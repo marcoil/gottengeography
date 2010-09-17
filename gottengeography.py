@@ -429,14 +429,7 @@ class GottenGeography:
 		)
 		
 		# These constants will make referencing the above columns much easier
-		self.PHOTO_PATH =		0
-		self.PHOTO_SUMMARY =		1
-		self.PHOTO_THUMB =		2
-		self.PHOTO_TIMESTAMP =		3
-		self.PHOTO_COORDINATES =	4
-		self.PHOTO_LATITUDE =		5
-		self.PHOTO_LONGITUDE =		6
-		self.PHOTO_MODIFIED =		7
+		(self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, self.PHOTO_TIMESTAMP, self.PHOTO_COORDINATES, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, self.PHOTO_MODIFIED) = range(8)
 		
 		self.treeview = gtk.TreeView(self.liststore)
 		self.treeview.set_enable_search(False)
