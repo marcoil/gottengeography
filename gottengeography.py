@@ -235,7 +235,7 @@ class GottenGeography:
 	# TODO Need to be able to load files with drag & drop, not just this thing
 	# TODO file previews would be nice
 	# TODO Sort liststore by timestamp after load is successful.
-	def add_file(self, widget, data=None):
+	def add_files(self, widget, data=None):
 		chooser = gtk.FileChooserDialog(
 			title="Open files...",
 			action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -297,9 +297,9 @@ class GottenGeography:
 				self.load_photo(filename)
 		self.progressbar.hide()
 		
-		# TODO remove this once everything works, it's for debugging only
-		pp = pprint.PrettyPrinter(indent=4)
-		pp.pprint(self.tracks)
+		# TODO for debugging only
+		#pp = pprint.PrettyPrinter(indent=4)
+		#pp.pprint(self.tracks)
 	
 	# Saves all modified files
 	def save_files(self, widget=None, data=None):
@@ -482,7 +482,7 @@ class GottenGeography:
 		# Connect all my precious signal handlers
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
-		self.load_button.connect("clicked", self.add_file)
+		self.load_button.connect("clicked", self.add_files)
 		self.delete_button.connect("clicked", self.apply_changes, False, True)
 		self.save_button.connect("clicked", self.save_files)
 		self.revert_button.connect("clicked", self.apply_changes, False)
