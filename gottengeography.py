@@ -184,6 +184,7 @@ class GottenGeography:
 					'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
 				}
 	
+	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx(self, filename):
 		self.progressbar.set_fraction(0)
 		self.progressbar.set_text("Parsing GPS data (please be patient)...")
@@ -201,6 +202,34 @@ class GottenGeography:
 		
 		# self.parse_track will take over the statusbar while it works
 		for node in gpx.documentElement.getElementsByTagName('trk'): self.parse_track(node, filename)
+	
+	def load_photo(self, filename):
+		self.treeview.show() 
+		
+		iter = self.liststore.append()
+		
+		# TODO replace with real thumbnail from pyexiv2
+		# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
+		# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
+		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
+		thumb.fill(0xFF000044) # transparent red, looks like pink
+		
+		# TODO placeholder strings here should be replaced with data from pyexiv2 once that works
+		# This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
+		# arrangement of columns later, I don't have to change this or worry about it at all here.
+		self.liststore.set(iter,
+			self.PHOTO_THUMB,		thumb,
+			self.PHOTO_PATH,		filename,
+			self.PHOTO_TIMESTAMP,		int(os.stat(filename).st_mtime), # Get this from pyexiv2 instead
+			self.PHOTO_COORDINATES,		False,
+			self.PHOTO_LATITUDE,		'latitude',
+			self.PHOTO_LONGITUDE,		'longitude',
+			self.PHOTO_MODIFIED,		False
+		)
+		
+		# This has to be called separately because self.create_summary relies on 
+		# the previous data already being present
+		self.liststore.set(iter, self.PHOTO_SUMMARY, self.create_summary(iter))
 		
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
@@ -258,44 +287,15 @@ class GottenGeography:
 		# Iterate over files and attempt to load them.
 		for filename in files:
 			# TODO Currently, this code assumes the file is GPX XML, and then if the xml parser fails, 
-			# it assumes it's photo data. Once pyexiv2 starts working, we'll want to assume
-			# that the files are photos (since that will be the most likely thing), and if
-			# pyexiv2 fails to read the files, THEN assume that they're GPX after.
+			# it assumes it's photo data. Once pyexiv2 starts working, we'll want to switch
+			# this around, because the most common case is likely to be the user loading lots of photos
+			# and then only one or two GPX files. So assume a given file is a photo, and if pyexiv2 explodes
+			# on it, try it in the GPX parser, and then failing that show some kind of error so the user knows
+			# that his files are garbage.
 			try:
 				self.load_gpx(filename)
-				
-			# File sure wasn't XML! Let's try to load it as an image instead
 			except xml.parsers.expat.ExpatError:
-				self.treeview.show() 
-				
-				# File wasn't XML, so try loading it with pyexiv2 here instead
-				# (I think the most common use case will be the user loading MANY images and only few
-				# GPX files, so make pyexiv2 the outermost case, and then load the GPX from within the exception there.
-				
-				iter = self.liststore.append()
-				
-				# TODO replace with real thumbnail from pyexiv2
-				# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
-				# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
-				thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
-				thumb.fill(0xFF000044) # transparent red, looks like pink
-				
-				# TODO placeholder strings here should be replaced with data from pyexiv2 once that works
-				# This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
-				# arrangement of columns later, I don't have to change this or worry about it at all here.
-				self.liststore.set(iter,
-					self.PHOTO_THUMB,		thumb,
-					self.PHOTO_PATH,		filename,
-					self.PHOTO_TIMESTAMP,		int(os.stat(filename).st_mtime), # Get this from pyexiv2 instead
-					self.PHOTO_COORDINATES,		False,
-					self.PHOTO_LATITUDE,		'latitude',
-					self.PHOTO_LONGITUDE,		'longitude',
-					self.PHOTO_MODIFIED,		False
-				)
-				
-				# This has to be called separately because self.create_summary relies on 
-				# the previous data already being present
-				self.liststore.set(iter, self.PHOTO_SUMMARY, self.create_summary(iter))
+				self.load_photo(filename)
 		self.progressbar.hide()
 		
 		# TODO remove this once everything works, it's for debugging only
