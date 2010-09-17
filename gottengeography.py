@@ -310,6 +310,7 @@ class GottenGeography:
 		if not self.any_modified(): return
 		
 		self.progressbar.show()
+		self.progressbar.set_text("Saving files...")
 		self.redraw_interface()
 		
 		# Data needed to start iterating over the images
@@ -318,13 +319,13 @@ class GottenGeography:
 		
 		while iter:
 			if self.liststore.get(iter, self.PHOTO_MODIFIED)[0]:
+				self.progressbar.set_fraction(count/self.mod_count)
+				self.progressbar.set_text("Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
+				self.redraw_interface()
 				time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
 				# TODO Actually write data to file here
 				self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
 				self.liststore.set_value(iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', self.liststore.get(iter, self.PHOTO_SUMMARY)[0])) # Remove bolding of text
-				self.progressbar.set_fraction(count/self.mod_count)
-				self.progressbar.set_text("Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
-				self.redraw_interface()
 				count += 1.0
 			iter = self.liststore.iter_next(iter)
 
