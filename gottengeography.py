@@ -94,20 +94,6 @@ class GottenGeography:
 		dialog.run()
 		dialog.destroy()
 	
-	def about_dialog_old(self, widget, data=None):
-		dialog = gtk.MessageDialog(parent=self.window, 
-		                           flags=gtk.DIALOG_MODAL,
-		                           type=gtk.MESSAGE_INFO, 
-		                           buttons=gtk.BUTTONS_NONE)
-		dialog.set_title("About GottenGeography")
-		
-		dialog.set_markup(u"<span size=\"larger\"><span weight=\"bold\" size=\"larger\">GottenGeography v0.0.1 Alpha</span>\n\n\u00A9 2010 Robert Park</span>\nrbpark@exolucere.ca")
-		dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
-		dialog.set_default_response(gtk.RESPONSE_CLOSE)
-		
-		dialog.run()
-		dialog.destroy()
-	
 	# This is called when the user clicks "x" button in windowmanager
 	# As far as I'm aware, this method is 100% GNOME HIG compliant.
 	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
