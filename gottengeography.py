@@ -155,7 +155,7 @@ class GottenGeography:
 	def parse_track(self, track, filename):
 		# I find GPS-generated names to be ugly, so I only show them in the progress meter,
 		# they're not stored anywhere or used after that
-		self.progressbar.set_text("Loading %s from %s..." % (
+		self.redraw_interface(0, "Loading %s from %s..." % (
 			track.getElementsByTagName('name')[0].firstChild.data, 
 			os.path.basename(filename))
 		)
