@@ -66,9 +66,8 @@ class GottenGeography:
 		# and GPS coords in a smaller font on the third line"
 		# TODO I don't think I actually want the date displayed here at all, this was just added
 		# for debugging, so I could ensure the date was being loaded properly
-		summary = '%s\n<small><span color="#777777">%s\n%s</span></small>' % (
+		summary = '%s\n<small><span color="#CCCCCC">%s</span></small>' % (
 			os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]), 
-			time.ctime(self.liststore.get(iter, self.PHOTO_TIMESTAMP)[0]),
 			summary 
 		)
 		
