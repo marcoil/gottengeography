@@ -84,7 +84,7 @@ class GottenGeography:
 		dialog.set_version("0.0.1")
 		dialog.set_copyright(u"\u00A9 Robert Park, 2010")
 		dialog.set_license(LICENSE)
-		#dialog.set_comments("These are comments.")
+		dialog.set_comments("This program is written in the Python programming language, and allows you to geotag your photos. The name \"Gotten Geography\" is an anagram of \"Python Geotagger\".")
 		dialog.set_website("http://exolucere.ca")
 		dialog.set_website_label("exolucere.ca")
 		dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
