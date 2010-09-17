@@ -282,7 +282,7 @@ class GottenGeography:
 				# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
 				# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
 				thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
-				thumb.fill(0xAAAAAAFF)
+				thumb.fill(0xFF000044)
 				
 				self.liststore.set(iter,
 					self.PHOTO_THUMB,		thumb,
