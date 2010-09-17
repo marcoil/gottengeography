@@ -98,8 +98,7 @@ class GottenGeography:
 	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
 	def delete_event(self, widget, event, data=None):
 		# If there's no unsaved data, just close without confirmation.
-		if not self.any_modified():
-			return False
+		if not self.any_modified(): return False
 		
 		dialog = gtk.MessageDialog(parent=self.window, 
 		                           flags=gtk.DIALOG_MODAL,
@@ -273,17 +272,17 @@ class GottenGeography:
 				# (I think the most common use case will be the user loading MANY images and only few
 				# GPX files, so make pyexiv2 the outermost case, and then load the GPX from within the exception there.
 				
-				# TODO placeholder strings here should be replaced with data from pyexiv2 once that works
-				# This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
-				# arrangement of columns later, I don't have to change this or worry about it at all here.
 				iter = self.liststore.append()
 				
 				# TODO replace with real thumbnail from pyexiv2
 				# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
 				# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
 				thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
-				thumb.fill(0xFF000044)
+				thumb.fill(0xFF000044) # transparent red, looks like pink
 				
+				# TODO placeholder strings here should be replaced with data from pyexiv2 once that works
+				# This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
+				# arrangement of columns later, I don't have to change this or worry about it at all here.
 				self.liststore.set(iter,
 					self.PHOTO_THUMB,		thumb,
 					self.PHOTO_PATH,		filename,
@@ -298,15 +297,20 @@ class GottenGeography:
 				# the previous data already being present
 				self.liststore.set(iter, self.PHOTO_SUMMARY, self.create_summary(iter))
 		self.progressbar.hide()
+		
+		# TODO remove this once everything works, it's for debugging only
 		pp = pprint.PrettyPrinter(indent=4)
 		pp.pprint(self.tracks)
 	
 	# Saves all modified files
 	def save_files(self, widget=None, data=None):
-		if not self.any_modified():
-			return
+		# Although this should never actually trigger because the save button gets disabled when there's nothing to save,
+		# we need to run self.any_modified() in order for self.mod_count to be set correctly, which is used later
+		# So this useless check is needed for it's side-effects. d'oh
+		if not self.any_modified(): return
 		
 		self.progressbar.show()
+		self.redraw_interface()
 		
 		# Data needed to start iterating over the images
 		count = 0.0
@@ -367,8 +371,8 @@ class GottenGeography:
 		self.mod_count = 0
 		
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		self.window.set_title("GottenGeography - Geotag your photos!")
-		self.window.set_size_request(700,500)
+		self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
+		self.window.set_size_request(900,500)
 		
 		self.vbox = gtk.VBox(spacing=0)
 		
@@ -412,12 +416,11 @@ class GottenGeography:
 		self.hbox = gtk.HBox()
 		
 		# This code defines how the photo list will appear
-		# TODO Image thumbnails / pyexiv2
 		# TODO sort by timestamp (needs pyexiv2)
 		self.liststore = gtk.ListStore(
 			gobject.TYPE_STRING,  # 0 Path to image file
 			gobject.TYPE_STRING,  # 1 "Nice" name for display purposes
-			gtk.gdk.Pixbuf,       # 2 Thumbnail (one day...)
+			gtk.gdk.Pixbuf,       # 2 Thumbnail
 			gobject.TYPE_INT,     # 3 Timestamp in Epoch seconds
 			gobject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
 			gobject.TYPE_STRING,  # 5 Latitude
