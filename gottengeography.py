@@ -34,8 +34,11 @@ pygtk.require('2.0')
 # Needs to be able to load files via drag&drop
 
 class GottenGeography:
-	# Shorthand for a little bit of GTK magic to make my code read more smoothly. (this gets called a lot)
-	def redraw_interface(self):
+	# Shorthand for updating the progressbar, and then redrawing the interface
+	# (won't modify progressbar if called with no arguments)
+	def redraw_interface(self, fraction=None, text=None):
+		if fraction:	self.progressbar.set_fraction(fraction)
+		if text:	self.progressbar.set_text(text)
 		while gtk.events_pending(): gtk.main_iteration()
 		
 	# Take a GtkTreeIter, check if it is unsaved, and if so, increment the 
@@ -169,9 +172,8 @@ class GottenGeography:
 			total = float(len(points))
 			
 			for point in points:
-				self.progressbar.set_fraction(count/total)
+				self.redraw_interface(count/total)
 				count += 1.0
-				self.redraw_interface()
 				
 				# Convert GPX time (RFC 3339 time) into UTC epoch time for simplicity in sorting and comparing
 				timestamp = point.getElementsByTagName('time')[0].firstChild.data
@@ -186,18 +188,15 @@ class GottenGeography:
 	
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx(self, filename):
-		self.progressbar.set_fraction(0)
-		self.progressbar.set_text("Parsing GPS data (please be patient)...")
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
-		self.redraw_interface()
+		self.redraw_interface(0, "Parsing GPS data (please be patient)...")
 		
 		# TODO what happens to this if I load an XML file that isn't GPX?
 		# TODO any way to make this faster?
 		# TODO any way to pulse the progress bar while this runs?
 		gpx = minidom.parse(filename)
 		
-		self.progressbar.set_text("Normalizing GPS data...") # Reticulating splines...
-		self.redraw_interface()
+		self.redraw_interface(0, "Normalizing GPS data...") # Reticulating splines...
 		gpx.normalize()
 		
 		# self.parse_track will take over the statusbar while it works
@@ -284,8 +283,7 @@ class GottenGeography:
 		# Anything else is really slow and feels unresponsive
 		files = chooser.get_filenames()
 		chooser.destroy()
-		self.progressbar.set_text("Loading files (please be patient)...")
-		self.redraw_interface()
+		self.redraw_interface(0, "Loading files (please be patient)...")
 		
 		# Iterate over files and attempt to load them.
 		for filename in files:
@@ -313,8 +311,7 @@ class GottenGeography:
 		if not self.any_modified(): return
 		
 		self.progressbar.show()
-		self.progressbar.set_text("Saving files...")
-		self.redraw_interface()
+		self.redraw_interface(0, "Saving files...")
 		
 		# Data needed to start iterating over the images
 		count = 0.0
@@ -322,9 +319,7 @@ class GottenGeography:
 		
 		while iter:
 			if self.liststore.get(iter, self.PHOTO_MODIFIED)[0]:
-				self.progressbar.set_fraction(count/self.mod_count)
-				self.progressbar.set_text("Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
-				self.redraw_interface()
+				self.redraw_interface(count/self.mod_count, "Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
 				time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
 				# TODO Actually write data to file here
 				self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
