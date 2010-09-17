@@ -149,43 +149,6 @@ class GottenGeography:
 		# The Revert button is only activated if the selection contains unsaved files.
 		self.revert_button.set_sensitive(self.any_modified(selection))
 		
-	# This function creates a nested dictionary (that is, a dictionary of dictionaries)
-	# in which the top level keys are epoch seconds, and the bottom level keys are elevation/latitude/longitude.
-	# TODO you'll probably want to offer the user some way to unload/clear this data without restarting the program
-	def parse_track(self, track, filename):
-		# I find GPS-generated names to be ugly, so I only show them in the progress meter,
-		# they're not stored anywhere or used after that
-		self.redraw_interface(0, "Loading %s from %s..." % (
-			track.getElementsByTagName('name')[0].firstChild.data, 
-			os.path.basename(filename))
-		)
-		
-		# In the event that the user loads a file (or multiple files) containing more than one track point
-		# for a given epoch second, the most-recently-loaded is kept, and the rest are clobbered. 
-		# Effectively this makes the assumption that the user cannot be in two places at once, although
-		# it is possible that the user might attempt to load two different GPX files from two different
-		# GPS units. If you do that, you're stupid, and I hate you.
-		for segment in track.getElementsByTagName('trkseg'):
-			points = segment.getElementsByTagName('trkpt')
-			
-			count = 0.0
-			total = float(len(points))
-			
-			for point in points:
-				self.redraw_interface(count/total)
-				count += 1.0
-				
-				# Convert GPX time (RFC 3339 time) into UTC epoch time for simplicity in sorting and comparing
-				timestamp = point.getElementsByTagName('time')[0].firstChild.data
-				timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-				timestamp = calendar.timegm(timestamp)
-				
-				self.tracks[timestamp]={
-					'latitude': float(point.getAttribute('lat')),
-					'longitude': float(point.getAttribute('lon')),
-					'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
-				}
-	
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
@@ -199,8 +162,43 @@ class GottenGeography:
 		self.redraw_interface(0, "Normalizing GPS data...") # Reticulating splines...
 		gpx.normalize()
 		
-		# self.parse_track will take over the statusbar while it works
-		for node in gpx.documentElement.getElementsByTagName('trk'): self.parse_track(node, filename)
+		# This creates a nested dictionary (that is, a dictionary of dictionaries)
+		# in which the top level keys are epoch seconds, and the bottom level keys are elevation/latitude/longitude.
+		# TODO you'll probably want to offer the user some way to unload/clear this data without restarting the program
+		for track in gpx.documentElement.getElementsByTagName('trk'): 
+			# I find GPS-generated names to be ugly, so I only show them in the progress meter,
+			# they're not stored anywhere or used after that
+			self.redraw_interface(0, "Loading %s from %s..." % (
+				track.getElementsByTagName('name')[0].firstChild.data, 
+				os.path.basename(filename))
+			)
+			
+			# In the event that the user loads a file (or multiple files) containing more than one track point
+			# for a given epoch second, the most-recently-loaded is kept, and the rest are clobbered. 
+			# Effectively this makes the assumption that the user cannot be in two places at once, although
+			# it is possible that the user might attempt to load two different GPX files from two different
+			# GPS units. If you do that, you're stupid, and I hate you.
+			for segment in track.getElementsByTagName('trkseg'):
+				points = segment.getElementsByTagName('trkpt')
+				
+				count = 0.0
+				total = float(len(points))
+				
+				for point in points:
+					self.redraw_interface(count/total)
+					count += 1.0
+					
+					# Convert GPX time (RFC 3339 time) into UTC epoch time for simplicity in sorting and comparing
+					timestamp = point.getElementsByTagName('time')[0].firstChild.data
+					timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+					timestamp = calendar.timegm(timestamp)
+					
+					self.tracks[timestamp]={
+						'latitude': float(point.getAttribute('lat')),
+						'longitude': float(point.getAttribute('lon')),
+						'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
+					}
+			
 	
 	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
 	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
