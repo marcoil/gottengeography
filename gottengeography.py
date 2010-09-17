@@ -203,9 +203,12 @@ class GottenGeography:
 		# self.parse_track will take over the statusbar while it works
 		for node in gpx.documentElement.getElementsByTagName('trk'): self.parse_track(node, filename)
 	
+	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
+	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
 	def load_photo(self, filename):
 		self.treeview.show() 
 		
+		# makes a new entry in the liststore for us to populate with data
 		iter = self.liststore.append()
 		
 		# TODO replace with real thumbnail from pyexiv2
