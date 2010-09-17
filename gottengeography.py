@@ -184,6 +184,24 @@ class GottenGeography:
 					'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
 				}
 	
+	def load_gpx(self, filename):
+		self.progressbar.set_fraction(0)
+		self.progressbar.set_text("Parsing GPS data (please be patient)...")
+		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
+		self.redraw_interface()
+		
+		# TODO what happens to this if I load an XML file that isn't GPX?
+		# TODO any way to make this faster?
+		# TODO any way to pulse the progress bar while this runs?
+		gpx = minidom.parse(filename)
+		
+		self.progressbar.set_text("Normalizing GPS data...") # Reticulating splines...
+		self.redraw_interface()
+		gpx.normalize()
+		
+		# self.parse_track will take over the statusbar while it works
+		for node in gpx.documentElement.getElementsByTagName('trk'): self.parse_track(node, filename)
+		
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
 	# TODO file previews would be nice
@@ -244,22 +262,7 @@ class GottenGeography:
 			# that the files are photos (since that will be the most likely thing), and if
 			# pyexiv2 fails to read the files, THEN assume that they're GPX after.
 			try:
-				self.progressbar.set_fraction(0)
-				self.progressbar.set_text("Parsing GPS data (please be patient)...")
-				# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
-				self.redraw_interface()
-				
-				# TODO what happens to this if I load an XML file that isn't GPX?
-				# TODO any way to make this faster?
-				# TODO any way to pulse the progress bar while this runs?
-				gpx = minidom.parse(filename)
-				
-				self.progressbar.set_text("Normalizing GPS data...") # Reticulating splines...
-				self.redraw_interface()
-				gpx.normalize()
-				
-				# self.parse_track will take over the statusbar while it works
-				for node in gpx.documentElement.getElementsByTagName('trk'): self.parse_track(node, filename)
+				self.load_gpx(filename)
 				
 			# File sure wasn't XML! Let's try to load it as an image instead
 			except xml.parsers.expat.ExpatError:
