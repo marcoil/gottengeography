@@ -61,11 +61,8 @@ class GottenGeography:
 			summary = ", ".join(self.liststore.get(iter, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE))
 		else:
 			summary = "Not geotagged"
-
-		# This says "filename on the first line, then date in a smaller font on the second line, 
-		# and GPS coords in a smaller font on the third line"
-		# TODO I don't think I actually want the date displayed here at all, this was just added
-		# for debugging, so I could ensure the date was being loaded properly
+		
+		# "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
 		summary = '%s\n<small><span color="#CCCCCC">%s</span></small>' % (
 			os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]), 
 			summary 
