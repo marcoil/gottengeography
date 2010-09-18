@@ -75,24 +75,6 @@ class GottenGeography:
 		if modified: summary = '<b>%s</b>' % summary
 		return summary
 	
-	# This just might be the single most important method ever written. In the history of computing.
-	# TODO needs logo
-	def about_dialog(self, widget, data=None):
-		dialog = gtk.AboutDialog()
-		dialog.set_name("GottenGeography")
-		dialog.set_version("0.0.1")
-		dialog.set_copyright(u"\u00A9 Robert Park, 2010")
-		dialog.set_license(LICENSE)
-		dialog.set_comments("This program is written in the Python programming language, and allows you to geotag your photos. The name \"Gotten Geography\" is an anagram of \"Python Geotagger\".")
-		dialog.set_website("http://exolucere.ca")
-		dialog.set_website_label("exolucere.ca")
-		dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
-		dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
-		dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
-		#dialog.set_translator_credits("Nobody!")
-		dialog.run()
-		dialog.destroy()
-	
 	# This is called when the user clicks "x" button in windowmanager
 	# As far as I'm aware, this method is 100% GNOME HIG compliant.
 	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
@@ -494,7 +476,25 @@ class GottenGeography:
 		self.window.show_all()
 		self.treeview.hide()
 		self.progressbar.hide()
-
+	
+	# This just might be the single most important method ever written. In the history of computing.
+	# TODO needs logo
+	def about_dialog(self, widget, data=None):
+		dialog = gtk.AboutDialog()
+		dialog.set_name("GottenGeography")
+		dialog.set_version("0.0.1")
+		dialog.set_copyright(u"\u00A9 Robert Park, 2010")
+		dialog.set_license(LICENSE)
+		dialog.set_comments("This program is written in the Python programming language, and allows you to geotag your photos. The name \"Gotten Geography\" is an anagram of \"Python Geotagger\".")
+		dialog.set_website("http://exolucere.ca/gottengeography")
+		dialog.set_website_label("GottenGeography Homepage")
+		dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
+		dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
+		dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
+		#dialog.set_translator_credits("Nobody!")
+		dialog.run()
+		dialog.destroy()
+	
 	def main(self):
 		gtk.main()
 
