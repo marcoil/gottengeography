@@ -87,7 +87,7 @@ class GottenGeography:
 		self.revert_button.set_sensitive(self.any_modified(selection))
 		
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
-	def load_gpx(self, filename):
+	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
 		self.redraw_interface(0, "Parsing GPS data (please be patient)...")
 		
@@ -139,7 +139,7 @@ class GottenGeography:
 	
 	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
 	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
-	def load_photo(self, filename, iter=None):
+	def load_exif_data(self, filename, iter=None):
 		# TODO before treeview gets shown or liststore appended, you need to attempt to load the
 		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
 		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
@@ -234,9 +234,9 @@ class GottenGeography:
 			# on it, try it in the GPX parser, and then failing that show some kind of error so the user knows
 			# that his files are garbage.
 			try:
-				self.load_gpx(filename)
+				self.load_gpx_data(filename)
 			except xml.parsers.expat.ExpatError:
-				self.load_photo(filename)
+				self.load_exif_data(filename)
 		self.progressbar.hide()
 		
 		# TODO for debugging only
@@ -276,7 +276,7 @@ class GottenGeography:
 	# much more alike than you might intuitively suspect. They all iterate over the GtkTreeSelection,
 	# They all modify the GtkListStore data... having this as three separate methods felt very redundant,
 	# so I merged it all into here. I hope this isn't TOO cluttered.
-	def apply_changes(self, widget, apply=True, delete=False):
+	def modify_selected_rows(self, widget, apply=True, delete=False):
 		(model, pathlist) = self.treeselection.get_selected_rows()
 		
 		# model.remove() will decrement the path # for all higher paths. 
@@ -298,7 +298,7 @@ class GottenGeography:
 				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, apply))
 			else:
 				# Revert photo data back to what was last saved on disk
-				self.load_photo(model.get(iter, self.PHOTO_PATH)[0], iter)
+				self.load_exif_data(model.get(iter, self.PHOTO_PATH)[0], iter)
 			
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
@@ -430,10 +430,10 @@ class GottenGeography:
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 		self.load_button.connect("clicked", self.add_files)
-		self.delete_button.connect("clicked", self.apply_changes, False, True)
+		self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
 		self.save_button.connect("clicked", self.save_files)
-		self.revert_button.connect("clicked", self.apply_changes, False)
-		self.apply_button.connect("clicked", self.apply_changes, True)
+		self.revert_button.connect("clicked", self.modify_selected_rows, False)
+		self.apply_button.connect("clicked", self.modify_selected_rows, True)
 		self.about_button.connect("clicked", self.about_dialog)
 		self.treeselection.connect("changed", self.selection_changed)
 		
