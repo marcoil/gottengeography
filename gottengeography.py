@@ -140,6 +140,10 @@ class GottenGeography:
 	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
 	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
 	def load_photo(self, filename):
+		# TODO before treeview gets shown or liststore appended, you need to attempt to load the
+		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
+		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
+		
 		self.treeview.show() 
 		
 		# makes a new entry in the liststore for us to populate with data
@@ -189,7 +193,7 @@ class GottenGeography:
 		# It makes sense to mix these into one view because
 		#    a) the user is unlikely to have these mixed into the same directory, and
 		#    b) it's a needless hassle to make the user switch between one or the other when trying to open files
-		# TODO don't limit this to just DNG and JPG
+		# TODO don't limit this to just DNG and JPG (what does pyexiv2 support?)
 		filter = gtk.FileFilter()
 		filter.set_name("Images & GPX")
 		filter.add_mime_type('image/jpeg')
@@ -207,7 +211,7 @@ class GottenGeography:
 		chooser.add_filter(filter)
 		
 		# Exit if the user clicked anything other than "OK"
-		if not (chooser.run() == gtk.RESPONSE_OK):
+		if chooser.run() <> gtk.RESPONSE_OK:
 			chooser.destroy()
 			return
 		
