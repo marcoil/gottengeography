@@ -430,10 +430,10 @@ class GottenGeography:
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 		self.load_button.connect("clicked", self.add_files)
-		self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
 		self.save_button.connect("clicked", self.save_files)
-		self.revert_button.connect("clicked", self.modify_selected_rows, False)
 		self.apply_button.connect("clicked", self.modify_selected_rows, True)
+		self.revert_button.connect("clicked", self.modify_selected_rows, False)
+		self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
 		self.about_button.connect("clicked", self.about_dialog)
 		self.treeselection.connect("changed", self.selection_changed)
 		
