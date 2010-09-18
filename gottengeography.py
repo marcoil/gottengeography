@@ -299,17 +299,17 @@ class GottenGeography:
 				model.remove(iter)
 				continue # Skip the rest of this loop because shit just got deleted
 			
+			self.redraw_interface(count/total, "Updating %s..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
+			count += 1.0
+			
 			if apply:
-				self.redraw_interface(count/total, "Applying coordinates to %s..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
 				model.set_value(iter, self.PHOTO_COORDINATES, True)
 				model.set_value(iter, self.PHOTO_MODIFIED, True)
-				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, apply))
+				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, True))
 			else:
-				self.redraw_interface(count/total, "Reverting %s to last saved..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
 				# Revert photo data back to what was last saved on disk
 				self.load_exif_data(model.get(iter, self.PHOTO_PATH)[0], iter)
-			count += 1.0
 			
 		self.progressbar.hide()
 		self.redraw_interface(0, " ")
