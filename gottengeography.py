@@ -49,6 +49,8 @@ class GottenGeography:
 	# If given a GtkTreeSelection, will return true if there are any unsaved files in 
 	# the selection. Otherwise, will return true if there are any unsaved files at all.
 	# Also sets the value of self.mod_count
+	# TODO if there is any possible way at all, I would prefer this not to have side-effects (self.mod_count).
+	# But I don't see any other way to maintain a count that would survive self.increment_modified (above)
 	def any_modified(self, selection=None):
 		self.mod_count = 0
 		if selection:	selection.selected_foreach(self.increment_modified)
@@ -71,50 +73,6 @@ class GottenGeography:
 		# Embolden text if this image has unsaved data
 		if modified: summary = '<b>%s</b>' % summary
 		return summary
-	
-	# This is called when the user clicks "x" button in windowmanager
-	# As far as I'm aware, this method is 100% GNOME HIG compliant.
-	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
-	def delete_event(self, widget, event, data=None):
-		# If there's no unsaved data, just close without confirmation.
-		if not self.any_modified(): return False
-		
-		dialog = gtk.MessageDialog(parent=self.window, 
-		                           flags=gtk.DIALOG_MODAL,
-		                           type=gtk.MESSAGE_WARNING, 
-		                           buttons=gtk.BUTTONS_NONE,
-		                           message_format="Save changes to your photos before closing?")
-		dialog.set_title(" ")
-		
-		# self.mod_count is accurate due to self.any_modified() being called above
-		dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % self.mod_count)
-		dialog.add_button("Close _without Saving", gtk.RESPONSE_CLOSE)
-		dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-		dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT)
-		dialog.set_default_response(gtk.RESPONSE_ACCEPT)
-		
-		# We need to destroy the dialog immediately so that the interface feels responsive,
-		# even if it takes some time to save the files and then close.
-		response = dialog.run()
-		dialog.destroy()
-		self.redraw_interface()
-		
-		# Close without saving
-		if response == gtk.RESPONSE_CLOSE:
-			return False
-		
-		# Save and then close
-		elif response == gtk.RESPONSE_ACCEPT:
-			self.save_files()
-			return False
-		
-		# Do not close
-		else:
-			return True
-	
-	# This function gets called automagically if the previous one returns False
-	def destroy(self, widget, data=None):
-		gtk.main_quit()
 
 	# This method gets called whenever the GtkTreeView selection changes, and it sets the sensitivity of
 	# a few buttons such that buttons which don't do anything useful in that context are desensitized.
@@ -473,6 +431,52 @@ class GottenGeography:
 		self.window.show_all()
 		self.treeview.hide()
 		self.progressbar.hide()
+	
+	# This is called when the user clicks "x" button in windowmanager
+	# As far as I'm aware, this method is 100% GNOME HIG compliant.
+	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
+	def delete_event(self, widget, event, data=None):
+		# If there's no unsaved data, just close without confirmation.
+		if not self.any_modified(): return False
+		
+		dialog = gtk.MessageDialog(
+			parent=self.window, 
+			flags=gtk.DIALOG_MODAL,
+			type=gtk.MESSAGE_WARNING, 
+			buttons=gtk.BUTTONS_NONE,
+			message_format="Save changes to your photos before closing?"
+		)
+		dialog.set_title(" ")
+		
+		# self.mod_count is accurate due to self.any_modified() being called above
+		dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % self.mod_count)
+		dialog.add_button("Close _without Saving", gtk.RESPONSE_CLOSE)
+		dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+		dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT)
+		dialog.set_default_response(gtk.RESPONSE_ACCEPT)
+		
+		# We need to destroy the dialog immediately so that the interface feels responsive,
+		# even if it takes some time to save the files and then close.
+		response = dialog.run()
+		dialog.destroy()
+		self.redraw_interface()
+		
+		# Close without saving
+		if response == gtk.RESPONSE_CLOSE:
+			return False
+		
+		# Save and then close
+		elif response == gtk.RESPONSE_ACCEPT:
+			self.save_files()
+			return False
+		
+		# Do not close
+		else:
+			return True
+	
+	# This function gets called automagically if the previous one returns False
+	def destroy(self, widget, data=None):
+		gtk.main_quit()
 	
 	# This just might be the single most important method ever written. In the history of computing.
 	# TODO needs logo
