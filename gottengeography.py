@@ -65,7 +65,7 @@ class GottenGeography:
 			summary = "Not geotagged"
 		
 		# "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
-		summary = '%s\n<small><span color="#CCCCCC">%s</span></small>' % (
+		summary = '%s\n<span color="#CCCCCC" size="smaller">%s</span>' % (
 			os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]), 
 			summary 
 		)
