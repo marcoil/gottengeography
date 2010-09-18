@@ -37,10 +37,10 @@ class GottenGeography:
 	# Shorthand for updating the progressbar, and then redrawing the interface
 	# (won't modify progressbar if called with no arguments)
 	def redraw_interface(self, fraction=None, text=None):
-		if fraction:	self.progressbar.set_fraction(fraction)
-		if text:	self.progressbar.set_text(text)
+		if fraction <> None:	self.progressbar.set_fraction(fraction)
+		if text <> None:	self.progressbar.set_text(text)
 		while gtk.events_pending(): gtk.main_iteration()
-		
+	
 	# Take a GtkTreeIter, check if it is unsaved, and if so, increment the 
 	# modified file count (used exclusively in the following method)
 	def increment_modified(self, model, path, iter):
@@ -143,6 +143,9 @@ class GottenGeography:
 		# TODO before treeview gets shown or liststore appended, you need to attempt to load the
 		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
 		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
+		
+		# simulate actually loading some data here
+		time.sleep(0.5)
 		
 		self.treeview.show() 
 		
@@ -285,6 +288,11 @@ class GottenGeography:
 		# more than one row is selected for deletion
 		pathlist.reverse()
 		
+		count = 0.0
+		total = float(len(pathlist))
+		self.progressbar.show()
+		self.redraw_interface(0, " ")
+		
 		for path in pathlist:
 			iter = model.get_iter(path)
 			if delete:
@@ -292,14 +300,20 @@ class GottenGeography:
 				continue # Skip the rest of this loop because shit just got deleted
 			
 			if apply:
+				self.redraw_interface(count/total, "Applying coordinates to %s..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
 				model.set_value(iter, self.PHOTO_COORDINATES, True)
 				model.set_value(iter, self.PHOTO_MODIFIED, True)
 				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, apply))
 			else:
+				self.redraw_interface(count/total, "Reverting %s to last saved..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
 				# Revert photo data back to what was last saved on disk
 				self.load_exif_data(model.get(iter, self.PHOTO_PATH)[0], iter)
+			count += 1.0
 			
+		self.progressbar.hide()
+		self.redraw_interface(0, " ")
+		
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
 		self.save_button.set_sensitive(self.any_modified())
