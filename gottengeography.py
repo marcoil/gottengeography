@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-# GottenGeography - Automatically geotags photos based on timestamps in GPX data
+# GottenGeography - Automatically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -44,18 +44,15 @@ class GottenGeography:
 	# Take a GtkTreeIter, check if it is unsaved, and if so, increment the 
 	# modified file count (used exclusively in the following method)
 	def increment_modified(self, model, path, iter):
-		if model.get(iter, self.PHOTO_MODIFIED)[0]:
-			self.mod_count += 1
+		if model.get(iter, self.PHOTO_MODIFIED)[0]: self.mod_count += 1
 	
 	# If given a GtkTreeSelection, will return true if there are any unsaved files in 
 	# the selection. Otherwise, will return true if there are any unsaved files at all.
 	# Also sets the value of self.mod_count
 	def any_modified(self, selection=None):
 		self.mod_count = 0
-		if selection:
-			selection.selected_foreach(self.increment_modified)
-		else:
-			self.liststore.foreach(self.increment_modified)
+		if selection:	selection.selected_foreach(self.increment_modified)
+		else:		self.liststore.foreach(self.increment_modified)
 		return self.mod_count > 0
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
