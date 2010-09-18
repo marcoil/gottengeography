@@ -139,15 +139,16 @@ class GottenGeography:
 	
 	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
 	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
-	def load_photo(self, filename):
+	def load_photo(self, filename, iter=None):
 		# TODO before treeview gets shown or liststore appended, you need to attempt to load the
 		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
 		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
 		
 		self.treeview.show() 
 		
-		# makes a new entry in the liststore for us to populate with data
-		iter = self.liststore.append()
+		# If we're given an iter, we're clobbering that data with the last saved data
+		# Otherwise, create a new entry in the liststore, and populate that with new data
+		if not iter: iter = self.liststore.append()
 		
 		# TODO replace with real thumbnail from pyexiv2
 		# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
@@ -278,21 +279,26 @@ class GottenGeography:
 	def apply_changes(self, widget, apply=True, delete=False):
 		(model, pathlist) = self.treeselection.get_selected_rows()
 		
-		# Sorted from highest to lowest prevents delete from breaking
-		# (deleting a row reduces the path # for all higher rows)
-		for path in sorted(pathlist, key=lambda a: a[0], reverse=True):
+		# model.remove() will decrement the path # for all higher paths. 
+		# Must reverse() the pathlist so that we delete highest-first, otherwise
+		# we'll actually end up deleting the totally wrong rows in the case where 
+		# more than one row is selected for deletion
+		pathlist.reverse()
+		
+		for path in pathlist:
 			iter = model.get_iter(path)
 			if delete:
 				model.remove(iter)
 				continue # Skip the rest of this loop because shit just got deleted
-			#if not apply:
-				# TODO Reload the data from the original file here
-				# Make sure to set PHOTO_COORDINATES based on whether or not there are any, not "False because we're reverting"
-			#else:
+			
+			if apply:
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
-			model.set_value(iter, self.PHOTO_COORDINATES, apply) # TODO this is incorrect in the case that we're reverting a photo that had GPS data from before
-			model.set_value(iter, self.PHOTO_MODIFIED, apply)
-			model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, apply))
+				model.set_value(iter, self.PHOTO_COORDINATES, True)
+				model.set_value(iter, self.PHOTO_MODIFIED, True)
+				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, apply))
+			else:
+				# Revert photo data back to what was last saved on disk
+				self.load_photo(model.get(iter, self.PHOTO_PATH)[0], iter)
 			
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
