@@ -243,6 +243,7 @@ class GottenGeography:
 			try:
 				self.load_gpx_data(filename)
 			except xml.parsers.expat.ExpatError:
+				self.redraw_interface(0, "Loading %s..." % os.path.basename(filename))
 				self.load_exif_data(filename)
 		self.progressbar.hide()
 		
@@ -307,7 +308,7 @@ class GottenGeography:
 				model.set_value(iter, self.PHOTO_COORDINATES, True)
 				model.set_value(iter, self.PHOTO_MODIFIED, True)
 				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, True))
-			else:
+			elif model.get_value(iter, self.PHOTO_MODIFIED):
 				# Revert photo data back to what was last saved on disk
 				self.load_exif_data(model.get_value(iter, self.PHOTO_PATH), iter)
 			
