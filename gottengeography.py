@@ -63,14 +63,14 @@ class GottenGeography:
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
 	def create_summary(self, iter, modified=False):
-		if self.liststore.get(iter, self.PHOTO_COORDINATES)[0]:
+		if self.liststore.get_value(iter, self.PHOTO_COORDINATES):
 			summary = ", ".join(self.liststore.get(iter, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE))
 		else:
 			summary = "Not geotagged"
 		
 		# "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
 		summary = '%s\n<span color="#CCCCCC" size="smaller">%s</span>' % (
-			os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]), 
+			os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH)), 
 			summary 
 		)
 		
@@ -261,12 +261,12 @@ class GottenGeography:
 		iter = self.liststore.get_iter_first()
 		
 		while iter:
-			if self.liststore.get(iter, self.PHOTO_MODIFIED)[0]:
-				self.redraw_interface(count/total, "Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
+			if self.liststore.get_value(iter, self.PHOTO_MODIFIED):
+				self.redraw_interface(count/total, "Saving %s..." % os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH)))
 				time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
 				# TODO Actually write data to file here
 				self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
-				self.liststore.set_value(iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', self.liststore.get(iter, self.PHOTO_SUMMARY)[0])) # Remove bolding of text
+				self.liststore.set_value(iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', self.liststore.get_value(iter, self.PHOTO_SUMMARY))) # Remove bolding of text
 				count += 1.0
 			iter = self.liststore.iter_next(iter)
 
@@ -299,7 +299,7 @@ class GottenGeography:
 				model.remove(iter)
 				continue # Skip the rest of this loop because shit just got deleted
 			
-			self.redraw_interface(count/total, "Updating %s..." % os.path.basename(model.get(iter, self.PHOTO_PATH)[0]))
+			self.redraw_interface(count/total, "Updating %s..." % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
 			count += 1.0
 			
 			if apply:
@@ -309,7 +309,7 @@ class GottenGeography:
 				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, True))
 			else:
 				# Revert photo data back to what was last saved on disk
-				self.load_exif_data(model.get(iter, self.PHOTO_PATH)[0], iter)
+				self.load_exif_data(model.get_value(iter, self.PHOTO_PATH), iter)
 			
 		self.progressbar.hide()
 		self.redraw_interface(0, " ")
