@@ -41,21 +41,25 @@ class GottenGeography:
 		if text <> None:	self.progressbar.set_text(text)
 		while gtk.events_pending(): gtk.main_iteration()
 	
-	# Take a GtkTreeIter, check if it is unsaved, and if so, increment the 
-	# modified file count (used exclusively in the following method)
-	def increment_modified(self, model, path, iter):
-		if model.get(iter, self.PHOTO_MODIFIED)[0]: self.mod_count += 1
+	# Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
+	def append_modified(self, model, path, iter, data):
+		if model.get_value(iter, self.PHOTO_MODIFIED): 
+			data[0].append(path)
+			# This stops the search at the first found unsaved file,
+			# unless the calling function has specifically requested 
+			# a full count be done (which is rarely needed)
+			return data[1] == False
 	
-	# If given a GtkTreeSelection, will return true if there are any unsaved files in 
-	# the selection. Otherwise, will return true if there are any unsaved files at all.
-	# Also sets the value of self.mod_count
-	# TODO if there is any possible way at all, I would prefer this not to have side-effects (self.mod_count).
-	# But I don't see any other way to maintain a count that would survive self.increment_modified (above)
-	def any_modified(self, selection=None):
-		self.mod_count = 0
-		if selection:	selection.selected_foreach(self.increment_modified)
-		else:		self.liststore.foreach(self.increment_modified)
-		return self.mod_count > 0
+	# Checks for unsaved files. By default will return True if it finds any, False otherwise
+	# If a full count is needed, call with give_count=True and it will then return an int
+	def any_modified(self, selection=None, give_count=False):
+		pathlist = []
+		
+		if selection:	selection.selected_foreach(self.append_modified, (pathlist, give_count))
+		else:		self.liststore.foreach(self.append_modified, (pathlist, give_count))
+		
+		if give_count:	return len(pathlist)
+		else: 		return pathlist <> [] # True if pathlist not empty set
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
 	def create_summary(self, iter, modified=False):
@@ -73,7 +77,7 @@ class GottenGeography:
 		# Embolden text if this image has unsaved data
 		if modified: summary = '<b>%s</b>' % summary
 		return summary
-
+	
 	# This method gets called whenever the GtkTreeView selection changes, and it sets the sensitivity of
 	# a few buttons such that buttons which don't do anything useful in that context are desensitized.
 	def selection_changed(self, selection, data=None):
@@ -85,7 +89,7 @@ class GottenGeography:
 		
 		# The Revert button is only activated if the selection contains unsaved files.
 		self.revert_button.set_sensitive(self.any_modified(selection))
-		
+	
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
@@ -248,21 +252,17 @@ class GottenGeography:
 	
 	# Saves all modified files
 	def save_files(self, widget=None, data=None):
-		# Although this should never actually trigger because the save button gets disabled when there's nothing to save,
-		# we need to run self.any_modified() in order for self.mod_count to be set correctly, which is used later
-		# So this useless check is needed for it's side-effects. d'oh
-		if not self.any_modified(): return
-		
 		self.progressbar.show()
 		self.redraw_interface(0, "Saving files...")
 		
 		# Data needed to start iterating over the images
 		count = 0.0
+		total = self.any_modified(give_count=True)
 		iter = self.liststore.get_iter_first()
 		
 		while iter:
 			if self.liststore.get(iter, self.PHOTO_MODIFIED)[0]:
-				self.redraw_interface(count/self.mod_count, "Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
+				self.redraw_interface(count/total, "Saving %s..." % os.path.basename(self.liststore.get(iter, self.PHOTO_PATH)[0]))
 				time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
 				# TODO Actually write data to file here
 				self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
@@ -323,10 +323,6 @@ class GottenGeography:
 	def __init__(self):
 		# Will store GPS data once GPX files loaded by user
 		self.tracks = {}
-		
-		# Warning, mod_count is not updated in real time, you must call 
-		# self.any_modified() first if you want this value to mean anything.
-		self.mod_count = 0
 		
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
@@ -461,7 +457,8 @@ class GottenGeography:
 	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
 	def delete_event(self, widget, event, data=None):
 		# If there's no unsaved data, just close without confirmation.
-		if not self.any_modified(): return False
+		mod_count = self.any_modified(give_count=True)
+		if mod_count == 0: return False
 		
 		dialog = gtk.MessageDialog(
 			parent=self.window, 
@@ -472,8 +469,7 @@ class GottenGeography:
 		)
 		dialog.set_title(" ")
 		
-		# self.mod_count is accurate due to self.any_modified() being called above
-		dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % self.mod_count)
+		dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % mod_count)
 		dialog.add_button("Close _without Saving", gtk.RESPONSE_CLOSE)
 		dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
 		dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT)
