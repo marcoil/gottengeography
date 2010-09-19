@@ -45,21 +45,18 @@ class GottenGeography:
 	def append_modified(self, model, path, iter, data):
 		if model.get_value(iter, self.PHOTO_MODIFIED): 
 			data[0].append(path)
-			# This stops the search at the first found unsaved file,
-			# unless the calling function has specifically requested 
-			# a full count be done (which is rarely needed)
-			return data[1] == False
+			return data[1] # Returning True halts the parent foreach() loop at the first found unsaved file
 	
-	# Checks for unsaved files. By default will return True if it finds any, False otherwise
+	# Checks for unsaved files. By default will return True if it finds any
 	# If a full count is needed, call with give_count=True and it will then return an int
 	def any_modified(self, selection=None, give_count=False):
 		pathlist = []
 		
-		if selection:	selection.selected_foreach(self.append_modified, (pathlist, give_count))
-		else:		self.liststore.foreach(self.append_modified, (pathlist, give_count))
+		if selection:	selection.selected_foreach(self.append_modified, (pathlist, not give_count))
+		else:		self.liststore.foreach(self.append_modified, (pathlist, not give_count))
 		
 		if give_count:	return len(pathlist)
-		else: 		return pathlist <> [] # True if pathlist not empty set
+		else: 		return pathlist <> [] # False if pathlist is empty
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
 	def create_summary(self, iter, modified=False):
