@@ -122,8 +122,7 @@ class GottenGeography:
 			for segment in track.getElementsByTagName('trkseg'):
 				points = segment.getElementsByTagName('trkpt')
 				
-				count = 0.0
-				total = float(len(points))
+				(count, total) = (0.0, float(len(points)))
 				
 				for point in points:
 					self.redraw_interface(count/total)
@@ -257,8 +256,7 @@ class GottenGeography:
 		self.redraw_interface(0, "Saving files...")
 		
 		# Data needed to start iterating over the images
-		count = 0.0
-		total = self.any_modified(give_count=True)
+		(count, total) = (0.0, self.any_modified(give_count=True))
 		iter = self.liststore.get_iter_first()
 		
 		while iter:
@@ -289,8 +287,8 @@ class GottenGeography:
 		# more than one row is selected for deletion
 		pathlist.reverse()
 		
-		count = 0.0
-		total = float(len(pathlist))
+		(count, total) = (0.0, float(len(pathlist)))
+		
 		self.progressbar.show()
 		self.redraw_interface(0, " ")
 		
@@ -313,7 +311,7 @@ class GottenGeography:
 				self.load_exif_data(model.get_value(iter, self.PHOTO_PATH), iter)
 			
 		self.progressbar.hide()
-		self.redraw_interface(0, " ")
+		#self.redraw_interface(0, " ")
 		
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
