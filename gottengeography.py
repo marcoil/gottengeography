@@ -90,14 +90,13 @@ class GottenGeography:
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
-		self.redraw_interface(0, "Parsing GPS data (please be patient)...")
+		#self.redraw_interface(0, "Parsing GPS data (please be patient)...") # TODO re-enable this after pyexiv2 is working
 		
 		# TODO what happens to this if I load an XML file that isn't GPX?
 		# TODO any way to make this faster?
 		# TODO any way to pulse the progress bar while this runs?
 		gpx = minidom.parse(filename)
 		
-		self.redraw_interface(0, "Normalizing GPS data...") # Reticulating splines...
 		gpx.normalize()
 		
 		# This creates a nested dictionary (that is, a dictionary of dictionaries)
@@ -119,7 +118,7 @@ class GottenGeography:
 			for segment in track.getElementsByTagName('trkseg'):
 				points = segment.getElementsByTagName('trkpt')
 				
-				(count, total) = (0.0, float(len(points)))
+				(count, total) = (0.0, len(points))
 				
 				for point in points:
 					self.redraw_interface(count/total)
@@ -232,6 +231,8 @@ class GottenGeography:
 		
 		# Iterate over files and attempt to load them.
 		for filename in files:
+			self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
+			count += 1
 			# TODO Currently, this code assumes the file is GPX XML, and then if the xml parser fails, 
 			# it assumes it's photo data. Once pyexiv2 starts working, we'll want to switch
 			# this around, because the most common case is likely to be the user loading lots of photos
@@ -241,8 +242,6 @@ class GottenGeography:
 			try:
 				self.load_gpx_data(filename)
 			except xml.parsers.expat.ExpatError:
-				self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
-				count += 1
 				self.load_exif_data(filename)
 		self.progressbar.hide()
 		
@@ -287,7 +286,7 @@ class GottenGeography:
 		# more than one row is selected for deletion
 		pathlist.reverse()
 		
-		(count, total) = (0.0, float(len(pathlist)))
+		(count, total) = (0.0, len(pathlist))
 		
 		self.progressbar.show()
 		self.redraw_interface(0, " ")
