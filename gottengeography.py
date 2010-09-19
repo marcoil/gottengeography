@@ -228,6 +228,8 @@ class GottenGeography:
 		chooser.destroy()
 		self.redraw_interface(0, "Loading files (please be patient)...")
 		
+		(count, total) = (0.0, len(files))
+		
 		# Iterate over files and attempt to load them.
 		for filename in files:
 			# TODO Currently, this code assumes the file is GPX XML, and then if the xml parser fails, 
@@ -239,7 +241,8 @@ class GottenGeography:
 			try:
 				self.load_gpx_data(filename)
 			except xml.parsers.expat.ExpatError:
-				self.redraw_interface(0, "Loading %s..." % os.path.basename(filename))
+				self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
+				count += 1
 				self.load_exif_data(filename)
 		self.progressbar.hide()
 		
