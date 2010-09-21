@@ -30,7 +30,6 @@ pygtk.require('2.0')
 # Needs to be able to sync GPX with image timestamps
 # Needs manual tagging of GPS coords based on user map entry alone, no GPX data
 # Needs to be able to save EXIF data
-# Needs photo thumbnails
 # Needs to be able to load files via drag&drop
 
 class GottenGeography:
@@ -61,24 +60,20 @@ class GottenGeography:
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
 	def create_summary(self, file, coords=(), modified=False):
-		if coords:
-			summary = ", ".join(coords)
-		else:
-			summary = "Not geotagged"
+		if coords:	summary = ", ".join(coords)
+		else:		summary = "Not geotagged"
 		
 		# "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
-		summary = '%s\n<span color="#CCCCCC" size="smaller">%s</span>' % (
-			os.path.basename(file), 
-			summary 
-		)
+		summary = '%s\n<span color="#BBBBBB" size="smaller">%s</span>' % (os.path.basename(file), summary)
 		
 		# Embolden text if this image has unsaved data
 		if modified: summary = '<b>%s</b>' % summary
+		
 		return summary
 	
 	# This method gets called whenever the GtkTreeView selection changes, and it sets the sensitivity of
 	# a few buttons such that buttons which don't do anything useful in that context are desensitized.
-	def selection_changed(self, selection, data=None):
+	def selection_changed(self, selection):
 		sensitivity = selection.count_selected_rows() > 0
 		
 		# Apply and Delete buttons get activated if there is any selection at all
@@ -87,7 +82,8 @@ class GottenGeography:
 		
 		# The Revert button is only activated if the selection contains unsaved files.
 		self.revert_button.set_sensitive(self.any_modified(selection))
-		
+	
+	# Loads a thumbnail into a Pixbuf and then saves it as the preview widget for the open FileChooserDialog
 	def update_preview(self, chooser):
 		filename = chooser.get_preview_filename()
 		
@@ -102,7 +98,7 @@ class GottenGeography:
 			active = False
 		
 		chooser.set_preview_widget_active(active)
-		
+	
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
@@ -150,7 +146,6 @@ class GottenGeography:
 						'longitude': float(point.getAttribute('lon')),
 						'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
 					}
-			
 	
 	# Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
 	# and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
@@ -165,13 +160,11 @@ class GottenGeography:
 		# Otherwise, create a new entry in the liststore, and populate that with new data
 		if not iter: iter = self.liststore.append()
 		
-		try:
-			# TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
-			# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
-			# This can only show thumbnails for JPEGs
-			thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 128, 128)
-		except:
-			thumb = None
+		# TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
+		# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
+		# This can only show thumbnails for JPEGs
+		try:	thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 128, 128)
+		except:	thumb = None
 		
 		# TODO grab from pyexiv2
 		coords = ()
@@ -189,10 +182,9 @@ class GottenGeography:
 			self.PHOTO_LONGITUDE,		"",
 			self.PHOTO_MODIFIED,		False
 		)
-		
+	
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
-	# TODO file previews would be nice
 	# TODO Sort liststore by timestamp after load is successful.
 	def add_files(self, widget, data=None):
 		chooser = gtk.FileChooserDialog(
@@ -209,7 +201,6 @@ class GottenGeography:
 		# make a file preview thingo
 		chooser.set_preview_widget(gtk.Image())
 		chooser.connect("selection-changed", self.update_preview)
-		
 		
 		# By default, we only want to show a combination of images and GPX data files
 		# It makes sense to mix these into one view because
@@ -251,17 +242,15 @@ class GottenGeography:
 		# Iterate over files and attempt to load them.
 		for filename in files:
 			self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
-			count += 1
+			count += 1.0
 			# TODO Currently, this code assumes the file is GPX XML, and then if the xml parser fails, 
 			# it assumes it's photo data. Once pyexiv2 starts working, we'll want to switch
 			# this around, because the most common case is likely to be the user loading lots of photos
 			# and then only one or two GPX files. So assume a given file is a photo, and if pyexiv2 explodes
 			# on it, try it in the GPX parser, and then failing that show some kind of error so the user knows
 			# that his files are garbage.
-			try:
-				self.load_gpx_data(filename)
-			except xml.parsers.expat.ExpatError:
-				self.load_exif_data(filename)
+			try:					self.load_gpx_data(filename)
+			except xml.parsers.expat.ExpatError:	self.load_exif_data(filename)
 		self.progressbar.hide()
 	
 	# Saves all modified files
@@ -278,11 +267,13 @@ class GottenGeography:
 				self.redraw_interface(count/total, "Saving %s..." % os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH)))
 				time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
 				# TODO Actually write data to file here
-				self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
-				self.liststore.set_value(iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', self.liststore.get_value(iter, self.PHOTO_SUMMARY))) # Remove bolding of text
+				self.liststore.set(iter, 
+					self.PHOTO_MODIFIED,	False,
+					self.PHOTO_SUMMARY,	re.sub(r'</?b>', '', self.liststore.get_value(iter, self.PHOTO_SUMMARY)) # Remove bolding of text
+				) 
 				count += 1.0
 			iter = self.liststore.iter_next(iter)
-
+		
 		# Update sensitivity of save/revert buttons based on current state, and hide the progressbar.
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
 		self.save_button.set_sensitive(self.any_modified())
@@ -318,15 +309,16 @@ class GottenGeography:
 			
 			if apply:
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
-				model.set_value(iter, self.PHOTO_COORDINATES, True)
-				model.set_value(iter, self.PHOTO_MODIFIED, True)
-				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, ('latitude', 'longitude'), True))
+				model.set(iter, 
+					self.PHOTO_COORDINATES,	True,
+					self.PHOTO_MODIFIED,	True,
+					self.PHOTO_SUMMARY,	self.create_summary(filename, ('latitude', 'longitude'), True)
+				)
 			elif model.get_value(iter, self.PHOTO_MODIFIED):
 				# Revert photo data back to what was last saved on disk
 				self.load_exif_data(filename, iter)
 			
 		self.progressbar.hide()
-		#self.redraw_interface(0, " ")
 		
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
