@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, gtk, gobject, os, re, time, calendar, xml, pprint
+import pygtk, gtk, gobject, os, re, time, calendar, xml, pprint, random
 from xml.dom import minidom
 
 pygtk.require('2.0')
@@ -87,7 +87,18 @@ class GottenGeography:
 		
 		# The Revert button is only activated if the selection contains unsaved files.
 		self.revert_button.set_sensitive(self.any_modified(selection))
-	
+		
+	def update_preview(self, chooser):
+		filename = chooser.get_preview_filename()
+		if not filename: return
+		
+		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 200, 133)
+		colors = [0xFF000044, 0x00FF0044, 0x0000FF44, 0xFFFF0044, 0xFF00FF44, 0x00FFFF44, 0xFFFFFF44, 0x00000044]
+		thumb.fill(random.choice(colors))
+		
+		chooser.get_preview_widget().set_from_pixbuf(thumb)
+		chooser.set_preview_widget_active(True)
+		
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
@@ -157,7 +168,8 @@ class GottenGeography:
 		# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
 		# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
 		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
-		thumb.fill(0xFF000044) # transparent red, looks like pink
+		colors = [0xFF000044, 0x00FF0044, 0x0000FF44, 0xFFFF0044, 0xFF00FF44, 0x00FFFF44, 0xFFFFFF44]
+		thumb.fill(random.choice(colors))
 		
 		# TODO grab from pyexiv2
 		coords = ()
@@ -191,6 +203,10 @@ class GottenGeography:
 		)
 		chooser.set_default_response(gtk.RESPONSE_OK)
 		chooser.set_select_multiple(True)
+		
+		# make a file preview thingo
+		chooser.set_preview_widget(gtk.Image())
+		chooser.connect("selection-changed", self.update_preview)
 		
 		
 		# By default, we only want to show a combination of images and GPX data files
