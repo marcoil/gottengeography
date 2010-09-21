@@ -42,6 +42,7 @@ class GottenGeography:
 		while gtk.events_pending(): gtk.main_iteration()
 	
 	# Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
+	# (used exlusively in the following method)
 	def append_modified(self, model, path, iter, data):
 		if model.get_value(iter, self.PHOTO_MODIFIED): 
 			data[0].append(path)
