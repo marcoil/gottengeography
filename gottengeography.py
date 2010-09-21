@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, gtk, gobject, os, re, time, calendar, xml, pprint, random
+import pygtk, gtk, gobject, os, re, time, calendar, xml
 from xml.dom import minidom
 
 pygtk.require('2.0')
@@ -90,14 +90,18 @@ class GottenGeography:
 		
 	def update_preview(self, chooser):
 		filename = chooser.get_preview_filename()
-		if not filename: return
 		
-		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 200, 133)
-		colors = [0xFF000044, 0x00FF0044, 0x0000FF44, 0xFFFF0044, 0xFF00FF44, 0x00FFFF44, 0xFFFFFF44, 0x00000044]
-		thumb.fill(random.choice(colors))
+		try:
+			# TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
+			# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
+			# This can only show thumbnails for JPEGs
+			thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 300, 300)
+			chooser.get_preview_widget().set_from_pixbuf(thumb)
+			active = True
+		except:
+			active = False
 		
-		chooser.get_preview_widget().set_from_pixbuf(thumb)
-		chooser.set_preview_widget_active(True)
+		chooser.set_preview_widget_active(active)
 		
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
@@ -155,21 +159,19 @@ class GottenGeography:
 		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
 		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
 		
-		# simulate actually loading some data here
-		time.sleep(0.5)
-		
 		self.treeview.show() 
 		
 		# If we're given an iter, we're clobbering that data with the last saved data
 		# Otherwise, create a new entry in the liststore, and populate that with new data
 		if not iter: iter = self.liststore.append()
 		
-		# TODO replace with real thumbnail from pyexiv2
-		# Should pyexiv2 fail to produce a thumbnail, don't be afraid to leave this blank,
-		# because the TreeView will use the stock image missing icon in it's place and that'll work out peachy.
-		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
-		colors = [0xFF000044, 0x00FF0044, 0x0000FF44, 0xFFFF0044, 0xFF00FF44, 0x00FFFF44, 0xFFFFFF44]
-		thumb.fill(random.choice(colors))
+		try:
+			# TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
+			# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
+			# This can only show thumbnails for JPEGs
+			thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 128, 128)
+		except:
+			thumb = None
 		
 		# TODO grab from pyexiv2
 		coords = ()
@@ -261,10 +263,6 @@ class GottenGeography:
 			except xml.parsers.expat.ExpatError:
 				self.load_exif_data(filename)
 		self.progressbar.hide()
-		
-		# TODO for debugging only
-		#pp = pprint.PrettyPrinter(indent=4)
-		#pp.pprint(self.tracks)
 	
 	# Saves all modified files
 	def save_files(self, widget=None, data=None):
