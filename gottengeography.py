@@ -60,15 +60,15 @@ class GottenGeography:
 		else: 		return pathlist <> [] # False if pathlist is empty
 	
 	# Creates the Pango-formatted display string used in the GtkTreeView
-	def create_summary(self, iter, modified=False):
-		if self.liststore.get_value(iter, self.PHOTO_COORDINATES):
-			summary = ", ".join(self.liststore.get(iter, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE))
+	def create_summary(self, file, coords=(), modified=False):
+		if coords:
+			summary = ", ".join(coords)
 		else:
 			summary = "Not geotagged"
 		
 		# "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
 		summary = '%s\n<span color="#CCCCCC" size="smaller">%s</span>' % (
-			os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH)), 
+			os.path.basename(file), 
 			summary 
 		)
 		
@@ -159,22 +159,22 @@ class GottenGeography:
 		thumb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, 100, 75)
 		thumb.fill(0xFF000044) # transparent red, looks like pink
 		
+		# TODO grab from pyexiv2
+		coords = ()
+		
 		# TODO placeholder strings here should be replaced with data from pyexiv2 once that works
 		# This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
 		# arrangement of columns later, I don't have to change this or worry about it at all here.
 		self.liststore.set(iter,
 			self.PHOTO_THUMB,		thumb,
+			self.PHOTO_SUMMARY,		self.create_summary(filename, coords),
 			self.PHOTO_PATH,		filename,
 			self.PHOTO_TIMESTAMP,		int(os.stat(filename).st_mtime), # Get this from pyexiv2 instead
 			self.PHOTO_COORDINATES,		False,
-			self.PHOTO_LATITUDE,		'latitude',
-			self.PHOTO_LONGITUDE,		'longitude',
+			self.PHOTO_LATITUDE,		"",
+			self.PHOTO_LONGITUDE,		"",
 			self.PHOTO_MODIFIED,		False
 		)
-		
-		# This has to be called separately because self.create_summary relies on 
-		# the previous data already being present
-		self.liststore.set(iter, self.PHOTO_SUMMARY, self.create_summary(iter))
 		
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
@@ -298,17 +298,18 @@ class GottenGeography:
 				model.remove(iter)
 				continue # Skip the rest of this loop because shit just got deleted
 			
-			self.redraw_interface(count/total, "Updating %s..." % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
+			filename = model.get_value(iter, self.PHOTO_PATH)
+			self.redraw_interface(count/total, "Updating %s..." % os.path.basename(filename))
 			count += 1.0
 			
 			if apply:
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
 				model.set_value(iter, self.PHOTO_COORDINATES, True)
 				model.set_value(iter, self.PHOTO_MODIFIED, True)
-				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(iter, True))
+				model.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, ('latitude', 'longitude'), True))
 			elif model.get_value(iter, self.PHOTO_MODIFIED):
 				# Revert photo data back to what was last saved on disk
-				self.load_exif_data(model.get_value(iter, self.PHOTO_PATH), iter)
+				self.load_exif_data(filename, iter)
 			
 		self.progressbar.hide()
 		#self.redraw_interface(0, " ")
