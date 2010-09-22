@@ -159,9 +159,18 @@ class GottenGeography:
 		
 		self.treeview.show() 
 		
-		# If we're given an iter, we're clobbering that data with the last saved data
-		# Otherwise, create a new entry in the liststore, and populate that with new data
-		if not iter: iter = self.liststore.append()
+		# This creates a list of all filenames loaded, checks it for the filename, if it's 
+		# present it gets the GtkTreeIter based on the index number of that filename, and if it's 
+		# not present, raises ValueError, which we then catch and create a new row to use.
+		# Effectively prevents the user from being able to load the same file twice, instead
+		# turning the second load attempt into a reload of the existing GtkTreeIter
+		if not iter:
+			try:
+				iter = self.liststore.get_iter(
+					[ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
+				)
+			except ValueError:
+				iter = self.liststore.append()
 		
 		# TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
 		# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
