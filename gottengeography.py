@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, gtk, gobject, os, re, time, calendar, xml
+import pygtk, gtk, gobject, glib, os, re, time, calendar, xml
 from xml.dom import minidom
 
 pygtk.require('2.0')
@@ -92,7 +92,18 @@ class GottenGeography:
 			# Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
 			# This can only show thumbnails for JPEGs
 			thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 300, 300)
-			chooser.get_preview_widget().set_from_pixbuf(thumb)
+			image = gtk.Image()
+			image.set_from_pixbuf(thumb)
+			
+			label = gtk.Label("latitude\nlongitude")
+			label.set_justify(gtk.JUSTIFY_CENTER)
+			
+			vbox = gtk.VBox(False, 6)
+			vbox.pack_start(image, False, False)
+			vbox.pack_start(label, False, False)
+			vbox.show_all()
+			
+			chooser.set_preview_widget(vbox)
 			active = True
 		except:
 			active = False
@@ -210,7 +221,6 @@ class GottenGeography:
 		chooser.set_select_multiple(True)
 		
 		# make a file preview thingo
-		chooser.set_preview_widget(gtk.Image())
 		chooser.connect("selection-changed", self.update_preview)
 		
 		# By default, we only want to show a combination of images and GPX data files
