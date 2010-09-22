@@ -112,7 +112,7 @@ class GottenGeography:
 		gpx.normalize()
 		
 		# This creates a nested dictionary (that is, a dictionary of dictionaries)
-		# in which the top level keys are epoch seconds, and the bottom level keys are elevation/latitude/longitude.
+		# in which the top level keys are UTC epoch seconds, and the bottom level keys are elevation/latitude/longitude.
 		# TODO you'll probably want to offer the user some way to unload/clear this data without restarting the program
 		for track in gpx.documentElement.getElementsByTagName('trk'): 
 			# I find GPS-generated names to be ugly, so I only show them in the progress meter,
@@ -230,7 +230,6 @@ class GottenGeography:
 			chooser.destroy()
 			return
 		
-		# Show the progress meter, because loading files is slow!
 		self.progressbar.show()
 		
 		# We need to make the chooser disappear immediately after clicking a button,
@@ -257,7 +256,7 @@ class GottenGeography:
 		self.progressbar.hide()
 	
 	# Saves all modified files
-	def save_files(self, widget=None, data=None):
+	def save_files(self, widget=None):
 		self.progressbar.show()
 		self.redraw_interface(0, "Saving files...")
 		
@@ -314,6 +313,8 @@ class GottenGeography:
 				# TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
 				model.set(iter, 
 					self.PHOTO_COORDINATES,	True,
+					self.PHOTO_LATITUDE,	'latitude',
+					self.PHOTO_LONGITUDE,	'longitude',
 					self.PHOTO_MODIFIED,	True,
 					self.PHOTO_SUMMARY,	self.create_summary(filename, ('latitude', 'longitude'), True)
 				)
