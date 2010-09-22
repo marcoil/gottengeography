@@ -102,7 +102,7 @@ class GottenGeography:
 	# Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
 	def load_gpx_data(self, filename):
 		# self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
-		#self.redraw_interface(0, "Parsing GPS data (please be patient)...") # TODO re-enable this after pyexiv2 is working
+		self.redraw_interface(0, "Parsing GPS data (please be patient)...")
 		
 		# TODO what happens to this if I load an XML file that isn't GPX?
 		# TODO any way to make this faster?
@@ -154,6 +154,9 @@ class GottenGeography:
 		# image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
 		# Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
 		
+		# TODO this won't be needed once pyexiv2 raises an error on failing to load a non-photo
+		if re.search(".gpx$", filename): raise NameError('GPX Encountered')
+		
 		self.treeview.show() 
 		
 		# If we're given an iter, we're clobbering that data with the last saved data
@@ -185,7 +188,6 @@ class GottenGeography:
 	
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
-	# TODO Sort liststore by timestamp after load is successful.
 	def add_files(self, widget, data=None):
 		chooser = gtk.FileChooserDialog(
 			title="Open files...",
@@ -243,14 +245,15 @@ class GottenGeography:
 		for filename in files:
 			self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
 			count += 1.0
-			# TODO Currently, this code assumes the file is GPX XML, and then if the xml parser fails, 
-			# it assumes it's photo data. Once pyexiv2 starts working, we'll want to switch
-			# this around, because the most common case is likely to be the user loading lots of photos
-			# and then only one or two GPX files. So assume a given file is a photo, and if pyexiv2 explodes
-			# on it, try it in the GPX parser, and then failing that show some kind of error so the user knows
-			# that his files are garbage.
-			try:					self.load_gpx_data(filename)
-			except xml.parsers.expat.ExpatError:	self.load_exif_data(filename)
+			
+			# Assume the file is an image; if that fails, assume it's GPX; if that fails, show an error
+			try:
+				try:			self.load_exif_data(filename)
+				except NameError:	self.load_gpx_data(filename)
+			except:
+				# File is neither GPX nor a photo with EXIF
+				self.redraw_interface(text="%s could not be loaded! Unrecognized filetype." % os.path.basename(filename))
+				time.sleep(1)
 		self.progressbar.hide()
 	
 	# Saves all modified files
