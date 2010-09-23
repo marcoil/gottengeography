@@ -208,7 +208,7 @@ class GottenGeography:
 	
 	# Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
 	# TODO Need to be able to load files with drag & drop, not just this thing
-	def add_files(self, widget, data=None):
+	def add_files(self, widget=None, data=None):
 		chooser = gtk.FileChooserDialog(
 			title="Open files...",
 			action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -304,7 +304,7 @@ class GottenGeography:
 	# much more alike than you might intuitively suspect. They all iterate over the GtkTreeSelection,
 	# They all modify the GtkListStore data... having this as three separate methods felt very redundant,
 	# so I merged it all into here. I hope this isn't TOO cluttered.
-	def modify_selected_rows(self, widget, apply=True, delete=False):
+	def modify_selected_rows(self, widget=None, apply=True, delete=False):
 		(model, pathlist) = self.treeselection.get_selected_rows()
 		
 		# model.remove() will decrement the path # for all higher paths. 
@@ -349,6 +349,22 @@ class GottenGeography:
 		# Hide the TreeView if it's empty, because it shows an ugly white strip
 		if delete and not self.liststore.get_iter_first(): self.treeview.hide()
 	
+	# This callback function is triggered whenever the user types Ctrl+[almost anything]
+	# TODO make sure these key choices actually make sense and are consistent with other apps
+	def key_accel(self, accel_group, acceleratable, keyval, modifier):
+		name = gtk.accelerator_get_label(keyval, modifier)
+		modified = self.any_modified()
+		
+		# One day, python will have a 'switch' statement... one day...
+		if (name == "Ctrl+S") and modified:	self.save_files()
+		elif (name == "Ctrl+W") and modified:	self.modify_selected_rows(None, True, True) # Delete
+		elif (name == "Ctrl+R") and modified:	self.modify_selected_rows(None, False, False) # Revert
+		elif (name == "Ctrl+Return"):		self.modify_selected_rows(None, True, False) # Apply
+		elif (name == "Ctrl+O"): 		self.add_files()
+		elif (name == "Ctrl+Q"): 		self.confirm_quit(True)
+		elif (name == "Ctrl+/"): 		self.about_dialog()
+		elif (name == "Ctrl+?"): 		self.about_dialog()
+	
 	def __init__(self):
 		# Will store GPS data once GPX files loaded by user
 		self.tracks = {}
@@ -362,25 +378,25 @@ class GottenGeography:
 		# Create the toolbar with standard buttons and some tooltips
 		self.toolbar = gtk.Toolbar()
 		self.load_button = gtk.ToolButton(gtk.STOCK_OPEN)
-		self.load_button.set_tooltip_text("Load photos or GPS data")
+		self.load_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
 		
 		self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE) # TODO Is this appropriate? I don't want the user to think his photos will be deleted. It's just for unloading photos.
-		self.delete_button.set_tooltip_text("Remove selected photos")
+		self.delete_button.set_tooltip_text("Remove selected photos (Ctrl+W)")
 		self.delete_button.set_sensitive(False)
 		
 		self.toolbar_spacer = gtk.SeparatorToolItem()
 		
 		self.apply_button = gtk.ToolButton(gtk.STOCK_APPLY)
-		self.apply_button.set_tooltip_text("Link displayed GPS data with selected photos")
+		self.apply_button.set_tooltip_text("Link displayed GPS data with selected photos (Ctrl+Return)")
 		self.apply_button.set_sensitive(False)
 		
 		self.save_button = gtk.ToolButton(gtk.STOCK_SAVE)
-		self.save_button.set_tooltip_text("Save all modified GPS data into your photos")
+		self.save_button.set_tooltip_text("Save all modified GPS data into your photos (Ctrl+S)")
 		self.save_button.set_label("Save All")
 		self.save_button.set_sensitive(False)
 		
 		self.revert_button = gtk.ToolButton(gtk.STOCK_REVERT_TO_SAVED)
-		self.revert_button.set_tooltip_text("Revert any changes made to selected photos")
+		self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+R)")
 		self.revert_button.set_sensitive(False)
 		
 		self.toolbar_spacer2 = gtk.SeparatorToolItem()
@@ -479,19 +495,32 @@ class GottenGeography:
 		self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
 		self.about_button.connect("clicked", self.about_dialog)
 		self.treeselection.connect("changed", self.selection_changed)
+
+		# Key bindings
+		self.accel = gtk.AccelGroup()
+		self.window.add_accel_group(self.accel)
+		keyvals = range(97,123) # A-Z
+		keyvals.append(47) # '/' key
+		keyvals.append(63) # '?' key
+		keyvals.append(65293) # 'Return' key
+		for key in keyvals: self.accel.connect_group(key, gtk.gdk.CONTROL_MASK, 0, self.key_accel)
+		
+		#self.save_button.add_accelerator("grab_focus", self.accel_group, 115, gtk.gdk.CONTROL_MASK, 0)
 		
 		# Causes all widgets to be displayed except the empty TreeView and the progressbar
 		self.window.show_all()
 		self.treeview.hide()
 		self.progressbar.hide()
 	
-	# This is called when the user clicks "x" button in windowmanager
-	# As far as I'm aware, this method is 100% GNOME HIG compliant.
-	# http://library.gnome.org/devel/hig-book/stable/windows-alert.html.en#save-confirmation-alerts
-	def delete_event(self, widget, event, data=None):
+	# This function checks for unsaved files, and displays a GNOME HIG compliant quit confirmation dialog
+	# If called with do_quit=True, it will call gtk.main_quit() and self.save_files() directly.
+	# If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
+	def confirm_quit(self, do_quit=False):
 		# If there's no unsaved data, just close without confirmation.
 		mod_count = self.any_modified(give_count=True)
-		if mod_count == 0: return False
+		if mod_count == 0: 
+			if do_quit: gtk.main_quit()
+			return gtk.RESPONSE_CLOSE
 		
 		dialog = gtk.MessageDialog(
 			parent=self.window, 
@@ -514,6 +543,16 @@ class GottenGeography:
 		dialog.destroy()
 		self.redraw_interface()
 		
+		if do_quit:
+			if response == gtk.RESPONSE_ACCEPT: self.save_files()
+			if response <> gtk.RESPONSE_CANCEL: gtk.main_quit()
+		
+		return response
+	
+	# This is called when the user clicks "x" button in windowmanager
+	def delete_event(self, widget, event, data=None):
+		response = self.confirm_quit()
+		
 		# Close without saving
 		if response == gtk.RESPONSE_CLOSE:
 			return False
@@ -533,7 +572,7 @@ class GottenGeography:
 	
 	# This just might be the single most important method ever written. In the history of computing.
 	# TODO needs logo
-	def about_dialog(self, widget, data=None):
+	def about_dialog(self, widget=None, data=None):
 		dialog = gtk.AboutDialog()
 		dialog.set_name("GottenGeography")
 		dialog.set_version("0.0.1")
