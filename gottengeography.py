@@ -306,6 +306,7 @@ class GottenGeography:
 	# so I merged it all into here. I hope this isn't TOO cluttered.
 	def modify_selected_rows(self, widget=None, apply=True, delete=False):
 		(model, pathlist) = self.treeselection.get_selected_rows()
+		if pathlist == []: return
 		
 		# model.remove() will decrement the path # for all higher paths. 
 		# Must reverse() the pathlist so that we delete highest-first, otherwise
@@ -346,6 +347,7 @@ class GottenGeography:
 		# Set sensitivity of buttons as appropriate for the changes we've just made
 		self.revert_button.set_sensitive(self.any_modified(self.treeselection))
 		self.save_button.set_sensitive(self.any_modified())
+		
 		# Hide the TreeView if it's empty, because it shows an ugly white strip
 		if delete and not self.liststore.get_iter_first(): self.treeview.hide()
 	
@@ -498,6 +500,7 @@ class GottenGeography:
 		name = gtk.accelerator_get_label(keyval, modifier)
 		
 		if   (name == "Ctrl+Return"):	self.modify_selected_rows(None, True, False) # Apply
+		elif (name == "Ctrl+W"):	self.modify_selected_rows(None, True, True) # Delete
 		elif (name == "Ctrl+O"):	self.add_files()
 		elif (name == "Ctrl+Q"):	self.confirm_quit(True)
 		elif (name == "Ctrl+/"):	self.about_dialog()
@@ -507,7 +510,6 @@ class GottenGeography:
 		if not self.any_modified(): return
 		
 		if   (name == "Ctrl+S"):	self.save_files()
-		elif (name == "Ctrl+W"):	self.modify_selected_rows(None, True, True) # Delete
 		elif (name == "Ctrl+Z"):	self.modify_selected_rows(None, False, False) # Revert
 		
 
