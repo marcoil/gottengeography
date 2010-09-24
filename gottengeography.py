@@ -31,6 +31,8 @@ pygtk.require('2.0')
 # Needs manual tagging of GPS coords based on user map entry alone, no GPX data
 # Needs to be able to save EXIF data
 # Needs to be able to load files via drag&drop
+# Don't automatically close the statusbar when you're done with it, instead
+# leave it open with a status message (success/etc) and an 'ok' button
 
 class GottenGeography:
 	# Shorthand for updating the progressbar, and then redrawing the interface
@@ -480,7 +482,7 @@ class GottenGeography:
 		self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
 		self.about_button.connect("clicked", self.about_dialog)
 		self.treeselection.connect("changed", self.selection_changed)
-
+		
 		# Key bindings
 		self.accel = gtk.AccelGroup()
 		self.window.add_accel_group(self.accel)
