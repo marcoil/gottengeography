@@ -472,8 +472,7 @@ class GottenGeography:
 		self.window.add(self.vbox)
 		
 		# Connect all my precious signal handlers
-		self.window.connect("delete_event", self.delete_event)
-		self.window.connect("destroy", self.destroy)
+		self.window.connect("delete_event", self.confirm_quit)
 		self.load_button.connect("clicked", self.add_files)
 		self.save_button.connect("clicked", self.save_files)
 		self.apply_button.connect("clicked", self.modify_selected_rows, True)
@@ -502,7 +501,7 @@ class GottenGeography:
 		if   (name == "Ctrl+Return"):	self.modify_selected_rows(None, True, False) # Apply
 		elif (name == "Ctrl+W"):	self.modify_selected_rows(None, True, True) # Delete
 		elif (name == "Ctrl+O"):	self.add_files()
-		elif (name == "Ctrl+Q"):	self.confirm_quit(True)
+		elif (name == "Ctrl+Q"):	self.confirm_quit()
 		elif (name == "Ctrl+/"):	self.about_dialog()
 		elif (name == "Ctrl+?"):	self.about_dialog()
 		
@@ -516,12 +515,13 @@ class GottenGeography:
 	# This function checks for unsaved files, and displays a GNOME HIG compliant quit confirmation dialog
 	# If called with do_quit=True, it will call gtk.main_quit() and self.save_files() directly.
 	# If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
-	def confirm_quit(self, do_quit=False):
+	def confirm_quit(self, widget=None, event=None):
+		print "confirm quit: ", widget, event
 		# If there's no unsaved data, just close without confirmation.
 		mod_count = self.any_modified(give_count=True)
 		if mod_count == 0: 
-			if do_quit: gtk.main_quit()
-			return gtk.RESPONSE_CLOSE
+			gtk.main_quit()
+			return True
 		
 		dialog = gtk.MessageDialog(
 			parent=self.window, 
@@ -538,38 +538,18 @@ class GottenGeography:
 		dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT)
 		dialog.set_default_response(gtk.RESPONSE_ACCEPT)
 		
-		# We need to destroy the dialog immediately so that the interface feels responsive,
-		# even if it takes some time to save the files and then close.
+		# If we don't dialog.destroy() here, and the users chooses to save files, the dialog stays open
+		# during the save, which is very unresponsive and makes the application feel sluggish.
 		response = dialog.run()
 		dialog.destroy()
 		self.redraw_interface()
 		
-		if do_quit:
-			if response == gtk.RESPONSE_ACCEPT: self.save_files()
-			if response <> gtk.RESPONSE_CANCEL: gtk.main_quit()
+		# Save and/or quit as necessary
+		if response == gtk.RESPONSE_ACCEPT: self.save_files()
+		if response <> gtk.RESPONSE_CANCEL: gtk.main_quit()
 		
-		return response
-	
-	# This is called when the user clicks "x" button in windowmanager
-	def delete_event(self, widget, event, data=None):
-		response = self.confirm_quit()
-		
-		# Close without saving
-		if response == gtk.RESPONSE_CLOSE:
-			return False
-		
-		# Save and then close
-		elif response == gtk.RESPONSE_ACCEPT:
-			self.save_files()
-			return False
-		
-		# Do not close
-		else:
-			return True
-	
-	# This function gets called automagically if the previous one returns False
-	def destroy(self, widget, data=None):
-		gtk.main_quit()
+		# Prevents GTK from trying to call our non-existant destroy method
+		return True 
 	
 	# This just might be the single most important method ever written. In the history of computing.
 	# TODO needs logo
