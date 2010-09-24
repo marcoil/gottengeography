@@ -349,22 +349,6 @@ class GottenGeography:
 		# Hide the TreeView if it's empty, because it shows an ugly white strip
 		if delete and not self.liststore.get_iter_first(): self.treeview.hide()
 	
-	# This callback function is triggered whenever the user types Ctrl+[almost anything]
-	# TODO make sure these key choices actually make sense and are consistent with other apps
-	def key_accel(self, accel_group, acceleratable, keyval, modifier):
-		name = gtk.accelerator_get_label(keyval, modifier)
-		modified = self.any_modified()
-		
-		# One day, python will have a 'switch' statement... one day...
-		if (name == "Ctrl+S") and modified:	self.save_files()
-		elif (name == "Ctrl+W") and modified:	self.modify_selected_rows(None, True, True) # Delete
-		elif (name == "Ctrl+R") and modified:	self.modify_selected_rows(None, False, False) # Revert
-		elif (name == "Ctrl+Return"):		self.modify_selected_rows(None, True, False) # Apply
-		elif (name == "Ctrl+O"): 		self.add_files()
-		elif (name == "Ctrl+Q"): 		self.confirm_quit(True)
-		elif (name == "Ctrl+/"): 		self.about_dialog()
-		elif (name == "Ctrl+?"): 		self.about_dialog()
-	
 	def __init__(self):
 		# Will store GPS data once GPX files loaded by user
 		self.tracks = {}
@@ -396,7 +380,7 @@ class GottenGeography:
 		self.save_button.set_sensitive(False)
 		
 		self.revert_button = gtk.ToolButton(gtk.STOCK_REVERT_TO_SAVED)
-		self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+R)")
+		self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+Z)")
 		self.revert_button.set_sensitive(False)
 		
 		self.toolbar_spacer2 = gtk.SeparatorToolItem()
@@ -499,19 +483,34 @@ class GottenGeography:
 		# Key bindings
 		self.accel = gtk.AccelGroup()
 		self.window.add_accel_group(self.accel)
-		keyvals = range(97,123) # A-Z
-		keyvals.append(47) # '/' key
-		keyvals.append(63) # '?' key
-		keyvals.append(65293) # 'Return' key
-		for key in keyvals: self.accel.connect_group(key, gtk.gdk.CONTROL_MASK, 0, self.key_accel)
-		
-		#self.save_button.add_accelerator("grab_focus", self.accel_group, 115, gtk.gdk.CONTROL_MASK, 0)
+		for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
+			self.accel.connect_group(gtk.accelerator_parse(key)[0], gtk.gdk.CONTROL_MASK, 0, self.key_accel)
 		
 		# Causes all widgets to be displayed except the empty TreeView and the progressbar
 		self.window.show_all()
 		self.treeview.hide()
 		self.progressbar.hide()
 	
+	# This method handles key shortcuts. It's called when the user types a shortcut key, and then dispatches
+	# the appropriate method to handle each possible action.
+	# TODO make sure these key choices actually make sense and are consistent with other apps
+	def key_accel(self, accel_group, acceleratable, keyval, modifier):
+		name = gtk.accelerator_get_label(keyval, modifier)
+		
+		if   (name == "Ctrl+Return"):	self.modify_selected_rows(None, True, False) # Apply
+		elif (name == "Ctrl+O"):	self.add_files()
+		elif (name == "Ctrl+Q"):	self.confirm_quit(True)
+		elif (name == "Ctrl+/"):	self.about_dialog()
+		elif (name == "Ctrl+?"):	self.about_dialog()
+		
+		# Prevent the following keybindings from executing if there are no unsaved files
+		if not self.any_modified(): return
+		
+		if   (name == "Ctrl+S"):	self.save_files()
+		elif (name == "Ctrl+W"):	self.modify_selected_rows(None, True, True) # Delete
+		elif (name == "Ctrl+Z"):	self.modify_selected_rows(None, False, False) # Revert
+		
+
 	# This function checks for unsaved files, and displays a GNOME HIG compliant quit confirmation dialog
 	# If called with do_quit=True, it will call gtk.main_quit() and self.save_files() directly.
 	# If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
