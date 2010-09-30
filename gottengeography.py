@@ -518,7 +518,6 @@ class GottenGeography:
 	# If called with do_quit=True, it will call gtk.main_quit() and self.save_files() directly.
 	# If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
 	def confirm_quit(self, widget=None, event=None):
-		print "confirm quit: ", widget, event
 		# If there's no unsaved data, just close without confirmation.
 		mod_count = self.any_modified(give_count=True)
 		if mod_count == 0: 
