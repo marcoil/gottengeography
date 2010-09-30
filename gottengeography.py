@@ -38,13 +38,13 @@ class GottenGeography:
     # Shorthand for updating the progressbar, and then redrawing the interface
     # (won't modify progressbar if called with no arguments)
     def redraw_interface(self, fraction=None, text=None):
-        if fraction <> None: self.progressbar.set_fraction(fraction)
-        if text <> None:     self.progressbar.set_text(text)
+        if fraction is not None: self.progressbar.set_fraction(fraction)
+        if text is not None:     self.progressbar.set_text(text)
         while gtk.events_pending(): gtk.main_iteration()
     
     # Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
     # (used exlusively in the following method)
-    def append_modified(self, model, path, iter, data):
+    def _append_modified(self, model, path, iter, data):
         if model.get_value(iter, self.PHOTO_MODIFIED): 
             data[0].append(path)
             return data[1] # Returning True halts the parent foreach() loop at the first found unsaved file
@@ -54,8 +54,8 @@ class GottenGeography:
     def any_modified(self, selection=None, give_count=False):
         pathlist = []
         
-        if selection: selection.selected_foreach(self.append_modified, (pathlist, not give_count))
-        else:         self.liststore.foreach(self.append_modified, (pathlist, not give_count))
+        if selection: selection.selected_foreach(self._append_modified, (pathlist, not give_count))
+        else:         self.liststore.foreach(self._append_modified, (pathlist, not give_count))
         
         if give_count: return len(pathlist)
         else:          return pathlist <> [] # False if pathlist is empty
