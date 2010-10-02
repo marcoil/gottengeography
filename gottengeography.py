@@ -17,10 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, gtk, gobject, glib, os, re, time, calendar, xml
+#import pyGtk, Gtk, GObject, glib, os, re, time, calendar, xml
+import pygtk, os, re, time, calendar, xml
+pygtk.require('2.0')
+
+from gi.repository import Gtk, GObject, GdkPixbuf
 from xml.dom import minidom
 
-pygtk.require('2.0')
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
@@ -40,7 +43,7 @@ class GottenGeography:
     def redraw_interface(self, fraction=None, text=None):
         if fraction is not None: self.progressbar.set_fraction(fraction)
         if text is not None:     self.progressbar.set_text(text)
-        while gtk.events_pending(): gtk.main_iteration()
+        while Gtk.events_pending(): Gtk.main_iteration()
     
     # Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
     # (used exlusively in the following method)
@@ -93,14 +96,14 @@ class GottenGeography:
             # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
             # Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
             # This can only show thumbnails for JPEGs
-            thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 300, 300)
-            image = gtk.Image()
+            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 300, 300)
+            image = Gtk.Image()
             image.set_from_pixbuf(thumb)
             
-            label = gtk.Label("latitude\nlongitude")
-            label.set_justify(gtk.JUSTIFY_CENTER)
+            label = Gtk.Label("latitude\nlongitude")
+            label.set_justify(Gtk.JUSTIFY_CENTER)
             
-            vbox = gtk.VBox(False, 6)
+            vbox = Gtk.VBox(False, 6)
             vbox.pack_start(image, False, False)
             vbox.pack_start(label, False, False)
             vbox.show_all()
@@ -114,7 +117,6 @@ class GottenGeography:
     
     # Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
     def load_gpx_data(self, filename):
-        # self.window.get_window().set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH)) # not working in X11.app, hopefully this works on Linux
         self.redraw_interface(0, "Parsing GPS data (please be patient)...")
         
         # TODO what happens to this if I load an XML file that isn't GPX?
@@ -178,18 +180,22 @@ class GottenGeography:
         # Effectively prevents the user from being able to load the same file twice, instead
         # turning the second load attempt into a reload of the existing GtkTreeIter
         if not iter:
-            try:
-                iter = self.liststore.get_iter(
-                    [ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
-                )
-            except ValueError:
-                iter = self.liststore.append()
+            # TODO regression: this code no longer works with introspection
+            # Without it, it's possible to load duplicate files
+            # I'm disabling this for now just to get the program into a semi-workable
+            # state, will fix later
+#            try:
+#                iter = self.liststore.get_iter(
+#                    [ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
+#                )
+#            except ValueError:
+                iter = self.liststore.append([None, None, None, None, None, None, None, None])
         
         # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
         # Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
         # This can only show thumbnails for JPEGs
-        try:    thumb = gtk.gdk.pixbuf_new_from_file_at_size(filename, 128, 128)
-        except: thumb = None
+        try:     thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
+        except:  thumb = None # TODO this pukes when invalid image loaded, need to create blank pixbuf
         
         # TODO grab from pyexiv2
         coords = ()
@@ -197,29 +203,27 @@ class GottenGeography:
         # TODO placeholder strings here should be replaced with data from pyexiv2 once that works
         # This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
         # arrangement of columns later, I don't have to change this or worry about it at all here.
-        self.liststore.set(iter,
-            self.PHOTO_THUMB,       thumb,
-            self.PHOTO_SUMMARY,     self.create_summary(filename, coords),
-            self.PHOTO_PATH,        filename,
-            self.PHOTO_TIMESTAMP,   int(os.stat(filename).st_mtime), # Get this from pyexiv2 instead
-            self.PHOTO_COORDINATES, False,
-            self.PHOTO_LATITUDE,    "",
-            self.PHOTO_LONGITUDE,   "",
-            self.PHOTO_MODIFIED,    False
-        )
+        self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
+        self.liststore.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, coords))
+        self.liststore.set_value(iter, self.PHOTO_PATH, filename)
+        self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, int(os.stat(filename).st_mtime))
+        self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
+        self.liststore.set_value(iter, self.PHOTO_LATITUDE, "")
+        self.liststore.set_value(iter, self.PHOTO_LONGITUDE, "")
+        self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
     
     # Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
     # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files(self, widget=None, data=None):
-        chooser = gtk.FileChooserDialog(
+        chooser = Gtk.FileChooserDialog(
             title="Open files...",
-            action=gtk.FILE_CHOOSER_ACTION_OPEN,
             buttons=(
-                gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL, 
-                gtk.STOCK_OPEN,    gtk.RESPONSE_OK
+                Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL, 
+                Gtk.STOCK_OPEN,    Gtk.ResponseType.OK
             )
         )
-        chooser.set_default_response(gtk.RESPONSE_OK)
+        chooser.set_action(Gtk.FileChooserAction.OPEN)
+        chooser.set_default_response(Gtk.ResponseType.OK)
         chooser.set_select_multiple(True)
         
         # make a file preview thingo
@@ -230,7 +234,7 @@ class GottenGeography:
         #    a) the user is unlikely to have these mixed into the same directory, and
         #    b) it's a needless hassle to make the user switch between one or the other when trying to open files
         # TODO don't limit this to just DNG and JPG (what does pyexiv2 support?)
-        filter = gtk.FileFilter()
+        filter = Gtk.FileFilter()
         filter.set_name("Images & GPX")
         filter.add_mime_type('image/jpeg')
         filter.add_pattern('*.jpg')
@@ -241,13 +245,13 @@ class GottenGeography:
         
         # In the event that the user has an image that isn't presented in the above filter, I'll allow them to display all files
         # Can't promise I'll be able to open just anything, though.
-        filter = gtk.FileFilter()
+        filter = Gtk.FileFilter()
         filter.set_name("All Files")
         filter.add_pattern('*')
         chooser.add_filter(filter)
         
         # Exit if the user clicked anything other than "OK"
-        if chooser.run() <> gtk.RESPONSE_OK:
+        if chooser.run() <> Gtk.ResponseType.OK:
             chooser.destroy()
             return
         
@@ -271,6 +275,7 @@ class GottenGeography:
                 try:              self.load_exif_data(filename)
                 except NameError: self.load_gpx_data(filename)
             except:
+                raise
                 # File is neither GPX nor a photo with EXIF
                 self.redraw_interface(text="%s could not be loaded! Unrecognized filetype." % os.path.basename(filename))
                 time.sleep(1)
@@ -357,62 +362,60 @@ class GottenGeography:
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
         
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
         self.window.set_size_request(900,500)
         
-        self.vbox = gtk.VBox(spacing=0)
+        self.vbox = Gtk.VBox(spacing=0)
         
         # Create the toolbar with standard buttons and some tooltips
-        self.toolbar = gtk.Toolbar()
-        self.load_button = gtk.ToolButton(gtk.STOCK_OPEN)
+        self.toolbar = Gtk.Toolbar()
+        self.load_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
         self.load_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
         
-        self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE) # TODO Is this appropriate? I don't want the user to think his photos will be deleted. It's just for unloading photos.
+        self.delete_button = Gtk.ToolButton(stock_id=Gtk.STOCK_DELETE) # TODO Is this appropriate? I don't want the user to think his photos will be deleted. It's just for unloading photos.
         self.delete_button.set_tooltip_text("Remove selected photos (Ctrl+W)")
         self.delete_button.set_sensitive(False)
         
-        self.toolbar_spacer = gtk.SeparatorToolItem()
+        self.toolbar_spacer = Gtk.SeparatorToolItem()
         
-        self.apply_button = gtk.ToolButton(gtk.STOCK_APPLY)
+        self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text("Link displayed GPS data with selected photos (Ctrl+Return)")
         self.apply_button.set_sensitive(False)
         
-        self.save_button = gtk.ToolButton(gtk.STOCK_SAVE)
+        self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
         self.save_button.set_tooltip_text("Save all modified GPS data into your photos (Ctrl+S)")
         self.save_button.set_label("Save All")
         self.save_button.set_sensitive(False)
         
-        self.revert_button = gtk.ToolButton(gtk.STOCK_REVERT_TO_SAVED)
+        self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+Z)")
         self.revert_button.set_sensitive(False)
         
-        self.toolbar_spacer2 = gtk.SeparatorToolItem()
+        self.toolbar_spacer2 = Gtk.SeparatorToolItem()
         
-        self.zoom_in_button = gtk.ToolButton(gtk.STOCK_ZOOM_IN)
-        self.zoom_out_button = gtk.ToolButton(gtk.STOCK_ZOOM_OUT)
+        self.zoom_in_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_IN)
+        self.zoom_out_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_OUT)
         
-        self.toolbar_spacer3 = gtk.SeparatorToolItem()
+        self.toolbar_spacer3 = Gtk.SeparatorToolItem()
         self.toolbar_spacer3.set_expand(True)
         self.toolbar_spacer3.set_draw(False)
         
-        self.about_button = gtk.ToolButton(gtk.STOCK_ABOUT)
+        self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
         
-        #self.toolbar.set_style(gtk.TOOLBAR_ICONS) # TODO let user decide this
-        
-        self.hbox = gtk.HBox()
+        self.hbox = Gtk.HBox()
         
         # This code defines how the photo list will appear
         # TODO sort by timestamp (needs pyexiv2)
-        self.liststore = gtk.ListStore(
-            gobject.TYPE_STRING,  # 0 Path to image file
-            gobject.TYPE_STRING,  # 1 "Nice" name for display purposes
-            gtk.gdk.Pixbuf,       # 2 Thumbnail
-            gobject.TYPE_INT,     # 3 Timestamp in Epoch seconds
-            gobject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
-            gobject.TYPE_STRING,  # 5 Latitude
-            gobject.TYPE_STRING,  # 6 Longitude
-            gobject.TYPE_BOOLEAN  # 7 'Have we modified the file?' flag
+        self.liststore = Gtk.ListStore(
+            GObject.TYPE_STRING,  # 0 Path to image file
+            GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
+            GdkPixbuf.Pixbuf,     # 2 Thumbnail
+            GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
+            GObject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
+            GObject.TYPE_STRING,  # 5 Latitude
+            GObject.TYPE_STRING,  # 6 Longitude
+            GObject.TYPE_BOOLEAN  # 7 'Have we modified the file?' flag
         )
         
         # These constants will make referencing the above columns much easier
@@ -420,43 +423,43 @@ class GottenGeography:
         self.PHOTO_TIMESTAMP, self.PHOTO_COORDINATES, self.PHOTO_LATITUDE, 
         self.PHOTO_LONGITUDE, self.PHOTO_MODIFIED) = range(8)
         
-        self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, gtk.SORT_ASCENDING)
+        self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
         
-        self.treeview = gtk.TreeView(self.liststore)
+        self.treeview = Gtk.TreeView(model=self.liststore)
         self.treeview.set_enable_search(False)
         self.treeview.set_reorderable(False)
         self.treeview.set_headers_visible(False)
         self.treeview.set_rubber_banding(True)
         
         self.treeselection = self.treeview.get_selection()
-        self.treeselection.set_mode(gtk.SELECTION_MULTIPLE)
+        self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
         
-        self.cell_string = gtk.CellRendererText()
-        self.cell_thumb = gtk.CellRendererPixbuf()
-        self.cell_thumb.set_property('stock-id', gtk.STOCK_MISSING_IMAGE)
+        self.cell_string = Gtk.CellRendererText()
+        self.cell_thumb = Gtk.CellRendererPixbuf()
+        self.cell_thumb.set_property('stock-id', Gtk.STOCK_MISSING_IMAGE)
         self.cell_thumb.set_property('ypad', 6)
         self.cell_thumb.set_property('xpad', 6)
         
-        self.img_column = gtk.TreeViewColumn('Thumbnails', self.cell_thumb)
+        self.img_column = Gtk.TreeViewColumn('Thumbnails', self.cell_thumb)
         self.img_column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
-        self.img_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        #self.img_column.set_sizing(Gtk.TREE_VIEW_COLUMN_AUTOSIZE) # Herp derp
         self.treeview.append_column(self.img_column)
         
-        self.name_column = gtk.TreeViewColumn('Summary', self.cell_string, markup=self.PHOTO_SUMMARY)
-        self.name_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        self.name_column = Gtk.TreeViewColumn('Summary', self.cell_string, markup=self.PHOTO_SUMMARY)
+        #self.name_column.set_sizing(Gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         self.treeview.append_column(self.name_column)
         
-        self.photoscroller = gtk.ScrolledWindow()
-        self.photoscroller.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        self.photoscroller = Gtk.ScrolledWindow()
+        self.photoscroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         
-        self.champlain = gtk.Label("libchamplain goes here")
+        self.champlain = Gtk.Label(label="libchamplain goes here")
         
-        self.progressbar = gtk.ProgressBar()
+        self.progressbar = Gtk.ProgressBar()
         
         # This adds each widget into it's place in the window.
         self.photoscroller.add(self.treeview)
-        self.hbox.pack_start(self.photoscroller, expand=0, fill=1)
-        self.hbox.pack_end(self.champlain, expand=1, fill=1)
+        self.hbox.pack_start(self.photoscroller, False, True, 0)
+        self.hbox.pack_end(self.champlain, True, True, 0)
         self.toolbar.add(self.load_button)
         self.toolbar.add(self.save_button)
         self.toolbar.add(self.toolbar_spacer)
@@ -468,9 +471,9 @@ class GottenGeography:
         self.toolbar.add(self.zoom_out_button)
         self.toolbar.add(self.toolbar_spacer3)
         self.toolbar.add(self.about_button)
-        self.vbox.pack_start(self.toolbar, expand=0)
-        self.vbox.pack_start(self.hbox, expand=1)
-        self.vbox.pack_end(self.progressbar, expand=0, padding=6)
+        self.vbox.pack_start(self.toolbar, False, True, 0)
+        self.vbox.pack_start(self.hbox, True, True, 0)
+        self.vbox.pack_end(self.progressbar, False, True, 6)
         self.window.add(self.vbox)
         
         # Connect all my precious signal handlers
@@ -484,10 +487,10 @@ class GottenGeography:
         self.treeselection.connect("changed", self.selection_changed)
         
         # Key bindings
-        self.accel = gtk.AccelGroup()
-        self.window.add_accel_group(self.accel)
-        for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
-            self.accel.connect_group(gtk.accelerator_parse(key)[0], gtk.gdk.CONTROL_MASK, 0, self.key_accel)
+        #self.accel = Gtk.AccelGroup()
+        #self.window.add_accel_group(self.accel)
+        #for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
+        #    self.accel.connect_group(Gtk.accelerator_parse(key)[0], Gtk.gdk.CONTROL_MASK, 0, self.key_accel)
         
         # Causes all widgets to be displayed except the empty TreeView and the progressbar
         self.window.show_all()
@@ -498,7 +501,7 @@ class GottenGeography:
     # the appropriate method to handle each possible action.
     # TODO make sure these key choices actually make sense and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
-        name = gtk.accelerator_get_label(keyval, modifier)
+        name = Gtk.accelerator_get_label(keyval, modifier)
         
         if   (name == "Ctrl+Return"): self.modify_selected_rows(None, True, False) # Apply
         elif (name == "Ctrl+W"):      self.modify_selected_rows(None, True, True) # Delete
@@ -515,29 +518,29 @@ class GottenGeography:
         
 
     # This function checks for unsaved files, and displays a GNOME HIG compliant quit confirmation dialog
-    # If called with do_quit=True, it will call gtk.main_quit() and self.save_files() directly.
+    # If called with do_quit=True, it will call Gtk.main_quit() and self.save_files() directly.
     # If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
     def confirm_quit(self, widget=None, event=None):
         # If there's no unsaved data, just close without confirmation.
         mod_count = self.any_modified(give_count=True)
         if mod_count == 0: 
-            gtk.main_quit()
+            Gtk.main_quit()
             return True
         
-        dialog = gtk.MessageDialog(
+        dialog = Gtk.MessageDialog(
             parent=self.window, 
-            flags=gtk.DIALOG_MODAL,
-            type=gtk.MESSAGE_WARNING, 
-            buttons=gtk.BUTTONS_NONE,
+            flags=Gtk.DIALOG_MODAL,
+            type=Gtk.MESSAGE_WARNING, 
+            buttons=Gtk.BUTTONS_NONE,
             message_format="Save changes to your photos before closing?"
         )
         dialog.set_title(" ")
         
         dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % mod_count)
-        dialog.add_button("Close _without Saving", gtk.RESPONSE_CLOSE)
-        dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        dialog.add_button(gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT)
-        dialog.set_default_response(gtk.RESPONSE_ACCEPT)
+        dialog.add_button("Close _without Saving", Gtk.RESPONSE_CLOSE)
+        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL)
+        dialog.add_button(Gtk.STOCK_SAVE, Gtk.RESPONSE_ACCEPT)
+        dialog.set_default_response(Gtk.RESPONSE_ACCEPT)
         
         # If we don't dialog.destroy() here, and the users chooses to save files, the dialog stays open
         # during the save, which is very unresponsive and makes the application feel sluggish.
@@ -546,8 +549,8 @@ class GottenGeography:
         self.redraw_interface()
         
         # Save and/or quit as necessary
-        if response == gtk.RESPONSE_ACCEPT: self.save_files()
-        if response <> gtk.RESPONSE_CANCEL: gtk.main_quit()
+        if response == Gtk.RESPONSE_ACCEPT: self.save_files()
+        if response <> Gtk.RESPONSE_CANCEL: Gtk.main_quit()
         
         # Prevents GTK from trying to call our non-existant destroy method
         return True 
@@ -555,10 +558,10 @@ class GottenGeography:
     # This just might be the single most important method ever written. In the history of computing.
     # TODO needs logo
     def about_dialog(self, widget=None, data=None):
-        dialog = gtk.AboutDialog()
+        dialog = Gtk.AboutDialog()
         dialog.set_name("GottenGeography")
         dialog.set_version("0.0.1")
-        dialog.set_copyright(u"\u00A9 Robert Park, 2010")
+        dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
         dialog.set_comments("This program is written in the Python programming language, and allows you to geotag your photos. The name \"Gotten Geography\" is an anagram of \"Python Geotagger\".")
         dialog.set_website("http://exolucere.ca/gottengeography")
@@ -571,7 +574,7 @@ class GottenGeography:
         dialog.destroy()
     
     def main(self):
-        gtk.main()
+        Gtk.main()
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
