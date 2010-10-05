@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-# GottenGeography - Automatically geotags photos by comparing timestamps to GPX data
+# GottenGeography - Automagically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#import pyGtk, Gtk, GObject, glib, os, re, time, calendar, xml
 import pygtk, os, re, time, calendar, xml
 pygtk.require('2.0')
 
-from gi.repository import Gtk, GObject, GdkPixbuf
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from xml.dom import minidom
-
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
@@ -34,15 +32,13 @@ from xml.dom import minidom
 # Needs manual tagging of GPS coords based on user map entry alone, no GPX data
 # Needs to be able to save EXIF data
 # Needs to be able to load files via drag&drop
-# Don't automatically close the statusbar when you're done with it, instead
-# leave it open with a status message (success/etc) and an 'ok' button
 
 class GottenGeography:
     # Shorthand for updating the progressbar, and then redrawing the interface
     # (won't modify progressbar if called with no arguments)
-    def redraw_interface(self, fraction=None, text=None):
+    def _redraw_interface(self, fraction=None, text=None):
         if fraction is not None: self.progressbar.set_fraction(fraction)
-        if text is not None:     self.progressbar.set_text(text)
+        if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
     # Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
@@ -50,10 +46,10 @@ class GottenGeography:
     def _append_modified(self, model, path, iter, data):
         if model.get_value(iter, self.PHOTO_MODIFIED): 
             data[0].append(path)
-            return data[1] # Returning True halts the parent foreach() loop at the first found unsaved file
+            return data[1] # halts the foreach() loop at the first unsaved file
     
     # Checks for unsaved files. By default will return True if it finds any
-    # If a full count is needed, call with give_count=True and it will then return an int
+    # If a count is needed, call with give_count=True and it will return an int
     def any_modified(self, selection=None, give_count=False):
         pathlist = []
         
@@ -91,6 +87,7 @@ class GottenGeography:
     # Loads a thumbnail into a Pixbuf and then saves it as the preview widget for the open FileChooserDialog
     def update_preview(self, chooser):
         filename = chooser.get_preview_filename()
+        if not filename: return
         
         try:
             # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
@@ -100,12 +97,12 @@ class GottenGeography:
             image = Gtk.Image()
             image.set_from_pixbuf(thumb)
             
-            label = Gtk.Label("latitude\nlongitude")
-            label.set_justify(Gtk.JUSTIFY_CENTER)
+            label = Gtk.Label(label="latitude\nlongitude")
+            label.set_justify(Gtk.Justification.CENTER)
             
-            vbox = Gtk.VBox(False, 6)
-            vbox.pack_start(image, False, False)
-            vbox.pack_start(label, False, False)
+            vbox = Gtk.VBox(spacing=6)
+            vbox.pack_start(image, False, False, 0)
+            vbox.pack_start(label, False, False, 0)
             vbox.show_all()
             
             chooser.set_preview_widget(vbox)
@@ -117,7 +114,7 @@ class GottenGeography:
     
     # Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
     def load_gpx_data(self, filename):
-        self.redraw_interface(0, "Parsing GPS data (please be patient)...")
+        self._redraw_interface(0, "Parsing GPS data (please be patient)...")
         
         # TODO what happens to this if I load an XML file that isn't GPX?
         # TODO any way to make this faster?
@@ -132,7 +129,7 @@ class GottenGeography:
         for track in gpx.documentElement.getElementsByTagName('trk'): 
             # I find GPS-generated names to be ugly, so I only show them in the progress meter,
             # they're not stored anywhere or used after that
-            self.redraw_interface(0, "Loading %s from %s..." % (
+            self._redraw_interface(0, "Loading %s from %s..." % (
                 track.getElementsByTagName('name')[0].firstChild.data, 
                 os.path.basename(filename))
             )
@@ -148,7 +145,7 @@ class GottenGeography:
                 (count, total) = (0.0, len(points))
                 
                 for point in points:
-                    self.redraw_interface(count/total)
+                    self._redraw_interface(count/total)
                     count += 1.0
                     
                     # Convert GPX time (RFC 3339 time) into UTC epoch time for simplicity in sorting and comparing
@@ -189,7 +186,7 @@ class GottenGeography:
 #                    [ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
 #                )
 #            except ValueError:
-                iter = self.liststore.append([None, None, None, None, None, None, None, None])
+                iter = self.liststore.append([None] * 8)
         
         # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
         # Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
@@ -261,13 +258,12 @@ class GottenGeography:
         # Anything else is really slow and feels unresponsive
         files = chooser.get_filenames()
         chooser.destroy()
-        self.redraw_interface(0, "Loading files (please be patient)...")
         
         (count, total) = (0.0, len(files))
         
         # Iterate over files and attempt to load them.
         for filename in files:
-            self.redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
+            self._redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
             count += 1.0
             
             # Assume the file is an image; if that fails, assume it's GPX; if that fails, show an error
@@ -277,74 +273,85 @@ class GottenGeography:
             except:
                 raise
                 # File is neither GPX nor a photo with EXIF
-                self.redraw_interface(text="%s could not be loaded! Unrecognized filetype." % os.path.basename(filename))
+                # TODO this error sucks, but I can't decide if I want a popup error message or not.
+                self._redraw_interface(text="%s could not be loaded! Unrecognized filetype." % os.path.basename(filename))
                 time.sleep(1)
+        
         self.progressbar.hide()
     
-    # Saves all modified files
+    # Checks if the given file needs to be saved, and if so, saves it.
+    def save_file(self, model, path, iter, data):
+        if model.get_value(iter, self.PHOTO_MODIFIED):
+            # data[0] contains the paths we've iterated over, used only for counting
+            # data[1] is the total number of unsaved files
+            data[0].append(path)
+            self._redraw_interface(
+                float( len( data[0] ) ) / float( data[1] ), "Saving %s..." % 
+                os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH))
+            )
+            
+            # TODO Actually write data to file here, instead of just pausing
+            time.sleep(0.1)
+            model.set_value(iter, self.PHOTO_MODIFIED, False)
+            model.set_value(
+                iter, self.PHOTO_SUMMARY, 
+                re.sub(r'</?b>', '', model.get_value(iter, self.PHOTO_SUMMARY))
+            )
+    
+    # Iterates over all files in the liststore and passes each one to the above
+    # saving function
     def save_files(self, widget=None):
         self.progressbar.show()
-        self.redraw_interface(0, "Saving files...")
         
-        # Data needed to start iterating over the images
-        (count, total) = (0.0, self.any_modified(give_count=True))
-        iter = self.liststore.get_iter_first()
-        
-        while iter:
-            if self.liststore.get_value(iter, self.PHOTO_MODIFIED):
-                self.redraw_interface(count/total, "Saving %s..." % os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH)))
-                time.sleep(0.1) # Simulates the delay of actually saving a file, which we don't actually do yet
-                # TODO Actually write data to file here
-                self.liststore.set(iter, 
-                    self.PHOTO_MODIFIED, False,
-                    self.PHOTO_SUMMARY,  re.sub(r'</?b>', '', self.liststore.get_value(iter, self.PHOTO_SUMMARY)) # Remove bolding of text
-                ) 
-                count += 1.0
-            iter = self.liststore.iter_next(iter)
+        self.liststore.foreach(self.save_file, [[], self.any_modified(give_count=True)])
         
         # Update sensitivity of save/revert buttons based on current state, and hide the progressbar.
         self.revert_button.set_sensitive(self.any_modified(self.treeselection))
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
     
-    # This method handles all three of apply, revert, and delete. Those three actions are
-    # much more alike than you might intuitively suspect. They all iterate over the GtkTreeSelection,
-    # They all modify the GtkListStore data... having this as three separate methods felt very redundant,
-    # so I merged it all into here. I hope this isn't TOO cluttered.
+    # This method handles all three of apply, revert, and delete. Those three 
+    # actions are much more alike than you might intuitively suspect. They all 
+    # iterate over the GtkTreeSelection, they all modify the GtkListStore data... 
+    # having this as three separate methods felt very redundant, so I merged 
+    # it all into here. I hope this isn't TOO cluttered.
     def modify_selected_rows(self, widget=None, apply=True, delete=False):
-        (model, pathlist) = self.treeselection.get_selected_rows()
+        (pathlist, model) = self.treeselection.get_selected_rows()
         if pathlist == []: return
         
-        # model.remove() will decrement the path # for all higher paths. 
-        # Must reverse() the pathlist so that we delete highest-first, otherwise
+        # model.remove() will decrement the path # for all higher paths, so we 
+        # must reverse() the pathlist, in order to delete highest-first, otherwise
         # we'll actually end up deleting the totally wrong rows in the case where 
         # more than one row is selected for deletion
         pathlist.reverse()
         
         (count, total) = (0.0, len(pathlist))
         
-        self.progressbar.show()
-        self.redraw_interface(0, " ")
+        if not delete: self.progressbar.show()
         
         for path in pathlist:
-            iter = model.get_iter(path)
-            if delete:
-                model.remove(iter)
-                continue # Skip the rest of this loop because shit just got deleted
+            iter = model.get_iter(path)[1]
+            
+            if delete: model.remove(iter); continue
             
             filename = model.get_value(iter, self.PHOTO_PATH)
-            self.redraw_interface(count/total, "Updating %s..." % os.path.basename(filename))
+            if apply: action = "Applying"
+            else:     action = "Reverting"
+            
+            self._redraw_interface(
+                count/total, 
+                "%s %s..." % (action, os.path.basename(filename))
+            )
             count += 1.0
             
             if apply:
                 # TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
-                model.set(iter, 
-                    self.PHOTO_COORDINATES, True,
-                    self.PHOTO_LATITUDE,    'latitude',
-                    self.PHOTO_LONGITUDE,   'longitude',
-                    self.PHOTO_MODIFIED,    True,
-                    self.PHOTO_SUMMARY,     self.create_summary(filename, ('latitude', 'longitude'), True)
-                )
+                model.set_value(iter, self.PHOTO_COORDINATES, True)
+                model.set_value(iter, self.PHOTO_LATITUDE,    'latitude')
+                model.set_value(iter, self.PHOTO_LONGITUDE,   'longitude')
+                model.set_value(iter, self.PHOTO_MODIFIED,    True)
+                model.set_value(iter, self.PHOTO_SUMMARY,     
+                    self.create_summary(filename, ('latitude', 'longitude'), True))
             elif model.get_value(iter, self.PHOTO_MODIFIED):
                 # Revert photo data back to what was last saved on disk
                 self.load_exif_data(filename, iter)
@@ -356,7 +363,7 @@ class GottenGeography:
         self.save_button.set_sensitive(self.any_modified())
         
         # Hide the TreeView if it's empty, because it shows an ugly white strip
-        if delete and not self.liststore.get_iter_first(): self.treeview.hide()
+        if delete and not self.liststore.get_iter_first()[0]: self.treeview.hide()
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
@@ -442,11 +449,11 @@ class GottenGeography:
         
         self.img_column = Gtk.TreeViewColumn('Thumbnails', self.cell_thumb)
         self.img_column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
-        #self.img_column.set_sizing(Gtk.TREE_VIEW_COLUMN_AUTOSIZE) # Herp derp
+        self.img_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         self.treeview.append_column(self.img_column)
         
         self.name_column = Gtk.TreeViewColumn('Summary', self.cell_string, markup=self.PHOTO_SUMMARY)
-        #self.name_column.set_sizing(Gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        self.name_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         self.treeview.append_column(self.name_column)
         
         self.photoscroller = Gtk.ScrolledWindow()
@@ -487,10 +494,10 @@ class GottenGeography:
         self.treeselection.connect("changed", self.selection_changed)
         
         # Key bindings
-        #self.accel = Gtk.AccelGroup()
-        #self.window.add_accel_group(self.accel)
-        #for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
-        #    self.accel.connect_group(Gtk.accelerator_parse(key)[0], Gtk.gdk.CONTROL_MASK, 0, self.key_accel)
+        self.accel = Gtk.AccelGroup()
+        self.window.add_accel_group(self.accel)
+        for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
+            self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
         # Causes all widgets to be displayed except the empty TreeView and the progressbar
         self.window.show_all()
@@ -501,58 +508,58 @@ class GottenGeography:
     # the appropriate method to handle each possible action.
     # TODO make sure these key choices actually make sense and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
-        name = Gtk.accelerator_get_label(keyval, modifier)
-        
-        if   (name == "Ctrl+Return"): self.modify_selected_rows(None, True, False) # Apply
-        elif (name == "Ctrl+W"):      self.modify_selected_rows(None, True, True) # Delete
-        elif (name == "Ctrl+O"):      self.add_files()
-        elif (name == "Ctrl+Q"):      self.confirm_quit()
-        elif (name == "Ctrl+/"):      self.about_dialog()
-        elif (name == "Ctrl+?"):      self.about_dialog()
+        # It would make more sense to store Gdk.keyval_name(keyval) in a variable and compare that
+        # rather than calling Gdk.keyval_from_name() a million times, but that seems to just crash
+        # and this way actually works, so it looks like this is what we're going with. 
+        if   keyval == Gdk.keyval_from_name("Return"): self.modify_selected_rows(None, True, False) # Apply
+        elif keyval == Gdk.keyval_from_name("w"):      self.modify_selected_rows(None, True, True) # Delete
+        elif keyval == Gdk.keyval_from_name("o"):      self.add_files()
+        elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit()
+        elif keyval == Gdk.keyval_from_name("/"):      self.about_dialog()
+        elif keyval == Gdk.keyval_from_name("?"):      self.about_dialog()
         
         # Prevent the following keybindings from executing if there are no unsaved files
         if not self.any_modified(): return
         
-        if   (name == "Ctrl+S"):    self.save_files()
-        elif (name == "Ctrl+Z"):    self.modify_selected_rows(None, False, False) # Revert
+        if   keyval == Gdk.keyval_from_name("s"):    self.save_files()
+        elif keyval == Gdk.keyval_from_name("z"):    self.modify_selected_rows(None, False, False) # Revert
         
 
-    # This function checks for unsaved files, and displays a GNOME HIG compliant quit confirmation dialog
-    # If called with do_quit=True, it will call Gtk.main_quit() and self.save_files() directly.
-    # If not, it will simply return the dialog response code, for use with the self.delete_event() handler.
+    # This function checks for unsaved files, and displays a 
+    # GNOME HIG compliant quit confirmation dialog. 
     def confirm_quit(self, widget=None, event=None):
         # If there's no unsaved data, just close without confirmation.
-        mod_count = self.any_modified(give_count=True)
-        if mod_count == 0: 
-            Gtk.main_quit()
-            return True
+        count = self.any_modified(give_count=True)
+        if count == 0: Gtk.main_quit(); return True
         
         dialog = Gtk.MessageDialog(
             parent=self.window, 
-            flags=Gtk.DIALOG_MODAL,
-            type=Gtk.MESSAGE_WARNING, 
-            buttons=Gtk.BUTTONS_NONE,
-            message_format="Save changes to your photos before closing?"
+            flags=Gtk.DialogFlags.MODAL,
+            #type=Gtk.MessageType.WARNING, # TODO Broken by introspection!
+            buttons=Gtk.ButtonsType.NONE
         )
+        #dialog.set_property('type', Gtk.MessageType.WARNING) # This could work, but it doesn't.
         dialog.set_title(" ")
+        dialog.set_markup("""<span weight="bold" size="larger">Save changes to your photos before closing?</span>
+
+The changes you've made to %d of your photos will be permanently lost if you do not save.""" % count)
+        dialog.add_button("Close _without Saving", Gtk.ResponseType.CLOSE)
+        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
+        dialog.set_default_response(Gtk.ResponseType.ACCEPT)
         
-        dialog.format_secondary_text("The changes you've made to %d of your photos will be permanently lost if you do not save." % mod_count)
-        dialog.add_button("Close _without Saving", Gtk.RESPONSE_CLOSE)
-        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL)
-        dialog.add_button(Gtk.STOCK_SAVE, Gtk.RESPONSE_ACCEPT)
-        dialog.set_default_response(Gtk.RESPONSE_ACCEPT)
-        
-        # If we don't dialog.destroy() here, and the users chooses to save files, the dialog stays open
-        # during the save, which is very unresponsive and makes the application feel sluggish.
+        # If we don't dialog.destroy() here, and the users chooses to save files, 
+        # the dialog stays open during the save, which looks very unresponsive 
+        # and makes the application feel sluggish.
         response = dialog.run()
         dialog.destroy()
-        self.redraw_interface()
+        self._redraw_interface()
         
         # Save and/or quit as necessary
-        if response == Gtk.RESPONSE_ACCEPT: self.save_files()
-        if response <> Gtk.RESPONSE_CANCEL: Gtk.main_quit()
+        if response == Gtk.ResponseType.ACCEPT: self.save_files()
+        if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
         
-        # Prevents GTK from trying to call our non-existant destroy method
+        # Prevents GTK from trying to call a non-existant destroy method
         return True 
     
     # This just might be the single most important method ever written. In the history of computing.
@@ -563,7 +570,7 @@ class GottenGeography:
         dialog.set_version("0.0.1")
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
-        dialog.set_comments("This program is written in the Python programming language, and allows you to geotag your photos. The name \"Gotten Geography\" is an anagram of \"Python Geotagger\".")
+        dialog.set_comments(COMMENTS)
         dialog.set_website("http://exolucere.ca/gottengeography")
         dialog.set_website_label("GottenGeography Homepage")
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
@@ -575,6 +582,8 @@ class GottenGeography:
     
     def main(self):
         Gtk.main()
+
+COMMENTS = """This program is written in the Python programming language, and allows you to geotag your photos. The name "Gotten Geography" is an anagram of "Python Geotagger"."""
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
