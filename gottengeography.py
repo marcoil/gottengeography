@@ -535,10 +535,9 @@ class GottenGeography:
         dialog = Gtk.MessageDialog(
             parent=self.window, 
             flags=Gtk.DialogFlags.MODAL,
-            buttons=Gtk.ButtonsType.NONE
+            title=" "            
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_title(" ")
         dialog.set_markup("""<span weight="bold" size="larger">Save changes to your photos before closing?</span>
 
 The changes you've made to %d of your photos will be permanently lost if you do not save.""" % count)
