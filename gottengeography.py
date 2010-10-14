@@ -20,7 +20,7 @@
 import pygtk, pyexiv2, os, re, time, calendar, math, xml
 pygtk.require('2.0')
 
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, Clutter, Champlain, GtkChamplain
 from xml.dom import minidom
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
@@ -223,7 +223,7 @@ class GottenGeography:
         except KeyError:
             lat = lon = None
         
-        self.treeview.show() 
+        self.photoscroller.show() 
         
         # This creates a list of all filenames loaded, checks it for the 
         # filename, if it's  present it gets the GtkTreeIter based on the 
@@ -382,7 +382,7 @@ class GottenGeography:
         # must reverse() the pathlist, in order to delete highest-first, otherwise
         # we'll actually end up deleting the totally wrong rows in the case where 
         # more than one row is selected for deletion
-        pathlist.reverse()
+        if delete: pathlist.reverse()
         
         (count, total) = (0.0, len(pathlist))
         
@@ -423,7 +423,7 @@ class GottenGeography:
         self.save_button.set_sensitive(self.any_modified())
         
         # Hide the TreeView if it's empty, because it shows an ugly white strip
-        if delete and not self.liststore.get_iter_first()[0]: self.treeview.hide()
+        if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
@@ -521,7 +521,8 @@ class GottenGeography:
         self.photoscroller = Gtk.ScrolledWindow()
         self.photoscroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         
-        self.champlain = Gtk.Label(label="libchamplain goes here")
+        Clutter.init([])
+        self.champlain = GtkChamplain.Embed()
         
         self.progressbar = Gtk.ProgressBar()
         
@@ -563,7 +564,7 @@ class GottenGeography:
         
         # Causes all widgets to be displayed except the empty TreeView and the progressbar
         self.window.show_all()
-        self.treeview.hide()
+        self.photoscroller.hide()
         self.progressbar.hide()
     
     # This method handles key shortcuts. It's called when the user 
