@@ -66,13 +66,15 @@ class GottenGeography:
         if lon > 0: lon_sign = "E "
         else:       lon_sign = "W "
         
-        lat = math.fabs(lat)
-        lon = math.fabs(lon)
+        lat = round(math.fabs(lat), 5)
+        lon = round(math.fabs(lon), 5)
         
-        return ", ".join([lat_sign + str(lat), lon_sign + str(lon)])
+        #return ", ".join([lat_sign + str(lat), lon_sign + str(lon)])
+        return lat_sign + str(lat) + ", " + lon_sign + str(lon)
     
     # Creates the Pango-formatted display string used in the GtkTreeView
     def create_summary(self, file, lat=None, lon=None, modified=False):
+        # Start with the coordinates, if any
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
         
