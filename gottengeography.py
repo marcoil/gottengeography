@@ -59,14 +59,21 @@ class GottenGeography:
         if give_count: return len(pathlist)
         else:          return pathlist <> [] # False if pathlist is empty
     
-    # Creates the Pango-formatted display string used in the GtkTreeView
-    def create_summary(self, file, lat=None, lon=None, modified=False):
+    # Takes decimal coordinates and returns a string with direction labels
+    def _pretty_coords(self, lat, lon):
         if lat > 0: lat_sign = "N "
         else:       lat_sign = "S "
         if lon > 0: lon_sign = "E "
         else:       lon_sign = "W "
         
-        if lat and lon: summary = ", ".join([lat_sign+str(math.fabs(lat)), lon_sign+str(math.fabs(lon))])
+        lat = math.fabs(lat)
+        lon = math.fabs(lon)
+        
+        return ", ".join([lat_sign + str(lat), lon_sign + str(lon)])
+    
+    # Creates the Pango-formatted display string used in the GtkTreeView
+    def create_summary(self, file, lat=None, lon=None, modified=False):
+        if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
         
         # "filename in normal size, then on a new line, 
@@ -113,7 +120,7 @@ class GottenGeography:
             image = Gtk.Image()
             image.set_from_pixbuf(thumb)
             
-            if lat and lon: label = Gtk.Label(label="%s, %s" % (lat, lon))
+            if lat and lon: label = Gtk.Label(label=self._pretty_coords(lat, lon))
             else:           label = Gtk.Label(label="Not geotagged")
             
             label.set_justify(Gtk.Justification.CENTER)
