@@ -88,16 +88,17 @@ class GottenGeography:
         
         return summary
     
-    # This method gets called whenever the GtkTreeView selection changes, and it sets the sensitivity of
-    # a few buttons such that buttons which don't do anything useful in that context are desensitized.
+    # This method gets called whenever the GtkTreeView selection changes, 
+    # and it sets the sensitivity of a few buttons such that buttons which 
+    # don't do anything useful in that context are desensitized.
     def selection_changed(self, selection):
         sensitivity = selection.count_selected_rows() > 0
         
-        # Apply and Delete buttons get activated if there is any selection at all
+        # Apply and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
         self.delete_button.set_sensitive(sensitivity)
         
-        # The Revert button is only activated if the selection contains unsaved files.
+        # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
     
     # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
@@ -150,7 +151,8 @@ class GottenGeography:
                 (float(dms[1].numerator)/dms[1].denominator)/60 + 
                 (float(dms[2].numerator)/dms[2].denominator)/3600) * sign
     
-    # Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
+    # Runs given filename through minidom-based GPX parser, and raises 
+    # xml.parsers.expat.ExpatError if the file is invalid
     def load_gpx_data(self, filename):
         self._redraw_interface(0, "Parsing GPS data (please be patient)...")
         
@@ -161,9 +163,11 @@ class GottenGeography:
         
         gpx.normalize()
         
-        # This creates a nested dictionary (that is, a dictionary of dictionaries)
-        # in which the top level keys are UTC epoch seconds, and the bottom level keys are elevation/latitude/longitude.
-        # TODO you'll probably want to offer the user some way to unload/clear this data without restarting the program
+        # This creates a nested dictionary (a dictionary of dictionaries) in 
+        # which the top level keys are UTC epoch seconds, and the bottom level 
+        # keys are elevation/latitude/longitude.
+        # TODO you'll probably want to offer the user some way to unload/clear 
+        # this data without restarting the program
         for track in gpx.documentElement.getElementsByTagName('trk'): 
             # I find GPS-generated names to be ugly, so I only show them in the progress meter,
             # they're not stored anywhere or used after that
@@ -172,10 +176,12 @@ class GottenGeography:
                 os.path.basename(filename))
             )
             
-            # In the event that the user loads a file (or multiple files) containing more than one track point
-            # for a given epoch second, the most-recently-loaded is kept, and the rest are clobbered. 
-            # Effectively this makes the assumption that the user cannot be in two places at once, although
-            # it is possible that the user might attempt to load two different GPX files from two different
+            # In the event that the user loads a file (or multiple files) 
+            # containing more than one track point for a given epoch second, 
+            # the most-recently-loaded is kept, and the rest are clobbered. 
+            # Effectively this makes the assumption that the user cannot be 
+            # in two places at once, although it is possible that the user 
+            # might attempt to load two different GPX files from two different
             # GPS units. If you do that, you're stupid, and I hate you.
             for segment in track.getElementsByTagName('trkseg'):
                 points = segment.getElementsByTagName('trkpt')
@@ -186,7 +192,8 @@ class GottenGeography:
                     self._redraw_interface(count/total)
                     count += 1.0
                     
-                    # Convert GPX time (RFC 3339 time) into UTC epoch time for simplicity in sorting and comparing
+                    # Convert GPX time (RFC 3339 time) into UTC epoch time for 
+                    # simplicity in sorting and comparing
                     timestamp = point.getElementsByTagName('time')[0].firstChild.data
                     timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     timestamp = calendar.timegm(timestamp)
@@ -197,8 +204,9 @@ class GottenGeography:
                         'elevation': float(point.getElementsByTagName('ele')[0].firstChild.data)
                     }
     
-    # Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
-    # and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
+    # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
+    # we know when the photo was taken, and whether or not it already has any 
+    # geotags on it, and a pretty thumbnail to show the user.
     def load_exif_data(self, filename, iter=None):
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
@@ -217,16 +225,18 @@ class GottenGeography:
         
         self.treeview.show() 
         
-        # This creates a list of all filenames loaded, checks it for the filename, if it's 
-        # present it gets the GtkTreeIter based on the index number of that filename, and if it's 
-        # not present, raises ValueError, which we then catch and create a new row to use.
-        # Effectively prevents the user from being able to load the same file twice, instead
-        # turning the second load attempt into a reload of the existing GtkTreeIter
+        # This creates a list of all filenames loaded, checks it for the 
+        # filename, if it's  present it gets the GtkTreeIter based on the 
+        # index number of that filename, and if it's  not present, raises 
+        # ValueError, which we then catch and create a new row to use.
+        # Effectively prevents the user from being able to load the same 
+        # file twice, instead turning the second load attempt into a reload 
+        # of the existing GtkTreeIter
         if not iter:
             # TODO regression: this code no longer works with introspection
             # Without it, it's possible to load duplicate files
-            # I'm disabling this for now just to get the program into a semi-workable
-            # state, will fix later
+            # I'm disabling this for now just to get the program 
+            # into a semi-workable state, will fix later
 #            try:
 #                iter = self.liststore.get_iter(
 #                    [ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
@@ -234,12 +244,12 @@ class GottenGeography:
 #            except ValueError:
                 iter = self.liststore.append([None] * 8)
         
-        # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
         try:     thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
         except:  thumb = None # TODO this pukes when invalid image loaded, need to create blank pixbuf
         
-        # This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
-        # arrangement of columns later, I don't have to change this or worry about it at all here.
+        # This is somewhat clumsy, but it's column-order-agnostic, so if I 
+        # feel like changing the  arrangement of columns later, I don't have 
+        # to change this or worry about it at all here.
         self.liststore.set_value(iter, self.PHOTO_PATH, filename)
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, lat, lon))
@@ -253,7 +263,8 @@ class GottenGeography:
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
     
-    # Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
+    # Displays nice GNOME file chooser dialog and allows user to select 
+    # either images or GPX files.
     # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files(self, widget=None, data=None):
         chooser = Gtk.FileChooserDialog(
@@ -273,7 +284,8 @@ class GottenGeography:
         # By default, we only want to show a combination of images and GPX data files
         # It makes sense to mix these into one view because
         #    a) the user is unlikely to have these mixed into the same directory, and
-        #    b) it's a needless hassle to make the user switch between one or the other when trying to open files
+        #    b) it's a needless hassle to make the user switch between one 
+        #       or the other when trying to open files
         # TODO don't limit this to just DNG and JPG (what does pyexiv2 support?)
         filter = Gtk.FileFilter()
         filter.set_name("Images & GPX")
@@ -284,7 +296,8 @@ class GottenGeography:
         filter.add_pattern('*.gpx')
         chooser.add_filter(filter)
         
-        # In the event that the user has an image that isn't presented in the above filter, I'll allow them to display all files
+        # In the event that the user has an image that isn't presented 
+        # in the above filter, I'll allow them to display all files
         # Can't promise I'll be able to open just anything, though.
         filter = Gtk.FileFilter()
         filter.set_name("All Files")
@@ -310,7 +323,8 @@ class GottenGeography:
             self._redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
             count += 1.0
             
-            # Assume the file is an image; if that fails, assume it's GPX; if that fails, show an error
+            # Assume the file is an image; if that fails, assume it's GPX; 
+            # if that fails, show an error
             try:
                 try:    self.load_exif_data(filename)
                 except: self.load_gpx_data(filename)
@@ -349,7 +363,8 @@ class GottenGeography:
         
         self.liststore.foreach(self.save_file, [[], self.any_modified(give_count=True)])
         
-        # Update sensitivity of save/revert buttons based on current state, and hide the progressbar.
+        # Update sensitivity of save/revert buttons based on
+        # current state, and hide the progressbar.
         self.revert_button.set_sensitive(self.any_modified(self.treeselection))
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
@@ -389,7 +404,8 @@ class GottenGeography:
             count += 1.0
             
             if apply:
-                # TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
+                # TODO save GPS data from libchamplain into 
+                # PHOTO_LATITUDE and PHOTO_LONGITUDE
                 model.set_value(iter, self.PHOTO_COORDINATES, True)
                 model.set_value(iter, self.PHOTO_LATITUDE,    44.23525)
                 model.set_value(iter, self.PHOTO_LONGITUDE,   -88.2452346)
@@ -424,7 +440,9 @@ class GottenGeography:
         self.load_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
         self.load_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
         
-        self.delete_button = Gtk.ToolButton(stock_id=Gtk.STOCK_DELETE) # TODO Is this appropriate? I don't want the user to think his photos will be deleted. It's just for unloading photos.
+        # TODO Is this appropriate? I don't want the user to think his 
+        # photos will be deleted. It's just for unloading photos.
+        self.delete_button = Gtk.ToolButton(stock_id=Gtk.STOCK_DELETE) 
         self.delete_button.set_tooltip_text("Remove selected photos (Ctrl+W)")
         self.delete_button.set_sensitive(False)
         
@@ -548,13 +566,16 @@ class GottenGeography:
         self.treeview.hide()
         self.progressbar.hide()
     
-    # This method handles key shortcuts. It's called when the user types a shortcut key, and then dispatches
-    # the appropriate method to handle each possible action.
-    # TODO make sure these key choices actually make sense and are consistent with other apps
+    # This method handles key shortcuts. It's called when the user 
+    # types a shortcut key, and then dispatches the appropriate method to 
+    # handle each possible action.
+    # TODO make sure these key choices actually make sense 
+    # and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
-        # It would make more sense to store Gdk.keyval_name(keyval) in a variable and compare that
-        # rather than calling Gdk.keyval_from_name() a million times, but that seems to just crash
-        # and this way actually works, so it looks like this is what we're going with. 
+        # It would make more sense to store Gdk.keyval_name(keyval) in a
+        # variable and compare that rather than calling Gdk.keyval_from_name() 
+        # a million times, but that seems to just crash and this way actually
+        # works, so it looks like this is what we're going with. 
         if   keyval == Gdk.keyval_from_name("Return"): self.modify_selected_rows(None, True, False) # Apply
         elif keyval == Gdk.keyval_from_name("w"):      self.modify_selected_rows(None, True, True) # Delete
         elif keyval == Gdk.keyval_from_name("o"):      self.add_files()
