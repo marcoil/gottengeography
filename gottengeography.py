@@ -256,6 +256,14 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, int(os.stat(filename).st_mtime))
         
         if lat and lon:
+            marker = Champlain.Marker()
+            marker.set_position(lat, lon)
+            marker.set_highlighted(True)
+            self.champlain_photo_layer.add_marker(marker)
+            self.champlain_photo_layer.animate_in_all_markers()
+            self.champlain_photo_layer.show()
+            self.champlain_photo_layer.show_all_markers()
+            self.champlainview.center_on(lat, lon)
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, True)
             self.liststore.set_value(iter, self.PHOTO_LATITUDE, lat)
             self.liststore.set_value(iter, self.PHOTO_LONGITUDE, lon)
@@ -404,14 +412,17 @@ class GottenGeography:
             count += 1.0
             
             if apply:
-                # TODO save GPS data from libchamplain into 
-                # PHOTO_LATITUDE and PHOTO_LONGITUDE
+                # TODO this only works for manual tagging where it links
+                # the photo to the center of the current champlain view.
+                # Needs to be able to sync up timestamps with GPX, too
+                lat = self.champlainview.get_property('latitude')
+                lon = self.champlainview.get_property('longitude')
                 model.set_value(iter, self.PHOTO_COORDINATES, True)
-                model.set_value(iter, self.PHOTO_LATITUDE,    44.23525)
-                model.set_value(iter, self.PHOTO_LONGITUDE,   -88.2452346)
+                model.set_value(iter, self.PHOTO_LATITUDE,    lat)
+                model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
                 model.set_value(iter, self.PHOTO_MODIFIED,    True)
                 model.set_value(iter, self.PHOTO_SUMMARY,     
-                    self.create_summary(filename, 44.234253, -88.2352462, True))
+                    self.create_summary(filename, lat, lon, True))
             elif model.get_value(iter, self.PHOTO_MODIFIED):
                 # Revert photo data back to what was last saved on disk
                 self.load_exif_data(filename, iter)
@@ -482,8 +493,8 @@ class GottenGeography:
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
             GObject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
-            GObject.TYPE_FLOAT,   # 5 Latitude
-            GObject.TYPE_FLOAT,   # 6 Longitude
+            GObject.TYPE_DOUBLE,   # 5 Latitude
+            GObject.TYPE_DOUBLE,   # 6 Longitude
             GObject.TYPE_BOOLEAN  # 7 'Have we modified the file?' flag
         )
         
@@ -523,6 +534,15 @@ class GottenGeography:
         
         Clutter.init([])
         self.champlain = GtkChamplain.Embed()
+        self.champlainview = self.champlain.get_view()
+        self.champlainview.set_keep_center_on_resize(True)
+        self.champlain_photo_layer = Champlain.Layer()
+        self.champlainview.add_layer(self.champlain_photo_layer)
+        self.champlain_photo_layer.show()
+        # TODO find some way to roughly guess where the user is, since hardcoding
+        # this to my own personal hometown is hardly going to be useful to a global audience
+        self.champlainview.center_on(53.52, -113.45) 
+        for i in range(8): self.champlainview.zoom_in()
         
         self.progressbar = Gtk.ProgressBar()
         
