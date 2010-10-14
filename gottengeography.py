@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, os, re, time, calendar, xml
+import pygtk, pyexiv2, os, re, time, calendar, math, xml
 pygtk.require('2.0')
 
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
@@ -60,12 +60,19 @@ class GottenGeography:
         else:          return pathlist <> [] # False if pathlist is empty
     
     # Creates the Pango-formatted display string used in the GtkTreeView
-    def create_summary(self, file, coords=(), modified=False):
-        if coords: summary = ", ".join(coords)
-        else:      summary = "Not geotagged"
+    def create_summary(self, file, lat=None, lon=None, modified=False):
+        if lat > 0: lat_sign = "N "
+        else:       lat_sign = "S "
+        if lon > 0: lon_sign = "E "
+        else:       lon_sign = "W "
         
-        # "filename in normal size, then on a new line, coordinates in a smaller, light grey font"
-        summary = '%s\n<span color="#BBBBBB" size="smaller">%s</span>' % (os.path.basename(file), summary)
+        if lat and lon: summary = ", ".join([lat_sign+str(math.fabs(lat)), lon_sign+str(math.fabs(lon))])
+        else:           summary = "Not geotagged"
+        
+        # "filename in normal size, then on a new line, 
+        # coordinates in a smaller, light grey font"
+        summary = ('%s\n<span color="#BBBBBB" size="smaller">%s</span>' % 
+            (os.path.basename(file), summary))
         
         # Embolden text if this image has unsaved data
         if modified: summary = '<b>%s</b>' % summary
@@ -84,20 +91,31 @@ class GottenGeography:
         # The Revert button is only activated if the selection contains unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
     
-    # Loads a thumbnail into a Pixbuf and then saves it as the preview widget for the open FileChooserDialog
+    # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
+    # saves it as the preview widget for the open FileChooserDialog
     def update_preview(self, chooser):
         filename = chooser.get_preview_filename()
-        if not filename: return
+        if not os.path.isfile(str(filename)): return
         
         try:
-            # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
-            # Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
-            # This can only show thumbnails for JPEGs
+            exif = pyexiv2.Image(filename)
+            exif.readMetadata()
+            
+            lat = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
+                                      exif['Exif.GPSInfo.GPSLatitudeRef'])
+            lon = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
+                                      exif['Exif.GPSInfo.GPSLongitudeRef'])
+        except:
+            lat = lon = ""
+            
+        try:
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 300, 300)
             image = Gtk.Image()
             image.set_from_pixbuf(thumb)
             
-            label = Gtk.Label(label="latitude\nlongitude")
+            if lat and lon: label = Gtk.Label(label="%s, %s" % (lat, lon))
+            else:           label = Gtk.Label(label="Not geotagged")
+            
             label.set_justify(Gtk.Justification.CENTER)
             
             vbox = Gtk.VBox(spacing=6)
@@ -111,6 +129,17 @@ class GottenGeography:
             active = False
         
         chooser.set_preview_widget_active(active)
+    
+    # Converts degrees, minutes, seconds (from pyexiv2) into decimal degrees
+    def dms_to_decimal(self, dms, sign=""):
+        # The south and the west hemispheres are considered "negative"
+        if re.match("[SWsw]", sign): sign = -1
+        else:                        sign =  1
+        
+        # This is "degrees + minutes/60 + seconds/3600"
+        return ((float(dms[0].numerator)/dms[0].denominator) + 
+                (float(dms[1].numerator)/dms[1].denominator)/60 + 
+                (float(dms[2].numerator)/dms[2].denominator)/3600) * sign
     
     # Runs given filename through minidom-based GPX parser, and raises xml.parsers.expat.ExpatError if the file is invalid
     def load_gpx_data(self, filename):
@@ -162,12 +191,20 @@ class GottenGeography:
     # Takes a filename and attempts to extract EXIF data with pyexiv2 so that we know when the photo was taken,
     # and whether or not it already has any geotags on it, and a pretty thumbnail to show the user.
     def load_exif_data(self, filename, iter=None):
-        # TODO before treeview gets shown or liststore appended, you need to attempt to load the
-        # image with pyexiv2, and fail ASAP in the event that we're not working with a photo file.
-        # Once pyexiv2 parses the EXIF data successfully, then you can continue with the following code
+        exif = pyexiv2.Image(filename)
+        exif.readMetadata()
         
-        # TODO this won't be needed once pyexiv2 raises an error on failing to load a non-photo
+        # TODO this needs to not fail for valid JPEGs that happen to not have any EXIF data
+        #if exif.exifKeys() == []: raise TypeError('No EXIF data found')
         if re.search(".gpx$", filename): raise NameError('GPX Encountered')
+
+        try:
+            lat = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
+                                      exif['Exif.GPSInfo.GPSLatitudeRef'])
+            lon = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
+                                      exif['Exif.GPSInfo.GPSLongitudeRef'])
+        except KeyError:
+            lat = lon = None
         
         self.treeview.show() 
         
@@ -189,24 +226,22 @@ class GottenGeography:
                 iter = self.liststore.append([None] * 8)
         
         # TODO get this from pyexiv2, will be faster since it won't have to scale down the full-size image
-        # Also, pyexiv2 will be able to show previews of RAW files since they embed JPEG thumbnails in EXIF
-        # This can only show thumbnails for JPEGs
         try:     thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
         except:  thumb = None # TODO this pukes when invalid image loaded, need to create blank pixbuf
         
-        # TODO grab from pyexiv2
-        coords = ()
-        
-        # TODO placeholder strings here should be replaced with data from pyexiv2 once that works
         # This is somewhat clumsy, but it's column-order-agnostic, so if I feel like changing the 
         # arrangement of columns later, I don't have to change this or worry about it at all here.
-        self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
-        self.liststore.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, coords))
         self.liststore.set_value(iter, self.PHOTO_PATH, filename)
+        self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
+        self.liststore.set_value(iter, self.PHOTO_SUMMARY, self.create_summary(filename, lat, lon))
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, int(os.stat(filename).st_mtime))
-        self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
-        self.liststore.set_value(iter, self.PHOTO_LATITUDE, "")
-        self.liststore.set_value(iter, self.PHOTO_LONGITUDE, "")
+        
+        if lat and lon:
+            self.liststore.set_value(iter, self.PHOTO_COORDINATES, True)
+            self.liststore.set_value(iter, self.PHOTO_LATITUDE, lat)
+            self.liststore.set_value(iter, self.PHOTO_LONGITUDE, lon)
+        else:
+            self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
     
     # Displays nice GNOME file chooser dialog and allows user to select either images or GPX files.
@@ -268,8 +303,8 @@ class GottenGeography:
             
             # Assume the file is an image; if that fails, assume it's GPX; if that fails, show an error
             try:
-                try:              self.load_exif_data(filename)
-                except NameError: self.load_gpx_data(filename)
+                try:    self.load_exif_data(filename)
+                except: self.load_gpx_data(filename)
             except:
                 raise
                 # File is neither GPX nor a photo with EXIF
@@ -347,11 +382,11 @@ class GottenGeography:
             if apply:
                 # TODO save GPS data from libchamplain into PHOTO_LATITUDE and PHOTO_LONGITUDE
                 model.set_value(iter, self.PHOTO_COORDINATES, True)
-                model.set_value(iter, self.PHOTO_LATITUDE,    'latitude')
-                model.set_value(iter, self.PHOTO_LONGITUDE,   'longitude')
+                model.set_value(iter, self.PHOTO_LATITUDE,    44.23525)
+                model.set_value(iter, self.PHOTO_LONGITUDE,   -88.2452346)
                 model.set_value(iter, self.PHOTO_MODIFIED,    True)
                 model.set_value(iter, self.PHOTO_SUMMARY,     
-                    self.create_summary(filename, ('latitude', 'longitude'), True))
+                    self.create_summary(filename, 44.234253, -88.2352462, True))
             elif model.get_value(iter, self.PHOTO_MODIFIED):
                 # Revert photo data back to what was last saved on disk
                 self.load_exif_data(filename, iter)
@@ -420,8 +455,8 @@ class GottenGeography:
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
             GObject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
-            GObject.TYPE_STRING,  # 5 Latitude
-            GObject.TYPE_STRING,  # 6 Longitude
+            GObject.TYPE_FLOAT,   # 5 Latitude
+            GObject.TYPE_FLOAT,   # 6 Longitude
             GObject.TYPE_BOOLEAN  # 7 'Have we modified the file?' flag
         )
         
