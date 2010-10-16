@@ -66,7 +66,7 @@ class GottenGeography:
     # Creates a new ChamplainMarker and adds it to the map
     def _add_marker(self, label, lat, lon, center_view=True):
             marker = Champlain.Marker()
-            marker.set_text(label)
+            marker.set_text(os.path.basename(label))
             marker.set_position(lat, lon)
             self.map_photo_layer.add_marker(marker)
             if center_view: self.map_view.center_on(lat, lon)
@@ -138,7 +138,7 @@ class GottenGeography:
         
         try:
             timestamp = str(exif['Exif.Photo.DateTimeOriginal']) + "\n"
-        except: 
+        except KeyError: 
             timestamp = ""
         
         try:
@@ -146,7 +146,7 @@ class GottenGeography:
                                        exif['Exif.GPSInfo.GPSLatitudeRef'])
             lon = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
                                        exif['Exif.GPSInfo.GPSLongitudeRef'])
-        except:
+        except KeyError:
             lat = lon = ""
         
         try:
@@ -242,6 +242,7 @@ class GottenGeography:
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
         self.map_gpx.clear_points()
+        del self.tracks
         self.tracks = {}
         self.clear_gpx_button.set_sensitive(False)
         
@@ -309,7 +310,7 @@ class GottenGeography:
             self.liststore.set_value(iter, self.PHOTO_LATITUDE, lat)
             self.liststore.set_value(iter, self.PHOTO_LONGITUDE, lon)
             self.liststore.set_value(iter, self.PHOTO_MARKER, 
-                self._add_marker(os.path.basename(filename), lat, lon))
+                self._add_marker(filename, lat, lon))
         else:
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
             self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
@@ -465,12 +466,16 @@ class GottenGeography:
                 # Needs to be able to sync up timestamps with GPX, too
                 lat = self.map_view.get_property('latitude')
                 lon = self.map_view.get_property('longitude')
+                marker = model.get_value(iter, self.PHOTO_MARKER)
+                if marker: self.map_photo_layer.remove_marker(marker)
                 model.set_value(iter, self.PHOTO_COORDINATES, True)
                 model.set_value(iter, self.PHOTO_LATITUDE,    lat)
                 model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
                 model.set_value(iter, self.PHOTO_MODIFIED,    True)
                 model.set_value(iter, self.PHOTO_SUMMARY,
                     self.create_summary(filename, lat, lon, True))
+                model.set_value(iter, self.PHOTO_MARKER,
+                    self._add_marker(filename, lat, lon))
 
             # Revert photo data back to what was last saved on disk
             elif model.get_value(iter, self.PHOTO_MODIFIED):
@@ -556,7 +561,7 @@ class GottenGeography:
             model.set_value(iter, self.PHOTO_SUMMARY,
                 self.create_summary(filename, photo_lat, photo_lon, True))
             model.set_value(iter, self.PHOTO_MARKER, 
-                self._add_marker(os.path.basename(filename), photo_lat, photo_lon))
+                self._add_marker(filename, photo_lat, photo_lon))
 
 
     def __init__(self):
