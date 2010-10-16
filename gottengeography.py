@@ -128,10 +128,6 @@ class GottenGeography:
         self.revert_button.set_sensitive(self.any_modified(selection))
     
     # Do the pyexiv2 dirty work
-    # TODO this would probably be a good place to check for the validity
-    # of the image file (I don't want to be able to open any files
-    # that pyexiv2 won't be able to write to, but unfortunately pyexiv2 fails
-    # *silently* when it's opening an unsupported filetype
     def _get_timestamp_and_coords(self, filename):
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
