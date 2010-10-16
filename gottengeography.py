@@ -127,19 +127,19 @@ class GottenGeography:
         # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
     
-    # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
-    # saves it as the preview widget for the open FileChooserDialog
-    def update_preview(self, chooser):
-        filename = chooser.get_preview_filename()
-        if not os.path.isfile(str(filename)): return
-        
+    # Do the pyexiv2 dirty work
+    # TODO this would probably be a good place to check for the validity
+    # of the image file (I don't want to be able to open any files
+    # that pyexiv2 won't be able to write to, but unfortunately pyexiv2 fails
+    # *silently* when it's opening an unsupported filetype
+    def _get_timestamp_and_coords(self, filename):
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
         try:
-            timestamp = str(exif['Exif.Photo.DateTimeOriginal']) + "\n"
+            timestamp = exif['Exif.Photo.DateTimeOriginal']
         except KeyError: 
-            timestamp = ""
+            timestamp = None
         
         try:
             lat = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
@@ -147,7 +147,21 @@ class GottenGeography:
             lon = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
                                        exif['Exif.GPSInfo.GPSLongitudeRef'])
         except KeyError:
-            lat = lon = ""
+            lat = lon = None
+            
+        return timestamp, lat, lon
+    
+    # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
+    # saves it as the preview widget for the open FileChooserDialog
+    def update_preview(self, chooser):
+        filename = chooser.get_preview_filename()
+        if not os.path.isfile(str(filename)): return
+        
+        try:
+            (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
+        except IOError:
+            chooser.set_preview_widget_active(False)
+            return
         
         try:
             image = Gtk.Image()
@@ -155,9 +169,8 @@ class GottenGeography:
                 GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 300, 300)
             )
             
-            
-            if lat and lon: label = Gtk.Label(label=timestamp + self._pretty_coords(lat, lon))
-            else:           label = Gtk.Label(label=timestamp + "Not geotagged")
+            if lat and lon: label = Gtk.Label(label="%s\n%s" % (timestamp, self._pretty_coords(lat, lon)))
+            else:           label = Gtk.Label(label="%s\n%s" % (timestamp, "Not geotagged"))
             
             label.set_justify(Gtk.Justification.CENTER)
             
@@ -167,11 +180,10 @@ class GottenGeography:
             vbox.show_all()
             
             chooser.set_preview_widget(vbox)
-            active = True
+            chooser.set_preview_widget_active(True)
         except:
-            active = False
+            chooser.set_preview_widget_active(False)
         
-        chooser.set_preview_widget_active(active)
     
     # Runs given filename through minidom-based GPX parser, and raises 
     # xml.parsers.expat.ExpatError if the file is invalid
@@ -250,20 +262,9 @@ class GottenGeography:
     # we know when the photo was taken, and whether or not it already has any 
     # geotags on it, and a pretty thumbnail to show the user.
     def load_exif_data(self, filename, iter=None):
-        exif = pyexiv2.Image(filename)
-        exif.readMetadata()
+        if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
-        # TODO this needs to not fail for valid JPEGs that happen to not have any EXIF data
-        #if exif.exifKeys() == []: raise TypeError('No EXIF data found')
-        if re.search(".gpx$", filename): raise NameError('GPX Encountered')
-
-        try:
-            lat = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
-                                       exif['Exif.GPSInfo.GPSLatitudeRef'])
-            lon = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
-                                       exif['Exif.GPSInfo.GPSLongitudeRef'])
-        except KeyError:
-            lat = lon = None
+        (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
         
         self.photoscroller.show() 
         
@@ -300,10 +301,7 @@ class GottenGeography:
         # to change that somehow in the event that the user was travelling or
         # something. God this is complicated.
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, 
-            int(time.mktime(
-                exif['Exif.Photo.DateTimeOriginal'].timetuple()
-            ))
-        )
+            int(time.mktime(timestamp.timetuple())))
         
         if lat and lon:
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, True)
@@ -378,14 +376,13 @@ class GottenGeography:
             # Assume the file is an image; if that fails, assume it's GPX; 
             # if that fails, show an error
             try:
-                try:              self.load_exif_data(filename)
-                except NameError: self.load_gpx_data(filename)
-            except:
-                raise
-                # File is neither GPX nor a photo with EXIF
-                # TODO this error sucks, but I can't decide if I want a popup error message or not.
-                self._redraw_interface(text="%s could not be loaded! Unrecognized filetype." % os.path.basename(filename))
-                time.sleep(1)
+                try:            self.load_exif_data(filename)
+                except IOError: self.load_gpx_data(filename)
+            except xml.parsers.expat.ExpatError:
+                self.errors.append(os.path.basename(filename))
+                
+                context = self.statusbar.get_context_id("Unable to open files")
+                self.statusbar.push(context, "No valid image or GPX data found in: " + ", ".join(self.errors))
         
         self.progressbar.hide()
     
@@ -567,6 +564,9 @@ class GottenGeography:
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
+        
+        # This is a list of filenames that we weren't able to open.
+        self.errors = []
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
