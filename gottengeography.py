@@ -498,21 +498,19 @@ class GottenGeography:
             lower = keys[0]
             
             if (photo < lower) or (photo > higher):
-                print "Photo is not in range!"
+                self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
+                    "Selected photo not in GPX range: did you load the right GPX file?")
                 return
             
             try:
-                print self.tracks[photo]
+                print self.tracks[photo]['point'].lat
+                print self.tracks[photo]['point'].lon
                 print "There's an exact match! Wowzers!"
             except KeyError:
                 print "No exact match, checking in the range..."
             
             print "we have %s, looking for nearest:" % photo
             
-            # This feels really clumsy to me. I feel as though there is
-            # a really brilliant academic algorithm that does this much more
-            # nicely in half the time, and if I'd paid more attention in school,
-            # I might know what it is.
             for key in keys:
                 print key
                 if (key > photo) and (key < higher):
@@ -527,7 +525,6 @@ class GottenGeography:
             high_delta = higher-photo
             max_delta = higher-lower
             print "differences are %s + %s = %s" % (low_delta, high_delta, max_delta)
-            
             
             low_perc = float(low_delta)/max_delta
             high_perc = float(high_delta)/max_delta
@@ -547,6 +544,8 @@ class GottenGeography:
             
             filename = model.get_value(iter, self.PHOTO_PATH)
             
+            marker = model.get_value(iter, self.PHOTO_MARKER)
+            if marker: self.map_photo_layer.remove_marker(marker)
             model.set_value(iter, self.PHOTO_LATITUDE, photo_lat)
             model.set_value(iter, self.PHOTO_LONGITUDE, photo_lon)
             model.set_value(iter, self.PHOTO_COORDINATES, True)
