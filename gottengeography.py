@@ -63,6 +63,16 @@ class GottenGeography:
         if give_count: return len(pathlist)
         else:          return pathlist <> [] # False if pathlist is empty
     
+    # Creates a new ChamplainMarker and adds it to the map
+    def _add_marker(self, label, lat, lon, center_view=True):
+            marker = Champlain.Marker()
+            marker.set_text(label)
+            marker.set_position(lat, lon)
+            self.map_photo_layer.add_marker(marker)
+            if center_view: self.map_view.center_on(lat, lon)
+            marker.show()
+            return marker
+
     # Converts degrees, minutes, seconds (from pyexiv2) into decimal degrees
     def _dms_to_decimal(self, dms, sign=""):
         # The south and the west hemispheres are considered "negative"
@@ -227,6 +237,14 @@ class GottenGeography:
                         self.tracks[timestamp]['point'].lon
                     )
         
+        self.clear_gpx_button.set_sensitive(True)
+    
+    # Removes all loaded GPX tracks from the map, and unloads all GPX data
+    def unload_gpx_data(self, widget=None):
+        self.map_gpx.clear_points()
+        self.tracks = {}
+        self.clear_gpx_button.set_sensitive(False)
+        
     # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
     # we know when the photo was taken, and whether or not it already has any 
     # geotags on it, and a pretty thumbnail to show the user.
@@ -274,26 +292,24 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
             self.create_summary(filename, lat, lon))
+        # I am nowhere NEAR smart enough to understand something as simple
+        # as time, but I *think* that this code requires the computer's timezone
+        # to be set to the same timezone as your camera, which seems reasonable
+        # enough to me, but you'll probably want to offer some kind of option
+        # to change that somehow in the event that the user was travelling or
+        # something. God this is complicated.
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, 
-            calendar.timegm(
-                time.strptime(
-                    exif['Exif.Photo.DateTimeOriginal'].ctime()
-                )
-            )
+            int(time.mktime(
+                exif['Exif.Photo.DateTimeOriginal'].timetuple()
+            ))
         )
         
         if lat and lon:
-            marker = Champlain.Marker()
-            marker.set_text(os.path.basename(filename))
-            marker.set_position(lat, lon)
-            self.map_photo_layer.add_marker(marker)
-            self.map_view.center_on(lat, lon)
-            marker.show()
-            
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, True)
             self.liststore.set_value(iter, self.PHOTO_LATITUDE, lat)
             self.liststore.set_value(iter, self.PHOTO_LONGITUDE, lon)
-            self.liststore.set_value(iter, self.PHOTO_MARKER, marker)
+            self.liststore.set_value(iter, self.PHOTO_MARKER, 
+                self._add_marker(os.path.basename(filename), lat, lon))
         else:
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
             self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
@@ -361,8 +377,8 @@ class GottenGeography:
             # Assume the file is an image; if that fails, assume it's GPX; 
             # if that fails, show an error
             try:
-                try:    self.load_exif_data(filename)
-                except: self.load_gpx_data(filename)
+                try:              self.load_exif_data(filename)
+                except NameError: self.load_gpx_data(filename)
             except:
                 raise
                 # File is neither GPX nor a photo with EXIF
@@ -453,7 +469,7 @@ class GottenGeography:
                 model.set_value(iter, self.PHOTO_LATITUDE,    lat)
                 model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
                 model.set_value(iter, self.PHOTO_MODIFIED,    True)
-                model.set_value(iter, self.PHOTO_SUMMARY,     
+                model.set_value(iter, self.PHOTO_SUMMARY,
                     self.create_summary(filename, lat, lon, True))
 
             # Revert photo data back to what was last saved on disk
@@ -469,6 +485,80 @@ class GottenGeography:
         # Hide the TreeView if it's empty, because it shows an ugly white strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
+    # This is my first attempt at trying to match photos with GPX data
+    def auto_timestamp_comparison(self, widget=None):
+        (pathlist, model) = self.treeselection.get_selected_rows()
+        if pathlist == []: return
+        
+        for path in pathlist:
+            iter = model.get_iter(path)[1]
+            photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
+            keys = self.tracks.keys()
+            keys.sort()
+            
+            higher = keys[-1]
+            lower = keys[0]
+            
+            if (photo < lower) or (photo > higher):
+                print "Photo is not in range!"
+                return
+            
+            try:
+                print self.tracks[photo]
+                print "There's an exact match! Wowzers!"
+            except KeyError:
+                print "No exact match, checking in the range..."
+            
+            print "we have %s, looking for nearest:" % photo
+            
+            # This feels really clumsy to me. I feel as though there is
+            # a really brilliant academic algorithm that does this much more
+            # nicely in half the time, and if I'd paid more attention in school,
+            # I might know what it is.
+            for key in keys:
+                print key
+                if (key > photo) and (key < higher):
+                    higher = key
+                if (key < photo) and (key > lower):
+                    lower = key
+            
+            print
+            print "%s < %s < %s" % (lower, photo, higher)
+
+            low_delta = photo-lower
+            high_delta = higher-photo
+            max_delta = higher-lower
+            print "differences are %s + %s = %s" % (low_delta, high_delta, max_delta)
+            
+            
+            low_perc = float(low_delta)/max_delta
+            high_perc = float(high_delta)/max_delta
+            print "which means, photo is %s %% more than lower, and %s %% less than higher" % (low_perc, high_perc)
+
+            low_lat = self.tracks[lower]['point'].lat
+            low_lon = self.tracks[lower]['point'].lon
+            high_lat = self.tracks[higher]['point'].lat
+            high_lon = self.tracks[higher]['point'].lon
+            
+            print "lower has: ", low_lat, low_lon
+            print "higher has: ", high_lat, high_lon
+            
+            photo_lat = low_lat*low_perc + high_lat*high_perc
+            photo_lon = low_lon*low_perc + high_lon*high_perc
+            print "So, proportionally, we get: ", photo_lat, photo_lon
+            
+            filename = model.get_value(iter, self.PHOTO_PATH)
+            
+            model.set_value(iter, self.PHOTO_LATITUDE, photo_lat)
+            model.set_value(iter, self.PHOTO_LONGITUDE, photo_lon)
+            model.set_value(iter, self.PHOTO_COORDINATES, True)
+            model.set_value(iter, self.PHOTO_MODIFIED, True)
+            model.set_value(iter, self.PHOTO_SUMMARY,
+                self.create_summary(filename, photo_lat, photo_lon, True))
+            model.set_value(iter, self.PHOTO_MARKER, 
+                self._add_marker(os.path.basename(filename), photo_lat, photo_lon))
+
+
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
@@ -492,8 +582,19 @@ class GottenGeography:
         
         self.toolbar_spacer = Gtk.SeparatorToolItem()
         
+        # TODO as it stands, the "Jump to" button initates automatic GPX/photo
+        # timestamp comparison, which will be the default behavior once it _works_
+        # When that time comes, you're going to want to roll the functionality
+        # back into the "Apply" button, which will make much more sense from a UI
+        # perspective. You'll just need some subtle/automatic way of deciding
+        # whether to use the automated functionality, or manual functionality,
+        # i.e., linking the photo to the map center.
+        self.connect_button = Gtk.ToolButton(stock_id=Gtk.STOCK_JUMP_TO)
+        self.connect_button.set_tooltip_text("Link displayed GPS data with selected photos")
+        self.connect_button.set_sensitive(True)
+        
         self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
-        self.apply_button.set_tooltip_text("Link displayed GPS data with selected photos (Ctrl+Return)")
+        self.apply_button.set_tooltip_text("Link selected photos with center of map (Ctrl+Return)")
         self.apply_button.set_sensitive(False)
         
         self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
@@ -504,6 +605,10 @@ class GottenGeography:
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+Z)")
         self.revert_button.set_sensitive(False)
+
+        self.clear_gpx_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLEAR) 
+        self.clear_gpx_button.set_tooltip_text("Unload all GPS data")
+        self.clear_gpx_button.set_sensitive(False)
         
         self.toolbar_spacer2 = Gtk.SeparatorToolItem()
         
@@ -580,7 +685,7 @@ class GottenGeography:
         
         self.map_gpx = Champlain.Polygon()
         self.map_gpx.set_property('closed-path', False)
-        self.map_gpx.set_property('mark-points', False)
+        self.map_gpx.set_property('mark-points', True)
         self.map_gpx.set_stroke(True)
         self.map_gpx.set_stroke_width(5)
         self.map_gpx.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
@@ -597,9 +702,11 @@ class GottenGeography:
         self.toolbar.add(self.load_button)
         self.toolbar.add(self.save_button)
         self.toolbar.add(self.toolbar_spacer)
+        self.toolbar.add(self.connect_button)
         self.toolbar.add(self.apply_button)
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.delete_button)
+        self.toolbar.add(self.clear_gpx_button)
         self.toolbar.add(self.toolbar_spacer2)
         self.toolbar.add(self.toolbar_spacer3)
         self.toolbar.add(self.about_button)
@@ -612,9 +719,11 @@ class GottenGeography:
         self.window.connect("delete_event", self.confirm_quit)
         self.load_button.connect("clicked", self.add_files)
         self.save_button.connect("clicked", self.save_files)
+        self.connect_button.connect("clicked", self.auto_timestamp_comparison)
         self.apply_button.connect("clicked", self.modify_selected_rows, True)
         self.revert_button.connect("clicked", self.modify_selected_rows, False)
         self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
+        self.clear_gpx_button.connect("clicked", self.unload_gpx_data)
         self.about_button.connect("clicked", self.about_dialog)
         self.treeselection.connect("changed", self.selection_changed)
         
