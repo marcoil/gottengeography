@@ -493,65 +493,79 @@ class GottenGeography:
     # This is my first attempt at trying to match photos with GPX data
     def auto_timestamp_comparison(self, widget=None):
         (pathlist, model) = self.treeselection.get_selected_rows()
+        
+        # There must be at least one selected photo for this to work
         if pathlist == []: return
+        
+        # There must be at least two GPX points loaded for this to work
+        if len(self.tracks) < 2: return
         
         for path in pathlist:
             iter = model.get_iter(path)[1]
-            photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
-            keys = self.tracks.keys()
-            keys.sort()
             
-            higher = keys[-1]
-            lower = keys[0]
+            # photo is the timestamp in epoch seconds,
+            # points is a list of epoch seconds representing GPX points.
+            # All the following calculations are directly in epoch seconds
+            photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
+            points = self.tracks.keys()
+            points.sort()
+            
+            # higher and lower begin by referring to the chronological first
+            # and last timestamp created by the GPX device. We later
+            # iterate over the list, searching for the two timestamps
+            # that are nearest to the photo
+            higher = points[-1]
+            lower  = points[0]
             
             if (photo < lower) or (photo > higher):
                 self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
                     "Selected photo not in GPX range: did you load the right GPX file?")
-                return
+                continue
             
+            # It's unlikely, but there's always that slim possibility that
+            # there is an exact match (eg, the photo timestamp and the GPX point
+            # at the exact same second. In this case, we can just take the lat
+            # and lon directly without any calculation.
             try:
-                print self.tracks[photo]['point'].lat
-                print self.tracks[photo]['point'].lon
-                print "There's an exact match! Wowzers!"
-            except KeyError:
-                print "No exact match, checking in the range..."
+                self._insert_coordinates(model, iter, 
+                    self.tracks[photo]['point'].lat, 
+                    self.tracks[photo]['point'].lon
+                )
+            except: pass
+            else:   continue # to the next photo, skipping the following
             
-            print "we have %s, looking for nearest:" % photo
+            # Iterate over the available gpx points, find the two that are
+            # nearest (in time) to the photo timestamp.
+            for point in points:
+                if (point > photo) and (point < higher): higher = point
+                if (point < photo) and (point > lower):  lower  = point
             
-            for key in keys:
-                print key
-                if (key > photo) and (key < higher):
-                    higher = key
-                if (key < photo) and (key > lower):
-                    lower = key
+            # delta is the number of seconds between 
+            # the two points we're averaging
+            delta = higher - lower
             
-            print
-            print "%s < %s < %s" % (lower, photo, higher)
+            # low_perc and high_perc are fractions (between 0 and 1)
+            # representing the proportional amount of time from the 
+            # lower point to the photo, and the higher point to the photo
+            low_perc = float(photo - lower) / delta
+            high_perc = float(higher - photo) / delta
 
-            low_delta = photo-lower
-            high_delta = higher-photo
-            max_delta = higher-lower
-            print "differences are %s + %s = %s" % (low_delta, high_delta, max_delta)
+            # Aahhhhh! Math! This multiplies the latitudes and longitudes
+            # of the gpx points by the proportional distance between the 
+            # gpx point and the photo timestamp, and then adding the two
+            # proportions. This results in finding the correct coordinates
+            # for the photo. It's not just averaging the two points giving
+            # you a point halfway in the middle, but in the proper proportions.
+            # Eg, if you have one gpx point that is 25 seconds before the photo,
+            # and another 75 seconds after the photo, the calculated coordinates
+            # will be 25% of the distance (between those two points) away from
+            # the prior point.
+            lat = ((self.tracks[lower]['point'].lat  * low_perc)   + 
+                   (self.tracks[higher]['point'].lat * high_perc))
+            lon = ((self.tracks[lower]['point'].lon  * low_perc)   + 
+                   (self.tracks[higher]['point'].lon * high_perc))
             
-            low_perc = float(low_delta)/max_delta
-            high_perc = float(high_delta)/max_delta
-            print "which means, photo is %s %% more than lower, and %s %% less than higher" % (low_perc, high_perc)
-
-            low_lat = self.tracks[lower]['point'].lat
-            low_lon = self.tracks[lower]['point'].lon
-            high_lat = self.tracks[higher]['point'].lat
-            high_lon = self.tracks[higher]['point'].lon
-            
-            print "lower has: ", low_lat, low_lon
-            print "higher has: ", high_lat, high_lon
-            
-            photo_lat = low_lat*low_perc + high_lat*high_perc
-            photo_lon = low_lon*low_perc + high_lon*high_perc
-            print "So, proportionally, we get: ", photo_lat, photo_lon
-            
-            filename = model.get_value(iter, self.PHOTO_PATH)
-            
-            self._insert_coordinates(model, iter, photo_lat, photo_lon)
+            self._insert_coordinates(model, iter, lat, lon)
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
