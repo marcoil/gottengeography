@@ -249,9 +249,9 @@ class GottenGeography:
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
-        self.map_gpx.clear_points()
         del self.tracks
         self.tracks = {}
+        self.map_gpx.clear_points()
         self.clear_gpx_button.set_sensitive(False)
         
     # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
@@ -519,7 +519,7 @@ class GottenGeography:
             
             if (photo < lower) or (photo > higher):
                 self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
-                    "Selected photo not in GPX range: did you load the right GPX file?")
+                    "%s not in GPX range: did you load the right GPX file?" % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
                 continue
             
             # It's unlikely, but there's always that slim possibility that
@@ -531,8 +531,11 @@ class GottenGeography:
                     self.tracks[photo]['point'].lat, 
                     self.tracks[photo]['point'].lon
                 )
-            except: pass
-            else:   continue # to the next photo, skipping the following
+            except: 
+                pass
+            else:
+                print "Exact match on photo/gpx timestamp! Yay ;-)"
+                continue # to the next photo, skipping the following
             
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
@@ -698,7 +701,7 @@ class GottenGeography:
         self.map_gpx.set_property('closed-path', False)
         self.map_gpx.set_property('mark-points', True)
         self.map_gpx.set_stroke(True)
-        self.map_gpx.set_stroke_width(5)
+        self.map_gpx.set_stroke_width(3)
         self.map_gpx.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
         self.map_gpx.set_fill(False)
         self.map_view.add_polygon(self.map_gpx)
