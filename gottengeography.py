@@ -699,6 +699,8 @@ class GottenGeography:
         self.map_gpx.show()
         
         self.progressbar = Gtk.ProgressBar()
+        self.statusbar = Gtk.Statusbar()
+        self.statusbar.add(self.progressbar)
         
         # This adds each widget into it's place in the window.
         self.photoscroller.add(self.treeview)
@@ -717,7 +719,7 @@ class GottenGeography:
         self.toolbar.add(self.about_button)
         self.vbox.pack_start(self.toolbar, False, True, 0)
         self.vbox.pack_start(self.hbox, True, True, 0)
-        self.vbox.pack_end(self.progressbar, False, True, 6)
+        self.vbox.pack_end(self.statusbar, False, True, 6)
         self.window.add(self.vbox)
         
         # Connect all my precious signal handlers
