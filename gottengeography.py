@@ -414,6 +414,22 @@ class GottenGeography:
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
     
+    def _insert_coordinates(self, model, iter, lat, lon):
+        # Remove the old marker, in case there is one
+        marker = model.get_value(iter, self.PHOTO_MARKER)
+        if marker: self.map_photo_layer.remove_marker(marker)
+        
+        filename = model.get_value(iter, self.PHOTO_PATH)
+        
+        model.set_value(iter, self.PHOTO_COORDINATES, True)
+        model.set_value(iter, self.PHOTO_LATITUDE,    lat)
+        model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
+        model.set_value(iter, self.PHOTO_MODIFIED,    True)
+        model.set_value(iter, self.PHOTO_SUMMARY,
+            self.create_summary(filename, lat, lon, True))
+        model.set_value(iter, self.PHOTO_MARKER,
+            self._add_marker(filename, lat, lon))
+
     # This method handles all three of apply, revert, and delete. Those three 
     # actions are much more alike than you might intuitively suspect. They all 
     # iterate over the GtkTreeSelection, they all modify the GtkListStore data... 
@@ -459,16 +475,7 @@ class GottenGeography:
                 # Needs to be able to sync up timestamps with GPX, too
                 lat = self.map_view.get_property('latitude')
                 lon = self.map_view.get_property('longitude')
-                marker = model.get_value(iter, self.PHOTO_MARKER)
-                if marker: self.map_photo_layer.remove_marker(marker)
-                model.set_value(iter, self.PHOTO_COORDINATES, True)
-                model.set_value(iter, self.PHOTO_LATITUDE,    lat)
-                model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
-                model.set_value(iter, self.PHOTO_MODIFIED,    True)
-                model.set_value(iter, self.PHOTO_SUMMARY,
-                    self.create_summary(filename, lat, lon, True))
-                model.set_value(iter, self.PHOTO_MARKER,
-                    self._add_marker(filename, lat, lon))
+                self._insert_coordinates(model, iter, lat, lon)
 
             # Revert photo data back to what was last saved on disk
             elif model.get_value(iter, self.PHOTO_MODIFIED):
@@ -544,18 +551,8 @@ class GottenGeography:
             
             filename = model.get_value(iter, self.PHOTO_PATH)
             
-            marker = model.get_value(iter, self.PHOTO_MARKER)
-            if marker: self.map_photo_layer.remove_marker(marker)
-            model.set_value(iter, self.PHOTO_LATITUDE, photo_lat)
-            model.set_value(iter, self.PHOTO_LONGITUDE, photo_lon)
-            model.set_value(iter, self.PHOTO_COORDINATES, True)
-            model.set_value(iter, self.PHOTO_MODIFIED, True)
-            model.set_value(iter, self.PHOTO_SUMMARY,
-                self.create_summary(filename, photo_lat, photo_lon, True))
-            model.set_value(iter, self.PHOTO_MARKER, 
-                self._add_marker(filename, photo_lat, photo_lon))
-
-
+            self._insert_coordinates(model, iter, photo_lat, photo_lon)
+    
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
