@@ -21,14 +21,14 @@ import pygtk, pyexiv2, os, re, time, calendar, math, xml
 
 pygtk.require('2.0')
 
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, Clutter, Champlain, GtkChamplain
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.dom import minidom
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
 # TODO:
-# Needs to be able to sync GPX with image timestamps
 # Needs to be able to save EXIF data
 # Needs to be able to load files via drag&drop
 
@@ -45,7 +45,9 @@ class GottenGeography:
     def _append_modified(self, model, path, iter, data):
         if model.get_value(iter, self.PHOTO_MODIFIED): 
             data[0].append(path)
-            return data[1] # halts the foreach() loop at the first unsaved file
+            # halt the foreach() loop at the first unsaved file
+            # but only if a count wasn't asked for
+            return data[1]
     
     # Checks for unsaved files. By default will return True if it finds any
     # If a count is needed, call with give_count=True and it will return an int
@@ -54,7 +56,7 @@ class GottenGeography:
         
         # give_count must be inverted here because "give_count=True" means
         # "I want a count", but internally a True value results in the count
-        # _NOT_ happening (it won't count beyond 1, enough to return a boolean)
+        # _NOT_ happening (it stops counting at 1, enough to return a boolean)
         if selection: 
             selection.selected_foreach(self._append_modified, (pathlist, not give_count))
         else:
@@ -70,7 +72,7 @@ class GottenGeography:
             marker.set_position(lat, lon)
             self.map_photo_layer.add_marker(marker)
             if center_view: self.map_view.center_on(lat, lon)
-            marker.show()
+            marker.animate_in()
             return marker
 
     # Converts degrees, minutes, seconds (from pyexiv2) into decimal degrees
@@ -80,9 +82,9 @@ class GottenGeography:
         else:                        sign =  1
         
         # This is "degrees + minutes/60 + seconds/3600"
-        return ((float(dms[0].numerator)/dms[0].denominator)       + 
-                (float(dms[1].numerator)/dms[1].denominator)/60    + 
-                (float(dms[2].numerator)/dms[2].denominator)/3600) * sign
+        return ((float(dms[0].numerator) / dms[0].denominator)         + 
+                (float(dms[1].numerator) / dms[1].denominator) / 60    + 
+                (float(dms[2].numerator) / dms[2].denominator) / 3600) * sign
     
     # Takes decimal coordinates and returns a string with direction labels
     def _pretty_coords(self, lat, lon):
@@ -92,14 +94,15 @@ class GottenGeography:
         else:       lon_sign = "W "
         
         # Decimal degrees, rounded to 5 places, provides
-        # an accuracy of 1.11m, which is Good Enough For Me(TM)    
+        # an accuracy of 1.11m. Note that this is only for display
+        # and the full precision is retained internally.    
         lat = round(math.fabs(lat), 5)
         lon = round(math.fabs(lon), 5)
         
         return lat_sign + str(lat) + ", " + lon_sign + str(lon)
     
     # Creates the Pango-formatted display string used in the GtkTreeView
-    def create_summary(self, file, lat=None, lon=None, modified=False):
+    def _create_summary(self, file, lat=None, lon=None, modified=False):
         # Start with the coordinates, if any
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
@@ -120,9 +123,10 @@ class GottenGeography:
     def selection_changed(self, selection):
         sensitivity = selection.count_selected_rows() > 0
         
-        # Apply and Delete buttons get activated if there is a selection
+        # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
         self.delete_button.set_sensitive(sensitivity)
+        self.connect_button.set_sensitive(sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
@@ -164,7 +168,9 @@ class GottenGeography:
             image.set_from_pixbuf(
                 GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 300, 300)
             )
-            
+        except:
+            chooser.set_preview_widget_active(False)
+        else:
             if lat and lon: label = Gtk.Label(label="%s\n%s" % (timestamp, self._pretty_coords(lat, lon)))
             else:           label = Gtk.Label(label="%s\n%s" % (timestamp, "Not geotagged"))
             
@@ -177,9 +183,6 @@ class GottenGeography:
             
             chooser.set_preview_widget(vbox)
             chooser.set_preview_widget_active(True)
-        except:
-            chooser.set_preview_widget_active(False)
-        
     
     # Runs given filename through minidom-based GPX parser, and raises 
     # xml.parsers.expat.ExpatError if the file is invalid
@@ -228,6 +231,8 @@ class GottenGeography:
                     timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     timestamp = calendar.timegm(timestamp)
                     
+                    # Populate the self.tracks dictionary with elevation and
+                    # coordinate data
                     self.tracks[timestamp]={
                         'elevation': 
                             float(point.getElementsByTagName('ele')[0].firstChild.data),
@@ -240,6 +245,9 @@ class GottenGeography:
                     
                     # TODO this should probably be optional. Checkbox in the
                     # file open dialog?
+                    # Follow the GPX on screen as it's loaded (useful
+                    # in the event that the GPX data is outside the current view
+                    # and the user is wondering why (seemingly) nothing is loading)
                     self.map_view.center_on(
                         self.tracks[timestamp]['point'].lat,
                         self.tracks[timestamp]['point'].lon
@@ -289,7 +297,7 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_PATH, filename)
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
-            self.create_summary(filename, lat, lon))
+            self._create_summary(filename, lat, lon))
         # I am nowhere NEAR smart enough to understand something as simple
         # as time, but I *think* that this code requires the computer's timezone
         # to be set to the same timezone as your camera, which seems reasonable
@@ -326,25 +334,11 @@ class GottenGeography:
         
         # make a file preview thingo
         chooser.connect("selection-changed", self.update_preview)
-        
-        # By default, we only want to show a combination of images and GPX data files
-        # It makes sense to mix these into one view because
-        #    a) the user is unlikely to have these mixed into the same directory, and
-        #    b) it's a needless hassle to make the user switch between one 
-        #       or the other when trying to open files
-        # TODO don't limit this to just DNG and JPG (what does pyexiv2 support?)
-        filter = Gtk.FileFilter()
-        filter.set_name("Images & GPX")
-        filter.add_mime_type('image/jpeg')
-        filter.add_pattern('*.jpg')
-        filter.add_pattern('*.jpeg')
-        filter.add_pattern('*.dng')
-        filter.add_pattern('*.gpx')
-        chooser.add_filter(filter)
-        
-        # In the event that the user has an image that isn't presented 
-        # in the above filter, I'll allow them to display all files
-        # Can't promise I'll be able to open just anything, though.
+
+        # TODO figure out what formats are supported by pyexiv2,
+        # and hide anything that isn't supported. For now, allow
+        # the user to open anything, but gracefully fail if they open
+        # something invalid.        
         filter = Gtk.FileFilter()
         filter.set_name("All Files")
         filter.add_pattern('*')
@@ -364,9 +358,12 @@ class GottenGeography:
         
         (count, total) = (0.0, len(files))
         
+        invalid_files = []
+        
         # Iterate over files and attempt to load them.
         for filename in files:
-            self._redraw_interface(count/total, "Loading %s..." % os.path.basename(filename))
+            self._redraw_interface(count/total, 
+                "Loading %s..." % os.path.basename(filename))
             count += 1.0
             
             # Assume the file is an image; if that fails, assume it's GPX; 
@@ -374,11 +371,10 @@ class GottenGeography:
             try:
                 try:            self.load_exif_data(filename)
                 except IOError: self.load_gpx_data(filename)
-            except xml.parsers.expat.ExpatError:
-                self.errors.append(os.path.basename(filename))
-                
-                context = self.statusbar.get_context_id("Unable to open files")
-                self.statusbar.push(context, "No valid image or GPX data found in: " + ", ".join(self.errors))
+            except:
+                invalid_files.append(os.path.basename(filename))
+                self.statusbar.push(self.statusbar.get_context_id("Unable to open files"), 
+                    "No valid image or GPX data found in: " + ", ".join(invalid_files))
         
         self.progressbar.hide()
     
@@ -389,7 +385,7 @@ class GottenGeography:
             # data[1] is the total number of unsaved files
             data[0].append(path)
             self._redraw_interface(
-                float( len( data[0] ) ) / float( data[1] ), "Saving %s..." % 
+                float( len( data[0] ) ) / data[1], "Saving %s..." % 
                 os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH))
             )
             
@@ -416,8 +412,8 @@ class GottenGeography:
     
     def _insert_coordinates(self, model, iter, lat, lon):
         # Remove the old marker, in case there is one
-        marker = model.get_value(iter, self.PHOTO_MARKER)
-        if marker: self.map_photo_layer.remove_marker(marker)
+        old_marker = model.get_value(iter, self.PHOTO_MARKER)
+        if old_marker: self.map_photo_layer.remove_marker(old_marker)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
         
@@ -426,7 +422,7 @@ class GottenGeography:
         model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
         model.set_value(iter, self.PHOTO_MODIFIED,    True)
         model.set_value(iter, self.PHOTO_SUMMARY,
-            self.create_summary(filename, lat, lon, True))
+            self._create_summary(filename, lat, lon, True))
         model.set_value(iter, self.PHOTO_MARKER,
             self._add_marker(filename, lat, lon))
 
@@ -444,38 +440,36 @@ class GottenGeography:
         # we'll actually end up deleting the totally wrong rows in the case where 
         # more than one row is selected for deletion
         if delete: pathlist.reverse()
+        else:      self.progressbar.show()
         
         (count, total) = (0.0, len(pathlist))
-        
-        if not delete: self.progressbar.show()
         
         for path in pathlist:
             iter = model.get_iter(path)[1]
             
-            if delete: 
+            if delete or (not apply):
                 self.map_photo_layer.remove_marker(
                     model.get_value(iter, self.PHOTO_MARKER)
                 )
+            
+            if delete: 
                 model.remove(iter)
-                continue
+                continue # to the next file
             
             filename = model.get_value(iter, self.PHOTO_PATH)
-            if apply: action = "Applying"
-            else:     action = "Reverting"
             
             self._redraw_interface(
                 count/total, 
-                "%s %s..." % (action, os.path.basename(filename))
+                "Updating %s..." % os.path.basename(filename)
             )
             count += 1.0
             
+            # Set photo's coordinates to the center of the map view
             if apply:
-                # TODO this only works for manual tagging where it links
-                # the photo to the center of the current champlain view.
-                # Needs to be able to sync up timestamps with GPX, too
-                lat = self.map_view.get_property('latitude')
-                lon = self.map_view.get_property('longitude')
-                self._insert_coordinates(model, iter, lat, lon)
+                self._insert_coordinates(model, iter, 
+                    self.map_view.get_property('latitude'), 
+                    self.map_view.get_property('longitude')
+                )
 
             # Revert photo data back to what was last saved on disk
             elif model.get_value(iter, self.PHOTO_MODIFIED):
@@ -487,7 +481,7 @@ class GottenGeography:
         self.revert_button.set_sensitive(self.any_modified(self.treeselection))
         self.save_button.set_sensitive(self.any_modified())
         
-        # Hide the TreeView if it's empty, because it shows an ugly white strip
+        # Hide the TreeView if it's empty, because it shows an ugly strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
     # This is my first attempt at trying to match photos with GPX data
@@ -573,9 +567,6 @@ class GottenGeography:
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
-        
-        # This is a list of filenames that we weren't able to open.
-        self.errors = []
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
@@ -690,12 +681,11 @@ class GottenGeography:
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_photo_layer.show()
-        self.map_photo_layer.animate_in_all_markers()
         
         # TODO store last used location in GConf and then
         # reload that location here, because hardcoding my hometown is lame
         self.map_view.center_on(53.52, -113.45) 
-        for i in range(8): self.map_view.zoom_in()
+        self.map_view.set_zoom_level(10)
         
         self.map_gpx = Champlain.Polygon()
         self.map_gpx.set_property('closed-path', False)
