@@ -126,7 +126,6 @@ class GottenGeography:
         # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
         self.delete_button.set_sensitive(sensitivity)
-        self.connect_button.set_sensitive(sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
@@ -254,6 +253,7 @@ class GottenGeography:
                     )
         
         self.clear_gpx_button.set_sensitive(True)
+        self.liststore.foreach(self.auto_timestamp_comparison, None)
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
@@ -316,6 +316,7 @@ class GottenGeography:
         else:
             self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
             self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
+        self.auto_timestamp_comparison(self.liststore, None, iter)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
@@ -484,53 +485,49 @@ class GottenGeography:
         # Hide the TreeView if it's empty, because it shows an ugly strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
-    # This is my first attempt at trying to match photos with GPX data
-    def auto_timestamp_comparison(self, widget=None):
-        (pathlist, model) = self.treeselection.get_selected_rows()
-        
-        # There must be at least one selected photo for this to work
-        if pathlist == []: return
-        
+    # This does all the magic of calculating coordinates proportional
+    # to relative timestamps. Takes in just a single photo,
+    # designed for use with self.liststore.foreach() but can be called
+    # separately, eg, during file loading.
+    def auto_timestamp_comparison(self, model, path, iter, data=None):
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
-        for path in pathlist:
-            iter = model.get_iter(path)[1]
-            
-            # photo is the timestamp in epoch seconds,
-            # points is a list of epoch seconds representing GPX points.
-            # All the following calculations are directly in epoch seconds
-            photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
-            points = self.tracks.keys()
-            points.sort()
-            
-            # higher and lower begin by referring to the chronological first
-            # and last timestamp created by the GPX device. We later
-            # iterate over the list, searching for the two timestamps
-            # that are nearest to the photo
-            higher = points[-1]
-            lower  = points[0]
-            
-            if (photo < lower) or (photo > higher):
-                self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
-                    "%s not in GPX range: did you load the right GPX file?" % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
-                continue
-            
-            # It's unlikely, but there's always that slim possibility that
-            # there is an exact match (eg, the photo timestamp and the GPX point
-            # at the exact same second. In this case, we can just take the lat
-            # and lon directly without any calculation.
-            try:
-                self._insert_coordinates(model, iter, 
-                    self.tracks[photo]['point'].lat, 
-                    self.tracks[photo]['point'].lon
-                )
-            except: 
-                pass
-            else:
-                print "Exact match on photo/gpx timestamp! Yay ;-)"
-                continue # to the next photo, skipping the following
-            
+        # photo is the timestamp in epoch seconds,
+        photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
+        
+        # points is a list of epoch seconds representing loaded GPX points.
+        # All the following calculations are directly in epoch seconds
+        points = self.tracks.keys()
+        points.sort()
+        
+        # higher and lower begin by referring to the chronological first
+        # and last timestamp created by the GPX device. We later
+        # iterate over the list, searching for the two timestamps
+        # that are nearest to the photo
+        higher = points[-1]
+        lower  = points[0]
+        
+        # TODO if the photo is out of range, does it make sense to just peg it
+        # on the nearest point in the range? (either highest or lowest)
+        if (photo < lower) or (photo > higher):
+            self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
+                "%s not in GPX range: did you load the right GPX file?" % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
+            return
+        
+        # In an ideal world, your GPS will produce a track point at least once 
+        # per second, and then you're guaranteed to have a track point recorded
+        # at the exact second that the camera snapped it's photo. In that perfect
+        # world, we can just take the exact coordinates from the track point,
+        # and slap them directly on the photo.
+        try:
+            lat = self.tracks[photo]['point'].lat
+            lon = self.tracks[photo]['point'].lon
+        
+        # In the real world, however, we have to find the two track points that
+        # are nearest to the photo timestamp, and then proportionally calculate
+        # the location in between. 
+        except KeyError: 
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
             for point in points:
@@ -541,12 +538,12 @@ class GottenGeography:
             # the two points we're averaging
             delta = higher - lower
             
-            # low_perc and high_perc are fractions (between 0 and 1)
+            # low_perc and high_perc are percentages (between 0 and 1)
             # representing the proportional amount of time from the 
             # lower point to the photo, and the higher point to the photo
             low_perc = float(photo - lower) / delta
             high_perc = float(higher - photo) / delta
-
+            
             # Aahhhhh! Math! This multiplies the latitudes and longitudes
             # of the gpx points by the proportional distance between the 
             # gpx point and the photo timestamp, and then adding the two
@@ -561,8 +558,8 @@ class GottenGeography:
                    (self.tracks[higher]['point'].lat * high_perc))
             lon = ((self.tracks[lower]['point'].lon  * low_perc)   + 
                    (self.tracks[higher]['point'].lon * high_perc))
-            
-            self._insert_coordinates(model, iter, lat, lon)
+        
+        self._insert_coordinates(model, iter, lat, lon)
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
@@ -586,17 +583,6 @@ class GottenGeography:
         self.delete_button.set_sensitive(False)
         
         self.toolbar_spacer = Gtk.SeparatorToolItem()
-        
-        # TODO as it stands, the "Jump to" button initates automatic GPX/photo
-        # timestamp comparison, which will be the default behavior once it _works_
-        # When that time comes, you're going to want to roll the functionality
-        # back into the "Apply" button, which will make much more sense from a UI
-        # perspective. You'll just need some subtle/automatic way of deciding
-        # whether to use the automated functionality, or manual functionality,
-        # i.e., linking the photo to the map center.
-        self.connect_button = Gtk.ToolButton(stock_id=Gtk.STOCK_JUMP_TO)
-        self.connect_button.set_tooltip_text("Link displayed GPS data with selected photos")
-        self.connect_button.set_sensitive(True)
         
         self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text("Link selected photos with center of map (Ctrl+Return)")
@@ -708,7 +694,6 @@ class GottenGeography:
         self.toolbar.add(self.load_button)
         self.toolbar.add(self.save_button)
         self.toolbar.add(self.toolbar_spacer)
-        self.toolbar.add(self.connect_button)
         self.toolbar.add(self.apply_button)
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.delete_button)
@@ -725,7 +710,6 @@ class GottenGeography:
         self.window.connect("delete_event", self.confirm_quit)
         self.load_button.connect("clicked", self.add_files)
         self.save_button.connect("clicked", self.save_files)
-        self.connect_button.connect("clicked", self.auto_timestamp_comparison)
         self.apply_button.connect("clicked", self.modify_selected_rows, True)
         self.revert_button.connect("clicked", self.modify_selected_rows, False)
         self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
