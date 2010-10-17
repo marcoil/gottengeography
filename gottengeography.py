@@ -261,7 +261,19 @@ class GottenGeography:
         self.tracks = {}
         self.map_gpx.clear_points()
         self.clear_gpx_button.set_sensitive(False)
-        
+
+    # This function is called from self.load_exif_data to help
+    # prevent the loading of duplicate files. (if a duplicate file
+    # load is detected, it turns into a reload of that file without
+    # generating a duplicate entry in the liststore)    
+    def _find_iter(self, model, path, iter, data):
+        # data[0] is a list onto which we append the iter representing
+        # the already-loaded file, data[1] is the filename the user
+        # trying to load.
+        if data[1] == model.get_value(iter, self.PHOTO_PATH):
+            data[0].append(iter.copy())
+            return True
+    
     # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
     # we know when the photo was taken, and whether or not it already has any 
     # geotags on it, and a pretty thumbnail to show the user.
@@ -272,24 +284,19 @@ class GottenGeography:
         
         self.photoscroller.show() 
         
-        # This creates a list of all filenames loaded, checks it for the 
-        # filename, if it's  present it gets the GtkTreeIter based on the 
-        # index number of that filename, and if it's  not present, raises 
-        # ValueError, which we then catch and create a new row to use.
-        # Effectively prevents the user from being able to load the same 
-        # file twice, instead turning the second load attempt into a reload 
-        # of the existing GtkTreeIter
+        # If load_exif_data is called without an iter, that should mean we're
+        # loading a new file. But users are stupid, so we need to make sure
+        # they're not trying to load a file that's alrady loaded.
         if not iter:
-            # TODO regression: this code no longer works with introspection
-            # Without it, it's possible to load duplicate files
-            # I'm disabling this for now just to get the program 
-            # into a semi-workable state, will fix later
-#            try:
-#                iter = self.liststore.get_iter(
-#                    [ row[self.PHOTO_PATH] for row in self.liststore ].index(filename)
-#                )
-#            except ValueError:
-                iter = self.liststore.append([None] * 9)
+            files = []
+            self.liststore.foreach(self._find_iter, [files, filename])
+            
+            # The user is loading a NEW file! Yay!
+            if files == []: iter = self.liststore.append([None] * 9)
+            
+            # The user is trying to open a file that already was loaded
+            # so reload that data into the already-existing iter
+            else: print "reloading!"; iter = files[0]
         
         try:     thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
         except:  thumb = None # TODO this pukes when invalid image loaded, need to create blank pixbuf
@@ -307,16 +314,11 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, 
             int(time.mktime(timestamp.timetuple())))
         
-        if lat and lon:
-            self.liststore.set_value(iter, self.PHOTO_COORDINATES, True)
-            self.liststore.set_value(iter, self.PHOTO_LATITUDE, lat)
-            self.liststore.set_value(iter, self.PHOTO_LONGITUDE, lon)
-            self.liststore.set_value(iter, self.PHOTO_MARKER, 
-                self._add_marker(filename, lat, lon))
-        else:
-            self.liststore.set_value(iter, self.PHOTO_COORDINATES, False)
-            self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
+        self._insert_coordinates(self.liststore, iter, lat, lon)
+        
+        self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter)
+        self.selection_changed(self.treeselection)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
@@ -411,21 +413,25 @@ class GottenGeography:
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
     
-    def _insert_coordinates(self, model, iter, lat, lon):
+    def _insert_coordinates(self, model, iter, lat=None, lon=None):
         # Remove the old marker, in case there is one
         old_marker = model.get_value(iter, self.PHOTO_MARKER)
         if old_marker: self.map_photo_layer.remove_marker(old_marker)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
         
-        model.set_value(iter, self.PHOTO_COORDINATES, True)
-        model.set_value(iter, self.PHOTO_LATITUDE,    lat)
-        model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
-        model.set_value(iter, self.PHOTO_MODIFIED,    True)
-        model.set_value(iter, self.PHOTO_SUMMARY,
-            self._create_summary(filename, lat, lon, True))
-        model.set_value(iter, self.PHOTO_MARKER,
-            self._add_marker(filename, lat, lon))
+        if lat and lon:
+            model.set_value(iter, self.PHOTO_COORDINATES, True)
+            model.set_value(iter, self.PHOTO_LATITUDE,    lat)
+            model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
+            model.set_value(iter, self.PHOTO_MODIFIED,    True)
+            model.set_value(iter, self.PHOTO_SUMMARY,
+                self._create_summary(filename, lat, lon, True))
+            model.set_value(iter, self.PHOTO_MARKER,
+                self._add_marker(filename, lat, lon))
+        else:
+            model.set_value(iter, self.PHOTO_COORDINATES, False)
+            #model.set_value(iter, self.PHOTO_MARKER,      None)
 
     # This method handles all three of apply, revert, and delete. Those three 
     # actions are much more alike than you might intuitively suspect. They all 
