@@ -416,8 +416,10 @@ class GottenGeography:
                 except IOError: self.load_gpx_data(filename)
             except ExpatError:
                 invalid_files.append(os.path.basename(filename))
-                self.statusbar.push(self.statusbar.get_context_id("Unable to open files"), 
-                    "No valid image or GPX data found in: " + ", ".join(invalid_files))
+                self.statusbar.push(
+                    self.statusbar.get_context_id("error"), 
+                    "Could not open: " + ", ".join(invalid_files)
+                )
         
         self.progressbar.hide()
     
@@ -562,8 +564,8 @@ class GottenGeography:
         if (photo < lower) or (photo > higher):
             errors.append(os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
             self.statusbar.push(
-                self.statusbar.get_context_id("Photo not in range"),
-                "Timestamp out of bounds: %s" % ", ".join(errors)
+                self.statusbar.get_context_id("error"),
+                "Out of range: %s" % ", ".join(errors)
             )
             return
         
@@ -777,7 +779,7 @@ class GottenGeography:
         self.toolbar.add(self.about_button)
         self.vbox.pack_start(self.toolbar, False, True, 0)
         self.vbox.pack_start(self.hbox, True, True, 0)
-        self.vbox.pack_end(self.statusbar, False, True, 2)
+        self.vbox.pack_end(self.statusbar, False, True, 0)
         self.window.add(self.vbox)
         
         # Connect all my precious signal handlers
