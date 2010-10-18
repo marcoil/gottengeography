@@ -530,6 +530,9 @@ class GottenGeography:
         # Hide the TreeView if it's empty, because it shows an ugly strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
+    def time_fudge_value_changed(self, slider):
+        self.liststore.foreach(self.auto_timestamp_comparison, [])
+    
     # This does all the magic of calculating coordinates proportional
     # to relative timestamps. Takes in just a single photo,
     # designed for use with self.liststore.foreach() but can be called
@@ -540,6 +543,7 @@ class GottenGeography:
         
         # photo is the timestamp in epoch seconds,
         photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
+        photo += self.time_fudge.get_value()
         
         # points is a list of epoch seconds representing loaded GPX points.
         # All the following calculations are directly in epoch seconds
@@ -739,9 +743,24 @@ class GottenGeography:
         self.map_gpx.show()
         
         self.progressbar = Gtk.ProgressBar()
-        self.progressbar.set_size_request(700, -1)
+        self.progressbar.set_size_request(550, -1)
+        
+        self.time_fudge = Gtk.HScale()
+        self.time_fudge.set_size_request(150, -1)
+        self.time_fudge.set_digits(0)
+        self.time_fudge.set_value_pos(Gtk.PositionType.RIGHT)
+        self.time_fudge.set_update_policy(Gtk.UpdateType.DISCONTINUOUS)
+        self.time_fudge.set_increments(1, 10)
+        self.time_fudge.set_range(-300, 300)
+        self.time_fudge.set_value(0)
+        self.time_fudge.set_show_fill_level(True)
+        #self.time_fudge_tooltip = Gtk.Tooltip()
+        #self.revert_button.set_tooltip_text(
+        #    "Correct for poorly-set camera clock, in seconds")
+        
         self.statusbar = Gtk.Statusbar()
         self.statusbar.pack_start(self.progressbar, True, True, 6)
+        self.statusbar.pack_end(self.time_fudge, False, False, 0)
         
         # This adds each widget into it's place in the window.
         self.photoscroller.add(self.treeview)
@@ -772,6 +791,7 @@ class GottenGeography:
         self.clear_gpx_button.connect("clicked", self.unload_gpx_data)
         self.about_button.connect("clicked", self.about_dialog)
         self.treeselection.connect("changed", self.update_button_sensitivity)
+        self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
