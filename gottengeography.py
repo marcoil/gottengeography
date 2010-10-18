@@ -670,7 +670,7 @@ class GottenGeography:
         
         self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
         
-        self.hbox = Gtk.HBox()
+        self.photos_and_map_container = Gtk.HPaned()
         
         # This code defines how the photo list will appear
         # TODO sort by timestamp (needs pyexiv2)
@@ -765,8 +765,8 @@ class GottenGeography:
         
         # This adds each widget into it's place in the window.
         self.photoscroller.add(self.treeview)
-        self.hbox.pack_start(self.photoscroller, False, True, 0)
-        self.hbox.pack_end(self.champlain, True, True, 0)
+        self.photos_and_map_container.add(self.photoscroller)
+        self.photos_and_map_container.add(self.champlain)
         self.toolbar.add(self.open_button)
         self.toolbar.add(self.save_button)
         self.toolbar.add(self.toolbar_first_spacer)
@@ -778,7 +778,7 @@ class GottenGeography:
         self.toolbar.add(self.toolbar_third_spacer)
         self.toolbar.add(self.about_button)
         self.vbox.pack_start(self.toolbar, False, True, 0)
-        self.vbox.pack_start(self.hbox, True, True, 0)
+        self.vbox.pack_start(self.photos_and_map_container, True, True, 0)
         self.vbox.pack_end(self.statusbar, False, True, 0)
         self.window.add(self.vbox)
         
