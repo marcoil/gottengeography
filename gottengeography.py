@@ -556,8 +556,11 @@ class GottenGeography:
         # TODO if the photo is out of range, does it make sense to just peg it
         # on the nearest point in the range? (either highest or lowest)
         if (photo < lower) or (photo > higher):
-            self.statusbar.push(self.statusbar.get_context_id("Photo not in range"),
-                "%s not in GPX range: did you load the right GPX file?" % os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
+            self.statusbar.push(
+                self.statusbar.get_context_id("Photo not in range"),
+                "%s not in GPX range: did you load the right GPX file?" % 
+                os.path.basename(model.get_value(iter, self.PHOTO_PATH))
+            )
             return
         
         # In an ideal world, your GPS will produce a track point at least once 
@@ -611,7 +614,8 @@ class GottenGeography:
         self.tracks = {}
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("GottenGeography - The Python Geotagger that's easy to use!")
+        self.window.set_title(
+            "GottenGeography - The Python Geotagger that's easy to use!")
         self.window.set_size_request(900,700)
         
         self.vbox = Gtk.VBox(spacing=0)
@@ -619,33 +623,39 @@ class GottenGeography:
         # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
         self.open_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
-        self.open_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
+        self.open_button.set_tooltip_text(
+            "Load photos or GPS data (Ctrl+O)")
         
         self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
-        self.save_button.set_tooltip_text("Save all modified GPS data into your photos (Ctrl+S)")
+        self.save_button.set_tooltip_text(
+            "Save all modified GPS data into your photos (Ctrl+S)")
         self.save_button.set_label("Save All")
         self.save_button.set_sensitive(False)
         
         self.toolbar_first_spacer = Gtk.SeparatorToolItem()
         
         self.clear_gpx_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLEAR) 
-        self.clear_gpx_button.set_tooltip_text("Unload all GPS data (Ctrl+X)")
+        self.clear_gpx_button.set_tooltip_text(
+            "Unload all GPS data (Ctrl+X)")
         self.clear_gpx_button.set_label("Clear GPX")
         self.clear_gpx_button.set_sensitive(False)
         
         self.close_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLOSE) 
-        self.close_button.set_tooltip_text("Close selected photos (Ctrl+W)")
+        self.close_button.set_tooltip_text(
+            "Close selected photos (Ctrl+W)")
         self.close_button.set_label("Close Photo")
         self.close_button.set_sensitive(False)
         
         self.toolbar_second_spacer = Gtk.SeparatorToolItem()
         
         self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
-        self.apply_button.set_tooltip_text("Place selected photos onto center of map (Ctrl+Return)")
+        self.apply_button.set_tooltip_text(
+            "Place selected photos onto center of map (Ctrl+Return)")
         self.apply_button.set_sensitive(False)
         
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
-        self.revert_button.set_tooltip_text("Reload selected photos, losing all changes (Ctrl+Z)")
+        self.revert_button.set_tooltip_text(
+            "Reload selected photos, losing all changes (Ctrl+Z)")
         self.revert_button.set_sensitive(False)
 
         self.toolbar_third_spacer = Gtk.SeparatorToolItem()
@@ -812,9 +822,11 @@ class GottenGeography:
             title=" "            
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_markup("""<span weight="bold" size="larger">Save changes to your photos before closing?</span>
+        dialog.set_markup("""<span weight="bold" size="larger">Save \
+changes to your photos before closing?</span>
 
-The changes you've made to %d of your photos will be permanently lost if you do not save.""" % count)
+The changes you've made to %d of your photos will be permanently \
+lost if you do not save.""" % count)
         dialog.add_button("Close _without Saving", Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
@@ -834,10 +846,10 @@ The changes you've made to %d of your photos will be permanently lost if you do 
         # Prevents GTK from trying to call a non-existant destroy method
         return True 
     
-    # This just might be the single most important method ever written. In the history of computing.
     # TODO needs logo
     def about_dialog(self, widget=None, data=None):
         dialog = Gtk.AboutDialog()
+        dialog.set_program_name("GottenGeography")
         dialog.set_name("GottenGeography")
         dialog.set_version("0.0.1")
         dialog.set_copyright("(c) Robert Park, 2010")
@@ -847,7 +859,7 @@ The changes you've made to %d of your photos will be permanently lost if you do 
         dialog.set_website_label("GottenGeography Homepage")
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
-        dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
+        #dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
         #dialog.set_translator_credits("Nobody!")
         dialog.run()
         dialog.destroy()
@@ -855,7 +867,18 @@ The changes you've made to %d of your photos will be permanently lost if you do 
     def main(self):
         Gtk.main()
 
-COMMENTS = """This program is written in the Python programming language, and allows you to geotag your photos. The name "Gotten Geography" is an anagram of "Python Geotagger"."""
+COMMENTS = ("""This program is written in the Python programming language, \
+and allows you to geotag your photos. The name GottenGeography is an \
+anagram of "Python Geotagger".\n\nGottenGeography supports both manual \
+and automatic tagging of photographs. If you do not have a GPS device, \
+simply load your images, navigate to where you took the photos on the map, \
+select all your images, and then click the Apply button. GottenGeography  \
+will then place all your selected images onto the center of the map, and \
+you can then save and close. \n\nIf you do have a GPS unit, just load the \
+GPX file along with your photos, and if the timestamp on your photographs \
+is within the range of the GPS data you recorded, GottenGeography will \
+automatically place your images along the GPS track at precisely the \
+correct coordinates.""")
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
