@@ -24,6 +24,7 @@ pygtk.require('2.0')
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
@@ -413,7 +414,7 @@ class GottenGeography:
             try:
                 try:            self.load_exif_data(filename)
                 except IOError: self.load_gpx_data(filename)
-            except:
+            except ExpatError:
                 invalid_files.append(os.path.basename(filename))
                 self.statusbar.push(self.statusbar.get_context_id("Unable to open files"), 
                     "No valid image or GPX data found in: " + ", ".join(invalid_files))
