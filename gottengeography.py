@@ -754,9 +754,8 @@ class GottenGeography:
         self.time_fudge.set_range(-300, 300)
         self.time_fudge.set_value(0)
         self.time_fudge.set_show_fill_level(True)
-        #self.time_fudge_tooltip = Gtk.Tooltip()
-        #self.revert_button.set_tooltip_text(
-        #    "Correct for poorly-set camera clock, in seconds")
+        self.time_fudge.set_tooltip_text(
+            "Is the clock on your camera wrong? Add or subtract some seconds here.")
         
         self.statusbar = Gtk.Statusbar()
         self.statusbar.pack_start(self.progressbar, True, True, 6)
