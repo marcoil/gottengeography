@@ -101,6 +101,31 @@ class GottenGeography:
         
         return lat_sign + str(lat) + ", " + lon_sign + str(lon)
     
+    # Do the pyexiv2 dirty work
+    def _get_timestamp_and_coords(self, filename):
+        exif = pyexiv2.Image(filename)
+        exif.readMetadata()
+        
+        try:
+            timestamp = exif['Exif.Photo.DateTimeOriginal']
+        except KeyError: 
+            timestamp = None
+        
+        # pyexiv2 provides a string when it can't parse invalid data
+        # So I just discard it here.
+        if type(timestamp) == str:
+            timestamp = None
+        
+        try:
+            lat = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
+                                       exif['Exif.GPSInfo.GPSLatitudeRef'])
+            lon = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
+                                       exif['Exif.GPSInfo.GPSLongitudeRef'])
+        except KeyError:
+            lat = lon = None
+        
+        return timestamp, lat, lon
+    
     # Creates the Pango-formatted display string used in the GtkTreeView
     def _create_summary(self, file, lat=None, lon=None, modified=False):
         # Start with the coordinates, if any
@@ -120,7 +145,7 @@ class GottenGeography:
     # This method gets called whenever the GtkTreeView selection changes, 
     # and it sets the sensitivity of a few buttons such that buttons which 
     # don't do anything useful in that context are desensitized.
-    def selection_changed(self, selection):
+    def update_button_sensitivity(self, selection):
         sensitivity = selection.count_selected_rows() > 0
         
         # Apply, Connect and Delete buttons get activated if there is a selection
@@ -129,32 +154,17 @@ class GottenGeography:
         
         # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
-    
-    # Do the pyexiv2 dirty work
-    def _get_timestamp_and_coords(self, filename):
-        exif = pyexiv2.Image(filename)
-        exif.readMetadata()
         
-        try:
-            timestamp = exif['Exif.Photo.DateTimeOriginal']
-        except KeyError: 
-            timestamp = None
-        
-        try:
-            lat = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
-                                       exif['Exif.GPSInfo.GPSLatitudeRef'])
-            lon = self._dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
-                                       exif['Exif.GPSInfo.GPSLongitudeRef'])
-        except KeyError:
-            lat = lon = None
-            
-        return timestamp, lat, lon
+        # The Save button is only activated if there are modified files.
+        self.save_button.set_sensitive(self.any_modified())
     
     # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
     # saves it as the preview widget for the open FileChooserDialog
     def update_preview(self, chooser):
         filename = chooser.get_preview_filename()
-        if not os.path.isfile(str(filename)): return
+        if not os.path.isfile(str(filename)): 
+            chooser.set_preview_widget_active(False)
+            return
         
         try:
             (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
@@ -228,6 +238,10 @@ class GottenGeography:
                     timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     timestamp = calendar.timegm(timestamp)
                     
+                    # TODO it probably doesn't make a lot of sense to add ALL
+                    # gpx data into the same ChamplainPolygon in the event that
+                    # the user loads two non-contiguous files. You should probably
+                    # create a new ChamplainPolygon for each GPX file. 
                     # Populate the self.tracks dictionary with elevation and
                     # coordinate data
                     self.tracks[timestamp]={
@@ -251,6 +265,8 @@ class GottenGeography:
                     )
         
         self.clear_gpx_button.set_sensitive(True)
+        
+        # Make magic happen ;-)
         self.liststore.foreach(self.auto_timestamp_comparison, None)
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
@@ -274,7 +290,7 @@ class GottenGeography:
     def _find_iter(self, model, path, iter, data):
         # data[0] is a list onto which we append the iter representing
         # the already-loaded file, data[1] is the filename the user
-        # trying to load.
+        # is trying to load.
         if data[1] == model.get_value(iter, self.PHOTO_PATH):
             data[0].append(iter.copy())
             return True
@@ -283,15 +299,33 @@ class GottenGeography:
     # we know when the photo was taken, and whether or not it already has any 
     # geotags on it, and a pretty thumbnail to show the user.
     def load_exif_data(self, filename, iter=None):
+        # This ugliness is necessary because pyexiv2 won't give any sort
+        # of error whatsoever when it's asked to parse a GPX file, it fails
+        # silently, and gives us an empty list of exif keys. Which is the exact
+        # same thing that it does when you try to load a valid photo that just
+        # happens to not have any exif data attached to it.
+        # TODO find a better way to detect GPX and raise an error to prevent
+        # the rest of this method from running on an invalid file.
         if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
         (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
+        
+        if timestamp:
+            # I *think* that this code requires the computer's timezone
+            # to be set to the same timezone as your camera. You'll probably 
+            # want to offer some kind of option to change that in the event 
+            # that the user was travelling or something.
+            timestamp = int(time.mktime(timestamp.timetuple()))
+        else:
+            # This number won't be especially useful, but more useful
+            # than absolutely nothing.
+            timestamp = int(os.stat(filename).st_mtime)
         
         self.photoscroller.show() 
         
         # If load_exif_data is called without an iter, that should mean we're
         # loading a new file. But users are stupid, so we need to make sure
-        # they're not trying to load a file that's alrady loaded.
+        # they're not trying to load a file that's already loaded.
         if not iter:
             files = []
             self.liststore.foreach(self._find_iter, [files, filename])
@@ -301,29 +335,29 @@ class GottenGeography:
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
-            else: print "reloading!"; iter = files[0]
+            else: iter = files[0]
         
-        try:     thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
-        except:  thumb = None # TODO this pukes when invalid image loaded, need to create blank pixbuf
+        try:
+            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
+        except:
+            thumb = Gtk.Widget.render_icon(
+                Gtk.Image(), 
+                Gtk.STOCK_MISSING_IMAGE, 
+                Gtk.IconSize.MENU, 
+                None
+            )
         
         self.liststore.set_value(iter, self.PHOTO_PATH, filename)
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
+        self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
             self._create_summary(filename, lat, lon))
-        # I am nowhere NEAR smart enough to understand something as simple
-        # as time, but I *think* that this code requires the computer's timezone
-        # to be set to the same timezone as your camera, which seems reasonable
-        # enough to me, but you'll probably want to offer some kind of option
-        # to change that somehow in the event that the user was travelling or
-        # something. God this is complicated.
-        self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, 
-            int(time.mktime(timestamp.timetuple())))
         
         self._insert_coordinates(self.liststore, iter, lat, lon)
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter)
-        self.selection_changed(self.treeselection)
+        self.update_button_sensitivity(self.treeselection)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
@@ -460,9 +494,8 @@ class GottenGeography:
             iter = model.get_iter(path)[1]
             
             if delete or (not apply):
-                self.map_photo_layer.remove_marker(
-                    model.get_value(iter, self.PHOTO_MARKER)
-                )
+                old_marker = model.get_value(iter, self.PHOTO_MARKER)
+                if old_marker: self.map_photo_layer.remove_marker(old_marker)
             
             if delete: 
                 model.remove(iter)
@@ -695,8 +728,9 @@ class GottenGeography:
         self.map_gpx.show()
         
         self.progressbar = Gtk.ProgressBar()
+        self.progressbar.set_size_request(700, -1)
         self.statusbar = Gtk.Statusbar()
-        self.statusbar.add(self.progressbar)
+        self.statusbar.pack_start(self.progressbar, True, True, 6)
         
         # This adds each widget into it's place in the window.
         self.photoscroller.add(self.treeview)
@@ -714,7 +748,7 @@ class GottenGeography:
         self.toolbar.add(self.about_button)
         self.vbox.pack_start(self.toolbar, False, True, 0)
         self.vbox.pack_start(self.hbox, True, True, 0)
-        self.vbox.pack_end(self.statusbar, False, True, 6)
+        self.vbox.pack_end(self.statusbar, False, True, 2)
         self.window.add(self.vbox)
         
         # Connect all my precious signal handlers
@@ -726,7 +760,7 @@ class GottenGeography:
         self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
         self.clear_gpx_button.connect("clicked", self.unload_gpx_data)
         self.about_button.connect("clicked", self.about_dialog)
-        self.treeselection.connect("changed", self.selection_changed)
+        self.treeselection.connect("changed", self.update_button_sensitivity)
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
