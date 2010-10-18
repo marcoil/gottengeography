@@ -151,7 +151,7 @@ class GottenGeography:
         
         # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
-        self.delete_button.set_sensitive(sensitivity)
+        self.close_button.set_sensitive(sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
         self.revert_button.set_sensitive(self.any_modified(selection))
@@ -618,39 +618,39 @@ class GottenGeography:
         
         # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
-        self.load_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
-        self.load_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
-        
-        # TODO Is this appropriate? I don't want the user to think his 
-        # photos will be deleted. It's just for unloading photos.
-        self.delete_button = Gtk.ToolButton(stock_id=Gtk.STOCK_DELETE) 
-        self.delete_button.set_tooltip_text("Remove selected photos (Ctrl+W)")
-        self.delete_button.set_sensitive(False)
-        
-        self.toolbar_spacer = Gtk.SeparatorToolItem()
-        
-        self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
-        self.apply_button.set_tooltip_text("Link selected photos with center of map (Ctrl+Return)")
-        self.apply_button.set_sensitive(False)
+        self.open_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
+        self.open_button.set_tooltip_text("Load photos or GPS data (Ctrl+O)")
         
         self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
         self.save_button.set_tooltip_text("Save all modified GPS data into your photos (Ctrl+S)")
         self.save_button.set_label("Save All")
         self.save_button.set_sensitive(False)
         
-        self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
-        self.revert_button.set_tooltip_text("Revert any changes made to selected photos (Ctrl+Z)")
-        self.revert_button.set_sensitive(False)
-
+        self.toolbar_first_spacer = Gtk.SeparatorToolItem()
+        
         self.clear_gpx_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLEAR) 
-        self.clear_gpx_button.set_tooltip_text("Unload all GPS data")
+        self.clear_gpx_button.set_tooltip_text("Unload all GPS data (Ctrl+X)")
+        self.clear_gpx_button.set_label("Clear GPX")
         self.clear_gpx_button.set_sensitive(False)
         
-        self.toolbar_spacer2 = Gtk.SeparatorToolItem()
+        self.close_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLOSE) 
+        self.close_button.set_tooltip_text("Close selected photos (Ctrl+W)")
+        self.close_button.set_label("Close Photo")
+        self.close_button.set_sensitive(False)
         
-        self.toolbar_spacer3 = Gtk.SeparatorToolItem()
-        self.toolbar_spacer3.set_expand(True)
-        self.toolbar_spacer3.set_draw(False)
+        self.toolbar_second_spacer = Gtk.SeparatorToolItem()
+        
+        self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
+        self.apply_button.set_tooltip_text("Place selected photos onto center of map (Ctrl+Return)")
+        self.apply_button.set_sensitive(False)
+        
+        self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
+        self.revert_button.set_tooltip_text("Reload selected photos, losing all changes (Ctrl+Z)")
+        self.revert_button.set_sensitive(False)
+
+        self.toolbar_third_spacer = Gtk.SeparatorToolItem()
+        self.toolbar_third_spacer.set_expand(True)
+        self.toolbar_third_spacer.set_draw(False)
         
         self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
         
@@ -737,15 +737,15 @@ class GottenGeography:
         self.photoscroller.add(self.treeview)
         self.hbox.pack_start(self.photoscroller, False, True, 0)
         self.hbox.pack_end(self.champlain, True, True, 0)
-        self.toolbar.add(self.load_button)
+        self.toolbar.add(self.open_button)
         self.toolbar.add(self.save_button)
-        self.toolbar.add(self.toolbar_spacer)
+        self.toolbar.add(self.toolbar_first_spacer)
+        self.toolbar.add(self.clear_gpx_button)
+        self.toolbar.add(self.close_button)
+        self.toolbar.add(self.toolbar_second_spacer)
         self.toolbar.add(self.apply_button)
         self.toolbar.add(self.revert_button)
-        self.toolbar.add(self.delete_button)
-        self.toolbar.add(self.clear_gpx_button)
-        self.toolbar.add(self.toolbar_spacer2)
-        self.toolbar.add(self.toolbar_spacer3)
+        self.toolbar.add(self.toolbar_third_spacer)
         self.toolbar.add(self.about_button)
         self.vbox.pack_start(self.toolbar, False, True, 0)
         self.vbox.pack_start(self.hbox, True, True, 0)
@@ -754,11 +754,11 @@ class GottenGeography:
         
         # Connect all my precious signal handlers
         self.window.connect("delete_event", self.confirm_quit)
-        self.load_button.connect("clicked", self.add_files)
+        self.open_button.connect("clicked", self.add_files)
         self.save_button.connect("clicked", self.save_files)
         self.apply_button.connect("clicked", self.modify_selected_rows, True)
         self.revert_button.connect("clicked", self.modify_selected_rows, False)
-        self.delete_button.connect("clicked", self.modify_selected_rows, False, True)
+        self.close_button.connect("clicked", self.modify_selected_rows, False, True)
         self.clear_gpx_button.connect("clicked", self.unload_gpx_data)
         self.about_button.connect("clicked", self.about_dialog)
         self.treeselection.connect("changed", self.update_button_sensitivity)
@@ -766,7 +766,7 @@ class GottenGeography:
         # Key bindings
         self.accel = Gtk.AccelGroup()
         self.window.add_accel_group(self.accel)
-        for key in [ 'q', 'w', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
+        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
             self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
         # Causes all widgets to be displayed except the empty TreeView and the progressbar
@@ -785,7 +785,8 @@ class GottenGeography:
         # a million times, but that seems to just crash and this way actually
         # works, so it looks like this is what we're going with. 
         if   keyval == Gdk.keyval_from_name("Return"): self.modify_selected_rows(None, True, False) # Apply
-        elif keyval == Gdk.keyval_from_name("w"):      self.modify_selected_rows(None, True, True) # Delete
+        elif keyval == Gdk.keyval_from_name("w"):      self.modify_selected_rows(None, True, True) # Close
+        elif keyval == Gdk.keyval_from_name("x"):      self.unload_gpx_data()
         elif keyval == Gdk.keyval_from_name("o"):      self.add_files()
         elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit()
         elif keyval == Gdk.keyval_from_name("/"):      self.about_dialog()
