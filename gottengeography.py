@@ -268,7 +268,7 @@ class GottenGeography:
         self.clear_gpx_button.set_sensitive(True)
         
         # Make magic happen ;-)
-        self.liststore.foreach(self.auto_timestamp_comparison, None)
+        self.liststore.foreach(self.auto_timestamp_comparison, [])
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
@@ -357,7 +357,7 @@ class GottenGeography:
         self._insert_coordinates(self.liststore, iter, lat, lon)
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
-        self.auto_timestamp_comparison(self.liststore, None, iter)
+        self.auto_timestamp_comparison(self.liststore, None, iter, [])
         self.update_button_sensitivity(self.treeselection)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
@@ -534,7 +534,7 @@ class GottenGeography:
     # to relative timestamps. Takes in just a single photo,
     # designed for use with self.liststore.foreach() but can be called
     # separately, eg, during file loading.
-    def auto_timestamp_comparison(self, model, path, iter, data=None):
+    def auto_timestamp_comparison(self, model, path, iter, errors=[]):
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
@@ -556,10 +556,10 @@ class GottenGeography:
         # TODO if the photo is out of range, does it make sense to just peg it
         # on the nearest point in the range? (either highest or lowest)
         if (photo < lower) or (photo > higher):
+            errors.append(os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
             self.statusbar.push(
                 self.statusbar.get_context_id("Photo not in range"),
-                "%s not in GPX range: did you load the right GPX file?" % 
-                os.path.basename(model.get_value(iter, self.PHOTO_PATH))
+                "Timestamp out of bounds: %s" % ", ".join(errors)
             )
             return
         
