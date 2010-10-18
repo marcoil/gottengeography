@@ -198,8 +198,6 @@ class GottenGeography:
         # This creates a nested dictionary (a dictionary of dictionaries) in 
         # which the top level keys are UTC epoch seconds, and the bottom level 
         # keys are elevation/latitude/longitude.
-        # TODO you'll probably want to offer the user some way to unload/clear 
-        # this data without restarting the program
         for track in gpx.documentElement.getElementsByTagName('trk'): 
             # I find GPS-generated names to be ugly, so I only show them in the progress meter,
             # they're not stored anywhere or used after that
@@ -257,9 +255,16 @@ class GottenGeography:
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
+        # One day, this will stop causing segfaults and make my life easier.
+        #self.map_gpx.clear_points()
+
+        # Until then, we have this:        
+        for point in self.tracks:
+            self.map_gpx.remove_point(self.tracks[point]['point'])
+        
         del self.tracks
         self.tracks = {}
-        self.map_gpx.clear_points()
+        
         self.clear_gpx_button.set_sensitive(False)
 
     # This function is called from self.load_exif_data to help
@@ -681,9 +686,9 @@ class GottenGeography:
         
         self.map_gpx = Champlain.Polygon()
         self.map_gpx.set_property('closed-path', False)
-        self.map_gpx.set_property('mark-points', True)
+        self.map_gpx.set_property('mark-points', False)
         self.map_gpx.set_stroke(True)
-        self.map_gpx.set_stroke_width(3)
+        self.map_gpx.set_stroke_width(5)
         self.map_gpx.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
         self.map_gpx.set_fill(False)
         self.map_view.add_polygon(self.map_gpx)
