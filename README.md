@@ -30,5 +30,8 @@ Testing
 
 I feel I have tested this application fairly thoroughly. However, I only own two cameras, and only one GPS unit, so my test data is somewhat limited. If you find that GottenGeography fails with your files, please send them to me and I'll do my best to get everything working. I have supplied some demo data with the program to show you how it is *supposed* to work ;-)
 
-Happy Tagging!
-    --Robert
+Note that GottenGeography depends upon your system timezone being set the same as your camera's timezone, so if you want to try out the included demo data and you're not in Mountain Standard Time (UTC-7), you'll have to invoke GottenGeography like this:
+
+    TZ=MST ./gottengeography.py
+
+Happy Tagging! --[Robert](mailto:rbpark@exolucere.ca)
