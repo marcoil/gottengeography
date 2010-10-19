@@ -757,15 +757,14 @@ class GottenGeography:
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         
-        self.time_fudge = Gtk.HScale()
-        self.time_fudge.set_size_request(150, -1)
+        self.time_fudge = Gtk.SpinButton()
         self.time_fudge.set_digits(0)
-        self.time_fudge.set_value_pos(Gtk.PositionType.RIGHT)
-        self.time_fudge.set_update_policy(Gtk.UpdateType.DISCONTINUOUS)
+        self.time_fudge.set_value(0)
         self.time_fudge.set_increments(1, 10)
         self.time_fudge.set_range(-300, 300)
-        self.time_fudge.set_value(0)
-        self.time_fudge.set_show_fill_level(True)
+        self.time_fudge.set_update_policy(Gtk.SpinButtonUpdatePolicy.IF_VALID)
+        self.time_fudge.set_numeric(True)
+        self.time_fudge.set_snap_to_ticks(True)
         self.time_fudge.set_tooltip_text(
             "Is the clock on your camera wrong? Add or subtract some seconds here.")
         
