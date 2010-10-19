@@ -21,7 +21,7 @@ import pygtk, pyexiv2, os, re, time, calendar, math, xml
 
 pygtk.require('2.0')
 
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
@@ -532,6 +532,8 @@ class GottenGeography:
         # Hide the TreeView if it's empty, because it shows an ugly strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
+    # This updates the position of all the loaded images each time the user
+    # modifies the time_fudge slider.
     def time_fudge_value_changed(self, slider):
         self.liststore.foreach(self.auto_timestamp_comparison, [])
     
@@ -618,6 +620,11 @@ class GottenGeography:
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
+        
+        self.gconf_client = GConf.Client.get_default()
+        self.LAST_LAT  = '/apps/gottengeography/last_latitude'
+        self.LAST_LON  = '/apps/gottengeography/last_longitude'
+        self.LAST_ZOOM = '/apps/gottengeography/last_zoom_level'
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title(
@@ -731,8 +738,13 @@ class GottenGeography:
         
         # TODO store last used location in GConf and then
         # reload that location here, because hardcoding my hometown is lame
-        self.map_view.center_on(53.52, -113.45) 
-        self.map_view.set_zoom_level(10)
+        self.map_view.center_on(
+            self.gconf_client.get_float(self.LAST_LAT), 
+            self.gconf_client.get_float(self.LAST_LON)
+        ) 
+        self.map_view.set_zoom_level(
+            self.gconf_client.get_int(self.LAST_ZOOM)
+        )
         
         self.map_gpx = Champlain.Polygon()
         self.map_gpx.set_property('closed-path', False)
@@ -833,6 +845,14 @@ class GottenGeography:
     # This function checks for unsaved files, and displays a 
     # GNOME HIG compliant quit confirmation dialog. 
     def confirm_quit(self, widget=None, event=None):
+        # Remember the last viewed location so we can return to it next run
+        self.gconf_client.set_float(self.LAST_LAT, 
+            self.map_view.get_property('latitude')) 
+        self.gconf_client.set_float(self.LAST_LON, 
+            self.map_view.get_property('longitude'))
+        self.gconf_client.set_int(self.LAST_ZOOM, 
+            self.map_view.get_zoom_level())
+        
         # If there's no unsaved data, just close without confirmation.
         count = self.any_modified(give_count=True)
         if count == 0: Gtk.main_quit(); return True
