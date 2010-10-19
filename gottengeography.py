@@ -332,7 +332,7 @@ class GottenGeography:
             self.liststore.foreach(self._find_iter, [files, filename])
             
             # The user is loading a NEW file! Yay!
-            if files == []: iter = self.liststore.append([None] * 8)
+            if files == []: iter = self.liststore.append([None] * 9)
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
@@ -354,7 +354,7 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
             self._create_summary(filename, lat, lon))
         
-        self._insert_coordinates(self.liststore, iter, lat, lon)
+        self._insert_coordinates(self.liststore, iter, lat, lon, False)
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter, [])
@@ -429,12 +429,67 @@ class GottenGeography:
             # data[0] contains the paths we've iterated over, used only for counting
             # data[1] is the total number of unsaved files
             data[0].append(path)
+            
+            filename  = model.get_value(iter, self.PHOTO_PATH)
+            latitude  = model.get_value(iter, self.PHOTO_LATITUDE)
+            longitude = model.get_value(iter, self.PHOTO_LONGITUDE)
             self._redraw_interface(
                 float( len( data[0] ) ) / data[1], "Saving %s..." % 
-                os.path.basename(self.liststore.get_value(iter, self.PHOTO_PATH))
+                os.path.basename(filename)
             )
             
+            exif = pyexiv2.Image(filename)
+            exif.readMetadata()
+            
+            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
+            
+            if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
+            else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
+            if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
+            else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
+            
+            print "\nCommence saving!"
+            
+            coords = []
+            for decimal in [ latitude, longitude ]:
+                decimal = math.fabs(decimal)
+                
+                (deg_frac, degrees) = math.modf(decimal)
+                (min_frac, minutes) = math.modf(deg_frac * 60)
+                seconds             = min_frac * 60
+                
+                dms = []
+                
+                # This is fine
+                dms.append(pyexiv2.Rational(degrees, 1))
+                dms.append(pyexiv2.Rational(minutes, 1))
+                
+                # This just drops the decimal, losing precision. There's some
+                # math magic to convert this into a proper faction that you 
+                # need TODO here.
+                dms.append(pyexiv2.Rational(seconds, 1))
+                
+                print decimal
+                for rat in dms:
+                    print rat.numerator,
+                print
+                
+                coords.append(dms)
+            
+            exif['Exif.GPSInfo.GPSLatitude']  = coords[0]
+            exif['Exif.GPSInfo.GPSLongitude'] = coords[1]
+            
+            exif.writeMetadata()
+            
             # TODO Actually write data to file here, instead of just pausing
+            # The EXIF keys that we will need to fill out are: 
+            # 'Exif.Image.GPSTag', 'Exif.GPSInfo.GPSVersionID', 
+            # 'Exif.GPSInfo.GPSLatitudeRef', 'Exif.GPSInfo.GPSLatitude', 
+            # 'Exif.GPSInfo.GPSLongitudeRef', 'Exif.GPSInfo.GPSLongitude', 
+            # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
+            # 'Exif.GPSInfo.GPSMapDatum'
+            for column in range(8):
+                print column, model.get_value(iter, column)
             time.sleep(0.1)
             model.set_value(iter, self.PHOTO_MODIFIED, False)
             model.set_value(
@@ -455,7 +510,7 @@ class GottenGeography:
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
     
-    def _insert_coordinates(self, model, iter, lat=None, lon=None):
+    def _insert_coordinates(self, model, iter, lat=None, lon=None, modified=True):
         # Remove the old marker, in case there is one
         old_marker = model.get_value(iter, self.PHOTO_MARKER)
         if old_marker: self.map_photo_layer.remove_marker(old_marker)
@@ -465,9 +520,9 @@ class GottenGeography:
         if lat and lon:
             model.set_value(iter, self.PHOTO_LATITUDE,    lat)
             model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
-            model.set_value(iter, self.PHOTO_MODIFIED,    True)
+            model.set_value(iter, self.PHOTO_MODIFIED,    modified)
             model.set_value(iter, self.PHOTO_SUMMARY,
-                self._create_summary(filename, lat, lon, True))
+                self._create_summary(filename, lat, lon, modified))
             model.set_value(iter, self.PHOTO_MARKER,
                 self._add_marker(filename, lat, lon))
     
@@ -683,14 +738,15 @@ class GottenGeography:
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
             GObject.TYPE_DOUBLE,  # 4 Latitude
             GObject.TYPE_DOUBLE,  # 5 Longitude
-            GObject.TYPE_BOOLEAN, # 6 'Have we modified the file?' flag
-            GObject.TYPE_OBJECT   # 7 ChamplainMarker representing photo on map
+            GObject.TYPE_DOUBLE,  # 6 Altitude
+            GObject.TYPE_BOOLEAN, # 7 'Have we modified the file?' flag
+            GObject.TYPE_OBJECT   # 8 ChamplainMarker representing photo on map
         )
         
         # These constants will make referencing the above columns much easier
         (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, 
         self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, 
-        self.PHOTO_MODIFIED, self.PHOTO_MARKER) = range(8)
+        self.PHOTO_ALTITUDE, self.PHOTO_MODIFIED, self.PHOTO_MARKER) = range(9)
         
         self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
         
