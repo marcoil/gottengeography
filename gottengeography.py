@@ -358,7 +358,6 @@ class GottenGeography:
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter, [])
-        self.update_button_sensitivity(self.treeselection)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
@@ -667,6 +666,7 @@ class GottenGeography:
                    (self.tracks[higher]['point'].lon * high_perc))
         
         self._insert_coordinates(model, iter, lat, lon)
+        self.update_button_sensitivity(self.treeselection)
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
