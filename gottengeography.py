@@ -332,7 +332,7 @@ class GottenGeography:
             self.liststore.foreach(self._find_iter, [files, filename])
             
             # The user is loading a NEW file! Yay!
-            if files == []: iter = self.liststore.append([None] * 9)
+            if files == []: iter = self.liststore.append([None] * 8)
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
@@ -463,7 +463,6 @@ class GottenGeography:
         filename = model.get_value(iter, self.PHOTO_PATH)
         
         if lat and lon:
-            model.set_value(iter, self.PHOTO_COORDINATES, True)
             model.set_value(iter, self.PHOTO_LATITUDE,    lat)
             model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
             model.set_value(iter, self.PHOTO_MODIFIED,    True)
@@ -471,10 +470,7 @@ class GottenGeography:
                 self._create_summary(filename, lat, lon, True))
             model.set_value(iter, self.PHOTO_MARKER,
                 self._add_marker(filename, lat, lon))
-        else:
-            model.set_value(iter, self.PHOTO_COORDINATES, False)
-            #model.set_value(iter, self.PHOTO_MARKER,      None)
-
+    
     # This method handles all three of apply, revert, and delete. Those three 
     # actions are much more alike than you might intuitively suspect. They all 
     # iterate over the GtkTreeSelection, they all modify the GtkListStore data... 
@@ -685,17 +681,16 @@ class GottenGeography:
             GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
-            GObject.TYPE_BOOLEAN, # 4 Coordinates (true if lat/long are present)
-            GObject.TYPE_DOUBLE,  # 5 Latitude
-            GObject.TYPE_DOUBLE,  # 6 Longitude
-            GObject.TYPE_BOOLEAN, # 7 'Have we modified the file?' flag
-            GObject.TYPE_OBJECT   # 8 ChamplainMarker representing photo on map
+            GObject.TYPE_DOUBLE,  # 4 Latitude
+            GObject.TYPE_DOUBLE,  # 5 Longitude
+            GObject.TYPE_BOOLEAN, # 6 'Have we modified the file?' flag
+            GObject.TYPE_OBJECT   # 7 ChamplainMarker representing photo on map
         )
         
         # These constants will make referencing the above columns much easier
         (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, 
-        self.PHOTO_TIMESTAMP, self.PHOTO_COORDINATES, self.PHOTO_LATITUDE, 
-        self.PHOTO_LONGITUDE, self.PHOTO_MODIFIED, self.PHOTO_MARKER) = range(9)
+        self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, 
+        self.PHOTO_MODIFIED, self.PHOTO_MARKER) = range(8)
         
         self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
         
