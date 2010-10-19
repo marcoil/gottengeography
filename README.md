@@ -23,4 +23,12 @@ You may be interested in hacking on GottenGeography if you enjoy writing Python 
 
 GottenGeography is heavily inspired by the OSX application [PhotoLinker.app](http://www.earlyinnovations.com/photolinker/), however I am not affiliated in any way with EarlyInnovations. Please don't sue me, etc. 
 
-If you have any questions, feel free to give me a shout at rbpark@exolucere.ca. This little project is my baby, and I'm eager to see it to completion.
+If you have any questions, feel free to [give me a shout](mailto:rbpark@exolucere.ca). This little project is my baby, and I'm eager to see it to completion.
+
+Testing
+-------
+
+I feel I have tested this application fairly thoroughly. However, I only own two cameras, and only one GPS unit, so my test data is somewhat limited. If you find that GottenGeography fails with your files, please send them to me and I'll do my best to get everything working. I have supplied some demo data with the program to show you how it is *supposed* to work ;-)
+
+Happy Tagging!
+    --Robert
