@@ -8,15 +8,22 @@ it's just a placeholder at the moment).
 
 However, in it's current state it's able to:
 
-* display maps using libchamplain,
-* parse GPX (xml) files and display the GPS tracks on the libchamplain map,
+* display maps using libchamplain
+
+* parse GPX (xml) files and display the GPS tracks on the libchamplain map
+
 * read pre-existing geotags inside photo EXIF data using pyexiv2 and display
     markers on the libchamplain map indicating where those photos were taken
+
 * manually geotag images (upon clicking the 'apply' button, the coordinates
     of the center of the map are attached to the selected photos)
+
 * automatically geotag images using timestamp comparison between photos
     and GPX data, including proportionally calculating photo coordinates
-    that fall in-between gpx tracks.
+    that fall in-between gpx tracks
+
+* remember the last viewed location (using GConf) and return to it the
+    next time you run the program
     
 You may be interested in hacking on GottenGeography if you enjoy writing Python
 code, have some experience with the poorly-documented GObject Introspection
