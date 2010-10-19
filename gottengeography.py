@@ -680,7 +680,6 @@ class GottenGeography:
         self.photos_and_map_container = Gtk.HPaned()
         
         # This code defines how the photo list will appear
-        # TODO sort by timestamp (needs pyexiv2)
         self.liststore = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
             GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
@@ -735,9 +734,8 @@ class GottenGeography:
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_photo_layer.show()
-        
-        # TODO store last used location in GConf and then
-        # reload that location here, because hardcoding my hometown is lame
+
+        # Load last used location from GConf
         self.map_view.center_on(
             self.gconf_client.get_float(self.LAST_LAT), 
             self.gconf_client.get_float(self.LAST_LON)
