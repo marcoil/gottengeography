@@ -561,26 +561,26 @@ class GottenGeography:
         higher = points[-1]
         lower  = points[0]
         
-        # TODO if the photo is out of range, does it make sense to just peg it
-        # on the nearest point in the range? (either highest or lowest)
-        if (photo < lower) or (photo > higher):
-            errors.append(os.path.basename(model.get_value(iter, self.PHOTO_PATH)))
-            self.statusbar.push(
-                self.statusbar.get_context_id("error"),
-                "Out of range: %s" % ", ".join(errors)
-            )
-            return
+        # If the photo is out of range, simply peg it to the end of the range.
+        # I think this makes sense. If it doesn't, the user isn't obligated to
+        # save the result. They can always override with the 'apply' button, 
+        # or load in a different GPX file with correct data.
+        if photo < lower:  photo = lower
+        if photo > higher: photo = higher
         
         # In an ideal world, your GPS will produce a track point at least once 
         # per second, and then you're guaranteed to have a track point recorded
         # at the exact second that the camera snapped it's photo. In that perfect
         # world, we can just take the exact coordinates from the track point,
-        # and slap them directly on the photo.
+        # and slap them directly on the photo. This is more likely than you
+        # might think. Three out of the six supplied demo images match this
+        # criteria, and I didn't even find that out until *after* I had selected
+        # them.
         try:
             lat = self.tracks[photo]['point'].lat
             lon = self.tracks[photo]['point'].lon
         
-        # In the real world, however, we have to find the two track points that
+        # Failing that, however, we have to find the two track points that
         # are nearest to the photo timestamp, and then proportionally calculate
         # the location in between. 
         except KeyError: 
