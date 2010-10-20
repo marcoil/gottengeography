@@ -293,6 +293,7 @@ class GottenGeography:
         
         # Make magic happen ;-)
         self.liststore.foreach(self.auto_timestamp_comparison, [])
+        self.update_button_sensitivity()
     
     # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def unload_gpx_data(self, widget=None):
@@ -382,6 +383,7 @@ class GottenGeography:
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter, [])
+        self.update_button_sensitivity()
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
@@ -625,6 +627,7 @@ inform rbpark@exolucere.ca!" % error)
     # modifies the time_fudge slider.
     def time_fudge_value_changed(self, slider):
         self.liststore.foreach(self.auto_timestamp_comparison, [])
+        self.update_button_sensitivity()
     
     # This does all the magic of calculating coordinates proportional
     # to relative timestamps. Takes in just a single photo,
@@ -708,7 +711,6 @@ inform rbpark@exolucere.ca!" % error)
                    (self.tracks[higher]['elevation'] * high_perc))
         
         self._insert_coordinates(model, iter, lat, lon, ele)
-        self.update_button_sensitivity()
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
