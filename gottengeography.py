@@ -25,6 +25,7 @@ from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
+from fractions import Fraction
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
@@ -440,15 +441,6 @@ class GottenGeography:
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
             
-            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
-            
-            if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
-            else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
-            if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
-            else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
-            
-            print "\nCommence saving!"
-            
             coords = []
             for decimal in [ latitude, longitude ]:
                 decimal = math.fabs(decimal)
@@ -459,25 +451,44 @@ class GottenGeography:
                 
                 dms = []
                 
-                # This is fine
+                # This is very straighforward
                 dms.append(pyexiv2.Rational(degrees, 1))
                 dms.append(pyexiv2.Rational(minutes, 1))
                 
-                # This just drops the decimal, losing precision. There's some
-                # math magic to convert this into a proper faction that you 
-                # need TODO here.
-                dms.append(pyexiv2.Rational(seconds, 1))
+                # fractions.Fraction() method claims to be able to convert a 
+                # float to a fraction, but it seems to be broken. Fortunately, 
+                # if I cast the float to a string first, that seems to work. 
+                # limit_denominator() causes some rounding to occur which 
+                # could reduce precision, but it's mostly just rounding out
+                # the inherent imprecision of a float. 
+                fraction = Fraction(str(seconds)).limit_denominator(10000)
+                dms.append(pyexiv2.Rational(fraction.numerator, fraction.denominator))
                 
-                print decimal
-                for rat in dms:
-                    print rat.numerator,
-                print
+                # My (limited) testing has shown that this works flawlessly
+                # 80% of the time, and the other 20% of the time the rounding
+                # error is approximate to 1.4 * 10^-14 (that is, correct to 
+                # thirteen decimal places). Considering that only eight decimal 
+                # places are required for millimeter precision on planet Earth, 
+                # I am ok with this. However, I'm going to leave this check 
+                # here until more people have tested this.
+                error = math.fabs(self._dms_to_decimal(dms) - decimal)
+                if error > 1e-10:
+                    raise FloatingPointError("Rounding discarded %s. Please \
+inform rbpark@exolucere.ca!" % error)
                 
                 coords.append(dms)
             
+            exif['Exif.GPSInfo.GPSMapDatum']  = 'WGS-84'
             exif['Exif.GPSInfo.GPSLatitude']  = coords[0]
             exif['Exif.GPSInfo.GPSLongitude'] = coords[1]
             
+            if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
+            else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
+            if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
+            else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
+            
+            for key in exif.exifKeys():
+                if re.search('GPS', key): print key, exif[key]
             exif.writeMetadata()
             
             # TODO Actually write data to file here, instead of just pausing
@@ -487,8 +498,8 @@ class GottenGeography:
             # 'Exif.GPSInfo.GPSLongitudeRef', 'Exif.GPSInfo.GPSLongitude', 
             # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
             # 'Exif.GPSInfo.GPSMapDatum'
-            for column in range(8):
-                print column, model.get_value(iter, column)
+            #for column in range(8):
+            #    print column, model.get_value(iter, column)
             time.sleep(0.1)
             model.set_value(iter, self.PHOTO_MODIFIED, False)
             model.set_value(
