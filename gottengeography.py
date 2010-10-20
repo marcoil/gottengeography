@@ -69,13 +69,13 @@ class GottenGeography:
     
     # Creates a new ChamplainMarker and adds it to the map
     def _add_marker(self, label, lat, lon, center_view=True):
-            marker = Champlain.Marker()
-            marker.set_text(os.path.basename(label))
-            marker.set_position(lat, lon)
-            self.map_photo_layer.add_marker(marker)
-            if center_view: self.map_view.center_on(lat, lon)
-            marker.animate_in()
-            return marker
+        marker = Champlain.Marker()
+        marker.set_text(os.path.basename(label))
+        marker.set_position(lat, lon)
+        self.map_photo_layer.add_marker(marker)
+        if center_view: self.map_view.center_on(lat, lon)
+        marker.animate_in()
+        return marker
 
     # Converts degrees, minutes, seconds (from pyexiv2) into decimal degrees
     def _dms_to_decimal(self, dms, sign=""):
