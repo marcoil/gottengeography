@@ -126,13 +126,21 @@ class GottenGeography:
         except KeyError:
             lat = lon = None
         
-        return timestamp, lat, lon
+        try:
+            ele = exif['Exif.GPSInfo.GPSAltitude']
+            ele = float(ele.numerator) / ele.denominator
+        except:
+            ele = None
+        
+        return timestamp, lat, lon, ele
     
     # Creates the Pango-formatted display string used in the GtkTreeView
-    def _create_summary(self, file, lat=None, lon=None, modified=False):
+    def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
         # Start with the coordinates, if any
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
+        
+        if ele: summary += "\n%sm above sea level" % round(ele, 2)
         
         # "filename in normal size, then on a new line, 
         # coordinates in a smaller, light grey font"
@@ -169,7 +177,7 @@ class GottenGeography:
             return
         
         try:
-            (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
+            (timestamp, lat, lon, ele) = self._get_timestamp_and_coords(filename)
         except IOError:
             chooser.set_preview_widget_active(False)
             return
@@ -310,7 +318,7 @@ class GottenGeography:
         # the rest of this method from running on an invalid file.
         if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
-        (timestamp, lat, lon) = self._get_timestamp_and_coords(filename)
+        (timestamp, lat, lon, ele) = self._get_timestamp_and_coords(filename)
         
         if timestamp:
             # I *think* that this code requires the computer's timezone
@@ -353,9 +361,9 @@ class GottenGeography:
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
         self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
-            self._create_summary(filename, lat, lon))
+            self._create_summary(filename, lat, lon, ele))
         
-        self._insert_coordinates(self.liststore, iter, lat, lon, False)
+        self._insert_coordinates(self.liststore, iter, lat, lon, ele, False)
         
         self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
         self.auto_timestamp_comparison(self.liststore, None, iter, [])
@@ -431,8 +439,10 @@ class GottenGeography:
             data[0].append(path)
             
             filename  = model.get_value(iter, self.PHOTO_PATH)
+            altitude  = model.get_value(iter, self.PHOTO_ALTITUDE)
             latitude  = model.get_value(iter, self.PHOTO_LATITUDE)
             longitude = model.get_value(iter, self.PHOTO_LONGITUDE)
+
             self._redraw_interface(
                 float( len( data[0] ) ) / data[1], "Saving %s..." % 
                 os.path.basename(filename)
@@ -478,17 +488,24 @@ inform rbpark@exolucere.ca!" % error)
                 
                 coords.append(dms)
             
-            exif['Exif.GPSInfo.GPSMapDatum']  = 'WGS-84'
-            exif['Exif.GPSInfo.GPSLatitude']  = coords[0]
-            exif['Exif.GPSInfo.GPSLongitude'] = coords[1]
+            exif['Exif.GPSInfo.GPSMapDatum']    = 'WGS-84'
+            
+            altitude = Fraction(str(altitude)).limit_denominator(1000)
+            print filename, altitude
+            exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
+            exif['Exif.GPSInfo.GPSAltitude']    = pyexiv2.Rational(altitude.numerator, altitude.denominator)
+
+            exif['Exif.GPSInfo.GPSLatitude']    = coords[0]
+            exif['Exif.GPSInfo.GPSLongitude']   = coords[1]
             
             if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
             else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
             if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
             else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
             
-            for key in exif.exifKeys():
-                if re.search('GPS', key): print key, exif[key]
+            #for key in exif.exifKeys():
+             #   if re.search('GPS', key): print key, type(exif[key])
+            
             exif.writeMetadata()
             
             # TODO Actually write data to file here, instead of just pausing
@@ -520,19 +537,23 @@ inform rbpark@exolucere.ca!" % error)
         self.save_button.set_sensitive(self.any_modified())
         self.progressbar.hide()
     
-    def _insert_coordinates(self, model, iter, lat=None, lon=None, modified=True):
+    def _insert_coordinates(self, model, iter, lat=None, lon=None, ele=None, modified=True):
         # Remove the old marker, in case there is one
         old_marker = model.get_value(iter, self.PHOTO_MARKER)
         if old_marker: self.map_photo_layer.remove_marker(old_marker)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
+        print filename, lat, lon, ele, modified
+        
+        if ele:
+            model.set_value(iter, self.PHOTO_ALTITUDE,    ele)
         
         if lat and lon:
             model.set_value(iter, self.PHOTO_LATITUDE,    lat)
             model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
             model.set_value(iter, self.PHOTO_MODIFIED,    modified)
             model.set_value(iter, self.PHOTO_SUMMARY,
-                self._create_summary(filename, lat, lon, modified))
+                self._create_summary(filename, lat, lon, ele, modified))
             model.set_value(iter, self.PHOTO_MARKER,
                 self._add_marker(filename, lat, lon))
     
@@ -640,6 +661,7 @@ inform rbpark@exolucere.ca!" % error)
         try:
             lat = self.tracks[photo]['point'].lat
             lon = self.tracks[photo]['point'].lon
+            ele = self.tracks[photo]['elevation']
         
         # Failing that, however, we have to find the two track points that
         # are nearest to the photo timestamp, and then proportionally calculate
@@ -675,8 +697,10 @@ inform rbpark@exolucere.ca!" % error)
                    (self.tracks[higher]['point'].lat * high_perc))
             lon = ((self.tracks[lower]['point'].lon  * low_perc)   + 
                    (self.tracks[higher]['point'].lon * high_perc))
+            ele = ((self.tracks[lower]['elevation']  * low_perc)   +
+                   (self.tracks[higher]['elevation'] * high_perc))
         
-        self._insert_coordinates(model, iter, lat, lon)
+        self._insert_coordinates(model, iter, lat, lon, ele)
         self.update_button_sensitivity(self.treeselection)
     
     def __init__(self):
