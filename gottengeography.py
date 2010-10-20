@@ -155,7 +155,10 @@ class GottenGeography:
     # Highlight the selected marker on the map
     def _highlight_marker(self, model, path, iter, highlight):
         marker = model.get_value(iter, self.PHOTO_MARKER)
-        if marker: marker.set_highlighted(highlight)
+        if marker: 
+            marker.set_highlighted(highlight)
+            if highlight: marker.set_property('opacity', 255)
+            else:         marker.set_property('opacity', 128)
     
     # This method is responsible for ensuring all the toolbuttons have the
     # correct sensitivity given the current context of the application, and
