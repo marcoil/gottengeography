@@ -152,13 +152,21 @@ class GottenGeography:
         
         return summary
     
-    # Highlight the selected marker on the map
-    def _highlight_marker(self, model, path, iter, highlight):
+    # Highlight the selected marker on the map. data[0] is True inside
+    # self.liststore.selected_foreach and False inside self.liststore.foreach.
+    # data[1] is True if there is anything selected.
+    def _highlight_marker(self, model, path, iter, data):
         marker = model.get_value(iter, self.PHOTO_MARKER)
-        if marker: 
-            marker.set_highlighted(highlight)
-            if highlight: marker.set_property('opacity', 255)
-            else:         marker.set_property('opacity', 128)
+        if not marker: return
+
+        marker.set_highlighted(data[0])
+        if data[0] or not data[1]: marker.set_property('opacity', 255)
+        else:                      marker.set_property('opacity', 128)
+        
+        # TODO bring marker to the front as well
+        
+        if data[0]: self.map_view.center_on(marker.get_property('latitude'), 
+                                            marker.get_property('longitude'))
     
     # This method is responsible for ensuring all the toolbuttons have the
     # correct sensitivity given the current context of the application, and
@@ -170,8 +178,8 @@ class GottenGeography:
         sensitivity = selection.count_selected_rows() > 0
         
         # Ensure proper markers are highlighted
-        self.liststore.foreach(self._highlight_marker, False)
-        selection.selected_foreach(self._highlight_marker, True)
+        self.liststore.foreach(self._highlight_marker, (False, sensitivity))
+        selection.selected_foreach(self._highlight_marker, (True, True))
         
         # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
