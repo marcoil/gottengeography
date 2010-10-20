@@ -152,11 +152,23 @@ class GottenGeography:
         
         return summary
     
-    # This method gets called whenever the GtkTreeView selection changes, 
-    # and it sets the sensitivity of a few buttons such that buttons which 
-    # don't do anything useful in that context are desensitized.
-    def update_button_sensitivity(self, selection):
+    # Highlight the selected marker on the map
+    def _highlight_marker(self, model, path, iter, highlight):
+        marker = model.get_value(iter, self.PHOTO_MARKER)
+        if marker: marker.set_highlighted(highlight)
+    
+    # This method is responsible for ensuring all the toolbuttons have the
+    # correct sensitivity given the current context of the application, and
+    # to ensure that the photos selected in self.liststore are highlighted
+    # on the map. Gets called every time the selection in self.liststore
+    # changes, and after loading various bits of data.
+    def update_button_sensitivity(self, selection=None):
+        if not selection: selection = self.treeselection
         sensitivity = selection.count_selected_rows() > 0
+        
+        # Ensure proper markers are highlighted
+        self.liststore.foreach(self._highlight_marker, False)
+        selection.selected_foreach(self._highlight_marker, True)
         
         # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
@@ -693,7 +705,7 @@ inform rbpark@exolucere.ca!" % error)
                    (self.tracks[higher]['elevation'] * high_perc))
         
         self._insert_coordinates(model, iter, lat, lon, ele)
-        self.update_button_sensitivity(self.treeselection)
+        self.update_button_sensitivity()
     
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
