@@ -491,7 +491,6 @@ inform rbpark@exolucere.ca!" % error)
             exif['Exif.GPSInfo.GPSMapDatum']    = 'WGS-84'
             
             altitude = Fraction(str(altitude)).limit_denominator(1000)
-            print filename, altitude
             exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
             exif['Exif.GPSInfo.GPSAltitude']    = pyexiv2.Rational(altitude.numerator, altitude.denominator)
 
@@ -503,21 +502,15 @@ inform rbpark@exolucere.ca!" % error)
             if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
             else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
             
-            #for key in exif.exifKeys():
-             #   if re.search('GPS', key): print key, type(exif[key])
-            
             exif.writeMetadata()
             
-            # TODO Actually write data to file here, instead of just pausing
             # The EXIF keys that we will need to fill out are: 
             # 'Exif.Image.GPSTag', 'Exif.GPSInfo.GPSVersionID', 
             # 'Exif.GPSInfo.GPSLatitudeRef', 'Exif.GPSInfo.GPSLatitude', 
             # 'Exif.GPSInfo.GPSLongitudeRef', 'Exif.GPSInfo.GPSLongitude', 
             # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
             # 'Exif.GPSInfo.GPSMapDatum'
-            #for column in range(8):
-            #    print column, model.get_value(iter, column)
-            time.sleep(0.1)
+            
             model.set_value(iter, self.PHOTO_MODIFIED, False)
             model.set_value(
                 iter, self.PHOTO_SUMMARY, 
@@ -543,7 +536,6 @@ inform rbpark@exolucere.ca!" % error)
         if old_marker: self.map_photo_layer.remove_marker(old_marker)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
-        print filename, lat, lon, ele, modified
         
         if ele:
             model.set_value(iter, self.PHOTO_ALTITUDE,    ele)
