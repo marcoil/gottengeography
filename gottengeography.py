@@ -113,6 +113,51 @@ class GottenGeography:
                 (float(dms[1].numerator) / dms[1].denominator) / 60    + 
                 (float(dms[2].numerator) / dms[2].denominator) / 3600) * sign
     
+    # Converts decimal (float) degrees into degrees, minutes, seconds
+    # represented by three instances of the pyexiv2.Rational class
+    def decimal_to_dms(self, decimal):
+        decimal = math.fabs(decimal)
+        
+        (deg_frac, degrees) = math.modf(decimal)
+        (min_frac, minutes) = math.modf(deg_frac * 60)
+        seconds             = min_frac * 60
+        
+        dms = []
+        
+        # degrees and minutes are whole numbers, thus have a denominator of 1
+        dms.append(pyexiv2.Rational(degrees, 1))
+        dms.append(pyexiv2.Rational(minutes, 1))
+        
+        # seconds has a bunch of crap after the decimal that needs to be
+        # preserved in fraction form for storage in EXIF.
+        dms.append(self.float_to_rational(seconds))
+        
+        # My (limited) testing has shown that this works flawlessly
+        # 80% of the time, and the other 20% of the time the rounding
+        # error is approximate to 1.4 * 10^-14 (that is, correct to 
+        # thirteen decimal places). Considering that only eight decimal 
+        # places are required for millimeter precision on planet Earth, 
+        # I am ok with this. However, I'm going to leave this check 
+        # here until more people have tested this.
+        error = math.fabs(self.dms_to_decimal(dms) - decimal)
+        if error > 1e-10:
+            raise FloatingPointError(
+                "Rounding discarded %s. Please inform rbpark@exolucere.ca!" 
+                % error
+            )
+        
+        return dms
+    
+    def float_to_rational(self, decimal):
+        # fractions.Fraction() method claims to be able to convert a 
+        # float to a fraction, but it seems to be broken. Fortunately, 
+        # if I cast the float to a string first, that seems to work. 
+        # limit_denominator() causes some rounding to occur which 
+        # could reduce precision, but it's mostly just rounding out
+        # the imprecision inherent to a float. 
+        fraction = Fraction(str(decimal)).limit_denominator(10000)
+        return pyexiv2.Rational(fraction.numerator, fraction.denominator)
+    
 ################################################################################
 # ChamplainMarker. This section contains methods that manipulate map markers.
 ################################################################################
@@ -182,51 +227,13 @@ class GottenGeography:
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
             
-            coords = []
-            for decimal in [ latitude, longitude ]:
-                decimal = math.fabs(decimal)
-                
-                (deg_frac, degrees) = math.modf(decimal)
-                (min_frac, minutes) = math.modf(deg_frac * 60)
-                seconds             = min_frac * 60
-                
-                dms = []
-                
-                # This is very straighforward
-                dms.append(pyexiv2.Rational(degrees, 1))
-                dms.append(pyexiv2.Rational(minutes, 1))
-                
-                # fractions.Fraction() method claims to be able to convert a 
-                # float to a fraction, but it seems to be broken. Fortunately, 
-                # if I cast the float to a string first, that seems to work. 
-                # limit_denominator() causes some rounding to occur which 
-                # could reduce precision, but it's mostly just rounding out
-                # the inherent imprecision of a float. 
-                fraction = Fraction(str(seconds)).limit_denominator(10000)
-                dms.append(pyexiv2.Rational(fraction.numerator, fraction.denominator))
-                
-                # My (limited) testing has shown that this works flawlessly
-                # 80% of the time, and the other 20% of the time the rounding
-                # error is approximate to 1.4 * 10^-14 (that is, correct to 
-                # thirteen decimal places). Considering that only eight decimal 
-                # places are required for millimeter precision on planet Earth, 
-                # I am ok with this. However, I'm going to leave this check 
-                # here until more people have tested this.
-                error = math.fabs(self.dms_to_decimal(dms) - decimal)
-                if error > 1e-10:
-                    raise FloatingPointError("Rounding discarded %s. Please \
-inform rbpark@exolucere.ca!" % error)
-                
-                coords.append(dms)
-            
             exif['Exif.GPSInfo.GPSMapDatum']    = 'WGS-84'
             
-            altitude = Fraction(str(altitude)).limit_denominator(1000)
             exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
-            exif['Exif.GPSInfo.GPSAltitude']    = pyexiv2.Rational(altitude.numerator, altitude.denominator)
+            exif['Exif.GPSInfo.GPSAltitude']    = self.float_to_rational(altitude)
 
-            exif['Exif.GPSInfo.GPSLatitude']    = coords[0]
-            exif['Exif.GPSInfo.GPSLongitude']   = coords[1]
+            exif['Exif.GPSInfo.GPSLatitude']    = self.decimal_to_dms(latitude)
+            exif['Exif.GPSInfo.GPSLongitude']   = self.decimal_to_dms(longitude)
             
             if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
             else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
