@@ -69,11 +69,10 @@ class GottenGeography:
     
     # Creates the Pango-formatted display string used in the GtkTreeView
     def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
-        # Start with the coordinates, if any
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
         
-        if ele: summary += "\n%sm above sea level" % round(ele, 1)
+        if ele: summary += "\n%.1fm above sea level" % ele
         
         # "filename in normal size, then on a new line, 
         # coordinates in a smaller, light grey font"
