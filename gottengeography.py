@@ -215,10 +215,7 @@ inform rbpark@exolucere.ca!" % error)
         
         self.liststore.foreach(self.save_one_file, [[], self.any_modified(give_count=True)])
         
-        # Update sensitivity of save/revert buttons based on
-        # current state, and hide the progressbar.
-        self.revert_button.set_sensitive(self.any_modified(self.treeselection))
-        self.save_button.set_sensitive(self.any_modified())
+        self.update_sensitivity()
         self.progressbar.hide()
     
     # Do the pyexiv2 dirty work
@@ -323,8 +320,6 @@ inform rbpark@exolucere.ca!" % error)
                         self.tracks[timestamp]['point'].lon
                     )
         
-        self.clear_gpx_button.set_sensitive(True)
-        
         # Make magic happen ;-)
         self.liststore.foreach(self.auto_timestamp_comparison, [])
         self.update_sensitivity()
@@ -333,7 +328,7 @@ inform rbpark@exolucere.ca!" % error)
     def clear_all_gpx(self, widget=None):
         # One day, this will stop causing segfaults and make my life easier.
         #self.map_gpx.clear_points()
-
+        
         # Until then, we have this:        
         for point in self.tracks:
             self.map_gpx.remove_point(self.tracks[point]['point'])
@@ -341,7 +336,7 @@ inform rbpark@exolucere.ca!" % error)
         del self.tracks
         self.tracks = {}
         
-        self.clear_gpx_button.set_sensitive(False)
+        self.update_sensitivity()
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
@@ -434,7 +429,6 @@ inform rbpark@exolucere.ca!" % error)
     # modifies the time_fudge slider.
     def time_fudge_value_changed(self, slider):
         self.liststore.foreach(self.auto_timestamp_comparison, [])
-        self.update_sensitivity()
     
     # This method handles all three of apply, revert, and delete. Those three 
     # actions are much more alike than you might intuitively suspect. They all 
@@ -486,9 +480,7 @@ inform rbpark@exolucere.ca!" % error)
             
         self.progressbar.hide()
         
-        # Set sensitivity of buttons as appropriate for the changes we've just made
-        self.revert_button.set_sensitive(self.any_modified(self.treeselection))
-        self.save_button.set_sensitive(self.any_modified())
+        self.update_sensitivity()
         
         # Hide the TreeView if it's empty, because it shows an ugly strip
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
@@ -783,7 +775,6 @@ lost if you do not save.""" % count)
         self.save_button.set_tooltip_text(
             "Save all modified GPS data into your photos (Ctrl+S)")
         self.save_button.set_label("Save All")
-        self.save_button.set_sensitive(False)
         
         self.toolbar_first_spacer = Gtk.SeparatorToolItem()
         
@@ -791,25 +782,21 @@ lost if you do not save.""" % count)
         self.clear_gpx_button.set_tooltip_text(
             "Unload all GPS data (Ctrl+X)")
         self.clear_gpx_button.set_label("Clear GPX")
-        self.clear_gpx_button.set_sensitive(False)
         
         self.close_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLOSE) 
         self.close_button.set_tooltip_text(
             "Close selected photos (Ctrl+W)")
         self.close_button.set_label("Close Photo")
-        self.close_button.set_sensitive(False)
         
         self.toolbar_second_spacer = Gtk.SeparatorToolItem()
         
         self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text(
             "Place selected photos onto center of map (Ctrl+Return)")
-        self.apply_button.set_sensitive(False)
         
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text(
             "Reload selected photos, losing all changes (Ctrl+Z)")
-        self.revert_button.set_sensitive(False)
 
         self.toolbar_third_spacer = Gtk.SeparatorToolItem()
         self.toolbar_third_spacer.set_expand(True)
@@ -953,6 +940,7 @@ lost if you do not save.""" % count)
         self.window.show_all()
         self.photoscroller.hide()
         self.progressbar.hide()
+        self.update_sensitivity()
     
     # This method handles key shortcuts. It's called when the user 
     # types a shortcut key, and then dispatches the appropriate method to 
@@ -1011,10 +999,9 @@ lost if you do not save.""" % count)
         else:          return pathlist <> [] # False if pathlist is empty
     
     # This method is responsible for ensuring all the toolbuttons have the
-    # correct sensitivity given the current context of the application, and
-    # to ensure that the photos selected in self.liststore are highlighted
-    # on the map. Gets called every time the selection in self.liststore
-    # changes, and after loading various bits of data.
+    # correct sensitivity given the current context of the application.
+    # Gets called every time the selection in self.liststore
+    # changes, and in a few places where state changes.
     def update_sensitivity(self, selection=None):
         if not selection: selection = self.treeselection
         sensitivity = selection.count_selected_rows() > 0
@@ -1032,6 +1019,11 @@ lost if you do not save.""" % count)
         
         # The Save button is only activated if there are modified files.
         self.save_button.set_sensitive(self.any_modified())
+        
+        # The Clear button and time fudge is only sensitive if there's any GPX
+        gpx_sensitive = len(self.tracks) > 0
+        self.clear_gpx_button.set_sensitive(gpx_sensitive)
+        self.time_fudge.set_sensitive(gpx_sensitive)
     
     def main(self):
         Gtk.main()
