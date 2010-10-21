@@ -154,6 +154,10 @@ class GottenGeography:
         marker.animate_in()
         return marker
     
+    def remove_marker(self, model, iter):
+        old_marker = model.get_value(iter, self.PHOTO_MARKER)
+        if old_marker: self.map_photo_layer.remove_marker(old_marker)
+    
 ################################################################################
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
@@ -489,8 +493,7 @@ inform rbpark@exolucere.ca!" % error)
             iter = model.get_iter(path)[1]
             
             if delete or (not apply):
-                old_marker = model.get_value(iter, self.PHOTO_MARKER)
-                if old_marker: self.map_photo_layer.remove_marker(old_marker)
+                self.remove_marker(model, iter)
             
             if delete: 
                 model.remove(iter)
@@ -523,9 +526,7 @@ inform rbpark@exolucere.ca!" % error)
         if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
     def _insert_coordinates(self, model, iter, lat=None, lon=None, ele=None, modified=True):
-        # Remove the old marker, in case there is one
-        old_marker = model.get_value(iter, self.PHOTO_MARKER)
-        if old_marker: self.map_photo_layer.remove_marker(old_marker)
+        self.remove_marker(model, iter)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
         
