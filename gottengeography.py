@@ -58,18 +58,14 @@ class GottenGeography:
     
     # Takes decimal coordinates and returns a string with direction labels
     def _pretty_coords(self, lat, lon):
-        if lat > 0: lat_sign = "N "
-        else:       lat_sign = "S "
-        if lon > 0: lon_sign = "E "
-        else:       lon_sign = "W "
+        if lat > 0: lat_sign = "N"
+        else:       lat_sign = "S"
+        if lon > 0: lon_sign = "E"
+        else:       lon_sign = "W"
         
-        # Decimal degrees, rounded to 5 places, provides
-        # an accuracy of 1.11m. Note that this is only for display
-        # and the full precision is retained internally.    
-        lat = round(math.fabs(lat), 5)
-        lon = round(math.fabs(lon), 5)
-        
-        return lat_sign + str(lat) + ", " + lon_sign + str(lon)
+        # Eg, "N nn.nnnnn, W nnn.nnnnn"
+        return ("%s %.5f, %s %.5f" % 
+            (lat_sign, math.fabs(lat), lon_sign, math.fabs(lon)))
     
     # Creates the Pango-formatted display string used in the GtkTreeView
     def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
@@ -77,7 +73,7 @@ class GottenGeography:
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
         
-        if ele: summary += "\n%sm above sea level" % round(ele, 2)
+        if ele: summary += "\n%sm above sea level" % round(ele, 1)
         
         # "filename in normal size, then on a new line, 
         # coordinates in a smaller, light grey font"
