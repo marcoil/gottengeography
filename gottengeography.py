@@ -117,21 +117,32 @@ class GottenGeography:
 # ChamplainMarker. This section contains methods that manipulate map markers.
 ################################################################################
     
-    # Highlight the selected marker on the map. data[0] is True inside
-    # self.liststore.selected_foreach and False inside self.liststore.foreach.
-    # data[1] is True if there is anything selected.
+    # Highlight (or not) the given marker on the map.
     def set_marker_highlight(self, model, path, iter, data):
+        (highlighted, transparent) = data
+        
         marker = model.get_value(iter, self.PHOTO_MARKER)
         if not marker: return
-
-        marker.set_highlighted(data[0])
-        if data[0] or not data[1]: marker.set_property('opacity', 255)
-        else:                      marker.set_property('opacity', 128)
         
-        # TODO bring marker to the front as well
+        marker.set_highlighted(highlighted)
         
-        if data[0]: self.map_view.center_on(marker.get_property('latitude'), 
-                                            marker.get_property('longitude'))
+        if transparent:
+            marker.set_property('opacity', 128)
+        elif highlighted:
+            # TODO bring marker to the front as well
+            marker.set_property('opacity', 255)
+            self.map_view.center_on(marker.get_property('latitude'), 
+                                    marker.get_property('longitude'))
+    
+    # Ensure proper markers are highlighted
+    def update_all_marker_highlights(self, selection=None):
+        if not selection: selection = self.treeselection
+        
+        if selection.count_selected_rows() > 0:
+            self.liststore.foreach(self.set_marker_highlight,     (False, True))
+            selection.selected_foreach(self.set_marker_highlight, (True,  False))
+        else:
+            self.liststore.foreach(self.set_marker_highlight,     (False, False))
     
     # Creates a new ChamplainMarker and adds it to the map
     def add_marker(self, label, lat, lon, center_view=True):
@@ -454,6 +465,7 @@ inform rbpark@exolucere.ca!" % error)
     # modifies the time_fudge slider.
     def time_fudge_value_changed(self, slider):
         self.liststore.foreach(self.auto_timestamp_comparison, [])
+        self.update_all_marker_highlights()
     
     # This method handles all three of apply, revert, and delete. Those three 
     # actions are much more alike than you might intuitively suspect. They all 
@@ -953,6 +965,7 @@ lost if you do not save.""" % count)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
         self.about_button.connect("clicked", self.about_dialog)
         self.treeselection.connect("changed", self.update_sensitivity)
+        self.treeselection.connect("changed", self.update_all_marker_highlights)
         self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
         
         # Key bindings
@@ -1030,10 +1043,6 @@ lost if you do not save.""" % count)
     def update_sensitivity(self, selection=None):
         if not selection: selection = self.treeselection
         sensitivity = selection.count_selected_rows() > 0
-        
-        # Ensure proper markers are highlighted
-        self.liststore.foreach(self.set_marker_highlight, (False, sensitivity))
-        selection.selected_foreach(self.set_marker_highlight, (True, True))
         
         # Apply, Connect and Delete buttons get activated if there is a selection
         self.apply_button.set_sensitive(sensitivity)
