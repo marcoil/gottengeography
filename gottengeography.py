@@ -30,8 +30,33 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-# TODO:
-# Needs to be able to load files via drag&drop
+# TODO Needs to be able to load files via drag&drop
+#
+# TODO create update_marker_highlight that is also a signal handler for 
+# treeselection-changed
+#
+# TODO modify_selected_rows is a farce. Split it into apply, revert,
+# delete methods that each call liststore.foreach with their own special
+# foreach method (so something like apply_selected_rows calls
+# _apply_one_row from inside a foreach). That will break it down into 6
+# manageable methods.
+#
+# TODO: in all of your foreach methods, assign data[0] and data[1] to
+# new variables with better names. this will greatly increase the 
+# readability of those functions.
+# 
+# TODO: I don't like how self.any_modified has to iterate over the whole
+# liststore to count the modified files. it's slow, and it gets called
+# frequently. consider bringing back self.mod_count, except instead of
+# it being a side effect of self.any_modified(), it would be
+# live-updated by all the methods that happen to modify/revert files.
+# Much faster to access an int than to iterate over (potentially
+# hundreds of) images and checking their variables. This would eliminate
+# self.any_modified() and self._append_modified() which is a pretty ugly
+# hack, and greatly reduce the amount of liststore iteration that goes
+# on. You'd only need something like any_modified_in_selection which
+# would be greatly simplified (iterating only over the selection,
+# doesn't even need to count, just boolean)
 
 class GottenGeography:
     
