@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, pyexiv2, os, re, time, calendar, math, xml
+import pygtk, pyexiv2, os, re, time, calendar, math
 
 pygtk.require('2.0')
 
@@ -31,15 +31,6 @@ from fractions import Fraction
 #                                    --- Isaac Newton
 
 # TODO Needs to be able to load files via drag&drop
-#
-# TODO create update_marker_highlight that is also a signal handler for 
-# treeselection-changed
-#
-# TODO modify_selected_rows is a farce. Split it into apply, revert,
-# delete methods that each call liststore.foreach with their own special
-# foreach method (so something like apply_selected_rows calls
-# _apply_one_row from inside a foreach). That will break it down into 6
-# manageable methods.
 #
 # TODO: in all of your foreach methods, assign data[0] and data[1] to
 # new variables with better names. this will greatly increase the 
@@ -171,11 +162,11 @@ class GottenGeography:
         
         marker.set_highlighted(highlighted)
         
-        if transparent:
-            marker.set_property('opacity', 128)
-        elif highlighted:
+        if transparent: marker.set_property('opacity', 128)
+        else:           marker.set_property('opacity', 255)
+
+        if highlighted:
             # TODO bring marker to the front as well
-            marker.set_property('opacity', 255)
             self.map_view.center_on(marker.get_property('latitude'), 
                                     marker.get_property('longitude'))
     
@@ -282,9 +273,9 @@ class GottenGeography:
         
         try:
             lat = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
-                                       exif['Exif.GPSInfo.GPSLatitudeRef'])
+                                      exif['Exif.GPSInfo.GPSLatitudeRef'])
             lon = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
-                                       exif['Exif.GPSInfo.GPSLongitudeRef'])
+                                      exif['Exif.GPSInfo.GPSLongitudeRef'])
         except KeyError:
             lat = lon = None
         
@@ -310,7 +301,8 @@ class GottenGeography:
         
         # This creates a nested dictionary (a dictionary of dictionaries) in 
         # which the top level keys are UTC epoch seconds, and the bottom level 
-        # keys are elevation/latitude/longitude.
+        # keys are 'elevation' and 'point', a ChamplainPoint representing 
+        # latitude/longitude.
         for track in gpx.documentElement.getElementsByTagName('trk'): 
             # I find GPS-generated names to be ugly, so I only show them in the progress meter,
             # they're not stored anywhere or used after that
@@ -478,60 +470,48 @@ class GottenGeography:
         self.liststore.foreach(self.auto_timestamp_comparison, [])
         self.update_all_marker_highlights()
     
-    # This method handles all three of apply, revert, and delete. Those three 
-    # actions are much more alike than you might intuitively suspect. They all 
-    # iterate over the GtkTreeSelection, they all modify the GtkListStore data... 
-    # having this as three separate methods felt very redundant, so I merged 
-    # it all into here. I hope this isn't TOO cluttered.
-    def modify_selected_rows(self, widget=None, apply=True, delete=False):
+    # {apply,revert}_single_photo are called from within selected_foreach()
+    # TODO considering that both of these consist of just a single method call,
+    # might it be possible to have those methods called directly from the 
+    # selected_foreach()? it would require some modifications to those methods.
+    def apply_single_photo(self, model, path, iter, data=None):
+        self._insert_coordinates(model, iter, 
+            self.map_view.get_property('latitude'), 
+            self.map_view.get_property('longitude')
+        )
+    
+    def revert_single_photo(self, model, path, iter, data=None):
+        self.add_or_reload_photo(model.get_value(iter, self.PHOTO_PATH), iter)
+        
+    # {apply,revert,close}_selected_photos are signal handlers that are called
+    # in response to both keyboard shortcuts and button clicking. button will
+    # be the ToolButton that invoked it, or None for a keyboard invocation.
+    def apply_selected_photos(self, button=None):
+        self.treeselection.selected_foreach(self.apply_single_photo, [])
+        self.update_sensitivity()
+        self.update_all_marker_highlights()
+    
+    def revert_selected_photos(self, button=None):
+        self.treeselection.selected_foreach(self.revert_single_photo, [])
+        self.update_sensitivity()
+        self.update_all_marker_highlights()
+    
+    def close_selected_photos(self, button=None):
         (pathlist, model) = self.treeselection.get_selected_rows()
         if pathlist == []: return
         
-        # model.remove() will decrement the path # for all higher paths, so we 
-        # must reverse() the pathlist, in order to delete highest-first, otherwise
-        # we'll actually end up deleting the totally wrong rows in the case where 
-        # more than one row is selected for deletion
-        if delete: pathlist.reverse()
-        else:      self.progressbar.show()
-        
-        (count, total) = (0.0, len(pathlist))
+        pathlist.reverse()
         
         for path in pathlist:
             iter = model.get_iter(path)[1]
-            
-            if delete or (not apply):
-                self.remove_marker(model, iter)
-            
-            if delete: 
-                model.remove(iter)
-                continue # to the next file
-            
-            filename = model.get_value(iter, self.PHOTO_PATH)
-            
-            self._redraw_interface(
-                count/total, 
-                "Updating %s..." % os.path.basename(filename)
-            )
-            count += 1.0
-            
-            # Set photo's coordinates to the center of the map view
-            if apply:
-                self._insert_coordinates(model, iter, 
-                    self.map_view.get_property('latitude'), 
-                    self.map_view.get_property('longitude')
-                )
-
-            # Revert photo data back to what was last saved on disk
-            elif model.get_value(iter, self.PHOTO_MODIFIED):
-                self.add_or_reload_photo(filename, iter)
-            
-        self.progressbar.hide()
+            self.remove_marker(model, iter)
+            model.remove(iter)
         
         self.update_sensitivity()
-        
-        # Hide the TreeView if it's empty, because it shows an ugly strip
-        if delete and not self.liststore.get_iter_first()[0]: self.photoscroller.hide()
     
+    # Takes in coordinates & elevation (as calculated either manually or 
+    # automatically), and applies those values into our GtkListStore.
+    # Removes any old marker if there is one, and creates a new one.
     def _insert_coordinates(self, model, iter, lat=None, lon=None, ele=None, modified=True):
         self.remove_marker(model, iter)
         
@@ -586,8 +566,6 @@ class GottenGeography:
             # This number won't be especially useful, but more useful
             # than absolutely nothing.
             timestamp = int(os.stat(filename).st_mtime)
-        
-        self.photoscroller.show() 
         
         # If add_or_reload_photo is called without an iter, that should mean we're
         # loading a new file. But users are stupid, so we need to make sure
@@ -967,9 +945,9 @@ lost if you do not save.""" % count)
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.open_button.connect("clicked", self.add_files_dialog)
         self.save_button.connect("clicked", self.save_all_files)
-        self.apply_button.connect("clicked", self.modify_selected_rows, True)
-        self.revert_button.connect("clicked", self.modify_selected_rows, False)
-        self.close_button.connect("clicked", self.modify_selected_rows, False, True)
+        self.apply_button.connect("clicked", self.apply_selected_photos)
+        self.revert_button.connect("clicked", self.revert_selected_photos)
+        self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
         self.about_button.connect("clicked", self.about_dialog)
         self.treeselection.connect("changed", self.update_sensitivity)
@@ -984,7 +962,6 @@ lost if you do not save.""" % count)
         
         # Causes all widgets to be displayed except the empty TreeView and the progressbar
         self.window.show_all()
-        self.photoscroller.hide()
         self.progressbar.hide()
         self.update_sensitivity()
     
@@ -998,8 +975,8 @@ lost if you do not save.""" % count)
         # variable and compare that rather than calling Gdk.keyval_from_name() 
         # a million times, but that seems to just crash and this way actually
         # works, so it looks like this is what we're going with. 
-        if   keyval == Gdk.keyval_from_name("Return"): self.modify_selected_rows(None, True, False) # Apply
-        elif keyval == Gdk.keyval_from_name("w"):      self.modify_selected_rows(None, True, True) # Close
+        if   keyval == Gdk.keyval_from_name("Return"): self.apply_selected_photos()
+        elif keyval == Gdk.keyval_from_name("w"):      self.close_selected_photos()
         elif keyval == Gdk.keyval_from_name("x"):      self.clear_all_gpx()
         elif keyval == Gdk.keyval_from_name("o"):      self.add_files_dialog()
         elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit_dialog()
@@ -1010,7 +987,7 @@ lost if you do not save.""" % count)
         if not self.any_modified(): return
         
         if   keyval == Gdk.keyval_from_name("s"):    self.save_all_files()
-        elif keyval == Gdk.keyval_from_name("z"):    self.modify_selected_rows(None, False, False) # Revert
+        elif keyval == Gdk.keyval_from_name("z"):    self.revert_selected_photos()
     
     # Shorthand for updating the progressbar, and then redrawing the interface
     # (won't modify progressbar if called with no arguments)
@@ -1066,6 +1043,10 @@ lost if you do not save.""" % count)
         gpx_sensitive = len(self.tracks) > 0
         self.clear_gpx_button.set_sensitive(gpx_sensitive)
         self.time_fudge.set_sensitive(gpx_sensitive)
+        
+        # The GtkListStore needs to be hidden if it is empty.
+        if self.liststore.get_iter_first()[0]: self.photoscroller.show()
+        else:                                  self.photoscroller.hide()
     
     def main(self):
         Gtk.main()
