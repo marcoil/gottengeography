@@ -65,7 +65,7 @@ class GottenGeography:
         
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
         return ("%s %.5f, %s %.5f" % 
-            (lat_sign, math.fabs(lat), lon_sign, math.fabs(lon)))
+            (lat_sign, abs(lat), lon_sign, abs(lon)))
     
     # Creates the Pango-formatted display string used in the GtkTreeView
     def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
@@ -102,7 +102,7 @@ class GottenGeography:
     # Converts decimal (float) degrees into degrees, minutes, seconds
     # represented by three instances of the pyexiv2.Rational class
     def decimal_to_dms(self, decimal):
-        decimal = math.fabs(decimal)
+        decimal = abs(decimal)
         
         (deg_frac, degrees) = math.modf(decimal)
         (min_frac, minutes) = math.modf(deg_frac * 60)
@@ -125,7 +125,7 @@ class GottenGeography:
         # places are required for millimeter precision on planet Earth, 
         # I am ok with this. However, I'm going to leave this check 
         # here until more people have tested this.
-        error = math.fabs(self.dms_to_decimal(dms) - decimal)
+        error = abs(self.dms_to_decimal(dms) - decimal)
         if error > 1e-10:
             raise FloatingPointError(
                 "Rounding discarded %s. Please inform rbpark@exolucere.ca!" 
