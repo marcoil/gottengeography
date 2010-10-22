@@ -167,7 +167,7 @@ class GottenGeography:
     
     # Ensure proper markers are highlighted
     def update_all_marker_highlights(self, selection=None):
-        if not selection: selection = self.treeselection
+        if not selection: selection = self.photo_selection
         
         if selection.count_selected_rows() > 0:
             self.liststore.foreach(self.set_marker_highlight,     (False, True))
@@ -482,17 +482,17 @@ class GottenGeography:
     # in response to both keyboard shortcuts and button clicking. button will
     # be the ToolButton that invoked it, or None for a keyboard invocation.
     def apply_selected_photos(self, button=None):
-        self.treeselection.selected_foreach(self.apply_single_photo, [])
+        self.photo_selection.selected_foreach(self.apply_single_photo, [])
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def revert_selected_photos(self, button=None):
-        self.treeselection.selected_foreach(self.revert_single_photo, [])
+        self.photo_selection.selected_foreach(self.revert_single_photo, [])
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def close_selected_photos(self, button=None):
-        (pathlist, model) = self.treeselection.get_selected_rows()
+        (pathlist, model) = self.photo_selection.get_selected_rows()
         if pathlist == []: return
         
         pathlist.reverse()
@@ -850,8 +850,8 @@ lost if you do not save.""" % count)
         self.treeview.set_headers_visible(False)
         self.treeview.set_rubber_banding(True)
         
-        self.treeselection = self.treeview.get_selection()
-        self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.photo_selection = self.treeview.get_selection()
+        self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         
         self.cell_string = Gtk.CellRendererText()
         self.cell_thumb = Gtk.CellRendererPixbuf()
@@ -945,8 +945,8 @@ lost if you do not save.""" % count)
         self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
         self.about_button.connect("clicked", self.about_dialog)
-        self.treeselection.connect("changed", self.update_sensitivity)
-        self.treeselection.connect("changed", self.update_all_marker_highlights)
+        self.photo_selection.connect("changed", self.update_sensitivity)
+        self.photo_selection.connect("changed", self.update_all_marker_highlights)
         self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
         
         # Key bindings
@@ -1021,7 +1021,7 @@ lost if you do not save.""" % count)
     # Gets called every time the selection in self.liststore
     # changes, and in a few places where state changes.
     def update_sensitivity(self, selection=None):
-        if not selection: selection = self.treeselection
+        if not selection: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
         
         # Apply, Connect and Delete buttons get activated if there is a selection
