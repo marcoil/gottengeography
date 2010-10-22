@@ -153,7 +153,7 @@ class GottenGeography:
         (highlighted, transparent) = data
         
         marker = model.get_value(iter, self.PHOTO_MARKER)
-        if not marker: return
+        if marker is None: return
         
         marker.set_highlighted(highlighted)
         
@@ -167,7 +167,7 @@ class GottenGeography:
     
     # Ensure proper markers are highlighted
     def update_all_marker_highlights(self, selection=None):
-        if not selection: selection = self.photo_selection
+        if selection is None: selection = self.photo_selection
         
         if selection.count_selected_rows() > 0:
             self.liststore.foreach(self.set_marker_highlight,     (False, True))
@@ -580,7 +580,7 @@ class GottenGeography:
         # If add_or_reload_photo is called without an iter, that should mean we're
         # loading a new file. But users are stupid, so we need to make sure
         # they're not trying to load a file that's already loaded.
-        if not iter:
+        if iter is None:
             files = []
             self.liststore.foreach(self._find_existing_photo, [files, filename])
             
@@ -1032,7 +1032,7 @@ lost if you do not save.""" % count)
     # Gets called every time the selection in self.liststore
     # changes, and in a few places where state changes.
     def update_sensitivity(self, selection=None):
-        if not selection: selection = self.photo_selection
+        if selection is None: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
         
         # Apply, Connect and Delete buttons get activated if there is a selection
