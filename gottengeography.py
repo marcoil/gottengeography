@@ -345,6 +345,11 @@ class GottenGeography:
                             )
                     }
                     
+                    if timestamp > self.HIGHEST: 
+                        self.HIGHEST = timestamp
+                    if timestamp < self.LOWEST or self.LOWEST is None: 
+                        self.LOWEST = timestamp
+                    
                     # TODO this should probably be optional. Checkbox in the
                     # file open dialog?
                     # Follow the GPX on screen as it's loaded (useful
@@ -371,6 +376,8 @@ class GottenGeography:
         del self.tracks
         self.tracks = {}
         
+        self.HIGHEST = self.LOWEST = None
+        
         self.update_sensitivity()
     
 ################################################################################
@@ -389,17 +396,12 @@ class GottenGeography:
         photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
         photo += self.time_fudge.get_value()
         
-        # points is a list of epoch seconds representing loaded GPX points.
-        # All the following calculations are directly in epoch seconds
-        points = self.tracks.keys()
-        points.sort()
-        
         # higher and lower begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
         # iterate over the list, searching for the two timestamps
         # that are nearest to the photo
-        higher = points[-1]
-        lower  = points[0]
+        higher = self.HIGHEST
+        lower  = self.LOWEST
         
         # If the photo is out of range, simply peg it to the end of the range.
         # I think this makes sense. If it doesn't, the user isn't obligated to
@@ -427,7 +429,7 @@ class GottenGeography:
         except KeyError: 
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
-            for point in points:
+            for point in self.tracks:
                 if (point > photo) and (point < higher): higher = point
                 if (point < photo) and (point > lower):  lower  = point
             
@@ -770,6 +772,7 @@ lost if you do not save.""" % len(self.modified))
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
+        self.HIGHEST = self.LOWEST = None
         
         # Keeps track of which files have been modified, mostly for counting
         # purposes. Keys are absolute paths to files, values are GtkTreeIters.
