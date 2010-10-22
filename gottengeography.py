@@ -35,19 +35,6 @@ from fractions import Fraction
 # TODO: in all of your foreach methods, assign data[0] and data[1] to
 # new variables with better names. this will greatly increase the 
 # readability of those functions.
-# 
-# TODO: I don't like how self.any_modified has to iterate over the whole
-# liststore to count the modified files. it's slow, and it gets called
-# frequently. consider bringing back self.mod_count, except instead of
-# it being a side effect of self.any_modified(), it would be
-# live-updated by all the methods that happen to modify/revert files.
-# Much faster to access an int than to iterate over (potentially
-# hundreds of) images and checking their variables. This would eliminate
-# self.any_modified() and self._append_modified() which is a pretty ugly
-# hack, and greatly reduce the amount of liststore iteration that goes
-# on. You'd only need something like any_modified_in_selection which
-# would be greatly simplified (iterating only over the selection,
-# doesn't even need to count, just boolean)
 
 class GottenGeography:
     
@@ -195,12 +182,12 @@ class GottenGeography:
     
     # Checks if the given file needs to be saved, and if so, saves it.
     def save_one_file(self, model, path, iter, data):
-        if model.get_value(iter, self.PHOTO_MODIFIED):
+        filename  = model.get_value(iter, self.PHOTO_PATH)
+        if self.modified.has_key(filename):
             # data[0] contains the paths we've iterated over, used only for counting
             # data[1] is the total number of unsaved files
             data[0].append(path)
             
-            filename  = model.get_value(iter, self.PHOTO_PATH)
             altitude  = model.get_value(iter, self.PHOTO_ALTITUDE)
             latitude  = model.get_value(iter, self.PHOTO_LATITUDE)
             longitude = model.get_value(iter, self.PHOTO_LONGITUDE)
@@ -235,7 +222,7 @@ class GottenGeography:
             # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
             # 'Exif.GPSInfo.GPSMapDatum'
             
-            model.set_value(iter, self.PHOTO_MODIFIED, False)
+            if self.modified.has_key(filename): del self.modified[filename]
             model.set_value(
                 iter, self.PHOTO_SUMMARY, 
                 re.sub(r'</?b>', '', model.get_value(iter, self.PHOTO_SUMMARY))
@@ -246,7 +233,7 @@ class GottenGeography:
     def save_all_files(self, widget=None):
         self.progressbar.show()
         
-        self.liststore.foreach(self.save_one_file, [[], self.any_modified(give_count=True)])
+        self.liststore.foreach(self.save_one_file, [[], len(self.modified)])
         
         self.update_sensitivity()
         self.progressbar.hide()
@@ -513,6 +500,8 @@ class GottenGeography:
         
         for path in pathlist:
             iter = model.get_iter(path)[1]
+            filename = model.get_value(iter, self.PHOTO_PATH)
+            if self.modified.has_key(filename): del self.modified[filename]
             self.remove_marker(model, iter)
             model.remove(iter)
         
@@ -526,13 +515,14 @@ class GottenGeography:
         
         filename = model.get_value(iter, self.PHOTO_PATH)
         
+        if modified: self.modified[filename] = iter.copy()
+        
         if ele:
             model.set_value(iter, self.PHOTO_ALTITUDE,    ele)
         
         if lat and lon:
             model.set_value(iter, self.PHOTO_LATITUDE,    lat)
             model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
-            model.set_value(iter, self.PHOTO_MODIFIED,    modified)
             model.set_value(iter, self.PHOTO_SUMMARY,
                 self._create_summary(filename, lat, lon, ele, modified))
             model.set_value(iter, self.PHOTO_MARKER,
@@ -599,7 +589,7 @@ class GottenGeography:
         
         self._insert_coordinates(self.liststore, iter, lat, lon, ele, False)
         
-        self.liststore.set_value(iter, self.PHOTO_MODIFIED, False)
+        if self.modified.has_key(filename): del self.modified[filename]
         self.auto_timestamp_comparison(self.liststore, None, iter, [])
         self.update_sensitivity()
     
@@ -723,8 +713,7 @@ class GottenGeography:
             self.map_view.get_zoom_level())
         
         # If there's no unsaved data, just close without confirmation.
-        count = self.any_modified(give_count=True)
-        if count == 0: Gtk.main_quit(); return True
+        if len(self.modified) == 0: Gtk.main_quit(); return True
         
         dialog = Gtk.MessageDialog(
             parent=self.window, 
@@ -736,7 +725,7 @@ class GottenGeography:
 changes to your photos before closing?</span>
 
 The changes you've made to %d of your photos will be permanently \
-lost if you do not save.""" % count)
+lost if you do not save.""" % len(self.modified))
         dialog.add_button("Close _without Saving", Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
@@ -781,6 +770,10 @@ lost if you do not save.""" % count)
     def __init__(self):
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
+        
+        # Keeps track of which files have been modified, mostly for counting
+        # purposes. Keys are absolute paths to files, values are GtkTreeIters.
+        self.modified = {}
         
         self.gconf_client = GConf.Client.get_default()
         self.LAST_LAT  = '/apps/gottengeography/last_latitude'
@@ -844,14 +837,13 @@ lost if you do not save.""" % count)
             GObject.TYPE_DOUBLE,  # 4 Latitude
             GObject.TYPE_DOUBLE,  # 5 Longitude
             GObject.TYPE_DOUBLE,  # 6 Altitude
-            GObject.TYPE_BOOLEAN, # 7 'Have we modified the file?' flag
-            GObject.TYPE_OBJECT   # 8 ChamplainMarker representing photo on map
+            GObject.TYPE_OBJECT   # 7 ChamplainMarker representing photo on map
         )
         
         # These constants will make referencing the above columns much easier
         (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, 
         self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, 
-        self.PHOTO_ALTITUDE, self.PHOTO_MODIFIED, self.PHOTO_MARKER
+        self.PHOTO_ALTITUDE, self.PHOTO_MARKER
         ) = range(self.liststore.get_n_columns())
         
         self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
@@ -991,7 +983,7 @@ lost if you do not save.""" % count)
         elif keyval == Gdk.keyval_from_name("?"):      self.about_dialog()
         
         # Prevent the following keybindings from executing if there are no unsaved files
-        if not self.any_modified(): return
+        if len(self.modified) == 0: return
         
         if   keyval == Gdk.keyval_from_name("s"):    self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):    self.revert_selected_photos()
@@ -1005,28 +997,17 @@ lost if you do not save.""" % count)
     
     # Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
     # (used exlusively in the following method)
-    def _append_modified(self, model, path, iter, data):
-        if model.get_value(iter, self.PHOTO_MODIFIED): 
-            data[0].append(path)
-            # halt the foreach() loop at the first unsaved file
-            # but only if a count wasn't asked for
-            return data[1]
+    def _append_if_modified(self, model, path, iter, pathlist):
+        if self.modified.has_key(model.get_value(iter, self.PHOTO_PATH)): 
+            pathlist.append(path)
+            return True
     
-    # Checks for unsaved files. By default will return True if it finds any
-    # If a count is needed, call with give_count=True and it will return an int
-    def any_modified(self, selection=None, give_count=False):
+    # Checks for unsaved files in the current selection. Used exclusively to
+    # determine the sensitivity of the Revert button.
+    def any_modified_in_selection(self):
         pathlist = []
-        
-        # give_count must be inverted here because "give_count=True" means
-        # "I want a count", but internally a True value results in the count
-        # _NOT_ happening (it stops counting at 1, enough to return a boolean)
-        if selection: 
-            selection.selected_foreach(self._append_modified, (pathlist, not give_count))
-        else:
-            self.liststore.foreach(self._append_modified, (pathlist, not give_count))
-        
-        if give_count: return len(pathlist)
-        else:          return pathlist <> [] # False if pathlist is empty
+        self.photo_selection.selected_foreach(self._append_if_modified, pathlist)
+        return pathlist <> []
     
     # This method is responsible for ensuring all the toolbuttons have the
     # correct sensitivity given the current context of the application.
@@ -1041,10 +1022,10 @@ lost if you do not save.""" % count)
         self.close_button.set_sensitive(sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
-        self.revert_button.set_sensitive(self.any_modified(selection))
+        self.revert_button.set_sensitive(self.any_modified_in_selection())
         
         # The Save button is only activated if there are modified files.
-        self.save_button.set_sensitive(self.any_modified())
+        self.save_button.set_sensitive(len(self.modified) > 0)
         
         # The Clear button and time fudge is only sensitive if there's any GPX
         gpx_sensitive = len(self.tracks) > 0
