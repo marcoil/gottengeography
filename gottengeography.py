@@ -52,8 +52,10 @@ class GottenGeography:
     def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
         """Describe photo metadata with Pango formatting."""
         
-        if lat and lon: summary = self._pretty_coords(lat, lon)
-        else:           summary = "Not geotagged"
+        if self.valid_coords(lat, lon): 
+            summary = self._pretty_coords(lat, lon)
+        else:
+            summary = "Not geotagged"
         
         if ele: summary += "\n%.1fm above sea level" % ele
         
@@ -133,6 +135,14 @@ class GottenGeography:
         # the imprecision inherent to a float. 
         fraction = Fraction(str(decimal)).limit_denominator(10000)
         return pyexiv2.Rational(fraction.numerator, fraction.denominator)
+    
+    def valid_coords(self, lat=None, lon=None):
+        """Determine the validity of coordinates."""
+        
+        # Note that None <= 90 will evaluate to True, but None >= -90 is False.
+        # Because these tests are all chained together with "and" logic,
+        # the entire thing will be False if given a None.
+        return lat >= -90 and lat <= 90 and lon >= -180 and lon <= 180
     
 ################################################################################
 # ChamplainMarker. This section contains methods that manipulate map markers.
@@ -541,7 +551,7 @@ class GottenGeography:
         if ele:
             model.set_value(iter, self.PHOTO_ALTITUDE,    ele)
         
-        if lat and lon:
+        if self.valid_coords(lat, lon):
             model.set_value(iter, self.PHOTO_LATITUDE,    lat)
             model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
             model.set_value(iter, self.PHOTO_SUMMARY,
@@ -652,8 +662,10 @@ class GottenGeography:
             chooser.set_preview_widget_active(False)
             return
         
-        if lat and lon: label = "%s\n%s" % (timestamp, self._pretty_coords(lat, lon))
-        else:           label = "%s\n%s" % (timestamp, "Not geotagged")
+        if self.valid_coords(lat, lon): 
+            label = "%s\n%s" % (timestamp, self._pretty_coords(lat, lon))
+        else:
+            label = "%s\n%s" % (timestamp, "Not geotagged")
         
         if ele: label = "%s\n%.1fm above sea level" % (label, ele)
         
