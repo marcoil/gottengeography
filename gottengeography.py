@@ -30,12 +30,6 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-# TODO Needs to be able to load files via drag&drop
-#
-# TODO: in all of your foreach methods, assign data[0] and data[1] to
-# new variables with better names. this will greatly increase the 
-# readability of those functions.
-
 class GottenGeography:
     
 ################################################################################
@@ -43,8 +37,9 @@ class GottenGeography:
 # that are suitable for displaying to the user.
 ################################################################################
     
-    # Takes decimal coordinates and returns a string with direction labels
     def _pretty_coords(self, lat, lon):
+        """Add cardinal directions to decimal coordinates."""
+        
         if lat > 0: lat_sign = "N"
         else:       lat_sign = "S"
         if lon > 0: lon_sign = "E"
@@ -54,17 +49,22 @@ class GottenGeography:
         return ("%s %.5f, %s %.5f" % 
             (lat_sign, abs(lat), lon_sign, abs(lon)))
     
-    # Creates the Pango-formatted display string used in the GtkTreeView
     def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
+        """Describe photo metadata with Pango formatting."""
+        
         if lat and lon: summary = self._pretty_coords(lat, lon)
         else:           summary = "Not geotagged"
         
         if ele: summary += "\n%.1fm above sea level" % ele
         
-        # "filename in normal size, then on a new line, 
-        # coordinates in a smaller, light grey font"
-        summary = ('%s\n<span color="#BBBBBB" size="smaller">%s</span>' % 
-                                       (os.path.basename(file), summary))
+        # Eg:
+        # filename.jpg
+        # N nn.nnnnn, W nnn.nnnnn
+        # 540.6m above sea level
+        summary = (
+            '%s\n<span color="#BBBBBB" size="smaller">%s</span>' % 
+            (os.path.basename(file), summary)
+        )
         
         # Embolden text if this image has unsaved data
         if modified: summary = '<b>%s</b>' % summary
@@ -75,8 +75,9 @@ class GottenGeography:
 # GPS math. These methods convert numbers into other numbers.
 ################################################################################
     
-    # Converts degrees, minutes, seconds (from pyexiv2) into decimal degrees
     def dms_to_decimal(self, dms, sign=""):
+        """Convert degrees, minutes, seconds into decimal degrees."""
+        
         # The south and the west hemispheres are considered "negative"
         if re.match("[SWsw]", sign): sign = -1
         else:                        sign =  1
@@ -86,9 +87,9 @@ class GottenGeography:
                 (float(dms[1].numerator) / dms[1].denominator) / 60    + 
                 (float(dms[2].numerator) / dms[2].denominator) / 3600) * sign
     
-    # Converts decimal (float) degrees into degrees, minutes, seconds
-    # represented by three instances of the pyexiv2.Rational class
     def decimal_to_dms(self, decimal):
+        """Convert decimal degrees into degrees, minutes, seconds."""
+        
         decimal = abs(decimal)
         
         (deg_frac, degrees) = math.modf(decimal)
@@ -97,11 +98,11 @@ class GottenGeography:
         
         dms = []
         
-        # degrees and minutes are whole numbers, thus have a denominator of 1
+        # Degrees and minutes are whole numbers, thus have a denominator of 1
         dms.append(pyexiv2.Rational(degrees, 1))
         dms.append(pyexiv2.Rational(minutes, 1))
         
-        # seconds has a bunch of crap after the decimal that needs to be
+        # seconds has a big remainder that needs to be
         # preserved in fraction form for storage in EXIF.
         dms.append(self.float_to_rational(seconds))
         
@@ -122,6 +123,8 @@ class GottenGeography:
         return dms
     
     def float_to_rational(self, decimal):
+        """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
+        
         # fractions.Fraction() method claims to be able to convert a 
         # float to a fraction, but it seems to be broken. Fortunately, 
         # if I cast the float to a string first, that seems to work. 
@@ -135,8 +138,9 @@ class GottenGeography:
 # ChamplainMarker. This section contains methods that manipulate map markers.
 ################################################################################
     
-    # Highlight (or not) the given marker on the map.
     def set_marker_highlight(self, model, path, iter, data):
+        """Set the highlightedness of the given photo's ChamplainMarker."""
+        
         (highlighted, transparent) = data
         
         marker = model.get_value(iter, self.PHOTO_MARKER)
@@ -146,14 +150,15 @@ class GottenGeography:
         
         if transparent: marker.set_property('opacity', 128)
         else:           marker.set_property('opacity', 255)
-
+        
         if highlighted:
             # TODO bring marker to the front as well
             self.map_view.center_on(marker.get_property('latitude'), 
                                     marker.get_property('longitude'))
     
-    # Ensure proper markers are highlighted
     def update_all_marker_highlights(self, selection=None):
+        """Ensure only the selected markers are highlighted."""
+        
         if selection is None: selection = self.photo_selection
         
         if selection.count_selected_rows() > 0:
@@ -162,8 +167,9 @@ class GottenGeography:
         else:
             self.liststore.foreach(self.set_marker_highlight,     (False, False))
     
-    # Creates a new ChamplainMarker and adds it to the map
     def add_marker(self, label, lat, lon, center_view=True):
+        """Create a new ChamplainMarker and add it to the map."""
+        
         marker = Champlain.Marker()
         marker.set_text(os.path.basename(label))
         marker.set_position(lat, lon)
@@ -173,6 +179,11 @@ class GottenGeography:
         return marker
     
     def remove_marker(self, model, iter):
+        """Remove any marker associated with the given photo from the map."""
+        
+        # TODO needs to check if the marker is already removed before removing,
+        # in order to suppress a warning from libchamplain.
+        # TODO needs to be deleted from the liststore somehow...
         old_marker = model.get_value(iter, self.PHOTO_MARKER)
         if old_marker: self.map_photo_layer.remove_marker(old_marker)
     
@@ -180,20 +191,22 @@ class GottenGeography:
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
-    # Checks if the given file needs to be saved, and if so, saves it.
     def save_one_file(self, model, path, iter, data):
-        filename  = model.get_value(iter, self.PHOTO_PATH)
+        """Save the specified file, if necessary."""
+        
+        (current, total) = data
+        
+        filename = model.get_value(iter, self.PHOTO_PATH)
+        
         if self.modified.has_key(filename):
-            # data[0] contains the paths we've iterated over, used only for counting
-            # data[1] is the total number of unsaved files
-            data[0].append(path)
+            current.append(path)
             
             altitude  = model.get_value(iter, self.PHOTO_ALTITUDE)
             latitude  = model.get_value(iter, self.PHOTO_LATITUDE)
             longitude = model.get_value(iter, self.PHOTO_LONGITUDE)
-
+            
             self._redraw_interface(
-                float( len( data[0] ) ) / data[1], "Saving %s..." % 
+                float(len(current)) / total, "Saving %s..." % 
                 os.path.basename(filename)
             )
             
@@ -204,7 +217,7 @@ class GottenGeography:
             
             exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
             exif['Exif.GPSInfo.GPSAltitude']    = self.float_to_rational(altitude)
-
+            
             exif['Exif.GPSInfo.GPSLatitude']    = self.decimal_to_dms(latitude)
             exif['Exif.GPSInfo.GPSLongitude']   = self.decimal_to_dms(longitude)
             
@@ -223,14 +236,15 @@ class GottenGeography:
             # 'Exif.GPSInfo.GPSMapDatum'
             
             if self.modified.has_key(filename): del self.modified[filename]
+            
             model.set_value(
                 iter, self.PHOTO_SUMMARY, 
                 re.sub(r'</?b>', '', model.get_value(iter, self.PHOTO_SUMMARY))
             )
     
-    # Iterates over all files in the liststore and passes each one to the above
-    # saving function
     def save_all_files(self, widget=None):
+        """Call self.save_one_file() once for each loaded file."""
+        
         self.progressbar.show()
         
         self.liststore.foreach(self.save_one_file, [[], len(self.modified)])
@@ -238,8 +252,9 @@ class GottenGeography:
         self.update_sensitivity()
         self.progressbar.hide()
     
-    # Do the pyexiv2 dirty work
-    def load_exif_from_file(self, filename, thumb_size=128):
+    def load_exif_from_file(self, filename, thumb_size=200):
+        """Read photo metadata from disk using the pyexiv2 module."""
+        
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
@@ -254,10 +269,14 @@ class GottenGeography:
             timestamp = None
         
         try:
-            lat = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLatitude'], 
-                                      exif['Exif.GPSInfo.GPSLatitudeRef'])
-            lon = self.dms_to_decimal(exif['Exif.GPSInfo.GPSLongitude'], 
-                                      exif['Exif.GPSInfo.GPSLongitudeRef'])
+            lat = self.dms_to_decimal(
+                exif['Exif.GPSInfo.GPSLatitude'], 
+                exif['Exif.GPSInfo.GPSLatitudeRef']
+            )
+            lon = self.dms_to_decimal(
+                exif['Exif.GPSInfo.GPSLongitude'], 
+                exif['Exif.GPSInfo.GPSLongitudeRef']
+            )
         except KeyError:
             lat = lon = None
         
@@ -283,9 +302,9 @@ class GottenGeography:
         
         return timestamp, lat, lon, ele, thumb
     
-    # Runs given filename through minidom-based GPX parser, and raises 
-    # xml.parsers.expat.ExpatError if the file is invalid
     def load_gpx_from_file(self, filename):
+        """Parse GPX data, placing each track point on the map."""
+        
         self._redraw_interface(0, "Parsing GPS data (please be patient)...")
         
         # TODO what happens to this if I load an XML file that isn't GPX?
@@ -297,8 +316,8 @@ class GottenGeography:
         
         # This creates a nested dictionary (a dictionary of dictionaries) in 
         # which the top level keys are UTC epoch seconds, and the bottom level 
-        # keys are 'elevation' and 'point', a ChamplainPoint representing 
-        # latitude/longitude.
+        # keys are 'elevation' (a float) and 'point', a ChamplainPoint 
+        # representing latitude and longitude.
         for track in gpx.documentElement.getElementsByTagName('trk'): 
             # I find GPS-generated names to be ugly, so I only show them in the progress meter,
             # they're not stored anywhere or used after that
@@ -361,11 +380,13 @@ class GottenGeography:
                     )
         
         # Make magic happen ;-)
-        self.liststore.foreach(self.auto_timestamp_comparison, [])
+        self.liststore.foreach(self.auto_timestamp_comparison, None)
+        
         self.update_sensitivity()
     
-    # Removes all loaded GPX tracks from the map, and unloads all GPX data
     def clear_all_gpx(self, widget=None):
+        """Forget all GPX data, start over with a clean slate."""
+        
         # One day, this will stop causing segfaults and make my life easier.
         #self.map_gpx.clear_points()
         
@@ -384,11 +405,9 @@ class GottenGeography:
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    # This does all the magic of calculating coordinates proportional
-    # to relative timestamps. Takes in just a single photo,
-    # designed for use with self.liststore.foreach() but can be called
-    # separately, eg, during file loading.
-    def auto_timestamp_comparison(self, model, path, iter, errors=[]):
+    def auto_timestamp_comparison(self, model, path, iter, data=None):
+        """Use GPX data to calculate photo coordinates and elevation."""
+        
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
@@ -462,14 +481,15 @@ class GottenGeography:
         
         self._insert_coordinates(model, iter, lat, lon, ele)
     
-    # This updates the position of all the loaded images each time the user
-    # modifies the time_fudge slider.
     def time_fudge_value_changed(self, slider):
-        self.liststore.foreach(self.auto_timestamp_comparison, [])
+        """Update all photos each time the camera's clock is corrected."""
+        
+        self.liststore.foreach(self.auto_timestamp_comparison, None)
         self.update_all_marker_highlights()
     
-    # apply_single_photo is called from within selected_foreach()
     def apply_single_photo(self, model, path, iter, data=None):
+        """Manually apply map center coordinates to given photo."""
+        
         self._insert_coordinates(model, iter, 
             self.map_view.get_property('latitude'), 
             self.map_view.get_property('longitude')
@@ -479,16 +499,22 @@ class GottenGeography:
     # in response to both keyboard shortcuts and button clicking. button will
     # be the ToolButton that invoked it, or None for a keyboard invocation.
     def apply_selected_photos(self, button=None):
-        self.photo_selection.selected_foreach(self.apply_single_photo, [])
+        """Manually apply map center coordinates to all selected photos."""
+        
+        self.photo_selection.selected_foreach(self.apply_single_photo, None)
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def revert_selected_photos(self, button=None):
+        """Discard any modifications to all selected photos."""
+        
         self.photo_selection.selected_foreach(self.add_or_reload_photo, None)
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def close_selected_photos(self, button=None):
+        """Discard all selected photos."""
+        
         (pathlist, model) = self.photo_selection.get_selected_rows()
         if pathlist == []: return
         
@@ -503,10 +529,9 @@ class GottenGeography:
         
         self.update_sensitivity()
     
-    # Takes in coordinates & elevation (as calculated either manually or 
-    # automatically), and applies those values into our GtkListStore.
-    # Removes any old marker if there is one, and creates a new one.
     def _insert_coordinates(self, model, iter, lat=None, lon=None, ele=None, modified=True):
+        """Create map marker and assign 3D coordinates to specified photo."""
+        
         self.remove_marker(model, iter)
         
         filename = model.get_value(iter, self.PHOTO_PATH)
@@ -524,25 +549,29 @@ class GottenGeography:
             model.set_value(iter, self.PHOTO_MARKER,
                 self.add_marker(filename, lat, lon))
     
-    # This function is called from self.add_or_reload_photo to help
-    # prevent the loading of duplicate files. (if a duplicate file
-    # load is detected, it turns into a reload of that file without
-    # generating a duplicate entry in the liststore)    
     def _find_existing_photo(self, model, path, iter, data):
-        # data[0] is a list onto which we append the iter representing
-        # the already-loaded file, data[1] is the filename the user
-        # is trying to load.
-        if data[1] == model.get_value(iter, self.PHOTO_PATH):
-            data[0].append(iter.copy())
+        """Determine if a photo has already been loaded or not."""
+        
+        (loaded, filename) = data
+        
+        if filename == model.get_value(iter, self.PHOTO_PATH):
+            loaded.append(iter.copy())
             return True
     
-    # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
-    # we know when the photo was taken, and whether or not it already has any 
-    # geotags on it, and a pretty thumbnail to show the user.
     def add_or_reload_photo(self, model=None, path=None, iter=None, filename=None):
+        """Create or update a row in the ListStore.
+        
+        Checks if the file has already been loaded, and if not, creates a new
+        row in the ListStore. Either way, it then populates that row with
+        photo metadata as read from disk. Effectively, this is used both for 
+        loading new photos, and reverting old photos, discarding any changes.
+        
+        Must be passed either an iter or filename, or both.
+        """
+        
         if iter is None and filename is None: 
             raise NameError("Cannot continue without either filename or iter.")
-
+        
         if model is None:    model    = self.liststore
         if filename is None: filename = model.get_value(iter, self.PHOTO_PATH)
         
@@ -593,16 +622,16 @@ class GottenGeography:
         
         if self.modified.has_key(filename): del self.modified[filename]
         
-        self.auto_timestamp_comparison(model, None, iter, [])
+        self.auto_timestamp_comparison(model, None, iter)
         self.update_sensitivity()
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
 ################################################################################
     
-    # Loads a thumbnail into a Pixbuf, and GPS data into a string and then 
-    # saves it as the preview widget for the open FileChooserDialog
     def update_preview(self, chooser):
+        """Display photo thumbnail and geotag data in file chooser."""
+        
         filename = chooser.get_preview_filename()
         
         if not os.path.isfile(str(filename)): 
@@ -641,10 +670,10 @@ class GottenGeography:
         chooser.set_preview_widget(vbox)
         chooser.set_preview_widget_active(True)
     
-    # Displays nice GNOME file chooser dialog and allows user to select 
-    # either images or GPX files.
     # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files_dialog(self, widget=None, data=None):
+        """Display a file chooser, and attempt to load chosen files."""
+        
         chooser = Gtk.FileChooserDialog(
             title="Open files...",
             buttons=(
@@ -658,7 +687,7 @@ class GottenGeography:
         
         # make a file preview thingo
         chooser.connect("selection-changed", self.update_preview)
-
+        
         # TODO figure out what formats are supported by pyexiv2,
         # and hide anything that isn't supported. For now, allow
         # the user to open anything, but gracefully fail if they open
@@ -699,14 +728,14 @@ class GottenGeography:
                 invalid_files.append(os.path.basename(filename))
                 self.statusbar.push(
                     self.statusbar.get_context_id("error"), 
-                    "Could not open: " + ", ".join(invalid_files)
+                    "Could not open: %s" % ", ".join(invalid_files)
                 )
         
         self.progressbar.hide()
     
-    # This function checks for unsaved files, and displays a 
-    # GNOME HIG compliant quit confirmation dialog. 
     def confirm_quit_dialog(self, widget=None, event=None):
+        """Teardown method, inform user of unsaved files, if any."""
+        
         # Remember the last viewed location so we can return to it next run
         self.gconf_client.set_float(self.LAST_LAT, 
             self.map_view.get_property('latitude')) 
@@ -734,7 +763,7 @@ lost if you do not save.""" % len(self.modified))
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
         dialog.set_default_response(Gtk.ResponseType.ACCEPT)
         
-        # If we don't dialog.destroy() here, and the users chooses to save files, 
+        # If we don't dialog.destroy() here, and the user chooses to save files, 
         # the dialog stays open during the save, which looks very unresponsive 
         # and makes the application feel sluggish.
         response = dialog.run()
@@ -750,6 +779,8 @@ lost if you do not save.""" % len(self.modified))
     
     # TODO needs logo
     def about_dialog(self, widget=None, data=None):
+        """Describe this application to the user."""
+        
         dialog = Gtk.AboutDialog()
         dialog.set_program_name("GottenGeography")
         dialog.set_name("GottenGeography")
@@ -771,6 +802,8 @@ lost if you do not save.""" % len(self.modified))
 ################################################################################
     
     def __init__(self):
+        """Initialize all necessary state."""
+        
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
         self.HIGHEST = self.LOWEST = None
@@ -779,6 +812,7 @@ lost if you do not save.""" % len(self.modified))
         # purposes. Keys are absolute paths to files, values are GtkTreeIters.
         self.modified = {}
         
+        # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
         self.LAST_LAT  = '/apps/gottengeography/last_latitude'
         self.LAST_LON  = '/apps/gottengeography/last_longitude'
@@ -789,7 +823,7 @@ lost if you do not save.""" % len(self.modified))
             "GottenGeography - The Python Geotagger that's easy to use!")
         self.window.set_size_request(900,700)
         
-        self.vbox = Gtk.VBox(spacing=0)
+        self.app_container = Gtk.VBox(spacing=0)
         
         # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
@@ -823,7 +857,7 @@ lost if you do not save.""" % len(self.modified))
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text(
             "Reload selected photos, losing all changes (Ctrl+Z)")
-
+        
         self.toolbar_third_spacer = Gtk.SeparatorToolItem()
         self.toolbar_third_spacer.set_expand(True)
         self.toolbar_third_spacer.set_draw(False)
@@ -887,7 +921,7 @@ lost if you do not save.""" % len(self.modified))
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_photo_layer.show()
-
+        
         # Load last used location from GConf
         self.map_view.center_on(
             self.gconf_client.get_float(self.LAST_LAT), 
@@ -939,10 +973,10 @@ lost if you do not save.""" % len(self.modified))
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.toolbar_third_spacer)
         self.toolbar.add(self.about_button)
-        self.vbox.pack_start(self.toolbar, False, True, 0)
-        self.vbox.pack_start(self.photos_and_map_container, True, True, 0)
-        self.vbox.pack_end(self.statusbar, False, True, 0)
-        self.window.add(self.vbox)
+        self.app_container.pack_start(self.toolbar, False, True, 0)
+        self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
+        self.app_container.pack_end(self.statusbar, False, True, 0)
+        self.window.add(self.app_container)
         
         # Connect all my precious signal handlers
         self.window.connect("delete_event", self.confirm_quit_dialog)
@@ -963,17 +997,16 @@ lost if you do not save.""" % len(self.modified))
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
             self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
-        # Causes all widgets to be displayed except the empty TreeView and the progressbar
+        # Ensure all widgets are displayed consistently with current state.
         self.window.show_all()
         self.progressbar.hide()
         self.update_sensitivity()
     
-    # This method handles key shortcuts. It's called when the user 
-    # types a shortcut key, and then dispatches the appropriate method to 
-    # handle each possible action.
     # TODO make sure these key choices actually make sense 
     # and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
+        """Respond to keyboard shortcuts as typed by user."""
+        
         # It would make more sense to store Gdk.keyval_name(keyval) in a
         # variable and compare that rather than calling Gdk.keyval_from_name() 
         # a million times, but that seems to just crash and this way actually
@@ -989,49 +1022,54 @@ lost if you do not save.""" % len(self.modified))
         # Prevent the following keybindings from executing if there are no unsaved files
         if len(self.modified) == 0: return
         
-        if   keyval == Gdk.keyval_from_name("s"):    self.save_all_files()
-        elif keyval == Gdk.keyval_from_name("z"):    self.revert_selected_photos()
+        if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
+        elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
     
-    # Shorthand for updating the progressbar, and then redrawing the interface
-    # (won't modify progressbar if called with no arguments)
     def _redraw_interface(self, fraction=None, text=None):
+        """Tell Gtk to redraw the user interface, so it doesn't look hung.
+        
+        Primarily used to update the progressbar, but also for disappearing
+        some dialogs while things are processing in the background. Won't 
+        modify the progressbar if called with no arguments.
+        """
+        
         if fraction is not None: self.progressbar.set_fraction(fraction)
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    # Take a GtkTreeIter, and append it's path to the pathlist if it's unsaved
-    # (used exlusively in the following method)
     def _append_if_modified(self, model, path, iter, pathlist):
+        """Append the given photo to the pathlist if it's been modified."""
+        
         if self.modified.has_key(model.get_value(iter, self.PHOTO_PATH)): 
             pathlist.append(path)
             return True
     
-    # Checks for unsaved files in the current selection. Used exclusively to
-    # determine the sensitivity of the Revert button.
-    def any_modified_in_selection(self):
-        pathlist = []
-        self.photo_selection.selected_foreach(self._append_if_modified, pathlist)
-        return pathlist <> []
-    
-    # This method is responsible for ensuring all the toolbuttons have the
-    # correct sensitivity given the current context of the application.
-    # Gets called every time the selection in self.liststore
-    # changes, and in a few places where state changes.
     def update_sensitivity(self, selection=None):
+        """Ensure all widgets are sensitive only when they need to be.
+        
+        This method should be called every time any program state changes,
+        eg, when modifying a photo in any way, and when the selection changes.
+        """
+        
         if selection is None: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
         
-        # Apply, Connect and Delete buttons get activated if there is a selection
+        # Apply and Close buttons get activated if any photo is selected
         self.apply_button.set_sensitive(sensitivity)
         self.close_button.set_sensitive(sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
-        self.revert_button.set_sensitive(self.any_modified_in_selection())
+        modified_in_selection = []
+        self.photo_selection.selected_foreach(
+            self._append_if_modified, 
+            modified_in_selection
+        )
+        self.revert_button.set_sensitive(len(modified_in_selection) > 0)
         
         # The Save button is only activated if there are modified files.
         self.save_button.set_sensitive(len(self.modified) > 0)
         
-        # The Clear button and time fudge is only sensitive if there's any GPX
+        # The Clear button and time fudge are only sensitive if there's any GPX
         gpx_sensitive = len(self.tracks) > 0
         self.clear_gpx_button.set_sensitive(gpx_sensitive)
         self.time_fudge.set_sensitive(gpx_sensitive)
@@ -1041,6 +1079,8 @@ lost if you do not save.""" % len(self.modified))
         else:                                  self.photoscroller.hide()
     
     def main(self):
+        """Go!"""
+        
         Gtk.main()
 
 COMMENTS = ("""This program is written in the Python programming language, \
