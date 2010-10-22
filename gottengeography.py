@@ -468,19 +468,13 @@ class GottenGeography:
         self.liststore.foreach(self.auto_timestamp_comparison, [])
         self.update_all_marker_highlights()
     
-    # {apply,revert}_single_photo are called from within selected_foreach()
-    # TODO considering that both of these consist of just a single method call,
-    # might it be possible to have those methods called directly from the 
-    # selected_foreach()? it would require some modifications to those methods.
+    # apply_single_photo is called from within selected_foreach()
     def apply_single_photo(self, model, path, iter, data=None):
         self._insert_coordinates(model, iter, 
             self.map_view.get_property('latitude'), 
             self.map_view.get_property('longitude')
         )
     
-    def revert_single_photo(self, model, path, iter, data=None):
-        self.add_or_reload_photo(model.get_value(iter, self.PHOTO_PATH), iter)
-        
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
     # be the ToolButton that invoked it, or None for a keyboard invocation.
@@ -490,7 +484,7 @@ class GottenGeography:
         self.update_all_marker_highlights()
     
     def revert_selected_photos(self, button=None):
-        self.photo_selection.selected_foreach(self.revert_single_photo, [])
+        self.photo_selection.selected_foreach(self.add_or_reload_photo, None)
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
@@ -545,7 +539,13 @@ class GottenGeography:
     # Takes a filename and attempts to extract EXIF data with pyexiv2 so that 
     # we know when the photo was taken, and whether or not it already has any 
     # geotags on it, and a pretty thumbnail to show the user.
-    def add_or_reload_photo(self, filename, iter=None):
+    def add_or_reload_photo(self, model=None, path=None, iter=None, filename=None):
+        if iter is None and filename is None: 
+            raise NameError("Cannot continue without either filename or iter.")
+
+        if model is None:    model    = self.liststore
+        if filename is None: filename = model.get_value(iter, self.PHOTO_PATH)
+        
         # This ugliness is necessary because pyexiv2 won't give any sort
         # of error whatsoever when it's asked to parse a GPX file, it fails
         # silently, and gives us an empty list of exif keys. Which is the exact
@@ -569,30 +569,31 @@ class GottenGeography:
             # than absolutely nothing.
             timestamp = int(os.stat(filename).st_mtime)
         
-        # If add_or_reload_photo is called without an iter, that should mean we're
-        # loading a new file. But users are stupid, so we need to make sure
-        # they're not trying to load a file that's already loaded.
+        # Make sure we're not loading a file that's already loaded.
         if iter is None:
             files = []
-            self.liststore.foreach(self._find_existing_photo, [files, filename])
+            model.foreach(self._find_existing_photo, [files, filename])
             
             # The user is loading a NEW file! Yay!
-            if files == []: iter = self.liststore.append([None] * self.liststore.get_n_columns())
+            if files == []: 
+                iter = model.append([None] * self.liststore.get_n_columns())
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
-            else: iter = files[0]
+            else: 
+                iter = files[0]
         
-        self.liststore.set_value(iter, self.PHOTO_PATH, filename)
-        self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
-        self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
-        self.liststore.set_value(iter, self.PHOTO_SUMMARY, 
+        model.set_value(iter, self.PHOTO_PATH,      filename)
+        model.set_value(iter, self.PHOTO_THUMB,     thumb)
+        model.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
+        model.set_value(iter, self.PHOTO_SUMMARY, 
             self._create_summary(filename, lat, lon, ele))
         
-        self._insert_coordinates(self.liststore, iter, lat, lon, ele, False)
+        self._insert_coordinates(model, iter, lat, lon, ele, False)
         
         if self.modified.has_key(filename): del self.modified[filename]
-        self.auto_timestamp_comparison(self.liststore, None, iter, [])
+        
+        self.auto_timestamp_comparison(model, None, iter, [])
         self.update_sensitivity()
     
 ################################################################################
@@ -692,7 +693,7 @@ class GottenGeography:
             # Assume the file is an image; if that fails, assume it's GPX; 
             # if that fails, show an error
             try:
-                try:            self.add_or_reload_photo(filename)
+                try:            self.add_or_reload_photo(filename=filename)
                 except IOError: self.load_gpx_from_file(filename)
             except ExpatError:
                 invalid_files.append(os.path.basename(filename))
