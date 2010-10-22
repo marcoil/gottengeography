@@ -585,7 +585,7 @@ class GottenGeography:
             self.liststore.foreach(self._find_existing_photo, [files, filename])
             
             # The user is loading a NEW file! Yay!
-            if files == []: iter = self.liststore.append([None] * 9)
+            if files == []: iter = self.liststore.append([None] * self.liststore.get_n_columns())
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
@@ -851,7 +851,8 @@ lost if you do not save.""" % count)
         # These constants will make referencing the above columns much easier
         (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, 
         self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, 
-        self.PHOTO_ALTITUDE, self.PHOTO_MODIFIED, self.PHOTO_MARKER) = range(9)
+        self.PHOTO_ALTITUDE, self.PHOTO_MODIFIED, self.PHOTO_MARKER
+        ) = range(self.liststore.get_n_columns())
         
         self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
         
