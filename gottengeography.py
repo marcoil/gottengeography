@@ -252,7 +252,7 @@ class GottenGeography:
         self.progressbar.hide()
     
     # Do the pyexiv2 dirty work
-    def load_exif_from_file(self, filename):
+    def load_exif_from_file(self, filename, thumb_size=128):
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
@@ -280,7 +280,21 @@ class GottenGeography:
         except:
             ele = None
         
-        return timestamp, lat, lon, ele
+        try:
+            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                filename, 
+                thumb_size, 
+                thumb_size
+            )
+        except:
+            thumb = Gtk.Widget.render_icon(
+                Gtk.Image(), 
+                Gtk.STOCK_MISSING_IMAGE, 
+                Gtk.IconSize.MENU, 
+                None
+            )
+        
+        return timestamp, lat, lon, ele, thumb
     
     # Runs given filename through minidom-based GPX parser, and raises 
     # xml.parsers.expat.ExpatError if the file is invalid
@@ -549,7 +563,8 @@ class GottenGeography:
         # the rest of this method from running on an invalid file.
         if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
-        (timestamp, lat, lon, ele) = self.load_exif_from_file(filename)
+        (timestamp, lat, lon, ele, thumb
+            ) = self.load_exif_from_file(filename, 200)
         
         if timestamp:
             # I *think* that this code requires the computer's timezone
@@ -576,16 +591,6 @@ class GottenGeography:
             # so reload that data into the already-existing iter
             else: iter = files[0]
         
-        try:
-            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 128, 128)
-        except:
-            thumb = Gtk.Widget.render_icon(
-                Gtk.Image(), 
-                Gtk.STOCK_MISSING_IMAGE, 
-                Gtk.IconSize.MENU, 
-                None
-            )
-        
         self.liststore.set_value(iter, self.PHOTO_PATH, filename)
         self.liststore.set_value(iter, self.PHOTO_THUMB, thumb)
         self.liststore.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
@@ -606,36 +611,42 @@ class GottenGeography:
     # saves it as the preview widget for the open FileChooserDialog
     def update_preview(self, chooser):
         filename = chooser.get_preview_filename()
+        
         if not os.path.isfile(str(filename)): 
             chooser.set_preview_widget_active(False)
             return
         
         try:
-            (timestamp, lat, lon, ele) = self.load_exif_from_file(filename)
+            (timestamp, lat, lon, ele, thumb
+                ) = self.load_exif_from_file(filename, 400)
         except IOError:
             chooser.set_preview_widget_active(False)
             return
         
-        try:
-            image = Gtk.Image()
-            image.set_from_pixbuf(
-                GdkPixbuf.Pixbuf.new_from_file_at_size(filename, 300, 300)
-            )
-        except:
+        image = Gtk.Image()
+        image.set_from_pixbuf(thumb)
+        
+        if timestamp is None: 
             chooser.set_preview_widget_active(False)
-        else:
-            if lat and lon: label = Gtk.Label(label="%s\n%s" % (timestamp, self._pretty_coords(lat, lon)))
-            else:           label = Gtk.Label(label="%s\n%s" % (timestamp, "Not geotagged"))
-            
-            label.set_justify(Gtk.Justification.CENTER)
-            
-            vbox = Gtk.VBox(spacing=6)
-            vbox.pack_start(image, False, False, 0)
-            vbox.pack_start(label, False, False, 0)
-            vbox.show_all()
-            
-            chooser.set_preview_widget(vbox)
-            chooser.set_preview_widget_active(True)
+            return
+        
+        if lat and lon: label = "%s\n%s" % (timestamp, self._pretty_coords(lat, lon))
+        else:           label = "%s\n%s" % (timestamp, "Not geotagged")
+        
+        if ele: label = "%s\n%.1fm above sea level" % (label, ele)
+        
+        # Is this a label? This should be a label.
+        label = Gtk.Label(label=label)
+        
+        label.set_justify(Gtk.Justification.CENTER)
+        
+        vbox = Gtk.VBox(spacing=6)
+        vbox.pack_start(image, False, False, 0)
+        vbox.pack_start(label, False, False, 0)
+        vbox.show_all()
+        
+        chooser.set_preview_widget(vbox)
+        chooser.set_preview_widget_active(True)
     
     # Displays nice GNOME file chooser dialog and allows user to select 
     # either images or GPX files.
