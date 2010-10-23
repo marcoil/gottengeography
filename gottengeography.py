@@ -162,9 +162,14 @@ class GottenGeography:
         else:           marker.set_property('opacity', 255)
         
         if highlighted and marker.get_parent():
+            marker.set_scale(1.2, 1.2)
             marker.raise_top()
-            self.map_view.center_on(marker.get_property('latitude'), 
-                                    marker.get_property('longitude'))
+            self.map_view.center_on(
+                marker.get_property('latitude'), 
+                marker.get_property('longitude')
+            )
+        else:
+            marker.set_scale(1, 1)
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
