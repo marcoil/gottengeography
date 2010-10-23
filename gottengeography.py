@@ -891,10 +891,6 @@ lost if you do not save.""" % len(self.modified))
         
         self.toolbar_second_spacer = Gtk.SeparatorToolItem()
         
-        self.apply_button = Gtk.ToolButton(stock_id=Gtk.STOCK_APPLY)
-        self.apply_button.set_tooltip_text(
-            "Place selected photos onto center of map (Ctrl+Return)")
-        
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text(
             "Reload selected photos, losing all changes (Ctrl+Z)")
@@ -953,8 +949,24 @@ lost if you do not save.""" % len(self.modified))
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         self.photos_view.append_column(self.column)
         
-        self.photoscroller = Gtk.ScrolledWindow()
-        self.photoscroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.photo_scroller = Gtk.ScrolledWindow()
+        self.photo_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        
+        self.apply_button = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
+        self.apply_button.set_tooltip_text(
+            "Place selected photos onto center of map (Ctrl+Return)")
+        
+        self.select_all_button = Gtk.Button.new_from_stock(Gtk.STOCK_SELECT_ALL)
+        self.select_all_button.set_tooltip_text(
+            "Toggle whether all photos are selected (Ctrl+A)")
+        
+        self.photo_button_bar = Gtk.HBox(spacing=6)
+        self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
+        self.photo_button_bar.pack_start(self.apply_button, True, True, 0)
+        
+        self.photos_with_buttons = Gtk.VBox(spacing=6)
+        self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
+        self.photos_with_buttons.pack_start(self.photo_button_bar, False, False, 0)
         
         # Initialize all the clutter/champlain stuff
         Clutter.init([])
@@ -993,8 +1005,8 @@ lost if you do not save.""" % len(self.modified))
         self.statusbar.pack_end(self.time_fudge, False, False, 0)
         
         # This adds each widget into it's place in the window.
-        self.photoscroller.add(self.photos_view)
-        self.photos_and_map_container.add(self.photoscroller)
+        self.photo_scroller.add(self.photos_view)
+        self.photos_and_map_container.add(self.photos_with_buttons)
         self.photos_and_map_container.add(self.champlain)
         self.toolbar.add(self.open_button)
         self.toolbar.add(self.save_button)
@@ -1002,7 +1014,6 @@ lost if you do not save.""" % len(self.modified))
         self.toolbar.add(self.clear_gpx_button)
         self.toolbar.add(self.close_button)
         self.toolbar.add(self.toolbar_second_spacer)
-        self.toolbar.add(self.apply_button)
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.toolbar_third_spacer)
         self.toolbar.add(self.about_button)
@@ -1020,6 +1031,7 @@ lost if you do not save.""" % len(self.modified))
         self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
         self.about_button.connect("clicked", self.about_dialog)
+        self.select_all_button.connect("clicked", self.toggle_selected_photos)
         self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
         self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
@@ -1034,6 +1046,14 @@ lost if you do not save.""" % len(self.modified))
         self.window.show_all()
         self.progressbar.hide()
         self.update_sensitivity()
+    
+    def toggle_selected_photos(self, button=None):
+        """Toggle the selection of photos."""
+        
+        if self.photo_selection.count_selected_rows() == 0:
+            self.photo_selection.select_all()
+        else:
+            self.photo_selection.unselect_all()
     
     # TODO make sure these key choices actually make sense 
     # and are consistent with other apps
@@ -1108,8 +1128,8 @@ lost if you do not save.""" % len(self.modified))
         self.time_fudge.set_sensitive(gpx_sensitive)
         
         # The GtkListStore needs to be hidden if it is empty.
-        if self.loaded_photos.get_iter_first()[0]: self.photoscroller.show()
-        else:                                      self.photoscroller.hide()
+        if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
+        else:                                      self.photos_with_buttons.hide()
     
     def main(self):
         """Go!"""
