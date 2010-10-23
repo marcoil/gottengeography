@@ -534,7 +534,10 @@ class GottenGeography:
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
         
-        self.photo_selection.selected_foreach(self.add_or_reload_photo, None)
+        self.progressbar.show()
+        self.photo_selection.selected_foreach(self.add_or_reload_photo, [[], len(self.modified)])
+        self.progressbar.hide()
+        
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
@@ -584,7 +587,7 @@ class GottenGeography:
             loaded.append(iter.copy())
             return True
     
-    def add_or_reload_photo(self, photos=None, path=None, iter=None, filename=None):
+    def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
         """Create or update a row in the ListStore.
         
         Checks if the file has already been loaded, and if not, creates a new
@@ -606,18 +609,25 @@ class GottenGeography:
         # silently, and gives us an empty list of exif keys. Which is the exact
         # same thing that it does when you try to load a valid photo that just
         # happens to not have any exif data attached to it.
-        # TODO find a better way to detect GPX and raise an error to prevent
-        # the rest of this method from running on an invalid file.
+        # TODO find a better way to detect non-photos and raise an error to 
+        # prevent the rest of this method from running on an invalid file.
         if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
         (timestamp, lat, lon, ele, thumb
             ) = self.load_exif_from_file(filename, 200)
         
+        # Update the progressbar
+        (current, total) = data
+        current.append(filename)
+        self._redraw_interface(
+            float(len(current)) / total,
+            "Loading %s..." % os.path.basename(filename)
+        )
+        
         if timestamp:
-            # I *think* that this code requires the computer's timezone
-            # to be set to the same timezone as your camera. You'll probably 
-            # want to offer some kind of option to change that in the event 
-            # that the user was travelling or something.
+            # This code requires the computer's timezone to be set to the same 
+            # timezone as your camera. TODO add an option for the user
+            # to override the system timezone.
             timestamp = int(time.mktime(timestamp.timetuple()))
         else:
             # This number won't be especially useful, but more useful
@@ -634,7 +644,7 @@ class GottenGeography:
                 iter = photos.append([None] * photos.get_n_columns())
             
             # The user is trying to open a file that already was loaded
-            # so reload that data into the already-existing iter
+            # so reload the file into the already-existing iter
             else: 
                 iter = files[0]
         
@@ -737,21 +747,23 @@ class GottenGeography:
         files = chooser.get_filenames()
         chooser.destroy()
         
-        (count, total) = (0.0, len(files))
+        # This is used to count loaded files
+        loaded_files = []
         
         invalid_files = []
         
         # Iterate over files and attempt to load them.
         for filename in files:
-            self._redraw_interface(count/total, 
-                "Loading %s..." % os.path.basename(filename))
-            count += 1.0
-            
             # Assume the file is an image; if that fails, assume it's GPX; 
             # if that fails, show an error
             try:
-                try:            self.add_or_reload_photo(filename=filename)
-                except IOError: self.load_gpx_from_file(filename)
+                try:
+                    self.add_or_reload_photo(
+                        filename=filename, 
+                        data=[loaded_files, len(files)]
+                    )
+                except IOError: 
+                    self.load_gpx_from_file(filename)
             except ExpatError:
                 invalid_files.append(os.path.basename(filename))
                 self.statusbar.push(
