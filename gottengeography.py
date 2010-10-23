@@ -145,9 +145,23 @@ class GottenGeography:
         return lat >= -90 and lat <= 90 and lon >= -180 and lon <= 180
     
 ################################################################################
-# ChamplainMarker. This section contains methods that manipulate map markers.
+# Champlain. This section contains methods that manipulate the map.
 ################################################################################
     
+    def create_polygon(self):
+        """Prepare a new ChamplainPolygon for display on the map."""
+        
+        polygon = Champlain.Polygon()
+        polygon.set_property('closed-path', False)
+        polygon.set_property('mark-points', False)
+        polygon.set_stroke(True)
+        polygon.set_stroke_width(5)
+        polygon.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
+        polygon.set_fill(False)
+        self.map_view.add_polygon(polygon)
+        polygon.show()
+        return polygon
+        
     def set_marker_highlight(self, photos, path, iter, data):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
@@ -350,6 +364,8 @@ class GottenGeography:
                 
                 (count, total) = (0.0, len(points))
                 
+                self.polygons.append(self.create_polygon())
+                
                 for point in points:
                     self._redraw_interface(count/total)
                     count += 1.0
@@ -360,17 +376,13 @@ class GottenGeography:
                     timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     timestamp = calendar.timegm(timestamp)
                     
-                    # TODO it probably doesn't make a lot of sense to add ALL
-                    # gpx data into the same ChamplainPolygon in the event that
-                    # the user loads two non-contiguous files. You should probably
-                    # create a new ChamplainPolygon for each GPX file. 
                     # Populate the self.tracks dictionary with elevation and
                     # coordinate data
                     self.tracks[timestamp]={
                         'elevation': 
                             float(point.getElementsByTagName('ele')[0].firstChild.data),
                         'point': 
-                            self.map_gpx.append_point(
+                            self.polygons[-1].append_point(
                                 float(point.getAttribute('lat')), 
                                 float(point.getAttribute('lon'))
                             )
@@ -399,12 +411,14 @@ class GottenGeography:
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
         
-        # One day, this will stop causing segfaults and make my life easier.
-        #self.map_gpx.clear_points()
+        for polygon in self.polygons:
+            polygon.hide()
+            # Segfault city!
+            #self.map_view.remove_polygon(polygon)
+            #polygon.clear_points()
         
-        # Until then, we have this:        
-        for point in self.tracks:
-            self.map_gpx.remove_point(self.tracks[point]['point'])
+        del self.polygons
+        self.polygons = []
         
         del self.tracks
         self.tracks = {}
@@ -820,6 +834,7 @@ lost if you do not save.""" % len(self.modified))
         
         # Will store GPS data once GPX files loaded by user
         self.tracks = {}
+        self.polygons = []
         self.HIGHEST = self.LOWEST = None
         
         # Keeps track of which files have been modified, mostly for counting
@@ -946,16 +961,6 @@ lost if you do not save.""" % len(self.modified))
         self.map_view.set_zoom_level(
             self.gconf_client.get_int(self.LAST_ZOOM)
         )
-        
-        self.map_gpx = Champlain.Polygon()
-        self.map_gpx.set_property('closed-path', False)
-        self.map_gpx.set_property('mark-points', False)
-        self.map_gpx.set_stroke(True)
-        self.map_gpx.set_stroke_width(5)
-        self.map_gpx.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
-        self.map_gpx.set_fill(False)
-        self.map_view.add_polygon(self.map_gpx)
-        self.map_gpx.show()
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
