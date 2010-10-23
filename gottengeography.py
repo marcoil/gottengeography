@@ -80,33 +80,31 @@ class GottenGeography:
     def dms_to_decimal(self, dms, sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
         
+        (degrees, minutes, seconds) = dms
+        
         # The south and the west hemispheres are considered "negative"
         if re.match("[SWsw]", sign): sign = -1
         else:                        sign =  1
         
-        # This is "degrees + minutes/60 + seconds/3600"
-        return ((float(dms[0].numerator) / dms[0].denominator)         + 
-                (float(dms[1].numerator) / dms[1].denominator) / 60    + 
-                (float(dms[2].numerator) / dms[2].denominator) / 3600) * sign
+        return ((float(degrees.numerator) / degrees.denominator)         + 
+                (float(minutes.numerator) / minutes.denominator) / 60    + 
+                (float(seconds.numerator) / seconds.denominator) / 3600) * sign
     
     def decimal_to_dms(self, decimal):
         """Convert decimal degrees into degrees, minutes, seconds."""
         
         decimal = abs(decimal)
         
-        (deg_frac, degrees) = math.modf(decimal)
-        (min_frac, minutes) = math.modf(deg_frac * 60)
-        seconds             = min_frac * 60
+        # math.modf splits a float into it's remainder and largest whole number
+        (remainder, degrees) = math.modf(decimal)
+        (remainder, minutes) = math.modf(remainder * 60)
+        seconds              = remainder * 60
         
-        dms = []
-        
-        # Degrees and minutes are whole numbers, thus have a denominator of 1
-        dms.append(pyexiv2.Rational(degrees, 1))
-        dms.append(pyexiv2.Rational(minutes, 1))
-        
-        # seconds has a big remainder that needs to be
-        # preserved in fraction form for storage in EXIF.
-        dms.append(self.float_to_rational(seconds))
+        dms = [
+            pyexiv2.Rational(degrees, 1),
+            pyexiv2.Rational(minutes, 1),
+            self.float_to_rational(seconds)
+        ]
         
         # My (limited) testing has shown that this works flawlessly
         # 80% of the time, and the other 20% of the time the rounding
@@ -148,12 +146,12 @@ class GottenGeography:
 # ChamplainMarker. This section contains methods that manipulate map markers.
 ################################################################################
     
-    def set_marker_highlight(self, model, path, iter, data):
+    def set_marker_highlight(self, photos, path, iter, data):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
         (highlighted, transparent) = data
         
-        marker = model.get_value(iter, self.PHOTO_MARKER)
+        marker = photos.get_value(iter, self.PHOTO_MARKER)
         if marker is None: return
         
         marker.set_highlighted(highlighted)
@@ -172,10 +170,10 @@ class GottenGeography:
         if selection is None: selection = self.photo_selection
         
         if selection.count_selected_rows() > 0:
-            self.liststore.foreach(self.set_marker_highlight,     (False, True))
+            self.loaded_photos.foreach(self.set_marker_highlight, (False, True ))
             selection.selected_foreach(self.set_marker_highlight, (True,  False))
         else:
-            self.liststore.foreach(self.set_marker_highlight,     (False, False))
+            self.loaded_photos.foreach(self.set_marker_highlight, (False, False))
     
     def add_marker(self, label, lat, lon, center_view=True):
         """Create a new ChamplainMarker and add it to the map."""
@@ -188,32 +186,29 @@ class GottenGeography:
         marker.animate_in()
         return marker
     
-    def remove_marker(self, model, iter):
+    def remove_marker(self, photos, iter):
         """Remove any marker associated with the given photo from the map."""
         
-        # TODO needs to check if the marker is already removed before removing,
-        # in order to suppress a warning from libchamplain.
-        # TODO needs to be deleted from the liststore somehow...
-        old_marker = model.get_value(iter, self.PHOTO_MARKER)
-        if old_marker: self.map_photo_layer.remove_marker(old_marker)
+        old_marker = photos.get_value(iter, self.PHOTO_MARKER)
+        if old_marker: old_marker.destroy()
     
 ################################################################################
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
-    def save_one_file(self, model, path, iter, data):
+    def save_one_file(self, photos, path, iter, data):
         """Save the specified file, if necessary."""
         
         (current, total) = data
         
-        filename = model.get_value(iter, self.PHOTO_PATH)
+        filename = photos.get_value(iter, self.PHOTO_PATH)
         
         if self.modified.has_key(filename):
             current.append(path)
             
-            altitude  = model.get_value(iter, self.PHOTO_ALTITUDE)
-            latitude  = model.get_value(iter, self.PHOTO_LATITUDE)
-            longitude = model.get_value(iter, self.PHOTO_LONGITUDE)
+            altitude  = photos.get_value(iter, self.PHOTO_ALTITUDE)
+            latitude  = photos.get_value(iter, self.PHOTO_LATITUDE)
+            longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
             
             self._redraw_interface(
                 float(len(current)) / total, "Saving %s..." % 
@@ -247,9 +242,9 @@ class GottenGeography:
             
             if self.modified.has_key(filename): del self.modified[filename]
             
-            model.set_value(
+            photos.set_value(
                 iter, self.PHOTO_SUMMARY, 
-                re.sub(r'</?b>', '', model.get_value(iter, self.PHOTO_SUMMARY))
+                re.sub(r'</?b>', '', photos.get_value(iter, self.PHOTO_SUMMARY))
             )
     
     def save_all_files(self, widget=None):
@@ -257,7 +252,7 @@ class GottenGeography:
         
         self.progressbar.show()
         
-        self.liststore.foreach(self.save_one_file, [[], len(self.modified)])
+        self.loaded_photos.foreach(self.save_one_file, [[], len(self.modified)])
         
         self.update_sensitivity()
         self.progressbar.hide()
@@ -390,7 +385,7 @@ class GottenGeography:
                     )
         
         # Make magic happen ;-)
-        self.liststore.foreach(self.auto_timestamp_comparison, None)
+        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         self.update_sensitivity()
     
@@ -415,14 +410,14 @@ class GottenGeography:
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, model, path, iter, data=None):
+    def auto_timestamp_comparison(self, photos, path, iter, data=None):
         """Use GPX data to calculate photo coordinates and elevation."""
         
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
         # photo is the timestamp in epoch seconds,
-        photo = model.get_value(iter, self.PHOTO_TIMESTAMP)
+        photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
         photo += self.time_fudge.get_value()
         
         # higher and lower begin by referring to the chronological first
@@ -489,18 +484,18 @@ class GottenGeography:
             ele = ((self.tracks[lower]['elevation']  * low_perc)   +
                    (self.tracks[higher]['elevation'] * high_perc))
         
-        self._insert_coordinates(model, iter, lat, lon, ele)
+        self._insert_coordinates(photos, iter, lat, lon, ele)
     
     def time_fudge_value_changed(self, slider):
         """Update all photos each time the camera's clock is corrected."""
         
-        self.liststore.foreach(self.auto_timestamp_comparison, None)
+        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         self.update_all_marker_highlights()
     
-    def apply_single_photo(self, model, path, iter, data=None):
+    def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
         
-        self._insert_coordinates(model, iter, 
+        self._insert_coordinates(photos, iter, 
             self.map_view.get_property('latitude'), 
             self.map_view.get_property('longitude')
         )
@@ -525,50 +520,50 @@ class GottenGeography:
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         
-        (pathlist, model) = self.photo_selection.get_selected_rows()
+        (pathlist, photos) = self.photo_selection.get_selected_rows()
         if pathlist == []: return
         
         pathlist.reverse()
         
         for path in pathlist:
-            iter = model.get_iter(path)[1]
-            filename = model.get_value(iter, self.PHOTO_PATH)
+            iter = photos.get_iter(path)[1]
+            filename = photos.get_value(iter, self.PHOTO_PATH)
             if self.modified.has_key(filename): del self.modified[filename]
-            self.remove_marker(model, iter)
-            model.remove(iter)
+            self.remove_marker(photos, iter)
+            photos.remove(iter)
         
         self.update_sensitivity()
     
-    def _insert_coordinates(self, model, iter, lat=None, lon=None, ele=None, modified=True):
+    def _insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
         
-        self.remove_marker(model, iter)
+        self.remove_marker(photos, iter)
         
-        filename = model.get_value(iter, self.PHOTO_PATH)
+        filename = photos.get_value(iter, self.PHOTO_PATH)
         
         if modified: self.modified[filename] = iter.copy()
         
         if ele:
-            model.set_value(iter, self.PHOTO_ALTITUDE,    ele)
+            photos.set_value(iter, self.PHOTO_ALTITUDE,  ele)
         
         if self.valid_coords(lat, lon):
-            model.set_value(iter, self.PHOTO_LATITUDE,    lat)
-            model.set_value(iter, self.PHOTO_LONGITUDE,   lon)
-            model.set_value(iter, self.PHOTO_SUMMARY,
+            photos.set_value(iter, self.PHOTO_LATITUDE,  lat)
+            photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
+            photos.set_value(iter, self.PHOTO_SUMMARY,
                 self._create_summary(filename, lat, lon, ele, modified))
-            model.set_value(iter, self.PHOTO_MARKER,
+            photos.set_value(iter, self.PHOTO_MARKER,
                 self.add_marker(filename, lat, lon))
     
-    def _find_existing_photo(self, model, path, iter, data):
+    def _find_existing_photo(self, photos, path, iter, data):
         """Determine if a photo has already been loaded or not."""
         
         (loaded, filename) = data
         
-        if filename == model.get_value(iter, self.PHOTO_PATH):
+        if filename == photos.get_value(iter, self.PHOTO_PATH):
             loaded.append(iter.copy())
             return True
     
-    def add_or_reload_photo(self, model=None, path=None, iter=None, filename=None):
+    def add_or_reload_photo(self, photos=None, path=None, iter=None, filename=None):
         """Create or update a row in the ListStore.
         
         Checks if the file has already been loaded, and if not, creates a new
@@ -582,8 +577,8 @@ class GottenGeography:
         if iter is None and filename is None: 
             raise NameError("Cannot continue without either filename or iter.")
         
-        if model is None:    model    = self.liststore
-        if filename is None: filename = model.get_value(iter, self.PHOTO_PATH)
+        if photos is None:   photos   = self.loaded_photos
+        if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
         
         # This ugliness is necessary because pyexiv2 won't give any sort
         # of error whatsoever when it's asked to parse a GPX file, it fails
@@ -611,28 +606,28 @@ class GottenGeography:
         # Make sure we're not loading a file that's already loaded.
         if iter is None:
             files = []
-            model.foreach(self._find_existing_photo, [files, filename])
+            photos.foreach(self._find_existing_photo, [files, filename])
             
             # The user is loading a NEW file! Yay!
             if files == []: 
-                iter = model.append([None] * self.liststore.get_n_columns())
+                iter = photos.append([None] * photos.get_n_columns())
             
             # The user is trying to open a file that already was loaded
             # so reload that data into the already-existing iter
             else: 
                 iter = files[0]
         
-        model.set_value(iter, self.PHOTO_PATH,      filename)
-        model.set_value(iter, self.PHOTO_THUMB,     thumb)
-        model.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
-        model.set_value(iter, self.PHOTO_SUMMARY, 
+        photos.set_value(iter, self.PHOTO_PATH,      filename)
+        photos.set_value(iter, self.PHOTO_THUMB,     thumb)
+        photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
+        photos.set_value(iter, self.PHOTO_SUMMARY, 
             self._create_summary(filename, lat, lon, ele))
         
-        self._insert_coordinates(model, iter, lat, lon, ele, False)
+        self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
         if self.modified.has_key(filename): del self.modified[filename]
         
-        self.auto_timestamp_comparison(model, None, iter)
+        self.auto_timestamp_comparison(photos, None, iter)
         self.update_sensitivity()
     
 ################################################################################
@@ -674,12 +669,12 @@ class GottenGeography:
         
         label.set_justify(Gtk.Justification.CENTER)
         
-        vbox = Gtk.VBox(spacing=6)
-        vbox.pack_start(image, False, False, 0)
-        vbox.pack_start(label, False, False, 0)
-        vbox.show_all()
+        preview_widget = Gtk.VBox(spacing=6)
+        preview_widget.pack_start(image, False, False, 0)
+        preview_widget.pack_start(label, False, False, 0)
+        preview_widget.show_all()
         
-        chooser.set_preview_widget(vbox)
+        chooser.set_preview_widget(preview_widget)
         chooser.set_preview_widget_active(True)
     
     # TODO Need to be able to load files with drag & drop, not just this thing
@@ -879,7 +874,7 @@ lost if you do not save.""" % len(self.modified))
         self.photos_and_map_container = Gtk.HPaned()
         
         # This code defines how the photo list will appear
-        self.liststore = Gtk.ListStore(
+        self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
             GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
@@ -894,17 +889,20 @@ lost if you do not save.""" % len(self.modified))
         (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB, 
         self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE, 
         self.PHOTO_ALTITUDE, self.PHOTO_MARKER
-        ) = range(self.liststore.get_n_columns())
+        ) = range(self.loaded_photos.get_n_columns())
         
-        self.liststore.set_sort_column_id(self.PHOTO_TIMESTAMP, Gtk.SortType.ASCENDING)
+        self.loaded_photos.set_sort_column_id(
+            self.PHOTO_TIMESTAMP, 
+            Gtk.SortType.ASCENDING
+        )
         
-        self.treeview = Gtk.TreeView(model=self.liststore)
-        self.treeview.set_enable_search(False)
-        self.treeview.set_reorderable(False)
-        self.treeview.set_headers_visible(False)
-        self.treeview.set_rubber_banding(True)
+        self.photos_view = Gtk.TreeView(model=self.loaded_photos)
+        self.photos_view.set_enable_search(False)
+        self.photos_view.set_reorderable(False)
+        self.photos_view.set_headers_visible(False)
+        self.photos_view.set_rubber_banding(True)
         
-        self.photo_selection = self.treeview.get_selection()
+        self.photo_selection = self.photos_view.get_selection()
         self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         
         self.cell_string = Gtk.CellRendererText()
@@ -916,11 +914,11 @@ lost if you do not save.""" % len(self.modified))
         self.img_column = Gtk.TreeViewColumn('Thumbnails', self.cell_thumb)
         self.img_column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
         self.img_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.treeview.append_column(self.img_column)
+        self.photos_view.append_column(self.img_column)
         
         self.name_column = Gtk.TreeViewColumn('Summary', self.cell_string, markup=self.PHOTO_SUMMARY)
         self.name_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.treeview.append_column(self.name_column)
+        self.photos_view.append_column(self.name_column)
         
         self.photoscroller = Gtk.ScrolledWindow()
         self.photoscroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -972,7 +970,7 @@ lost if you do not save.""" % len(self.modified))
         self.statusbar.pack_end(self.time_fudge, False, False, 0)
         
         # This adds each widget into it's place in the window.
-        self.photoscroller.add(self.treeview)
+        self.photoscroller.add(self.photos_view)
         self.photos_and_map_container.add(self.photoscroller)
         self.photos_and_map_container.add(self.champlain)
         self.toolbar.add(self.open_button)
@@ -1049,10 +1047,10 @@ lost if you do not save.""" % len(self.modified))
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    def _append_if_modified(self, model, path, iter, pathlist):
+    def _append_if_modified(self, photos, path, iter, pathlist):
         """Append the given photo to the pathlist if it's been modified."""
         
-        if self.modified.has_key(model.get_value(iter, self.PHOTO_PATH)): 
+        if self.modified.has_key(photos.get_value(iter, self.PHOTO_PATH)): 
             pathlist.append(path)
             return True
     
@@ -1087,8 +1085,8 @@ lost if you do not save.""" % len(self.modified))
         self.time_fudge.set_sensitive(gpx_sensitive)
         
         # The GtkListStore needs to be hidden if it is empty.
-        if self.liststore.get_iter_first()[0]: self.photoscroller.show()
-        else:                                  self.photoscroller.hide()
+        if self.loaded_photos.get_iter_first()[0]: self.photoscroller.show()
+        else:                                      self.photoscroller.hide()
     
     def main(self):
         """Go!"""
