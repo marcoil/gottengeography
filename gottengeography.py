@@ -158,11 +158,11 @@ class GottenGeography:
         
         marker.set_highlighted(highlighted)
         
-        if transparent: marker.set_property('opacity', 32)
+        if transparent: marker.set_property('opacity', 64)
         else:           marker.set_property('opacity', 255)
         
-        if highlighted:
-            # TODO bring marker to the front as well
+        if highlighted and marker.get_parent():
+            marker.raise_top()
             self.map_view.center_on(marker.get_property('latitude'), 
                                     marker.get_property('longitude'))
     
