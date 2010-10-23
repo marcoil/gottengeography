@@ -30,6 +30,8 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+VERSION = "0.1.0"
+
 class GottenGeography:
     
 ################################################################################
@@ -791,7 +793,7 @@ lost if you do not save.""" % len(self.modified))
         dialog = Gtk.AboutDialog()
         dialog.set_program_name("GottenGeography")
         dialog.set_name("GottenGeography")
-        dialog.set_version("0.0.1")
+        dialog.set_version(VERSION)
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
