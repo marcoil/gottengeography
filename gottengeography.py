@@ -158,7 +158,7 @@ class GottenGeography:
         
         marker.set_highlighted(highlighted)
         
-        if transparent: marker.set_property('opacity', 128)
+        if transparent: marker.set_property('opacity', 32)
         else:           marker.set_property('opacity', 255)
         
         if highlighted:
