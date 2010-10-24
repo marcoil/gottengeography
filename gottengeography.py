@@ -182,10 +182,8 @@ class GottenGeography:
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
-    def set_marker_highlight(self, photos, path, iter, data):
+    def set_marker_highlight(self, photos, path, iter, (highlighted, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
-        
-        (highlighted, transparent) = data
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
         if marker is None: return
@@ -258,10 +256,8 @@ class GottenGeography:
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
-    def save_one_file(self, photos, path, iter, data):
+    def save_one_file(self, photos, path, iter, (current, total)):
         """Save the specified file, if necessary."""
-        
-        (current, total) = data
         
         filename = photos.get_value(iter, self.PHOTO_PATH)
         
@@ -615,10 +611,8 @@ class GottenGeography:
             photos.set_value(iter, self.PHOTO_MARKER,
                 self.add_marker(filename, lat, lon))
     
-    def _find_existing_photo(self, photos, path, iter, data):
+    def _find_existing_photo(self, photos, path, iter, (loaded, filename)):
         """Determine if a photo has already been loaded or not."""
-        
-        (loaded, filename) = data
         
         if filename == photos.get_value(iter, self.PHOTO_PATH):
             loaded.append(iter.copy())
