@@ -289,7 +289,7 @@ class GottenGeography:
             # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
             # 'Exif.GPSInfo.GPSMapDatum'
             
-            if self.modified.has_key(filename): del self.modified[filename]
+            del self.modified[filename]
             
             photos.set_value(
                 iter, self.PHOTO_SUMMARY, 
