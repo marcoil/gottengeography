@@ -182,7 +182,7 @@ class GottenGeography:
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
-    def set_marker_highlight(self, photos, path, iter, (highlighted, transparent)):
+    def set_marker_highlight(self, photos, path, iter, (highlighted, transparent, area)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
@@ -199,23 +199,40 @@ class GottenGeography:
             marker.set_scale(1.2, 1.2)
             marker.raise_top()
             self.crosshair.raise_top()
-            self.map_view.center_on(
-                marker.get_property('latitude'), 
-                marker.get_property('longitude')
-            )
         else:
             marker.set_scale(1, 1)
+        
+        if area is None: return
+        
+        # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
+        lat = marker.get_property('latitude')
+        lon = marker.get_property('longitude')
+        
+        if len(area) == 0:
+            area.append(lat)
+            area.append(lon)
+            area.append(lat)
+            area.append(lon)
+            area.append(False)
+        else:
+            if lat < area[0]: area[0] = lat
+            if lon < area[1]: area[1] = lon
+            if lat > area[2]: area[2] = lat
+            if lon > area[3]: area[3] = lon
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
         
         if selection is None: selection = self.photo_selection
         
+        area = []
+        
         if selection.count_selected_rows() > 0:
-            self.loaded_photos.foreach(self.set_marker_highlight, (False, True ))
-            selection.selected_foreach(self.set_marker_highlight, (True,  False))
+            self.loaded_photos.foreach(self.set_marker_highlight, (False, True,  None))
+            selection.selected_foreach(self.set_marker_highlight, (True,  False, area))
+            self.map_view.ensure_visible(*area)
         else:
-            self.loaded_photos.foreach(self.set_marker_highlight, (False, False))
+            self.loaded_photos.foreach(self.set_marker_highlight, (False, False, None))
     
     def add_marker(self, label, lat, lon):
         """Create a new ChamplainMarker and add it to the map."""
