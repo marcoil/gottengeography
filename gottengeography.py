@@ -969,11 +969,12 @@ lost if you do not save.""" % len(self.modified))
         self.select_all_button.set_tooltip_text(
             "Toggle whether all photos are selected (Ctrl+A)")
         
-        self.photo_button_bar = Gtk.HBox(spacing=6)
+        self.photo_button_bar = Gtk.HBox(spacing=12)
         self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
         self.photo_button_bar.pack_start(self.apply_button, True, True, 0)
+        self.photo_button_bar.set_border_width(3)
         
-        self.photos_with_buttons = Gtk.VBox(spacing=6)
+        self.photos_with_buttons = Gtk.VBox()
         self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
         self.photos_with_buttons.pack_start(self.photo_button_bar, False, False, 0)
         
