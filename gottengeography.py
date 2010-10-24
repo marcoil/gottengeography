@@ -224,7 +224,8 @@ class GottenGeography:
         marker.set_text(os.path.basename(label))
         marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
-        marker.animate_in()
+        marker.show()
+        marker.raise_top()
         return marker
     
     def remove_marker(self, photos, iter):
@@ -435,7 +436,7 @@ class GottenGeography:
                         self.LOWEST = timestamp
                     
                     if area is None:
-                        area = [ lat, lon, lat, lon, True ]
+                        area = [ lat, lon, lat, lon, False ]
                     else:
                         if lat < area[0]: area[0] = lat
                         if lon < area[1]: area[1] = lon
