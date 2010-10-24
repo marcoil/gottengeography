@@ -965,7 +965,8 @@ lost if you do not save.""" % len(self.modified))
         self.apply_button.set_tooltip_text(
             "Place selected photos onto center of map (Ctrl+Return)")
         
-        self.select_all_button = Gtk.Button.new_from_stock(Gtk.STOCK_SELECT_ALL)
+        self.select_all_button = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
+        self.select_all_button.set_use_stock(True)
         self.select_all_button.set_tooltip_text(
             "Toggle whether all photos are selected (Ctrl+A)")
         
@@ -1060,7 +1061,7 @@ lost if you do not save.""" % len(self.modified))
         self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
         self.about_button.connect("clicked", self.about_dialog)
-        self.select_all_button.connect("clicked", self.toggle_selected_photos)
+        self.select_all_button.connect("released", self.toggle_selected_photos)
         self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
         self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
@@ -1077,10 +1078,10 @@ lost if you do not save.""" % len(self.modified))
         self.progressbar.hide()
         self.update_sensitivity()
     
-    def toggle_selected_photos(self, button=None):
+    def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
         
-        if self.photo_selection.count_selected_rows() == 0:
+        if button.get_active():
             self.photo_selection.select_all()
         else:
             self.photo_selection.unselect_all()
@@ -1140,6 +1141,9 @@ lost if you do not save.""" % len(self.modified))
         # Apply and Close buttons get activated if any photo is selected
         self.apply_button.set_sensitive(sensitivity)
         self.close_button.set_sensitive(sensitivity)
+        
+        # Select button needs to show as toggled if there is any selection
+        self.select_all_button.set_property('active', sensitivity)
         
         # The Revert button is only activated if the selection has unsaved files.
         modified_in_selection = []
