@@ -195,6 +195,8 @@ class GottenGeography:
         if transparent: marker.set_property('opacity', 64)
         else:           marker.set_property('opacity', 255)
         
+        # The check for marker.get_parent() prevents us from
+        # centering the view on a marker that's been "deleted" (hidden).
         if highlighted and marker.get_parent():
             marker.set_scale(1.2, 1.2)
             marker.raise_top()
@@ -217,14 +219,13 @@ class GottenGeography:
         else:
             self.loaded_photos.foreach(self.set_marker_highlight, (False, False))
     
-    def add_marker(self, label, lat, lon, center_view=True):
+    def add_marker(self, label, lat, lon):
         """Create a new ChamplainMarker and add it to the map."""
         
         marker = Champlain.Marker()
         marker.set_text(os.path.basename(label))
         marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
-        if center_view: self.map_view.center_on(lat, lon)
         marker.animate_in()
         return marker
     
@@ -380,6 +381,10 @@ class GottenGeography:
         
         gpx.normalize()
         
+        # area will be [ min lat, min lon, max lat, max lon, animate ] once 
+        # populated. This is the signature of ChamplainView.ensure_visible()
+        area = None
+        
         # This creates a nested dictionary (a dictionary of dictionaries) in 
         # which the top level keys are UTC epoch seconds, and the bottom level 
         # keys are 'elevation' (a float) and 'point', a ChamplainPoint 
@@ -416,16 +421,16 @@ class GottenGeography:
                     timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
                     timestamp = calendar.timegm(timestamp)
                     
+                    lat = float(point.getAttribute('lat'))
+                    lon = float(point.getAttribute('lon'))
+                    
                     # Populate the self.tracks dictionary with elevation and
                     # coordinate data
                     self.tracks[timestamp]={
                         'elevation': 
                             float(point.getElementsByTagName('ele')[0].firstChild.data),
                         'point': 
-                            self.polygons[-1].append_point(
-                                float(point.getAttribute('lat')), 
-                                float(point.getAttribute('lon'))
-                            )
+                            self.polygons[-1].append_point(lat, lon)
                     }
                     
                     if timestamp > self.HIGHEST: 
@@ -433,18 +438,28 @@ class GottenGeography:
                     if timestamp < self.LOWEST or self.LOWEST is None: 
                         self.LOWEST = timestamp
                     
+                    if area is None:
+                        area = [ lat, lon, lat, lon, True ]
+                    else:
+                        if lat < area[0]: area[0] = lat
+                        if lon < area[1]: area[1] = lon
+                        if lat > area[2]: area[2] = lat
+                        if lon > area[3]: area[3] = lon
+                    
                     # TODO this should probably be optional. Checkbox in the
                     # file open dialog?
                     # Follow the GPX on screen as it's loaded (useful
                     # in the event that the GPX data is outside the current view
                     # and the user is wondering why (seemingly) nothing is loading)
-                    self.map_view.center_on(
-                        self.tracks[timestamp]['point'].lat,
-                        self.tracks[timestamp]['point'].lon
-                    )
+                    self.map_view.center_on(lat, lon)
         
         # Make magic happen ;-)
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+        
+        # Zoom out to show the whole track, instead of just leaving the user 
+        # looking at the last loaded point. The * here unpacks the list into
+        # the individual arguments to ensure_visible()
+        self.map_view.ensure_visible(*area)
         
         self.update_sensitivity()
     
