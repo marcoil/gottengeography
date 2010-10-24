@@ -161,7 +161,15 @@ class GottenGeography:
         self.map_view.add_polygon(polygon)
         polygon.show()
         return polygon
+    
+    def position_crosshair(self, stage=None):
+        """Ensure that the crosshair is precisely in the center of the map."""
         
+        self.crosshair.set_position(
+            (self.stage.get_width() - self.crosshair.get_width()) / 2,
+            (self.stage.get_height() - self.crosshair.get_height()) / 2
+        )
+    
     def set_marker_highlight(self, photos, path, iter, data):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
@@ -178,6 +186,7 @@ class GottenGeography:
         if highlighted and marker.get_parent():
             marker.set_scale(1.2, 1.2)
             marker.raise_top()
+            self.crosshair.raise_top()
             self.map_view.center_on(
                 marker.get_property('latitude'), 
                 marker.get_property('longitude')
@@ -212,6 +221,25 @@ class GottenGeography:
         
         old_marker = photos.get_value(iter, self.PHOTO_MARKER)
         if old_marker: old_marker.destroy()
+    
+    def clear_all_gpx(self, widget=None):
+        """Forget all GPX data, start over with a clean slate."""
+        
+        for polygon in self.polygons:
+            polygon.hide()
+            # Segfault city!
+            #self.map_view.remove_polygon(polygon)
+            #polygon.clear_points()
+        
+        del self.polygons
+        self.polygons = []
+        
+        del self.tracks
+        self.tracks = {}
+        
+        self.HIGHEST = self.LOWEST = None
+        
+        self.update_sensitivity()
     
 ################################################################################
 # File data handling. These methods interact with files (loading, saving, etc)
@@ -405,25 +433,6 @@ class GottenGeography:
         
         # Make magic happen ;-)
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
-        
-        self.update_sensitivity()
-    
-    def clear_all_gpx(self, widget=None):
-        """Forget all GPX data, start over with a clean slate."""
-        
-        for polygon in self.polygons:
-            polygon.hide()
-            # Segfault city!
-            #self.map_view.remove_polygon(polygon)
-            #polygon.clear_points()
-        
-        del self.polygons
-        self.polygons = []
-        
-        del self.tracks
-        self.tracks = {}
-        
-        self.HIGHEST = self.LOWEST = None
         
         self.update_sensitivity()
     
@@ -986,6 +995,25 @@ lost if you do not save.""" % len(self.modified))
             self.gconf_client.get_int(self.LAST_ZOOM)
         )
         
+        self.stage = self.map_view.get_stage()
+        
+        self.crosshair = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 128)
+        )
+        self.crosshair.set_property('has-border', False)
+        self.crosshair.set_size(6, 6)
+        self.crosshair.set_parent(self.stage)
+        self.crosshair.set_rotation(
+            Clutter.RotateAxis.Z_AXIS, 
+            45, # Degrees
+            self.crosshair.get_width()/2, 
+            self.crosshair.get_height()/2, 
+            0
+        )
+        self.crosshair.raise_top()
+        self.position_crosshair()
+        self.crosshair.show()
+        
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         
@@ -1035,6 +1063,7 @@ lost if you do not save.""" % len(self.modified))
         self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
         self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
+        self.stage.connect("paint", self.position_crosshair)
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
