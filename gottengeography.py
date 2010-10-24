@@ -815,11 +815,7 @@ class GottenGeography:
             title=" "            
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_markup("""<span weight="bold" size="larger">Save \
-changes to your photos before closing?</span>
-
-The changes you've made to %d of your photos will be permanently \
-lost if you do not save.""" % len(self.modified))
+        dialog.set_markup(SAVE_WARNING % len(self.modified))
         dialog.add_button("Close _without Saving", Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
@@ -1182,6 +1178,17 @@ lost if you do not save.""" % len(self.modified))
         """Go!"""
         
         Gtk.main()
+
+################################################################################
+# Strings section. Various strings that were too obnoxiously large to fit
+# nicely into the actual code above, so they've been extracted here.
+################################################################################
+
+SAVE_WARNING = """<span weight="bold" size="larger">Save changes to your \
+photos before closing?</span>
+
+The changes you've made to %d of your photos will be permanently lost if you \
+do not save."""
 
 COMMENTS = ("""GottenGeography is written in the Python programming language, \
 and allows you to geotag your photos. The name is an anagram of "Python \
