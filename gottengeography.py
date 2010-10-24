@@ -30,7 +30,7 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-VERSION = "0.1.0"
+VERSION = "0.1a"
 
 class GottenGeography:
     
@@ -837,7 +837,7 @@ lost if you do not save.""" % len(self.modified))
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
-        dialog.set_website("http://exolucere.ca/gottengeography")
+        dialog.set_website("http://github.com/robru/GottenGeography")
         dialog.set_website_label("GottenGeography Homepage")
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
@@ -1165,18 +1165,20 @@ lost if you do not save.""" % len(self.modified))
         
         Gtk.main()
 
-COMMENTS = ("""This program is written in the Python programming language, \
-and allows you to geotag your photos. The name GottenGeography is an \
-anagram of "Python Geotagger".\n\nGottenGeography supports both manual \
-and automatic tagging of photographs. If you do not have a GPS device, \
-simply load your images, navigate to where you took the photos on the map, \
-select all your images, and then click the Apply button. GottenGeography  \
-will then place all your selected images onto the center of the map, and \
-you can then save and close. \n\nIf you do have a GPS unit, just load the \
-GPX file along with your photos, and if the timestamp on your photographs \
-is within the range of the GPS data you recorded, GottenGeography will \
+COMMENTS = ("""GottenGeography is written in the Python programming language, \
+and allows you to geotag your photos. The name is an anagram of "Python \
+Geotagger".
+
+GottenGeography supports both manual and automatic tagging of photographs. If \
+you do not have a GPS device, simply load your images, navigate on the map to \
+where your photos were taken, select your images, and then click the Apply \
+button. GottenGeography will place the selected images onto the center of the \
+map, and then you can then save your work and close.
+
+If you do have a GPS unit, just load the GPX file and GottenGeography will \
 automatically place your images along the GPS track at precisely the \
-correct coordinates.""")
+correct coordinates. Note that your computer's timezone must be set to the \
+same timezone that your camera is set to for correct results.""")
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
