@@ -118,16 +118,18 @@ class GottenGeography:
             self.float_to_rational(seconds)
         ]
         
-        # My (limited) testing has shown that this works flawlessly
-        # 80% of the time, and the other 20% of the time the rounding
-        # error is approximate to 1.4 * 10^-14 (that is, correct to 
-        # thirteen decimal places). Considering that only eight decimal 
-        # places are required for millimeter precision on planet Earth, 
-        # I am ok with this. However, I'm going to leave this check 
-        # here until more people have tested this.
+        # The use of fractions.Fraction().limit_denominator() introduces some
+        # rounding into the result here. So far, largest rounding error I've 
+        # seen is ~6.7e-12 (so, correct to 11 decimal places). I'm pretty sure
+        # that this is just the inherent imprecision of floating point math,
+        # but I'm by no means an expert on the subject. Considering that only
+        # eight decimal places are required for millimeter precision on planet
+        # Earth, I think that this is acceptable. However, I'm going to leave
+        # this check here until more people have tested this. 
         error = abs(self.dms_to_decimal(dms) - decimal)
         if error > 1e-10:
-            raise FloatingPointError(
+            self.statusbar.push(
+                self.statusbar.get_context_id("error"), 
                 "Rounding discarded %s. Please inform rbpark@exolucere.ca!" 
                 % error
             )
