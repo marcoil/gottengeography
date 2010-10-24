@@ -51,13 +51,23 @@ class GottenGeography:
         return ("%s %.5f, %s %.5f" % 
             (lat_sign, abs(lat), lon_sign, abs(lon)))
     
-    def _create_summary(self, file, lat=None, lon=None, ele=None, modified=False):
+    def _pretty_time(self, timestamp):
+        """Convert epoch seconds into something human-readable."""
+        
+        if type(timestamp) is int:
+            return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
+        else:
+            return timestamp.ctime()
+    
+    def _create_summary(self, file, timestamp, lat=None, lon=None, ele=None, modified=False):
         """Describe photo metadata with Pango formatting."""
         
         if self.valid_coords(lat, lon): 
             summary = self._pretty_coords(lat, lon)
         else:
             summary = "Not geotagged"
+        
+        summary = "%s\n%s" % (self._pretty_time(timestamp), summary)
         
         if ele: summary += "\n%.1fm above sea level" % ele
         
@@ -573,6 +583,7 @@ class GottenGeography:
         self.remove_marker(photos, iter)
         
         filename = photos.get_value(iter, self.PHOTO_PATH)
+        timestamp = photos.get_value(iter, self.PHOTO_TIMESTAMP)
         
         if modified: self.modified[filename] = iter.copy()
         
@@ -583,7 +594,7 @@ class GottenGeography:
             photos.set_value(iter, self.PHOTO_LATITUDE,  lat)
             photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
             photos.set_value(iter, self.PHOTO_SUMMARY,
-                self._create_summary(filename, lat, lon, ele, modified))
+                self._create_summary(filename, timestamp, lat, lon, ele, modified))
             photos.set_value(iter, self.PHOTO_MARKER,
                 self.add_marker(filename, lat, lon))
     
@@ -661,7 +672,7 @@ class GottenGeography:
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
         photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
         photos.set_value(iter, self.PHOTO_SUMMARY, 
-            self._create_summary(filename, lat, lon, ele))
+            self._create_summary(filename, timestamp, lat, lon, ele))
         
         self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
@@ -697,10 +708,12 @@ class GottenGeography:
             chooser.set_preview_widget_active(False)
             return
         
+        label = self._pretty_time(timestamp)
+        
         if self.valid_coords(lat, lon): 
-            label = "%s\n%s" % (timestamp, self._pretty_coords(lat, lon))
+            label = "%s\n%s" % (label, self._pretty_coords(lat, lon))
         else:
-            label = "%s\n%s" % (timestamp, "Not geotagged")
+            label = "%s\n%s" % (label, "Not geotagged")
         
         if ele: label = "%s\n%.1fm above sea level" % (label, ele)
         
