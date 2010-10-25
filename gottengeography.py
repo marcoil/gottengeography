@@ -1201,6 +1201,7 @@ class GottenGeography:
         gpx_sensitive = len(self.tracks) > 0
         self.clear_gpx_button.set_sensitive(gpx_sensitive)
         self.time_fudge.set_sensitive(gpx_sensitive)
+        self.time_fudge_label.set_sensitive(gpx_sensitive)
         
         # The GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
