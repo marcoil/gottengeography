@@ -1057,6 +1057,8 @@ class GottenGeography:
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         
+        self.time_fudge_label = Gtk.Label(label="Clock Offset: ")
+        
         self.time_fudge = Gtk.SpinButton()
         self.time_fudge.set_digits(0)
         self.time_fudge.set_value(0)
@@ -1071,6 +1073,7 @@ class GottenGeography:
         self.statusbar = Gtk.Statusbar()
         self.statusbar.pack_start(self.progressbar, True, True, 6)
         self.statusbar.pack_end(self.time_fudge, False, False, 0)
+        self.statusbar.pack_end(self.time_fudge_label, False, False, 0)
         
         # This adds each widget into it's place in the window.
         self.photo_scroller.add(self.photos_view)
