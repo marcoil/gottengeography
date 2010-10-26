@@ -23,8 +23,7 @@ pygtk.require('2.0')
 
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
-from xml.dom import minidom
-from xml.parsers.expat import ExpatError
+from xml.parsers import expat
 from fractions import Fraction
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
@@ -260,13 +259,16 @@ class GottenGeography:
             #self.map_view.remove_polygon(polygon)
             #polygon.clear_points()
         
-        del self.polygons
         self.polygons = []
         
-        del self.tracks
         self.tracks = {}
         
-        self.HIGHEST = self.LOWEST = None
+        self.current = { 
+            'count':   0.0, 
+            'area':    [], 
+            'highest': None, 
+            'lowest':  None 
+        }
         
         self.update_sensitivity()
     
@@ -279,7 +281,7 @@ class GottenGeography:
         
         filename = photos.get_value(iter, self.PHOTO_PATH)
         
-        if self.modified.has_key(filename):
+        if filename in self.modified:
             current.append(path)
             
             altitude  = photos.get_value(iter, self.PHOTO_ALTITUDE)
@@ -383,99 +385,113 @@ class GottenGeography:
         
         return timestamp, lat, lon, ele, thumb
     
-    def load_gpx_from_file(self, filename):
-        """Parse GPX data, placing each track point on the map."""
+    def gpx_element_start(self, name, attributes):
+        """Callback function for Expat StartElementHandler."""
         
-        self._redraw_interface(0, "Parsing GPS data (please be patient)...")
+        self.current['element-name'] = name
         
-        # TODO what happens to this if I load an XML file that isn't GPX?
-        # TODO any way to make this faster?
-        # TODO any way to pulse the progress bar while this runs?
-        gpx = minidom.parse(filename)
+        # New track segment, show the new name and create a new polygon for it
+        if name == "trkseg":
+            self._redraw_interface(text="Parsing %s..." % self.current['name'])
+            self.polygons.append(self.create_polygon())
         
-        gpx.normalize()
+        # Eg, <trkpt lat="45.147445" lon="-81.469507">
+        if 'lat' in attributes and 'lon' in attributes:
+            self.current.update(attributes)
+    
+    def gpx_element_data(self, data):
+        """Callback function for Expat CharacterDataHandler."""
         
-        # area will be [ min lat, min lon, max lat, max lon, animate ] once 
-        # populated. This is the signature of ChamplainView.ensure_visible()
-        area = None
+        data = data.strip()
+        if not data: return
         
-        # This creates a nested dictionary (a dictionary of dictionaries) in 
-        # which the top level keys are UTC epoch seconds, and the bottom level 
-        # keys are 'elevation' (a float) and 'point', a ChamplainPoint 
-        # representing latitude and longitude.
-        for track in gpx.documentElement.getElementsByTagName('trk'): 
-            # I find GPS-generated names to be ugly, so I only show them in the progress meter,
-            # they're not stored anywhere or used after that
-            self._redraw_interface(0, "Loading %s from %s..." % (
-                track.getElementsByTagName('name')[0].firstChild.data, 
-                os.path.basename(filename))
+        # This is where we collect elevation and time data
+        # And this += silliness is necessary because sometimes expat breaks
+        # the value into chunks when calling this handler
+        element = self.current['element-name']
+        if element in self.current:
+            self.current[element] += data
+        else:
+            self.current[element] = data
+    
+    def gpx_element_end(self, name):
+        """Callback function for Expat EndElementHandler."""
+        
+        # A single point is completely loaded, so show it on the map, and stuff
+        if name == "trkpt":
+            self.current['count'] += 1.0
+            
+            # GPX is only UTC, as far as I'm aware
+            timestamp = calendar.timegm(
+                time.strptime(self.current['time'], '%Y-%m-%dT%H:%M:%SZ')
             )
             
-            # In the event that the user loads a file (or multiple files) 
-            # containing more than one track point for a given epoch second, 
-            # the most-recently-loaded is kept, and the rest are clobbered. 
-            # Effectively this makes the assumption that the user cannot be 
-            # in two places at once, although it is possible that the user 
-            # might attempt to load two different GPX files from two different
-            # GPS units. If you do that, you're stupid, and I hate you.
-            for segment in track.getElementsByTagName('trkseg'):
-                points = segment.getElementsByTagName('trkpt')
-                
-                (count, total) = (0.0, len(points))
-                
-                self.polygons.append(self.create_polygon())
-                
-                for point in points:
-                    self._redraw_interface(count/total)
-                    count += 1.0
-                    
-                    # Convert GPX time (RFC 3339 time) into UTC epoch time for 
-                    # simplicity in sorting and comparing
-                    timestamp = point.getElementsByTagName('time')[0].firstChild.data
-                    timestamp = time.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-                    timestamp = calendar.timegm(timestamp)
-                    
-                    lat = float(point.getAttribute('lat'))
-                    lon = float(point.getAttribute('lon'))
-                    
-                    # Populate the self.tracks dictionary with elevation and
-                    # coordinate data
-                    self.tracks[timestamp]={
-                        'elevation': 
-                            float(point.getElementsByTagName('ele')[0].firstChild.data),
-                        'point': 
-                            self.polygons[-1].append_point(lat, lon)
-                    }
-                    
-                    if timestamp > self.HIGHEST: 
-                        self.HIGHEST = timestamp
-                    if timestamp < self.LOWEST or self.LOWEST is None: 
-                        self.LOWEST = timestamp
-                    
-                    if area is None:
-                        area = [ lat, lon, lat, lon, False ]
-                    else:
-                        if lat < area[0]: area[0] = lat
-                        if lon < area[1]: area[1] = lon
-                        if lat > area[2]: area[2] = lat
-                        if lon > area[3]: area[3] = lon
-                    
-                    # TODO this should probably be optional. Checkbox in the
-                    # file open dialog?
-                    # Follow the GPX on screen as it's loaded (useful
-                    # in the event that the GPX data is outside the current view
-                    # and the user is wondering why (seemingly) nothing is loading)
-                    self.map_view.center_on(lat, lon)
+            lat = float(self.current['lat'])
+            lon = float(self.current['lon'])
+            
+            self.tracks[timestamp] = {
+                'elevation': float(self.current['ele']),
+                'point':     self.polygons[-1].append_point(lat, lon)
+            }
+            
+            highest = self.current['highest']
+            lowest = self.current['lowest']
+            
+            if timestamp > highest or highest is None: 
+                self.current['highest'] = timestamp
+            if timestamp < lowest or lowest is None: 
+                self.current['lowest'] = timestamp
+            
+            if len(self.current['area']) == 0:
+                self.current['area'] = [ lat, lon, lat, lon, False ]
+            else:
+                if lat < self.current['area'][0]: self.current['area'][0] = lat
+                if lon < self.current['area'][1]: self.current['area'][1] = lon
+                if lat > self.current['area'][2]: self.current['area'][2] = lat
+                if lon > self.current['area'][3]: self.current['area'][3] = lon
+            
+            # Refreshing the screen for every single track point seems to be
+            # the slowest part of this whole operation, so I'm only going to do
+            # it every 150th point.
+            if self.current['count'] % 150 == 0:
+                self.progressbar.pulse()
+                self._redraw_interface()
+                self.map_view.ensure_visible(*self.current['area'])
+            
+            # Clear all four coordinates of our four-dimensional location
+            # so that it can't accidentally be re-used for the next point
+            try:
+                del self.current['lat']
+                del self.current['lon']
+                del self.current['ele']
+                del self.current['time']
+            except KeyError:
+                pass
         
-        # Make magic happen ;-)
-        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+        elif name == "trk":
+            if 'name' in self.current: del self.current['name']
+    
+    def load_gpx_from_file(self, filename):
+        """Parse GPX data, drawing each GPS track segment on the map."""
         
-        # Zoom out to show the whole track, instead of just leaving the user 
-        # looking at the last loaded point. The * here unpacks the list into
-        # the individual arguments to ensure_visible()
-        self.map_view.ensure_visible(*area)
+        self._redraw_interface(0, "Parsing GPX data...")
+        
+        gpx_parser = expat.ParserCreate()
+        
+        # Callback functions which do all of the parsing.
+        gpx_parser.StartElementHandler = self.gpx_element_start
+        gpx_parser.CharacterDataHandler = self.gpx_element_data
+        gpx_parser.EndElementHandler = self.gpx_element_end
+        
+        with open(filename) as gpx:
+            status = gpx_parser.ParseFile(gpx)
         
         self.update_sensitivity()
+        
+        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+        
+        self.current['count'] = 0.0
+        del self.current['element-name']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
@@ -495,8 +511,8 @@ class GottenGeography:
         # and last timestamp created by the GPX device. We later
         # iterate over the list, searching for the two timestamps
         # that are nearest to the photo
-        higher = self.HIGHEST
-        lower  = self.LOWEST
+        higher = self.current['highest']
+        lower  = self.current['lowest']
         
         # If the photo is out of range, simply peg it to the end of the range.
         # I think this makes sense. If it doesn't, the user isn't obligated to
@@ -602,7 +618,7 @@ class GottenGeography:
         for path in pathlist:
             iter = photos.get_iter(path)[1]
             filename = photos.get_value(iter, self.PHOTO_PATH)
-            if self.modified.has_key(filename): del self.modified[filename]
+            if filename in self.modified: del self.modified[filename]
             self.remove_marker(photos, iter)
             photos.remove(iter)
         
@@ -705,7 +721,7 @@ class GottenGeography:
         
         self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
-        if self.modified.has_key(filename): del self.modified[filename]
+        if filename in self.modified: del self.modified[filename]
         
         self.auto_timestamp_comparison(photos, None, iter)
         self.update_sensitivity()
@@ -815,7 +831,7 @@ class GottenGeography:
                     )
                 except IOError: 
                     self.load_gpx_from_file(filename)
-            except ExpatError:
+            except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
                 self.statusbar.push(
                     self.statusbar.get_context_id("error"), 
@@ -823,16 +839,17 @@ class GottenGeography:
                 )
         
         self.progressbar.hide()
+        self.update_sensitivity()
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
         
         # Remember the last viewed location so we can return to it next run
-        self.gconf_client.set_float(self.LAST_LAT, 
+        self.gconf_client.set_float(self.gconf_keys['lat'], 
             self.map_view.get_property('latitude')) 
-        self.gconf_client.set_float(self.LAST_LON, 
+        self.gconf_client.set_float(self.gconf_keys['lon'], 
             self.map_view.get_property('longitude'))
-        self.gconf_client.set_int(self.LAST_ZOOM, 
+        self.gconf_client.set_int(self.gconf_keys['zoom'], 
             self.map_view.get_zoom_level())
         
         # If there's no unsaved data, just close without confirmation.
@@ -891,20 +908,17 @@ class GottenGeography:
     def __init__(self):
         """Initialize all necessary state."""
         
-        # Will store GPS data once GPX files loaded by user
-        self.tracks = {}
-        self.polygons = []
-        self.HIGHEST = self.LOWEST = None
-        
         # Keeps track of which files have been modified, mostly for counting
         # purposes. Keys are absolute paths to files, values are GtkTreeIters.
         self.modified = {}
         
         # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
-        self.LAST_LAT  = '/apps/gottengeography/last_latitude'
-        self.LAST_LON  = '/apps/gottengeography/last_longitude'
-        self.LAST_ZOOM = '/apps/gottengeography/last_zoom_level'
+        self.gconf_keys = { 
+            'lat':  '/apps/gottengeography/last_latitude',
+            'lon':  '/apps/gottengeography/last_longitude',
+            'zoom': '/apps/gottengeography/last_zoom_level'
+        }
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title(
@@ -1028,11 +1042,11 @@ class GottenGeography:
         
         # Load last used location from GConf
         self.map_view.center_on(
-            self.gconf_client.get_float(self.LAST_LAT), 
-            self.gconf_client.get_float(self.LAST_LON)
+            self.gconf_client.get_float(self.gconf_keys['lat']), 
+            self.gconf_client.get_float(self.gconf_keys['lon'])
         ) 
         self.map_view.set_zoom_level(
-            self.gconf_client.get_int(self.LAST_ZOOM)
+            self.gconf_client.get_int(self.gconf_keys['zoom'])
         )
         
         self.stage = self.map_view.get_stage()
@@ -1114,10 +1128,13 @@ class GottenGeography:
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
             self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
-        # Ensure all widgets are displayed consistently with current state.
+        # Ensure all widgets are displayed properly
         self.window.show_all()
         self.progressbar.hide()
-        self.update_sensitivity()
+        
+        # Various bits of state for the GPX parser
+        self.polygons = []
+        self.clear_all_gpx()
     
     def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
@@ -1165,7 +1182,7 @@ class GottenGeography:
     def _append_if_modified(self, photos, path, iter, pathlist):
         """Append the given photo to the pathlist if it's been modified."""
         
-        if self.modified.has_key(photos.get_value(iter, self.PHOTO_PATH)): 
+        if photos.get_value(iter, self.PHOTO_PATH) in self.modified: 
             pathlist.append(path)
             return True
     
