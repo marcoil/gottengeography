@@ -9,7 +9,7 @@ In it's current state, it's able to:
 
 * Display maps using [libchamplain](http://projects.gnome.org/libchamplain/)
 
-* Parse GPX (xml) files and display the GPS tracks on the map, using [expat](http://docs.python.org/library/pyexpat.html)
+* Parse GPX (xml) files and display the GPS tracks on the map, using [expat](http://docs.python.org/library/pyexpat.html) (a recent switch from minidom to expat has yeilded an 80x speed improvement in the GPX parser).
 
 * Read pre-existing geotags inside photo EXIF data using [pyexiv2](http://tilloy.net/dev/pyexiv2/) and display markers on the libchamplain map indicating where those photos were taken
 
