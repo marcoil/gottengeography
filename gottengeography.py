@@ -262,7 +262,9 @@ class GottenGeography:
         
         for polygon in self.polygons:
             polygon.hide()
-            # Segfault city!
+            
+            # Why doesn't this work? Why do these always cause segfaults?
+            # Who are you? Where are my pants?
             #self.map_view.remove_polygon(polygon)
             #polygon.clear_points()
         
@@ -902,7 +904,7 @@ class GottenGeography:
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
-        dialog.set_website("http://github.com/robru/GottenGeography")
+        dialog.set_website("http://github.com/robru/GottenGeography/wiki")
         dialog.set_website_label("GottenGeography Homepage")
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
@@ -1252,18 +1254,7 @@ do not save."""
 
 COMMENTS = ("""GottenGeography is written in the Python programming language, \
 and allows you to geotag your photos. The name is an anagram of "Python \
-Geotagger".
-
-GottenGeography supports both manual and automatic tagging of photographs. If \
-you do not have a GPS device, simply load your images, navigate on the map to \
-where your photos were taken, select your images, and then click the Apply \
-button. GottenGeography will place the selected images onto the center of the \
-map, and then you can then save your work and close.
-
-If you do have a GPS unit, just load the GPX file and GottenGeography will \
-automatically place your images along the GPS track at precisely the \
-correct coordinates. Note that your computer's timezone must be set to the \
-same timezone that your camera is set to for correct results.""")
+Geotagger".""")
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
