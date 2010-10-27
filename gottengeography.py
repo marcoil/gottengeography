@@ -186,11 +186,13 @@ class GottenGeography:
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
-    def set_marker_highlight(self, photos, path, iter, (highlighted, transparent, area)):
+    def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
         if marker is None: return
+        
+        highlighted = area is not None
         
         marker.set_highlighted(highlighted)
         
@@ -232,11 +234,11 @@ class GottenGeography:
         area = []
         
         if selection.count_selected_rows() > 0:
-            self.loaded_photos.foreach(self.set_marker_highlight, (False, True,  None))
-            selection.selected_foreach(self.set_marker_highlight, (True,  False, area))
+            self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
+            selection.selected_foreach(self.set_marker_highlight, (area, False))
             if len(area) == 5: self.map_view.ensure_visible(*area)
         else:
-            self.loaded_photos.foreach(self.set_marker_highlight, (False, False, None))
+            self.loaded_photos.foreach(self.set_marker_highlight, (None, False))
     
     def add_marker(self, label, lat, lon):
         """Create a new ChamplainMarker and add it to the map."""
