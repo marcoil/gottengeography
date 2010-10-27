@@ -164,6 +164,30 @@ class GottenGeography:
 # Champlain. This section contains methods that manipulate the map.
 ################################################################################
     
+    def remember_location(self):
+        """Add the current location to the history stack."""
+        
+        self.history.append( [
+            self.map_view.get_property('latitude'),
+            self.map_view.get_property('longitude'),
+            self.map_view.get_zoom_level()
+        ] )
+    
+    def return_to_last(self, button=None):
+        """Return the map view to where the user last set it."""
+        
+        try:
+            last = self.history.pop()
+        except IndexError:
+            self.statusbar.push(
+                self.statusbar.get_context_id("error"), 
+                "That's as far back as I can remember!"
+            )
+            self.back_button.set_sensitive(False)
+        else:
+            self.map_view.center_on(last[0], last[1])
+            self.map_view.set_zoom_level(last[2])
+    
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
         
@@ -232,6 +256,7 @@ class GottenGeography:
         if selection is None: selection = self.photo_selection
         
         area = []
+        self.remember_location()
         
         if selection.count_selected_rows() > 0:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
@@ -487,6 +512,8 @@ class GottenGeography:
         """Parse GPX data, drawing each GPS track segment on the map."""
         
         self._redraw_interface(0, "Parsing GPX data...")
+        
+        self.remember_location()
         
         gpx_parser = expat.ParserCreate()
         
@@ -935,6 +962,11 @@ class GottenGeography:
         # auto-tagger doesn't discard the users hard work.
         self.has_manual = {}
         
+        # Stores a list of locations that the user was viewing immediately
+        # prior to any point at which the view was changed programmatically.
+        # Allows the user to go "back", eg, after GPX load has changed the view.
+        self.history = []
+        
         # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
         self.gconf_keys = { 
@@ -982,6 +1014,10 @@ class GottenGeography:
         self.toolbar_third_spacer = Gtk.SeparatorToolItem()
         self.toolbar_third_spacer.set_expand(True)
         self.toolbar_third_spacer.set_draw(False)
+        
+        self.back_button = Gtk.ToolButton(stock_id=Gtk.STOCK_GO_BACK)
+        self.back_button.set_tooltip_text(
+            "Return to previous location in map view.")
         
         self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
         
@@ -1124,6 +1160,7 @@ class GottenGeography:
         self.toolbar.add(self.toolbar_second_spacer)
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.toolbar_third_spacer)
+        self.toolbar.add(self.back_button)
         self.toolbar.add(self.about_button)
         self.app_container.pack_start(self.toolbar, False, True, 0)
         self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
@@ -1138,6 +1175,7 @@ class GottenGeography:
         self.revert_button.connect("clicked", self.revert_selected_photos)
         self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
+        self.back_button.connect("clicked", self.return_to_last)
         self.about_button.connect("clicked", self.about_dialog)
         self.select_all_button.connect("released", self.toggle_selected_photos)
         self.photo_selection.connect("changed", self.update_sensitivity)
@@ -1242,6 +1280,9 @@ class GottenGeography:
         self.clear_gpx_button.set_sensitive(gpx_sensitive)
         self.time_fudge.set_sensitive(gpx_sensitive)
         self.time_fudge_label.set_sensitive(gpx_sensitive)
+        
+        # The Back button should not be sensitive if there's no history yet.
+        self.back_button.set_sensitive(len(self.history) > 0)
         
         # The GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
