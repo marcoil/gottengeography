@@ -88,10 +88,8 @@ class GottenGeography:
 # GPS math. These methods convert numbers into other numbers.
 ################################################################################
     
-    def dms_to_decimal(self, dms, sign=""):
+    def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
-        
-        (degrees, minutes, seconds) = dms
         
         # The south and the west hemispheres are considered "negative"
         if re.match("[SWsw]", sign): sign = -1
@@ -101,8 +99,15 @@ class GottenGeography:
                 (float(minutes.numerator) / minutes.denominator) / 60    + 
                 (float(seconds.numerator) / seconds.denominator) / 3600) * sign
     
-    def decimal_to_dms(self, decimal):
+    def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
+        
+        if is_latitude:
+            if decimal > 0: sign = "N"
+            else:           sign = "S"
+        else:
+            if decimal > 0: sign = "E"
+            else:           sign = "W"
         
         decimal = abs(decimal)
         
@@ -133,7 +138,7 @@ class GottenGeography:
                 % error
             )
         
-        return dms
+        return dms, sign
     
     def float_to_rational(self, decimal):
         """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
@@ -296,34 +301,37 @@ class GottenGeography:
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
             
-            exif['Exif.GPSInfo.GPSMapDatum']    = 'WGS-84'
+            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
             
             exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
-            exif['Exif.GPSInfo.GPSAltitude']    = self.float_to_rational(altitude)
+            exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(altitude)
             
-            exif['Exif.GPSInfo.GPSLatitude']    = self.decimal_to_dms(latitude)
-            exif['Exif.GPSInfo.GPSLongitude']   = self.decimal_to_dms(longitude)
+            (
+                exif['Exif.GPSInfo.GPSLatitude'], 
+                exif['Exif.GPSInfo.GPSLatitudeRef']
+            ) = self.decimal_to_dms(latitude, True)
             
-            if latitude  > 0: exif['Exif.GPSInfo.GPSLatitudeRef']  = "N"
-            else:             exif['Exif.GPSInfo.GPSLatitudeRef']  = "S"
-            if longitude > 0: exif['Exif.GPSInfo.GPSLongitudeRef'] = "E"
-            else:             exif['Exif.GPSInfo.GPSLongitudeRef'] = "W"
+            (
+                exif['Exif.GPSInfo.GPSLongitude'], 
+                exif['Exif.GPSInfo.GPSLongitudeRef']
+            ) = self.decimal_to_dms(longitude, False)
             
-            exif.writeMetadata()
+            try:
+                exif.writeMetadata()
+            except Exception as inst:
+                self.statusbar.push(
+                    self.statusbar.get_context_id("error"), 
+                    "%s: %s" % (type(inst), ", ".join(inst.args))
+                )
+            else:
+                del self.modified[filename]
+                photos.set_value(
+                    iter, self.PHOTO_SUMMARY, 
+                    re.sub(r'</?b>', '', photos.get_value(iter, self.PHOTO_SUMMARY))
+                )
             
             # The EXIF keys that we will need to fill out are: 
             # 'Exif.Image.GPSTag', 'Exif.GPSInfo.GPSVersionID', 
-            # 'Exif.GPSInfo.GPSLatitudeRef', 'Exif.GPSInfo.GPSLatitude', 
-            # 'Exif.GPSInfo.GPSLongitudeRef', 'Exif.GPSInfo.GPSLongitude', 
-            # 'Exif.GPSInfo.GPSAltitudeRef', 'Exif.GPSInfo.GPSAltitude', 
-            # 'Exif.GPSInfo.GPSMapDatum'
-            
-            del self.modified[filename]
-            
-            photos.set_value(
-                iter, self.PHOTO_SUMMARY, 
-                re.sub(r'</?b>', '', photos.get_value(iter, self.PHOTO_SUMMARY))
-            )
     
     def save_all_files(self, widget=None):
         """Call self.save_one_file() once for each loaded file."""
