@@ -515,6 +515,9 @@ class GottenGeography:
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
+        # User has manually tagged a photo, we should respect that
+        if photos.get_value(iter, self.PHOTO_PATH) in self.has_manual: return
+        
         # photo is the timestamp in epoch seconds,
         photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
         photo += self.time_fudge.get_value()
@@ -598,6 +601,8 @@ class GottenGeography:
             self.map_view.get_property('latitude'), 
             self.map_view.get_property('longitude')
         )
+        
+        self.has_manual[photos.get_value(iter, self.PHOTO_PATH)] = iter.copy()
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -630,7 +635,8 @@ class GottenGeography:
         for path in pathlist:
             iter = photos.get_iter(path)[1]
             filename = photos.get_value(iter, self.PHOTO_PATH)
-            if filename in self.modified: del self.modified[filename]
+            if filename in self.modified:   del self.modified[filename]
+            if filename in self.has_manual: del self.has_manual[filename]
             self.remove_marker(photos, iter)
             photos.remove(iter)
         
@@ -733,7 +739,8 @@ class GottenGeography:
         
         self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
-        if filename in self.modified: del self.modified[filename]
+        if filename in self.modified:   del self.modified[filename]
+        if filename in self.has_manual: del self.has_manual[filename]
         
         self.auto_timestamp_comparison(photos, None, iter)
         self.update_sensitivity()
@@ -923,6 +930,10 @@ class GottenGeography:
         # Keeps track of which files have been modified, mostly for counting
         # purposes. Keys are absolute paths to files, values are GtkTreeIters.
         self.modified = {}
+        
+        # Keeps track of which files have manually-applied tags, so that the
+        # auto-tagger doesn't discard the users hard work.
+        self.has_manual = {}
         
         # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
