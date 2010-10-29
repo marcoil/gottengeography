@@ -214,25 +214,26 @@ class GottenGeography:
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
+        
         if marker is None: return
         
-        highlighted = area is not None
+        # get_parent() returns None if the marker is not actually on the map.
+        if not marker.get_parent(): return
         
-        marker.set_highlighted(highlighted)
+        highlighted = area is not None
         
         if transparent: marker.set_property('opacity', 64)
         else:           marker.set_property('opacity', 255)
         
-        # The check for marker.get_parent() prevents us from
-        # centering the view on a marker that's been "deleted" (hidden).
-        if highlighted and marker.get_parent():
+        marker.set_highlighted(highlighted)
+        
+        if highlighted:
             marker.set_scale(1.2, 1.2)
             marker.raise_top()
             self.crosshair.raise_top()
         else:
             marker.set_scale(1, 1)
-        
-        if area is None: return
+            return
         
         # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
         lat = marker.get_property('latitude')
