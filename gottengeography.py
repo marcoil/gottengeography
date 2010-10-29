@@ -548,7 +548,9 @@ class GottenGeography:
         
         # photo is the timestamp in epoch seconds,
         photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
-        photo += self.time_fudge.get_value()
+        photo += self.offset_hours.get_value() * 3600
+        photo += self.offset_minutes.get_value() * 60
+        photo += self.offset_seconds.get_value()
         
         # higher and lower begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
@@ -616,7 +618,7 @@ class GottenGeography:
         
         self._insert_coordinates(photos, iter, lat, lon, ele)
     
-    def time_fudge_value_changed(self, slider):
+    def time_offset_value_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
@@ -1131,23 +1133,24 @@ class GottenGeography:
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         
-        self.time_fudge_label = Gtk.Label(label="Clock Offset: ")
+        self.offset_label = Gtk.Label(label="Clock Offset: ")
+        self.offset_hours_label = Gtk.Label(label="h ")
+        self.offset_minutes_label = Gtk.Label(label="m ")
+        self.offset_seconds_label = Gtk.Label(label="s ")
         
-        self.time_fudge = Gtk.SpinButton()
-        self.time_fudge.set_digits(0)
-        self.time_fudge.set_value(0)
-        self.time_fudge.set_increments(5, 100)
-        self.time_fudge.set_range(-3600, 3600)
-        self.time_fudge.set_update_policy(Gtk.SpinButtonUpdatePolicy.IF_VALID)
-        self.time_fudge.set_numeric(True)
-        self.time_fudge.set_snap_to_ticks(True)
-        self.time_fudge.set_tooltip_text(
-            "Is the clock on your camera wrong? Add or subtract some seconds here.")
+        self.offset_hours   = self.create_spin_button(24)
+        self.offset_minutes = self.create_spin_button(60)
+        self.offset_seconds = self.create_spin_button(60)
         
         self.statusbar = Gtk.Statusbar()
         self.statusbar.pack_start(self.progressbar, True, True, 6)
-        self.statusbar.pack_end(self.time_fudge, False, False, 0)
-        self.statusbar.pack_end(self.time_fudge_label, False, False, 0)
+        self.statusbar.pack_end(self.offset_seconds_label, False, False, 0)
+        self.statusbar.pack_end(self.offset_seconds, False, False, 0)
+        self.statusbar.pack_end(self.offset_minutes_label, False, False, 0)
+        self.statusbar.pack_end(self.offset_minutes, False, False, 0)
+        self.statusbar.pack_end(self.offset_hours_label, False, False, 0)
+        self.statusbar.pack_end(self.offset_hours, False, False, 0)
+        self.statusbar.pack_end(self.offset_label, False, False, 0)
         
         # This adds each widget into it's place in the window.
         self.photo_scroller.add(self.photos_view)
@@ -1181,7 +1184,9 @@ class GottenGeography:
         self.select_all_button.connect("released", self.toggle_selected_photos)
         self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
-        self.time_fudge.connect("value-changed", self.time_fudge_value_changed)
+        self.offset_seconds.connect("value-changed", self.time_offset_value_changed)
+        self.offset_minutes.connect("value-changed", self.time_offset_value_changed)
+        self.offset_hours.connect("value-changed", self.time_offset_value_changed)
         self.stage.connect("paint", self.position_crosshair)
         
         # Key bindings
@@ -1197,6 +1202,22 @@ class GottenGeography:
         # Various bits of state for the GPX parser
         self.polygons = []
         self.clear_all_gpx()
+    
+    def create_spin_button(self, value):
+        """Create a SpinButton for use as a clock offset setting."""
+        
+        button = Gtk.SpinButton()
+        button.set_digits(0)
+        button.set_value(0)
+        button.set_increments(1, 4)
+        button.set_range(-1*value, value)
+        button.set_update_policy(Gtk.SpinButtonUpdatePolicy.IF_VALID)
+        button.set_numeric(True)
+        button.set_snap_to_ticks(True)
+        button.set_tooltip_text(
+            "Is the clock on your camera wrong? Correct it here.")
+        
+        return button
     
     def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
@@ -1278,9 +1299,11 @@ class GottenGeography:
         
         # The Clear button and time fudge are only sensitive if there's any GPX
         gpx_sensitive = len(self.tracks) > 0
-        self.clear_gpx_button.set_sensitive(gpx_sensitive)
-        self.time_fudge.set_sensitive(gpx_sensitive)
-        self.time_fudge_label.set_sensitive(gpx_sensitive)
+        for widget in [self.clear_gpx_button, self.offset_hours, 
+        self.offset_minutes, self.offset_seconds, self.offset_hours_label, 
+        self.offset_minutes_label, self.offset_seconds_label, 
+        self.offset_label]:
+            widget.set_sensitive(gpx_sensitive)
         
         # The Back button should not be sensitive if there's no history yet.
         self.back_button.set_sensitive(len(self.history) > 0)
