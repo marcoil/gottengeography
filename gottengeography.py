@@ -132,8 +132,7 @@ class GottenGeography:
         # this check here until more people have tested this. 
         error = abs(self.dms_to_decimal(dms) - decimal)
         if error > 1e-10:
-            self.statusbar.push(
-                self.statusbar.get_context_id("error"), 
+            self._status_message(
                 "Rounding discarded %s. Please inform rbpark@exolucere.ca!" 
                 % error
             )
@@ -179,10 +178,7 @@ class GottenGeography:
         try:
             last = self.history.pop()
         except IndexError:
-            self.statusbar.push(
-                self.statusbar.get_context_id("error"), 
-                "That's as far back as I can remember!"
-            )
+            self._status_message("That's as far back as I can remember!")
             self.back_button.set_sensitive(False)
         else:
             self.map_view.center_on(last[0], last[1])
@@ -349,15 +345,13 @@ class GottenGeography:
             try:
                 exif.writeMetadata()
             except Exception as inst:
-                self.statusbar.push(
-                    self.statusbar.get_context_id("error"), 
-                    "%s: %s" % (type(inst), ", ".join(inst.args))
-                )
+                self._status_message("%s: %s" % 
+                    (type(inst), ", ".join(inst.args)))
             else:
                 del self.modified[filename]
                 photos.set_value(
-                    iter, self.PHOTO_SUMMARY, 
-                    re.sub(r'</?b>', '', photos.get_value(iter, self.PHOTO_SUMMARY))
+                    iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', 
+                    photos.get_value(iter, self.PHOTO_SUMMARY))
                 )
             
             # The EXIF keys that we will need to fill out are: 
@@ -446,11 +440,10 @@ class GottenGeography:
         # This is where we collect elevation and time data
         # And this += silliness is necessary because sometimes expat breaks
         # the value into chunks when calling this handler
-        element = self.current['element-name']
-        if element in self.current:
-            self.current[element] += data
-        else:
-            self.current[element] = data
+        try:
+            self.current[self.current['element-name']] += data
+        except KeyError:
+            self.current[self.current['element-name']] = data
     
     def gpx_element_end(self, name):
         """Callback function for Expat EndElementHandler."""
@@ -493,8 +486,8 @@ class GottenGeography:
             # it every 150th point.
             if self.current['count'] % 150 == 0:
                 self.progressbar.pulse()
-                self._redraw_interface()
                 self.map_view.ensure_visible(*self.current['area'])
+                self._redraw_interface()
             
             # Clear all four coordinates of our four-dimensional location
             # so that it can't accidentally be re-used for the next point
@@ -527,6 +520,8 @@ class GottenGeography:
             status = gpx_parser.ParseFile(gpx)
         
         self.update_sensitivity()
+        
+        self._status_message("%d points loaded." % self.current['count'], False)
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
@@ -882,10 +877,8 @@ class GottenGeography:
                     self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
-                self.statusbar.push(
-                    self.statusbar.get_context_id("error"), 
-                    "Could not open: %s" % ", ".join(invalid_files)
-                )
+                self._status_message("Could not open: %s" % 
+                    ", ".join(invalid_files))
         
         self.progressbar.hide()
         self.update_sensitivity()
@@ -1249,6 +1242,14 @@ class GottenGeography:
         
         if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
+    
+    def _status_message(self, message, error=True):
+        """Display a message on the GtkStatusBar."""
+        
+        if error: context_id = "error"
+        else:     context_id = "message"
+        
+        self.statusbar.push(self.statusbar.get_context_id(context_id), message)
     
     def _redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
