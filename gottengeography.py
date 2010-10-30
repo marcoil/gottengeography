@@ -521,6 +521,11 @@ class GottenGeography:
         
         self.remember_location()
         
+        # By zooming in fully, no matter where you are or what you're looking 
+        # at, the map view will always show the minimum possible amount to 
+        # include the full GPX track.
+        self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+        
         gpx_parser = expat.ParserCreate()
         
         # Callback functions which do all of the parsing.
@@ -1343,8 +1348,11 @@ class GottenGeography:
             widget.set_sensitive(gpx_sensitive)
         
         # Zoom buttons should not be able to zoom beyond their ability
-        self.zoom_in_button.set_sensitive(self.map_view.get_max_zoom_level() is not self.map_view.get_zoom_level())
-        self.zoom_out_button.set_sensitive(self.map_view.get_min_zoom_level() is not self.map_view.get_zoom_level())
+        zoom_level = self.map_view.get_zoom_level()
+        self.zoom_in_button.set_sensitive(
+            self.map_view.get_max_zoom_level() is not zoom_level)
+        self.zoom_out_button.set_sensitive(
+            self.map_view.get_min_zoom_level() is not zoom_level)
         
         # The Back button should not be sensitive if there's no history yet.
         self.back_button.set_sensitive(len(self.history) > 0)
