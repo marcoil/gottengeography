@@ -17,10 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk, pyexiv2, os, re, time, calendar, math
+from __future__ import division
+#from __future__ import calculus # too advanced for us cavemen
 
-pygtk.require('2.0')
-
+import pyexiv2, os, re, time, calendar, math
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.parsers import expat
@@ -95,9 +95,9 @@ class GottenGeography:
         if re.match("[SWsw]", sign): sign = -1
         else:                        sign =  1
         
-        return ((float(degrees.numerator) / degrees.denominator)         + 
-                (float(minutes.numerator) / minutes.denominator) / 60    + 
-                (float(seconds.numerator) / seconds.denominator) / 3600) * sign
+        return ((degrees.numerator / degrees.denominator)         + 
+                (minutes.numerator / minutes.denominator) / 60    + 
+                (seconds.numerator / seconds.denominator) / 3600) * sign
     
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
@@ -324,7 +324,7 @@ class GottenGeography:
             longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
             
             self._redraw_interface(
-                float(len(current)) / total, "Saving %s..." % 
+                len(current) / total, "Saving %s..." % 
                 os.path.basename(filename)
             )
             
@@ -403,7 +403,7 @@ class GottenGeography:
         
         try:
             ele = exif['Exif.GPSInfo.GPSAltitude']
-            ele = float(ele.numerator) / ele.denominator
+            ele = ele.numerator / ele.denominator
         except:
             ele = None
         
@@ -596,8 +596,8 @@ class GottenGeography:
             # low_perc and high_perc are percentages (between 0 and 1)
             # representing the proportional amount of time from the 
             # lower point to the photo, and the higher point to the photo
-            low_perc = float(photo - lower) / delta
-            high_perc = float(higher - photo) / delta
+            low_perc = (photo - lower) / delta
+            high_perc = (higher - photo) / delta
             
             # Aahhhhh! Math! This multiplies the latitudes and longitudes
             # of the gpx points by the proportional distance between the 
@@ -733,7 +733,7 @@ class GottenGeography:
         (current, total) = data
         current.append(filename)
         self._redraw_interface(
-            float(len(current)) / total,
+            len(current) / total,
             "Loading %s..." % os.path.basename(filename)
         )
         
