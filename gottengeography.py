@@ -196,6 +196,25 @@ class GottenGeography:
         self.map_view.zoom_out()
         self.update_sensitivity()
     
+    def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
+        """Move the map view, taking into account the current zoom."""
+        
+        lat = self.map_view.get_property('latitude')
+        lon = self.map_view.get_property('longitude')
+        
+        # This gives ok movement when zoomed in close, but needs some finessing
+        # at larger zoomed-out levels
+        move_by = 0.1 / self.map_view.get_zoom_level()
+        
+        print move_by
+        
+        if   keyval == Gdk.keyval_from_name("Left"):  lon += move_by * -1
+        elif keyval == Gdk.keyval_from_name("Up"):    lat += move_by
+        elif keyval == Gdk.keyval_from_name("Right"): lon += move_by
+        elif keyval == Gdk.keyval_from_name("Down"):  lat += move_by * -1
+        
+        self.map_view.center_on(lat, lon)
+    
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
         
@@ -1223,6 +1242,9 @@ class GottenGeography:
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 
         'question', 'equal', 'minus', 'Left' ]: 
             self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
+        
+        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
+            self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
         
         # Ensure all widgets are displayed properly
         self.window.show_all()
