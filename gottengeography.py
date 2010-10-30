@@ -184,6 +184,18 @@ class GottenGeography:
             self.map_view.center_on(last[0], last[1])
             self.map_view.set_zoom_level(last[2])
     
+    def zoom_in(self, button=None):
+        """Zoom the map in by one level."""
+        
+        self.map_view.zoom_in()
+        self.update_sensitivity()
+    
+    def zoom_out(self, button=None):
+        """Zoom the map out by one level."""
+        
+        self.map_view.zoom_out()
+        self.update_sensitivity()
+    
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
         
@@ -1011,9 +1023,21 @@ class GottenGeography:
         self.toolbar_third_spacer.set_expand(True)
         self.toolbar_third_spacer.set_draw(False)
         
+        self.zoom_out_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_OUT)
+        self.zoom_out_button.set_tooltip_text(
+            "Zoom the map out one step.")
+        
+        self.zoom_in_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_IN)
+        self.zoom_in_button.set_tooltip_text(
+            "Enhance!")
+        
+        self.toolbar_fourth_spacer = Gtk.SeparatorToolItem()
+        
         self.back_button = Gtk.ToolButton(stock_id=Gtk.STOCK_GO_BACK)
         self.back_button.set_tooltip_text(
             "Return to previous location in map view.")
+        
+        self.toolbar_fifth_spacer = Gtk.SeparatorToolItem()
         
         self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
         
@@ -1157,7 +1181,11 @@ class GottenGeography:
         self.toolbar.add(self.toolbar_second_spacer)
         self.toolbar.add(self.revert_button)
         self.toolbar.add(self.toolbar_third_spacer)
+        self.toolbar.add(self.zoom_out_button)
+        self.toolbar.add(self.zoom_in_button)
+        self.toolbar.add(self.toolbar_fourth_spacer)
         self.toolbar.add(self.back_button)
+        self.toolbar.add(self.toolbar_fifth_spacer)
         self.toolbar.add(self.about_button)
         self.app_container.pack_start(self.toolbar, False, True, 0)
         self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
@@ -1172,6 +1200,8 @@ class GottenGeography:
         self.revert_button.connect("clicked", self.revert_selected_photos)
         self.close_button.connect("clicked", self.close_selected_photos)
         self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
+        self.zoom_out_button.connect("clicked", self.zoom_out)
+        self.zoom_in_button.connect("clicked", self.zoom_in)
         self.back_button.connect("clicked", self.return_to_last)
         self.about_button.connect("clicked", self.about_dialog)
         self.select_all_button.connect("released", self.toggle_selected_photos)
@@ -1185,7 +1215,8 @@ class GottenGeography:
         # Key bindings
         self.accel = Gtk.AccelGroup()
         self.window.add_accel_group(self.accel)
-        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 'question' ]: 
+        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 
+        'question', 'equal', 'minus', 'Left' ]: 
             self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
         # Ensure all widgets are displayed properly
@@ -1229,8 +1260,13 @@ class GottenGeography:
         # variable and compare that rather than calling Gdk.keyval_from_name() 
         # a million times, but that seems to just crash and this way actually
         # works, so it looks like this is what we're going with. 
+        # Update 2010-10-29: J5 says he's just fixed this in Gtk3. Maybe one day
+        # I'll get to use it!
         if   keyval == Gdk.keyval_from_name("Return"): self.apply_selected_photos()
         elif keyval == Gdk.keyval_from_name("w"):      self.close_selected_photos()
+        elif keyval == Gdk.keyval_from_name("equal"):  self.zoom_in()
+        elif keyval == Gdk.keyval_from_name("minus"):  self.zoom_out()
+        elif keyval == Gdk.keyval_from_name("Left"):   self.return_to_last()
         elif keyval == Gdk.keyval_from_name("x"):      self.clear_all_gpx()
         elif keyval == Gdk.keyval_from_name("o"):      self.add_files_dialog()
         elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit_dialog()
@@ -1305,6 +1341,10 @@ class GottenGeography:
         self.offset_minutes_label, self.offset_seconds_label, 
         self.offset_label]:
             widget.set_sensitive(gpx_sensitive)
+        
+        # Zoom buttons should not be able to zoom beyond their ability
+        self.zoom_in_button.set_sensitive(self.map_view.get_max_zoom_level() is not self.map_view.get_zoom_level())
+        self.zoom_out_button.set_sensitive(self.map_view.get_min_zoom_level() is not self.map_view.get_zoom_level())
         
         # The Back button should not be sensitive if there's no history yet.
         self.back_button.set_sensitive(len(self.history) > 0)
