@@ -39,18 +39,11 @@ class GottenGeographyTester(unittest.TestCase):
         # Make the tests work for people outside my time zone.
         os.environ["TZ"] = "America/Edmonton"
         
+        # Load only the photos first
         os.chdir('./demo/')
         for demo in os.listdir('.'):
             filename = "%s/%s" % (os.getcwd(), demo)
-            if re.search(r'gpx$', demo):
-                self.assertRaises(IOError, 
-                    self.gui.add_or_reload_photo,
-                    filename=filename,
-                    data=[[], 1]
-                )
-
-                self.gui.load_gpx_from_file(filename)
-            else:
+            if not re.search(r'gpx$', demo):
                 self.assertRaises(ExpatError, 
                     self.gui.load_gpx_from_file,
                     filename
@@ -60,11 +53,29 @@ class GottenGeographyTester(unittest.TestCase):
                     data=[[], 1]
                 )
         
-        # GPX parser uses 'start' for timing the GPX loading process, but we fed
-        # it an invalid file above, which caused it to raise an exception, 
-        # so this didn't get cleaned up.
-        del self.gui.current['start']
+        iter = self.gui.loaded_photos.get_iter_first()
+        self.assertTrue(iter[0])
         
+        # Test that a photo has no coordinates to begin with
+        self.assertEqual(
+            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE), 
+            0.0
+        )
+        self.assertEqual(
+            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LONGITUDE),
+            0.0
+        )
+        
+        # Load the GPX
+        filename="%s/%s" % (os.getcwd(), "20101016.gpx")
+        self.assertRaises(IOError, 
+            self.gui.add_or_reload_photo,
+            filename=filename,
+            data=[[], 1]
+        )
+        self.gui.load_gpx_from_file(filename)
+        
+        # Check that the GPX is loaded
         self.assertEqual(len(self.gui.tracks),   374)
         self.assertEqual(len(self.gui.modified), 6)
         self.assertEqual(len(self.gui.current),  4)
@@ -76,8 +87,7 @@ class GottenGeographyTester(unittest.TestCase):
              53.537399000000001, -113.443061, False]
         )
         
-        iter = self.gui.loaded_photos.get_iter_first()
-        self.assertTrue(iter[0])
+        # check that a photo has the correct coordinates.
         self.assertAlmostEqual(
             self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE), 
             53.530006, 6
@@ -87,9 +97,11 @@ class GottenGeographyTester(unittest.TestCase):
             -113.448004333, 9
         )
     
-    def test_writing_files(self):
-        pass
-        # TODO
+#    def test_writing_files(self):
+#        pass
+#        # TODO
 
 if __name__ == '__main__':
-    unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(GottenGeographyTester)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+
