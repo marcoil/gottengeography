@@ -259,29 +259,31 @@ class GottenGeography:
             marker.set_scale(1, 1)
             return
         
-        # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
         lat = marker.get_property('latitude')
         lon = marker.get_property('longitude')
         
-        if len(area) < 5:
-            area.extend([ lat, lon, lat, lon, False ])
-        else:
-            if lat < area[0]: area[0] = lat
-            if lon < area[1]: area[1] = lon
-            if lat > area[2]: area[2] = lat
-            if lon > area[3]: area[3] = lon
+        # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
+        if lat < area[0]: area[0] = lat
+        if lon < area[1]: area[1] = lon
+        if lat > area[2]: area[2] = lat
+        if lon > area[3]: area[3] = lon
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
         
         if selection is None: selection = self.photo_selection
         
-        area = []
+        # The first two values are minimums, and the second two are maximums.
+        # 'float < ""' is always true, and 'float > None' is always true, so
+        # these are sensible default values that get immediately clobbered
+        # whenever compared against a real value.
+        area = [ "", "", None, None, False ]
         
         if selection.count_selected_rows() > 0:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
             selection.selected_foreach(self.set_marker_highlight, (area, False))
-            if len(area) == 5: 
+            try: area.index(None)
+            except ValueError:
                 self.remember_location()
                 self.map_view.ensure_visible(*area)
         else:
@@ -321,7 +323,9 @@ class GottenGeography:
         
         self.current = { 
             'count':   0.0, 
-            'area':    [], 
+            # 'float < ""' is always true, and 'float > None' is always true,
+            # so these make sensible default values that we can easily clobber
+            'area':    [ "", "", None, None, False ], 
             'highest': None, 
             'lowest':  None 
         }
@@ -500,20 +504,19 @@ class GottenGeography:
             if timestamp < lowest or lowest is None: 
                 self.current['lowest'] = timestamp
             
-            if len(self.current['area']) < 5:
-                self.current['area'].extend([ lat, lon, lat, lon, False ])
-            else:
-                if lat < self.current['area'][0]: self.current['area'][0] = lat
-                if lon < self.current['area'][1]: self.current['area'][1] = lon
-                if lat > self.current['area'][2]: self.current['area'][2] = lat
-                if lon > self.current['area'][3]: self.current['area'][3] = lon
+            if lat < self.current['area'][0]: self.current['area'][0] = lat
+            if lon < self.current['area'][1]: self.current['area'][1] = lon
+            if lat > self.current['area'][2]: self.current['area'][2] = lat
+            if lon > self.current['area'][3]: self.current['area'][3] = lon
             
             # Refreshing the screen for every single track point seems to be
             # the slowest part of this whole operation, so I'm only going to do
-            # it every 150th point.
-            if self.current['count'] % 150 == 0:
+            # it every 200th point.
+            if self.current['count'] % 200 == 0:
                 self.progressbar.pulse()
-                self.map_view.ensure_visible(*self.current['area'])
+                try: self.current['area'].index(None)
+                except ValueError:
+                    self.map_view.ensure_visible(*self.current['area'])
                 self._redraw_interface()
             
             # Clear all four coordinates of our four-dimensional location
