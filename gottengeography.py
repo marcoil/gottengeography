@@ -402,6 +402,17 @@ class GottenGeography:
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module."""
         
+        try: 
+            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                filename, 
+                thumb_size, 
+                thumb_size
+            )
+        except RuntimeError:
+            # IOErrror is what I'm using to indicate "invalid filetype"
+            # because that's what pyexiv2 raises for certain invalid files.
+            raise IOError
+        
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
@@ -433,29 +444,26 @@ class GottenGeography:
         except:
             ele = None
         
-        try:
-            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                filename, 
-                thumb_size, 
-                thumb_size
-            )
-        except:
-            thumb = Gtk.Widget.render_icon(
-                Gtk.Image(), 
-                Gtk.STOCK_MISSING_IMAGE, 
-                Gtk.IconSize.MENU, 
-                None
-            )
-        
         return timestamp, lat, lon, ele, thumb
     
     def gpx_element_start(self, name, attributes):
         """Callback function for Expat StartElementHandler."""
         
+        # If the root element is not GPX, don't even bother with it, just
+        # barf right away and get it over with.
+        if 'element-name' not in self.current:
+            if name <> 'gpx':
+                raise expat.ExpatError
+        
+        # This is how the data handler knows what elements it's in
         self.current['element-name'] = name
+        
+        # give us a blank string to append to from the data handler
+        self.current[name] = ""
         
         # New track segment, show the new name and create a new polygon for it
         if name == "trkseg":
+            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self._redraw_interface(text="Parsing %s..." % self.current['name'])
             self.polygons.append(self.create_polygon())
         
@@ -472,10 +480,7 @@ class GottenGeography:
         # This is where we collect elevation and time data
         # And this += silliness is necessary because sometimes expat breaks
         # the value into chunks when calling this handler
-        try:
-            self.current[self.current['element-name']] += data
-        except KeyError:
-            self.current[self.current['element-name']] = data
+        self.current[self.current['element-name']] += data
     
     def gpx_element_end(self, name):
         """Callback function for Expat EndElementHandler."""
@@ -541,10 +546,7 @@ class GottenGeography:
         
         self.remember_location()
         
-        # By zooming in fully, no matter where you are or what you're looking 
-        # at, the map view will always show the minimum possible amount to 
-        # include the full GPX track.
-        self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+        self.current['start'] = time.clock()
         
         gpx_parser = expat.ParserCreate()
         
@@ -558,12 +560,20 @@ class GottenGeography:
         
         self.update_sensitivity()
         
-        self._status_message("%d points loaded." % self.current['count'], False)
+        self.current['end'] = time.clock()
+        
+        self._status_message(
+            "%d points loaded in %.2fs." % 
+            (self.current['count'], self.current['end']-self.current['start']), 
+            False
+        )
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         self.current['count'] = 0.0
         del self.current['element-name']
+        del self.current['start']
+        del self.current['end']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
@@ -740,7 +750,9 @@ class GottenGeography:
         photo metadata as read from disk. Effectively, this is used both for 
         loading new photos, and reverting old photos, discarding any changes.
         
-        Must be passed either an iter or filename, or both.
+        Must be passed either an iter or filename, or both. Raises NameError
+        if called with neither, and raises IOError if filename refers to a file
+        that is not a photograph.
         """
         
         if iter is None and filename is None: 
@@ -748,15 +760,6 @@ class GottenGeography:
         
         if photos is None:   photos   = self.loaded_photos
         if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
-        
-        # This ugliness is necessary because pyexiv2 won't give any sort
-        # of error whatsoever when it's asked to parse a GPX file, it fails
-        # silently, and gives us an empty list of exif keys. Which is the exact
-        # same thing that it does when you try to load a valid photo that just
-        # happens to not have any exif data attached to it.
-        # TODO find a better way to detect non-photos and raise an error to 
-        # prevent the rest of this method from running on an invalid file.
-        if re.search(".gpx$", filename): raise IOError('GPX Encountered')
         
         (timestamp, lat, lon, ele, thumb
             ) = self.load_exif_from_file(filename, 200)
