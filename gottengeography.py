@@ -877,15 +877,6 @@ class GottenGeography:
         # make a file preview thingo
         chooser.connect("selection-changed", self.update_preview)
         
-        # TODO figure out what formats are supported by pyexiv2,
-        # and hide anything that isn't supported. For now, allow
-        # the user to open anything, but gracefully fail if they open
-        # something invalid.        
-        filter = Gtk.FileFilter()
-        filter.set_name("All Files")
-        filter.add_pattern('*')
-        chooser.add_filter(filter)
-        
         # Exit if the user clicked anything other than "OK"
         if chooser.run() <> Gtk.ResponseType.OK:
             chooser.destroy()
