@@ -594,19 +594,19 @@ class GottenGeography:
         photo += self.offset_minutes.get_value() * 60
         photo += self.offset_seconds.get_value()
         
-        # higher and lower begin by referring to the chronological first
+        # hi and lo begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
         # iterate over the list, searching for the two timestamps
         # that are nearest to the photo
-        higher = self.current['highest']
-        lower  = self.current['lowest']
+        hi = self.current['highest']
+        lo = self.current['lowest']
         
         # If the photo is out of range, simply peg it to the end of the range.
         # I think this makes sense. If it doesn't, the user isn't obligated to
         # save the result. They can always override with the 'apply' button, 
         # or load in a different GPX file with correct data.
-        if photo < lower:  photo = lower
-        if photo > higher: photo = higher
+        if photo < lo: photo = lo
+        if photo > hi: photo = hi
         
         # Check for GPX point with exact timestamp as photo. This is more likely
         # than you might think. Three out of the six supplied demo images match
@@ -623,29 +623,29 @@ class GottenGeography:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
             for point in self.tracks:
-                if (point > photo) and (point < higher): higher = point
-                if (point < photo) and (point > lower):  lower  = point
+                if (point > photo) and (point < hi): hi = point
+                if (point < photo) and (point > lo): lo = point
             
             # delta is the number of seconds between 
             # the two points we're averaging
-            delta = higher - lower
+            delta = hi - lo
             
             # low_perc and high_perc are percentages (between 0 and 1)
             # representing the proportional amount of time from the 
             # lower point to the photo, and the higher point to the photo
-            low_perc = (photo - lower) / delta
-            high_perc = (higher - photo) / delta
+            lo_perc = (photo - lo) / delta
+            hi_perc = (hi - photo) / delta
             
             # Multiply the coordinates of the gpx points by the proportional
             # distance between the gpx point and the photo timestamp, and then
             # add the two proportions. This results in finding the correct
             # coordinates for the photo.
-            lat = ((self.tracks[lower]['point'].lat  * low_perc)   + 
-                   (self.tracks[higher]['point'].lat * high_perc))
-            lon = ((self.tracks[lower]['point'].lon  * low_perc)   + 
-                   (self.tracks[higher]['point'].lon * high_perc))
-            ele = ((self.tracks[lower]['elevation']  * low_perc)   +
-                   (self.tracks[higher]['elevation'] * high_perc))
+            lat = ((self.tracks[lo]['point'].lat * lo_perc)   + 
+                   (self.tracks[hi]['point'].lat * hi_perc))
+            lon = ((self.tracks[lo]['point'].lon * lo_perc)   + 
+                   (self.tracks[hi]['point'].lon * hi_perc))
+            ele = ((self.tracks[lo]['elevation'] * lo_perc)   +
+                   (self.tracks[hi]['elevation'] * hi_perc))
         
         self._insert_coordinates(photos, iter, lat, lon, ele)
     
