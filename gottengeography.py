@@ -154,8 +154,6 @@ class GottenGeography:
     def valid_coords(self, lat=None, lon=None):
         """Determine the validity of coordinates."""
         
-        print lat, lon
-        
         # Note that None <= 90 will evaluate to True, but None >= -90 is False.
         # Because these tests are all chained together with "and" logic,
         # the entire thing will be False if given a None.
