@@ -286,12 +286,13 @@ class GottenGeography:
         if selection is None: selection = self.photo_selection
         
         area = []
-        self.remember_location()
         
         if selection.count_selected_rows() > 0:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
             selection.selected_foreach(self.set_marker_highlight, (area, False))
-            if len(area) == 5: self.map_view.ensure_visible(*area)
+            if len(area) == 5: 
+                self.remember_location()
+                self.map_view.ensure_visible(*area)
         else:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, False))
     
