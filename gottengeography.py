@@ -233,7 +233,7 @@ class GottenGeography:
         """Ensure that the crosshair is precisely in the center of the map."""
         
         self.crosshair.set_position(
-            (self.stage.get_width() - self.crosshair.get_width()) / 2,
+            (self.stage.get_width()  - self.crosshair.get_width())  / 2,
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
@@ -242,9 +242,7 @@ class GottenGeography:
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
         
-        if marker is None: return
-        
-        # get_parent() returns None if the marker is not actually on the map.
+        if marker is None:          return
         if not marker.get_parent(): return
         
         highlighted = area is not None
@@ -257,7 +255,6 @@ class GottenGeography:
         if highlighted:
             marker.set_scale(1.2, 1.2)
             marker.raise_top()
-            self.crosshair.raise_top()
         else:
             marker.set_scale(1, 1)
             return
@@ -266,12 +263,8 @@ class GottenGeography:
         lat = marker.get_property('latitude')
         lon = marker.get_property('longitude')
         
-        if len(area) == 0:
-            area.append(lat)
-            area.append(lon)
-            area.append(lat)
-            area.append(lon)
-            area.append(False)
+        if len(area) < 5:
+            area.extend([ lat, lon, lat, lon, False ])
         else:
             if lat < area[0]: area[0] = lat
             if lon < area[1]: area[1] = lon
@@ -377,17 +370,13 @@ class GottenGeography:
             try:
                 exif.writeMetadata()
             except Exception as inst:
-                self._status_message("%s: %s" % 
-                    (type(inst), ", ".join(inst.args)))
+                self._status_message(", ".join(inst.args))
             else:
                 del self.modified[filename]
                 photos.set_value(
                     iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', 
                     photos.get_value(iter, self.PHOTO_SUMMARY))
                 )
-            
-            # The EXIF keys that we will need to fill out are: 
-            # 'Exif.Image.GPSTag', 'Exif.GPSInfo.GPSVersionID', 
     
     def save_all_files(self, widget=None):
         """Call self.save_one_file() once for each loaded file."""
@@ -411,6 +400,10 @@ class GottenGeography:
         except RuntimeError:
             # IOErrror is what I'm using to indicate "invalid filetype"
             # because that's what pyexiv2 raises for certain invalid files.
+            # This means my program will refuse to open files that GdkPixbuf
+            # can't create a thumbnail for, which might pose a problem in the 
+            # event that there's some image format that is supported by
+            # pyexiv2 but not GdkPixbuf. Works with JPG and DNG at least.
             raise IOError
         
         exif = pyexiv2.Image(filename)
@@ -451,24 +444,21 @@ class GottenGeography:
         
         # If the root element is not GPX, don't even bother with it, just
         # barf right away and get it over with.
-        if 'element-name' not in self.current:
-            if name <> 'gpx':
-                raise expat.ExpatError
+        if 'element-name' not in self.current and name <> 'gpx':
+            raise expat.ExpatError
         
-        # This is how the data handler knows what elements it's in
+        # This is how the data handler knows what element it's in
         self.current['element-name'] = name
         
         # give us a blank string to append to from the data handler
         self.current[name] = ""
         
-        # New track segment, show the new name and create a new polygon for it
+        # New track segment, create a new polygon for it
         if name == "trkseg":
-            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-            self._redraw_interface(text="Parsing %s..." % self.current['name'])
             self.polygons.append(self.create_polygon())
         
         # Eg, <trkpt lat="45.147445" lon="-81.469507">
-        if 'lat' in attributes and 'lon' in attributes:
+        if 'lat' in attributes:
             self.current.update(attributes)
     
     def gpx_element_data(self, data):
@@ -478,8 +468,8 @@ class GottenGeography:
         if not data: return
         
         # This is where we collect elevation and time data
-        # And this += silliness is necessary because sometimes expat breaks
-        # the value into chunks when calling this handler
+        # Sometimes expat calls this handler multiple times each with just
+        # a chunk of the whole data, so += is necessary to collect all of it.
         self.current[self.current['element-name']] += data
     
     def gpx_element_end(self, name):
@@ -510,8 +500,8 @@ class GottenGeography:
             if timestamp < lowest or lowest is None: 
                 self.current['lowest'] = timestamp
             
-            if len(self.current['area']) == 0:
-                self.current['area'] = [ lat, lon, lat, lon, False ]
+            if len(self.current['area']) < 5:
+                self.current['area'].extend([ lat, lon, lat, lon, False ])
             else:
                 if lat < self.current['area'][0]: self.current['area'][0] = lat
                 if lon < self.current['area'][1]: self.current['area'][1] = lon
@@ -535,9 +525,6 @@ class GottenGeography:
                 del self.current['time']
             except KeyError:
                 pass
-        
-        elif name == "trk":
-            if 'name' in self.current: del self.current['name']
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -570,10 +557,11 @@ class GottenGeography:
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
+        # Cleanup leftover data from parser
         self.current['count'] = 0.0
-        del self.current['element-name']
-        del self.current['start']
-        del self.current['end']
+        for key in ['trk', 'name', 'trkpt', 'gpx', 'trkseg', 'start', 
+        'end', 'element-name' ]:
+            if key in self.current: del self.current[key]
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
