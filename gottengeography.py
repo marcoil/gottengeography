@@ -608,14 +608,9 @@ class GottenGeography:
         if photo < lower:  photo = lower
         if photo > higher: photo = higher
         
-        # In an ideal world, your GPS will produce a track point at least once 
-        # per second, and then you're guaranteed to have a track point recorded
-        # at the exact second that the camera snapped it's photo. In that perfect
-        # world, we can just take the exact coordinates from the track point,
-        # and slap them directly on the photo. This is more likely than you
-        # might think. Three out of the six supplied demo images match this
-        # criteria, and I didn't even find that out until *after* I had selected
-        # them.
+        # Check for GPX point with exact timestamp as photo. This is more likely
+        # than you might think. Three out of the six supplied demo images match
+        # this criteria, which I didn't notice until *after* I selected them.
         try:
             lat = self.tracks[photo]['point'].lat
             lon = self.tracks[photo]['point'].lon
@@ -641,16 +636,10 @@ class GottenGeography:
             low_perc = (photo - lower) / delta
             high_perc = (higher - photo) / delta
             
-            # Aahhhhh! Math! This multiplies the latitudes and longitudes
-            # of the gpx points by the proportional distance between the 
-            # gpx point and the photo timestamp, and then adding the two
-            # proportions. This results in finding the correct coordinates
-            # for the photo. It's not just averaging the two points giving
-            # you a point halfway in the middle, but in the proper proportions.
-            # Eg, if you have one gpx point that is 25 seconds before the photo,
-            # and another 75 seconds after the photo, the calculated coordinates
-            # will be 25% of the distance (between those two points) away from
-            # the prior point.
+            # Multiply the coordinates of the gpx points by the proportional
+            # distance between the gpx point and the photo timestamp, and then
+            # add the two proportions. This results in finding the correct
+            # coordinates for the photo.
             lat = ((self.tracks[lower]['point'].lat  * low_perc)   + 
                    (self.tracks[higher]['point'].lat * high_perc))
             lon = ((self.tracks[lower]['point'].lon  * low_perc)   + 
@@ -690,7 +679,12 @@ class GottenGeography:
         """Discard any modifications to all selected photos."""
         
         self.progressbar.show()
-        self.photo_selection.selected_foreach(self.add_or_reload_photo, [[], len(self.modified)])
+        
+        self.photo_selection.selected_foreach(
+            self.add_or_reload_photo, 
+            [[], len(self.modified)]
+        )
+        
         self.progressbar.hide()
         
         self.update_sensitivity()
@@ -884,8 +878,8 @@ class GottenGeography:
         
         self.progressbar.show()
         
-        # We need to make the chooser disappear immediately after clicking a button,
-        # Anything else is really slow and feels unresponsive
+        # Make the chooser disappear immediately after clicking a button,
+        # anything else feels unresponsive
         files = chooser.get_filenames()
         chooser.destroy()
         
@@ -1109,7 +1103,10 @@ class GottenGeography:
         self.photos_view.append_column(self.column)
         
         self.photo_scroller = Gtk.ScrolledWindow()
-        self.photo_scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.photo_scroller.set_policy(
+            Gtk.PolicyType.NEVER, 
+            Gtk.PolicyType.AUTOMATIC
+        )
         
         self.apply_button = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text(
@@ -1236,10 +1233,20 @@ class GottenGeography:
         self.window.add_accel_group(self.accel)
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash', 
         'question', 'equal', 'minus', 'Left' ]: 
-            self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
+            self.accel.connect(
+                Gdk.keyval_from_name(key), 
+                Gdk.ModifierType.CONTROL_MASK, 
+                0, 
+                self.key_accel
+            )
         
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            self.accel.connect(Gdk.keyval_from_name(key), Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
+            self.accel.connect(
+                Gdk.keyval_from_name(key), 
+                Gdk.ModifierType.MOD1_MASK, 
+                0, 
+                self.move_map_view_by_arrow_keys
+            )
         
         # Ensure all widgets are displayed properly
         self.window.show_all()
@@ -1345,7 +1352,7 @@ class GottenGeography:
         # Select button needs to show as toggled if there is any selection
         self.select_all_button.set_property('active', sensitivity)
         
-        # The Revert button is only activated if the selection has unsaved files.
+        # Revert button is only activated if the selection has unsaved files.
         modified_in_selection = []
         self.photo_selection.selected_foreach(
             self._append_if_modified, 
@@ -1353,10 +1360,10 @@ class GottenGeography:
         )
         self.revert_button.set_sensitive(len(modified_in_selection) > 0)
         
-        # The Save button is only activated if there are modified files.
+        # Save button is only activated if there are modified files.
         self.save_button.set_sensitive(len(self.modified) > 0)
         
-        # The Clear button and time fudge are only sensitive if there's any GPX
+        # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
         for widget in [self.clear_gpx_button, self.offset_hours, 
         self.offset_minutes, self.offset_seconds, self.offset_hours_label, 
@@ -1371,10 +1378,10 @@ class GottenGeography:
         self.zoom_out_button.set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
         
-        # The Back button should not be sensitive if there's no history yet.
+        # Back button should not be sensitive if there's no history yet.
         self.back_button.set_sensitive(len(self.history) > 0)
         
-        # The GtkListStore needs to be hidden if it is empty.
+        # GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
         else:                                      self.photos_with_buttons.hide()
     
