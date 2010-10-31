@@ -154,6 +154,8 @@ class GottenGeography:
     def valid_coords(self, lat=None, lon=None):
         """Determine the validity of coordinates."""
         
+        print lat, lon
+        
         # Note that None <= 90 will evaluate to True, but None >= -90 is False.
         # Because these tests are all chained together with "and" logic,
         # the entire thing will be False if given a None.
@@ -202,11 +204,11 @@ class GottenGeography:
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         
-        # This gives ok movement when zoomed in close, but needs some finessing
-        # at larger zoomed-out levels
-        move_by = 0.1 / self.map_view.get_zoom_level()
-        
-        print move_by
+        # 10 / (1 + 2zoom^3) where zoom is the map zoom level from 0 to 20)
+        # This makes the map move by 10 degrees at zoom level 0, but only
+        # 0.00086 degrees at maximum zoom (which is roughly half a city block
+        # in my neighborhood)
+        move_by = 10 / (1 + (2 * (self.map_view.get_zoom_level() ** 3)))
         
         if   keyval == Gdk.keyval_from_name("Left"):  lon += move_by * -1
         elif keyval == Gdk.keyval_from_name("Up"):    lat += move_by
