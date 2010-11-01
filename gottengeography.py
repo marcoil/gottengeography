@@ -31,11 +31,9 @@ from fractions import Fraction
 
 VERSION = "0.1"
 
-#gettext.install('gottengeography')
-
 class GottenGeography:
     
-    t = gettext.translation("gottengeography", os.getcwd() + "/locale")
+    t = gettext.translation("gottengeography", "/usr/share/locale/")
     _ = t.ugettext
     t.install()
     
