@@ -72,7 +72,7 @@ class GottenGeography:
         
         summary = "%s\n%s" % (self._pretty_time(timestamp), summary)
         
-        if ele: summary += _("\n%.1fm above sea level") % ele
+        if ele: summary += "\n%.1f%s" % (ele, _("m above sea level"))
         
         # Eg:
         # filename.jpg
@@ -139,8 +139,8 @@ class GottenGeography:
         error = abs(self.dms_to_decimal(dms) - decimal)
         if error > 1e-10:
             self._status_message(
-                _("Rounding discarded %s. Please inform rbpark@exolucere.ca!")
-                % error
+                _("Rounding discarded %s. Please inform %s!")
+                % (error, "rbpark@exolucere.ca")
             )
         
         return dms, sign
@@ -833,7 +833,7 @@ class GottenGeography:
         else:
             label = "%s\n%s" % (label, _("Not geotagged"))
         
-        if ele: label = _("%s\n%.1fm above sea level") % (label, ele)
+        if ele: label = "%s\n%.1f%s" % (label, ele, _("m above sea level"))
         
         # Is this a label? This should be a label.
         label = Gtk.Label(label=label)
@@ -955,7 +955,7 @@ class GottenGeography:
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
         dialog.set_website("http://github.com/robru/GottenGeography/wiki")
-        dialog.set_website_label(_("GottenGeography Wiki"))
+        dialog.set_website_label("GottenGeography Wiki")
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
         #dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
@@ -992,8 +992,7 @@ class GottenGeography:
         }
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title(
-            _("GottenGeography - The Python Geotagger that's easy to use!"))
+        self.window.set_title("GottenGeography")
         self.window.set_size_request(900,700)
         
         self.app_container = Gtk.VBox(spacing=0)
@@ -1089,7 +1088,7 @@ class GottenGeography:
         self.cell_thumb.set_property('ypad', 6)
         self.cell_thumb.set_property('xpad', 6)
         
-        self.column = Gtk.TreeViewColumn(_('Photos'))
+        self.column = Gtk.TreeViewColumn('Photos')
         self.column.pack_start(self.cell_thumb, False)
         self.column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
         self.column.pack_start(self.cell_string, False)
@@ -1390,11 +1389,11 @@ class GottenGeography:
 # nicely into the actual code above, so they've been extracted here.
 ################################################################################
 
-SAVE_WARNING = _("""<span weight="bold" size="larger">Save changes to your \
-photos before closing?</span>
+SAVE_WARNING = """<span weight="bold" size="larger">""" + _("""Save changes to \
+your photos before closing?""") + """</span>
 
-The changes you've made to %d of your photos will be permanently lost if you \
-do not save.""")
+""" + _("""The changes you've made to %d of your photos will be permanently \
+lost if you do not save.""")
 
 COMMENTS = _("""GottenGeography is written in the Python programming language, \
 and allows you to geotag your photos. The name is an anagram of "Python \
