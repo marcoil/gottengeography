@@ -20,7 +20,7 @@
 from __future__ import division
 #from __future__ import calculus # too advanced for us cavemen
 
-import pyexiv2, os, re, time, calendar, math
+import pyexiv2, os, re, time, calendar, math, gettext
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
 from xml.parsers import expat
@@ -31,7 +31,13 @@ from fractions import Fraction
 
 VERSION = "0.1"
 
+#gettext.install('gottengeography')
+
 class GottenGeography:
+    
+    t = gettext.translation("gottengeography", os.getcwd() + "/locale")
+    _ = t.ugettext
+    t.install()
     
 ################################################################################
 # Pretty string methods. These methods take numbers as input and return strings
@@ -41,10 +47,10 @@ class GottenGeography:
     def _pretty_coords(self, lat, lon):
         """Add cardinal directions to decimal coordinates."""
         
-        if lat > 0: lat_sign = "N"
-        else:       lat_sign = "S"
-        if lon > 0: lon_sign = "E"
-        else:       lon_sign = "W"
+        if lat > 0: lat_sign = _("N")
+        else:       lat_sign = _("S")
+        if lon > 0: lon_sign = _("E")
+        else:       lon_sign = _("W")
         
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
         return ("%s %.5f, %s %.5f" % 
@@ -64,11 +70,11 @@ class GottenGeography:
         if self.valid_coords(lat, lon): 
             summary = self._pretty_coords(lat, lon)
         else:
-            summary = "Not geotagged"
+            summary = _("Not geotagged")
         
         summary = "%s\n%s" % (self._pretty_time(timestamp), summary)
         
-        if ele: summary += "\n%.1fm above sea level" % ele
+        if ele: summary += _("\n%.1fm above sea level") % ele
         
         # Eg:
         # filename.jpg
@@ -102,6 +108,8 @@ class GottenGeography:
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
         
+        # Don't translate these strings as they're stored in EXIF, which
+        # defines them in English only.
         if is_latitude:
             if decimal > 0: sign = "N"
             else:           sign = "S"
@@ -133,7 +141,7 @@ class GottenGeography:
         error = abs(self.dms_to_decimal(dms) - decimal)
         if error > 1e-10:
             self._status_message(
-                "Rounding discarded %s. Please inform rbpark@exolucere.ca!" 
+                _("Rounding discarded %s. Please inform rbpark@exolucere.ca!")
                 % error
             )
         
@@ -178,7 +186,7 @@ class GottenGeography:
         try:
             last = self.history.pop()
         except IndexError:
-            self._status_message("That's as far back as I can remember!")
+            self._status_message(_("That's as far back as I can remember!"))
             self.back_button.set_sensitive(False)
         else:
             self.map_view.center_on(last[0], last[1])
@@ -349,7 +357,7 @@ class GottenGeography:
             longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
             
             self._redraw_interface(
-                len(current) / total, "Saving %s..." % 
+                len(current) / total, _("Saving %s...") % 
                 os.path.basename(filename)
             )
             
@@ -532,7 +540,7 @@ class GottenGeography:
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         
-        self._redraw_interface(0, "Parsing GPX data...")
+        self._redraw_interface(0, _("Parsing GPX data..."))
         
         self.remember_location()
         
@@ -553,7 +561,7 @@ class GottenGeography:
         self.current['end'] = time.clock()
         
         self._status_message(
-            "%d points loaded in %.2fs." % 
+            _("%d points loaded in %.2fs.") % 
             (self.current['count'], self.current['end']-self.current['start']), 
             False
         )
@@ -735,13 +743,11 @@ class GottenGeography:
         photo metadata as read from disk. Effectively, this is used both for 
         loading new photos, and reverting old photos, discarding any changes.
         
-        Must be passed either an iter or filename, or both. Raises NameError
-        if called with neither, and raises IOError if filename refers to a file
-        that is not a photograph.
+        Must be passed either an iter or filename, or both. Raises IOError if 
+        filename refers to a file that is not a photograph.
         """
         
-        if iter is None and filename is None: 
-            raise NameError("Cannot continue without either filename or iter.")
+        if iter is None and filename is None: return
         
         if photos is None:   photos   = self.loaded_photos
         if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
@@ -754,7 +760,7 @@ class GottenGeography:
         current.append(filename)
         self._redraw_interface(
             len(current) / total,
-            "Loading %s..." % os.path.basename(filename)
+            _("Loading %s...") % os.path.basename(filename)
         )
         
         if timestamp:
@@ -827,9 +833,9 @@ class GottenGeography:
         if self.valid_coords(lat, lon): 
             label = "%s\n%s" % (label, self._pretty_coords(lat, lon))
         else:
-            label = "%s\n%s" % (label, "Not geotagged")
+            label = "%s\n%s" % (label, _("Not geotagged"))
         
-        if ele: label = "%s\n%.1fm above sea level" % (label, ele)
+        if ele: label = _("%s\n%.1fm above sea level") % (label, ele)
         
         # Is this a label? This should be a label.
         label = Gtk.Label(label=label)
@@ -849,7 +855,7 @@ class GottenGeography:
         """Display a file chooser, and attempt to load chosen files."""
         
         chooser = Gtk.FileChooserDialog(
-            title="Open files...",
+            title=_("Open files..."),
             buttons=(
                 Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL, 
                 Gtk.STOCK_OPEN,    Gtk.ResponseType.OK
@@ -893,7 +899,7 @@ class GottenGeography:
                     self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
-                self._status_message("Could not open: %s" % 
+                self._status_message(_("Could not open: %s") % 
                     ", ".join(invalid_files))
         
         self.progressbar.hide()
@@ -920,7 +926,7 @@ class GottenGeography:
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
         dialog.set_markup(SAVE_WARNING % len(self.modified))
-        dialog.add_button("Close _without Saving", Gtk.ResponseType.CLOSE)
+        dialog.add_button(_("Close _without Saving"), Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
         dialog.set_default_response(Gtk.ResponseType.ACCEPT)
@@ -951,7 +957,7 @@ class GottenGeography:
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
         dialog.set_website("http://github.com/robru/GottenGeography/wiki")
-        dialog.set_website_label("GottenGeography Homepage")
+        dialog.set_website_label(_("GottenGeography Wiki"))
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
         #dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
@@ -989,7 +995,7 @@ class GottenGeography:
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title(
-            "GottenGeography - The Python Geotagger that's easy to use!")
+            _("GottenGeography - The Python Geotagger that's easy to use!"))
         self.window.set_size_request(900,700)
         
         self.app_container = Gtk.VBox(spacing=0)
@@ -998,30 +1004,30 @@ class GottenGeography:
         self.toolbar = Gtk.Toolbar()
         self.open_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
         self.open_button.set_tooltip_text(
-            "Load photos or GPS data (Ctrl+O)")
+            _("Load photos or GPS data (Ctrl+O)"))
         
         self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
         self.save_button.set_tooltip_text(
-            "Save all modified GPS data into your photos (Ctrl+S)")
-        self.save_button.set_label("Save All")
+            _("Save all modified GPS data into your photos (Ctrl+S)"))
+        self.save_button.set_label(_("Save All"))
         
         self.toolbar_first_spacer = Gtk.SeparatorToolItem()
         
         self.clear_gpx_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLEAR) 
         self.clear_gpx_button.set_tooltip_text(
-            "Unload all GPS data (Ctrl+X)")
-        self.clear_gpx_button.set_label("Clear GPX")
+            _("Unload all GPS data (Ctrl+X)"))
+        self.clear_gpx_button.set_label(_("Clear GPX"))
         
         self.close_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLOSE) 
         self.close_button.set_tooltip_text(
-            "Close selected photos (Ctrl+W)")
-        self.close_button.set_label("Close Photo")
+            _("Close selected photos (Ctrl+W)"))
+        self.close_button.set_label(_("Close Photo"))
         
         self.toolbar_second_spacer = Gtk.SeparatorToolItem()
         
         self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
         self.revert_button.set_tooltip_text(
-            "Reload selected photos, losing all changes (Ctrl+Z)")
+            _("Reload selected photos, losing all changes (Ctrl+Z)"))
         
         self.toolbar_third_spacer = Gtk.SeparatorToolItem()
         self.toolbar_third_spacer.set_expand(True)
@@ -1029,17 +1035,17 @@ class GottenGeography:
         
         self.zoom_out_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_OUT)
         self.zoom_out_button.set_tooltip_text(
-            "Zoom the map out one step.")
+            _("Zoom the map out one step."))
         
         self.zoom_in_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_IN)
         self.zoom_in_button.set_tooltip_text(
-            "Enhance!")
+            _("Enhance!"))
         
         self.toolbar_fourth_spacer = Gtk.SeparatorToolItem()
         
         self.back_button = Gtk.ToolButton(stock_id=Gtk.STOCK_GO_BACK)
         self.back_button.set_tooltip_text(
-            "Return to previous location in map view.")
+            _("Return to previous location in map view."))
         
         self.toolbar_fifth_spacer = Gtk.SeparatorToolItem()
         
@@ -1085,7 +1091,7 @@ class GottenGeography:
         self.cell_thumb.set_property('ypad', 6)
         self.cell_thumb.set_property('xpad', 6)
         
-        self.column = Gtk.TreeViewColumn('Photos')
+        self.column = Gtk.TreeViewColumn(_('Photos'))
         self.column.pack_start(self.cell_thumb, False)
         self.column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
         self.column.pack_start(self.cell_string, False)
@@ -1101,12 +1107,12 @@ class GottenGeography:
         
         self.apply_button = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text(
-            "Place selected photos onto center of map (Ctrl+Return)")
+            _("Place selected photos onto center of map (Ctrl+Return)"))
         
         self.select_all_button = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
         self.select_all_button.set_use_stock(True)
         self.select_all_button.set_tooltip_text(
-            "Toggle whether all photos are selected (Ctrl+A)")
+            _("Toggle whether all photos are selected (Ctrl+A)"))
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
         self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
@@ -1157,10 +1163,10 @@ class GottenGeography:
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         
-        self.offset_label = Gtk.Label(label="Clock Offset: ")
-        self.offset_hours_label = Gtk.Label(label="h ")
-        self.offset_minutes_label = Gtk.Label(label="m ")
-        self.offset_seconds_label = Gtk.Label(label="s ")
+        self.offset_label = Gtk.Label(label=_("Clock Offset: "))
+        self.offset_hours_label = Gtk.Label(label=_("h "))
+        self.offset_minutes_label = Gtk.Label(label=_("m "))
+        self.offset_seconds_label = Gtk.Label(label=_("s "))
         
         self.offset_hours   = self.create_spin_button(24)
         self.offset_minutes = self.create_spin_button(60)
@@ -1259,7 +1265,7 @@ class GottenGeography:
         button.set_numeric(True)
         button.set_snap_to_ticks(True)
         button.set_tooltip_text(
-            "Is the clock on your camera wrong? Correct it here.")
+            _("Is the clock on your camera wrong? Correct it here."))
         
         return button
     
@@ -1386,13 +1392,13 @@ class GottenGeography:
 # nicely into the actual code above, so they've been extracted here.
 ################################################################################
 
-SAVE_WARNING = """<span weight="bold" size="larger">Save changes to your \
+SAVE_WARNING = _("""<span weight="bold" size="larger">Save changes to your \
 photos before closing?</span>
 
 The changes you've made to %d of your photos will be permanently lost if you \
-do not save."""
+do not save.""")
 
-COMMENTS = ("""GottenGeography is written in the Python programming language, \
+COMMENTS = _("""GottenGeography is written in the Python programming language, \
 and allows you to geotag your photos. The name is an anagram of "Python \
 Geotagger".""")
 
