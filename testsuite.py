@@ -243,6 +243,23 @@ N 48.44034, W 89.20475
         self.gui.return_to_last()
         self.assertEqual(history_length, len(self.gui.history))
     
+    def test_map_markers(self):
+        """Put a marker on the map, and then take it off."""
+        
+        lat = random.random() * 180 - 90
+        lon = random.random() * 360 - 180
+        
+        marker = self.gui.add_marker("foobar", lat, lon)
+        
+        self.assertEqual(marker.get_property('latitude'), lat)
+        self.assertEqual(marker.get_property('longitude'), lon)
+        
+        self.assertTrue(marker.get_parent())
+        
+        marker.destroy()
+        
+        self.assertFalse(marker.get_parent())
+        
 #    def test_writing_files(self):
 #        pass
 #        # TODO
