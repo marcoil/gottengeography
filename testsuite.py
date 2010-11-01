@@ -226,8 +226,6 @@ N 48.44034, W 89.20475
         self.gui.return_to_last()
         self.assertEqual(history_length + 1, len(self.gui.history))
         
-        print coords
-        
         # These assertAlmostEqual calls are less accurate than the other ones
         # because they're testing the ChamplainView coordinates more than
         # anything else, which rounds a bit more loosely than my own code does.
