@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import unittest, os, re, time
+from __future__ import division
+import unittest, os, re, time, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
+        
+        # Make the tests work for people outside my time zone.
+        os.environ["TZ"] = "America/Edmonton"
         
         self.gui = GottenGeography()
         # TODO add code to do a git checkout of the demo data so that
@@ -29,15 +33,13 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.modified), 0)
+        self.assertEqual(len(self.gui.polygons), 0)
         self.assertEqual(self.gui.current['lowest'],  None)
         self.assertEqual(self.gui.current['highest'], None)
         self.assertEqual(
             self.gui.current['area'], 
             ['', '', None, None, False]
         )
-        
-        # Make the tests work for people outside my time zone.
-        os.environ["TZ"] = "America/Edmonton"
         
         # Load only the photos first
         os.chdir('./demo/')
@@ -79,6 +81,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks),   374)
         self.assertEqual(len(self.gui.modified), 6)
         self.assertEqual(len(self.gui.current),  4)
+        self.assertEqual(len(self.gui.polygons), 1)
         self.assertEqual(self.gui.current['lowest'],  1287259751)
         self.assertEqual(self.gui.current['highest'], 1287260756)
         self.assertEqual(
@@ -96,6 +99,151 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LONGITUDE),
             -113.448004333, 9
         )
+    
+    def test_string_functions(self):
+        """Ensure that strings print properly."""
+        
+        self.assertEqual(
+            self.gui._pretty_coords(10, 10),
+            "N 10.00000, E 10.00000"
+        )
+        self.assertEqual(
+            self.gui._pretty_coords(-10, -10),
+            "S 10.00000, W 10.00000"
+        )
+        
+        self.assertEqual(
+            self.gui._pretty_time(999999999), 
+            "2001-09-08 07:46:39 PM"
+        )
+        
+        self.assertEqual(
+            self.gui._create_summary(
+                "photo.jpg", 
+                999999999, 
+                43.646719, 
+                -79.334382, 
+                101, 
+                True
+            ), 
+            """<b>photo.jpg
+<span color="#BBBBBB" size="smaller">2001-09-08 07:46:39 PM
+N 43.64672, W 79.33438
+101.0m above sea level</span></b>"""
+        )
+        
+        self.assertEqual(
+            self.gui._create_summary(
+                "image.dng", 
+                999999999, 
+                48.440344, 
+                -89.204751, 
+                186, 
+                False
+            ), 
+            """image.dng
+<span color="#BBBBBB" size="smaller">2001-09-08 07:46:39 PM
+N 48.44034, W 89.20475
+186.0m above sea level</span>"""
+        )
+    
+    def test_gps_math(self):
+        """Test coordinate conversion functions."""
+        
+        self.assertFalse(self.gui.valid_coords(None, None))
+        self.assertFalse(self.gui.valid_coords("", ""))
+        
+        # Pick 100 random coordinates on the globe, convert them from decimal
+        # to sexagesimal and then back, and ensure that they are always equal.
+        for i in range(100):
+            # Oh, and test altitudes too
+            altitude = round(random.random() * 100, 6)
+            fraction = self.gui.float_to_rational(altitude)
+            self.assertAlmostEqual(
+                altitude,
+                fraction.numerator / fraction.denominator,
+                5
+            )
+            
+            decimal_lat = round(random.random() * 180 - 90,  6)
+            decimal_lon = round(random.random() * 360 - 180, 6)
+            
+            self.assertTrue(self.gui.valid_coords(decimal_lat, decimal_lon))
+            
+            dms_lat = self.gui.decimal_to_dms(decimal_lat, True)
+            dms_lon = self.gui.decimal_to_dms(decimal_lon, False)
+            
+            self.assertEqual(len(dms_lat),    2)
+            self.assertEqual(len(dms_lat[0]), 3)
+            
+            self.assertEqual(len(dms_lon),    2)
+            self.assertEqual(len(dms_lon[0]), 3)
+            
+            self.assertAlmostEqual(
+                decimal_lat, 
+                self.gui.dms_to_decimal(*dms_lat), 
+                10 # equal to 10 places
+            )
+            self.assertAlmostEqual(
+                decimal_lon, 
+                self.gui.dms_to_decimal(*dms_lon), 
+                10 # equal to 10 places
+            )
+    
+    def test_map_navigation(self):
+        """Ensure that it's possible to navigate the map."""
+        
+        history_length = len(self.gui.history)
+        
+        self.gui.remember_location()
+        self.assertEqual(history_length + 1, len(self.gui.history))
+        
+        coords = []
+        
+        coords.append([
+            self.gui.map_view.get_property('latitude'),
+            self.gui.map_view.get_property('longitude')
+        ])
+        
+        self.gui.map_view.center_on(
+            round(random.random() * 160 - 80,  6),
+            round(random.random() * 360 - 180, 6)
+        )
+        
+        coords.append([
+            self.gui.map_view.get_property('latitude'),
+            self.gui.map_view.get_property('longitude')
+        ])
+        
+        self.gui.remember_location()
+        self.assertEqual(history_length + 2, len(self.gui.history))
+        
+        self.gui.map_view.center_on(
+            round(random.random() * 160 - 80,  6),
+            round(random.random() * 360 - 180, 6)
+        )
+        
+        self.gui.return_to_last()
+        self.assertEqual(history_length + 1, len(self.gui.history))
+        
+        print coords
+        
+        # These assertAlmostEqual calls are less accurate than the other ones
+        # because they're testing the ChamplainView coordinates more than
+        # anything else, which rounds a bit more loosely than my own code does.
+        self.assertAlmostEqual(
+            self.gui.map_view.get_property('latitude'),
+            coords[-1][0],
+            2
+        )
+        self.assertAlmostEqual(
+            self.gui.map_view.get_property('longitude'),
+            coords[-1][1],
+            2
+        )
+        
+        self.gui.return_to_last()
+        self.assertEqual(history_length, len(self.gui.history))
     
 #    def test_writing_files(self):
 #        pass
