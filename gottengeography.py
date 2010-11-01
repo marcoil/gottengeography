@@ -29,7 +29,7 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 class GottenGeography:
     
@@ -558,6 +558,10 @@ class GottenGeography:
         
         self.current['end'] = time.clock()
         
+        try: self.current['area'].index(None)
+        except ValueError:
+            self.map_view.ensure_visible(*self.current['area'])
+        
         self._status_message(
             _("%d points loaded in %.2fs.") % 
             (self.current['count'], self.current['end']-self.current['start']), 
@@ -630,8 +634,8 @@ class GottenGeography:
             # low_perc and high_perc are percentages (between 0 and 1)
             # representing the proportional amount of time from the 
             # lower point to the photo, and the higher point to the photo
-            lo_perc = (photo - lo) / delta
-            hi_perc = (hi - photo) / delta
+            hi_perc = (photo - lo) / delta
+            lo_perc = (hi - photo) / delta
             
             # Multiply the coordinates of the gpx points by the proportional
             # distance between the gpx point and the photo timestamp, and then
