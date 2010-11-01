@@ -29,7 +29,7 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-VERSION = "0.1"
+VERSION = "0.1.1"
 
 class GottenGeography:
     
