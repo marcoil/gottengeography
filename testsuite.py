@@ -93,11 +93,11 @@ class GottenGeographyTester(unittest.TestCase):
         # check that a photo has the correct coordinates.
         self.assertAlmostEqual(
             self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE), 
-            53.530006, 6
+            53.529963999999993, 9
         )
         self.assertAlmostEqual(
             self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LONGITUDE),
-            -113.448004333, 9
+            -113.44800866666665, 9
         )
     
     def test_string_functions(self):
