@@ -122,28 +122,8 @@ class GottenGeography:
         (remainder, minutes) = math.modf(remainder * 60)
         seconds              = remainder * 60
         
-        dms = [
-            pyexiv2.Rational(degrees, 1),
-            pyexiv2.Rational(minutes, 1),
-            self.float_to_rational(seconds)
-        ]
-        
-        # The use of fractions.Fraction().limit_denominator() introduces some
-        # rounding into the result here. So far, largest rounding error I've 
-        # seen is ~6.7e-12 (so, correct to 11 decimal places). I'm pretty sure
-        # that this is just the inherent imprecision of floating point math,
-        # but I'm by no means an expert on the subject. Considering that only
-        # eight decimal places are required for millimeter precision on planet
-        # Earth, I think that this is acceptable. However, I'm going to leave
-        # this check here until more people have tested this. 
-        error = abs(self.dms_to_decimal(dms) - decimal)
-        if error > 1e-10:
-            self._status_message(
-                _("Rounding discarded %s. Please inform %s!")
-                % (error, "rbpark@exolucere.ca")
-            )
-        
-        return dms, sign
+        return [ pyexiv2.Rational(degrees, 1), pyexiv2.Rational(minutes, 1),
+            self.float_to_rational(seconds) ], sign
     
     def float_to_rational(self, decimal):
         """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
