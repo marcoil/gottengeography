@@ -188,18 +188,19 @@ class GottenGeography:
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         
-        # 10 / (1 + 2zoom^3) where zoom is the map zoom level from 0 to 20)
+        # 10 / (1 + 4zoom^3) where zoom is the map zoom level from 0 to 20)
         # This makes the map move by 10 degrees at zoom level 0, but only
-        # 0.00086 degrees at maximum zoom (which is roughly half a city block
-        # in my neighborhood)
-        move_by = 10 / (1 + (2 * (self.map_view.get_zoom_level() ** 3)))
+        # 0.0003125 degrees at maximum zoom (which is roughly one quarter of
+        # a city block in my neighborhood)
+        move_by = 10 / (1 + (4 * (self.map_view.get_zoom_level() ** 3)))
         
         if   keyval == Gdk.keyval_from_name("Left"):  lon += move_by * -1
         elif keyval == Gdk.keyval_from_name("Up"):    lat += move_by
         elif keyval == Gdk.keyval_from_name("Right"): lon += move_by
         elif keyval == Gdk.keyval_from_name("Down"):  lat += move_by * -1
         
-        self.map_view.center_on(lat, lon)
+        if self.valid_coords(lat, lon):
+            self.map_view.center_on(lat, lon)
     
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
