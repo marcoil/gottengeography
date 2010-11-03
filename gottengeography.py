@@ -210,7 +210,7 @@ class GottenGeography:
         polygon.set_property('mark-points', False)
         polygon.set_stroke(True)
         polygon.set_stroke_width(5)
-        polygon.set_stroke_color(Clutter.Color.new(255, 0, 0, 128))
+        polygon.set_stroke_color(self.track_color)
         polygon.set_fill(False)
         self.map_view.add_polygon(polygon)
         polygon.show()
@@ -1113,6 +1113,9 @@ class GottenGeography:
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_photo_layer.show()
+        
+        # color to use for GPX tracks
+        self.track_color = Clutter.Color.new(255, 0, 0, 128)
         
         # Load last used location from GConf
         self.map_view.center_on(
