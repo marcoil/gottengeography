@@ -29,7 +29,7 @@ from fractions import Fraction
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 class GottenGeography:
     
@@ -632,6 +632,22 @@ class GottenGeography:
     
     def time_offset_value_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
+        
+        # Some magic to let minutes and seconds settings wrap around.
+        seconds = self.offset_seconds.get_value()
+        minutes = self.offset_minutes.get_value()
+        
+        if seconds == -60 or seconds == 60:
+            self.offset_seconds.set_value(0)
+            self.offset_minutes.set_value(
+                self.offset_minutes.get_value() + (seconds/60)
+            )
+        
+        if minutes == -60 or minutes == 60:
+            self.offset_minutes.set_value(0)
+            self.offset_hours.set_value(
+                self.offset_hours.get_value() + (minutes/60)
+            )
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         self.update_all_marker_highlights()
