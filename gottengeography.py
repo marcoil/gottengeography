@@ -268,8 +268,8 @@ class GottenGeography:
         if selection.count_selected_rows() > 0:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
             selection.selected_foreach(self.set_marker_highlight, (area, False))
-            try: area.index(None)
-            except ValueError:
+            if (self.valid_coords(*area[0:2]) and 
+                self.valid_coords(*area[2:4])):
                 self.remember_location()
                 self.map_view.ensure_visible(*area)
         else:
@@ -500,8 +500,8 @@ class GottenGeography:
             # it every 200th point.
             if self.current['count'] % 200 == 0:
                 self.progressbar.pulse()
-                try: self.current['area'].index(None)
-                except ValueError:
+                if (self.valid_coords(*self.current['area'][0:2]) and
+                    self.valid_coords(*self.current['area'][2:4])):
                     self.map_view.ensure_visible(*self.current['area'])
                 self._redraw_interface()
             
@@ -538,8 +538,8 @@ class GottenGeography:
         
         self.current['end'] = time.clock()
         
-        try: self.current['area'].index(None)
-        except ValueError:
+        if (self.valid_coords(*self.current['area'][0:2]) and
+            self.valid_coords(*self.current['area'][2:4])):
             self.map_view.ensure_visible(*self.current['area'])
         
         self._status_message(
