@@ -328,46 +328,44 @@ class GottenGeography:
         
         filename = photos.get_value(iter, self.PHOTO_PATH)
         
-        if filename in self.modified:
-            current.append(path)
-            
-            altitude  = photos.get_value(iter, self.PHOTO_ALTITUDE)
-            latitude  = photos.get_value(iter, self.PHOTO_LATITUDE)
-            longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
-            
-            self._redraw_interface(
-                len(current) / total, _("Saving %s...") % 
-                os.path.basename(filename)
-            )
-            
-            exif = pyexiv2.Image(filename)
-            exif.readMetadata()
-            
-            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
-            
-            exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
-            exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(altitude)
-            
-            (
-                exif['Exif.GPSInfo.GPSLatitude'], 
-                exif['Exif.GPSInfo.GPSLatitudeRef']
+        if filename not in self.modified: return
+        
+        current.append(path)
+        
+        altitude  = photos.get_value(iter, self.PHOTO_ALTITUDE)
+        latitude  = photos.get_value(iter, self.PHOTO_LATITUDE)
+        longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
+        
+        self._redraw_interface(len(current) / total, 
+            _("Saving %s...") % os.path.basename(filename))
+        
+        exif = pyexiv2.Image(filename)
+        exif.readMetadata()
+        
+        exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
+        
+        exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
+        exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(altitude)
+        
+        (exif['Exif.GPSInfo.GPSLatitude'], exif['Exif.GPSInfo.GPSLatitudeRef']
             ) = self.decimal_to_dms(latitude, True)
-            
-            (
-                exif['Exif.GPSInfo.GPSLongitude'], 
-                exif['Exif.GPSInfo.GPSLongitudeRef']
+        
+        (exif['Exif.GPSInfo.GPSLongitude'], exif['Exif.GPSInfo.GPSLongitudeRef']
             ) = self.decimal_to_dms(longitude, False)
-            
-            try:
-                exif.writeMetadata()
-            except Exception as inst:
-                self._status_message(", ".join(inst.args))
-            else:
-                del self.modified[filename]
-                photos.set_value(
-                    iter, self.PHOTO_SUMMARY, re.sub(r'</?b>', '', 
-                    photos.get_value(iter, self.PHOTO_SUMMARY))
+        
+        try:
+            exif.writeMetadata()
+        except Exception as inst:
+            self._status_message(", ".join(inst.args))
+        else:
+            del self.modified[filename]
+            photos.set_value(
+                iter, self.PHOTO_SUMMARY, 
+                re.sub(
+                    r'</?b>', '', 
+                    photos.get_value(iter, self.PHOTO_SUMMARY)
                 )
+            )
     
     def save_all_files(self, widget=None):
         """Call self.save_one_file() once for each loaded file."""
