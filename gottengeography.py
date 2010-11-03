@@ -166,11 +166,12 @@ class GottenGeography:
         try:
             last = self.history.pop()
         except IndexError:
-            self._status_message(_("That's as far back as I can remember!"))
             self.back_button.set_sensitive(False)
         else:
             self.map_view.center_on(last[0], last[1])
             self.map_view.set_zoom_level(last[2])
+        
+        self.update_sensitivity()
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
