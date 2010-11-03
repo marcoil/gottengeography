@@ -480,6 +480,8 @@ class GottenGeography:
         lat = float(self.current['lat'])
         lon = float(self.current['lon'])
         
+        if not self.valid_coords(lat, lon): return
+        
         self.tracks[timestamp] = {
             'elevation': float(self.current['ele']),
             'point':     self.polygons[-1].append_point(lat, lon)
@@ -503,9 +505,7 @@ class GottenGeography:
         # it every 200th point.
         if self.current['count'] % 200 == 0:
             self.progressbar.pulse()
-            if (self.valid_coords(*self.current['area'][0:2]) and
-                self.valid_coords(*self.current['area'][2:4])):
-                self.map_view.ensure_visible(*self.current['area'])
+            self.map_view.ensure_visible(*self.current['area'])
             self._redraw_interface()
         
         # Clear all four coordinates of our four-dimensional location
