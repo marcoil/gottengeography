@@ -522,7 +522,7 @@ class GottenGeography:
         
         self.remember_location()
         
-        self.current['start'] = time.clock()
+        start_time = time.clock()
         
         gpx_parser = expat.ParserCreate()
         
@@ -536,25 +536,22 @@ class GottenGeography:
         
         self.update_sensitivity()
         
-        self.current['end'] = time.clock()
-        
-        if (self.valid_coords(*self.current['area'][0:2]) and
-            self.valid_coords(*self.current['area'][2:4])):
-            self.map_view.ensure_visible(*self.current['area'])
-        
         self._status_message(
             _("%d points loaded in %.2fs.") % 
-            (self.current['count'], self.current['end']-self.current['start']), 
+            (self.current['count'], time.clock()-start_time),
             False
         )
+        
+        if len(self.tracks) > 0:
+            self.map_view.ensure_visible(*self.current['area'])
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         # Cleanup leftover data from parser
         self.current['count'] = 0.0
-        for key in ['trk', 'name', 'trkpt', 'gpx', 'trkseg', 'start', 
-        'end', 'element-name' ]:
-            if key in self.current: del self.current[key]
+        for key in self.current.keys():
+            if key not in [ 'count', 'area', 'highest', 'lowest' ]:
+                del self.current[key]
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
