@@ -642,7 +642,7 @@ class GottenGeography:
             self.map_view.get_property('longitude')
         )
         
-        self.has_manual[photos.get_value(iter, self.PHOTO_PATH)] = iter.copy()
+        self.has_manual[photos.get_value(iter, self.PHOTO_PATH)] = True
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -695,7 +695,7 @@ class GottenGeography:
         filename = photos.get_value(iter, self.PHOTO_PATH)
         timestamp = photos.get_value(iter, self.PHOTO_TIMESTAMP)
         
-        if modified: self.modified[filename] = iter.copy()
+        if modified: self.modified[filename] = True
         
         if ele:
             photos.set_value(iter, self.PHOTO_ALTITUDE,  ele)
@@ -953,7 +953,7 @@ class GottenGeography:
         """Initialize all necessary state."""
         
         # Keeps track of which files have been modified, mostly for counting
-        # purposes. Keys are absolute paths to files, values are GtkTreeIters.
+        # purposes. Keys are absolute paths to files, values are True.
         self.modified = {}
         
         # Keeps track of which files have manually-applied tags, so that the
