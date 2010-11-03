@@ -466,55 +466,57 @@ class GottenGeography:
     def gpx_element_end(self, name):
         """Callback function for Expat EndElementHandler."""
         
-        # A single point is completely loaded, so show it on the map, and stuff
-        if name == "trkpt":
-            self.current['count'] += 1.0
-            
-            # GPX is only UTC, as far as I'm aware
-            timestamp = calendar.timegm(
-                time.strptime(self.current['time'], '%Y-%m-%dT%H:%M:%SZ')
-            )
-            
-            lat = float(self.current['lat'])
-            lon = float(self.current['lon'])
-            
-            self.tracks[timestamp] = {
-                'elevation': float(self.current['ele']),
-                'point':     self.polygons[-1].append_point(lat, lon)
-            }
-            
-            highest = self.current['highest']
-            lowest = self.current['lowest']
-            
-            if timestamp > highest or highest is None: 
-                self.current['highest'] = timestamp
-            if timestamp < lowest or lowest is None: 
-                self.current['lowest'] = timestamp
-            
-            if lat < self.current['area'][0]: self.current['area'][0] = lat
-            if lon < self.current['area'][1]: self.current['area'][1] = lon
-            if lat > self.current['area'][2]: self.current['area'][2] = lat
-            if lon > self.current['area'][3]: self.current['area'][3] = lon
-            
-            # Refreshing the screen for every single track point seems to be
-            # the slowest part of this whole operation, so I'm only going to do
-            # it every 200th point.
-            if self.current['count'] % 200 == 0:
-                self.progressbar.pulse()
-                if (self.valid_coords(*self.current['area'][0:2]) and
-                    self.valid_coords(*self.current['area'][2:4])):
-                    self.map_view.ensure_visible(*self.current['area'])
-                self._redraw_interface()
-            
-            # Clear all four coordinates of our four-dimensional location
-            # so that it can't accidentally be re-used for the next point
-            try:
-                del self.current['lat']
-                del self.current['lon']
-                del self.current['ele']
-                del self.current['time']
-            except KeyError:
-                pass
+        # We only care about the trkpt element closing, because that means
+        # there is a new, fully-loaded GPX point to play with.
+        if name <> "trkpt": return
+        
+        self.current['count'] += 1.0
+        
+        # GPX is only UTC, as far as I'm aware
+        timestamp = calendar.timegm(
+            time.strptime(self.current['time'], '%Y-%m-%dT%H:%M:%SZ')
+        )
+        
+        lat = float(self.current['lat'])
+        lon = float(self.current['lon'])
+        
+        self.tracks[timestamp] = {
+            'elevation': float(self.current['ele']),
+            'point':     self.polygons[-1].append_point(lat, lon)
+        }
+        
+        highest = self.current['highest']
+        lowest = self.current['lowest']
+        
+        if timestamp > highest or highest is None: 
+            self.current['highest'] = timestamp
+        if timestamp < lowest or lowest is None: 
+            self.current['lowest'] = timestamp
+        
+        if lat < self.current['area'][0]: self.current['area'][0] = lat
+        if lon < self.current['area'][1]: self.current['area'][1] = lon
+        if lat > self.current['area'][2]: self.current['area'][2] = lat
+        if lon > self.current['area'][3]: self.current['area'][3] = lon
+        
+        # Refreshing the screen for every single track point seems to be
+        # the slowest part of this whole operation, so I'm only going to do
+        # it every 200th point.
+        if self.current['count'] % 200 == 0:
+            self.progressbar.pulse()
+            if (self.valid_coords(*self.current['area'][0:2]) and
+                self.valid_coords(*self.current['area'][2:4])):
+                self.map_view.ensure_visible(*self.current['area'])
+            self._redraw_interface()
+        
+        # Clear all four coordinates of our four-dimensional location
+        # so that it can't accidentally be re-used for the next point
+        try:
+            del self.current['lat']
+            del self.current['lon']
+            del self.current['ele']
+            del self.current['time']
+        except KeyError:
+            pass
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
