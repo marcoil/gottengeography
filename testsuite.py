@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from __future__ import division
-import unittest, os, re, time, random
+import unittest, os, re, time, math, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 
@@ -27,6 +27,8 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.assertEqual(self.gui.loaded_photos.get_n_columns(), 8)
         self.assertEqual(self.gui.window.get_size(), (900, 700))
+        
+        self.assertTrue(self.gui.app_container.get_visible())
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -118,6 +120,11 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         self.assertEqual(
+            self.gui._pretty_time(None),
+            "No timestamp"
+        )
+        
+        self.assertEqual(
             self.gui._create_summary(
                 "photo.jpg", 
                 999999999, 
@@ -150,8 +157,16 @@ N 48.44034, W 89.20475
     def test_gps_math(self):
         """Test coordinate conversion functions."""
         
+        # Really important that this method is bulletproof
         self.assertFalse(self.gui.valid_coords(None, None))
         self.assertFalse(self.gui.valid_coords("", ""))
+        self.assertFalse(self.gui.valid_coords(True, True))
+        self.assertFalse(self.gui.valid_coords(False, False))
+        self.assertFalse(self.gui.valid_coords(45, 270))
+        self.assertFalse(self.gui.valid_coords(100, 50))
+        self.assertFalse(self.gui.valid_coords([], 50))
+        self.assertFalse(self.gui.valid_coords(45, {'grunt':42}))
+        self.assertFalse(self.gui.valid_coords("ya", "dun goofed"))
         
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
@@ -175,9 +190,17 @@ N 48.44034, W 89.20475
             
             self.assertEqual(len(dms_lat),    2)
             self.assertEqual(len(dms_lat[0]), 3)
+            self.assertEqual(
+                dms_lat[0][0].numerator,
+                math.floor(abs(decimal_lat))
+            )
             
             self.assertEqual(len(dms_lon),    2)
             self.assertEqual(len(dms_lon[0]), 3)
+            self.assertEqual(
+                dms_lon[0][0].numerator,
+                math.floor(abs(decimal_lon))
+            )
             
             self.assertAlmostEqual(
                 decimal_lat, 
