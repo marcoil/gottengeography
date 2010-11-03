@@ -1158,6 +1158,7 @@ class GottenGeography:
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
+        self.progressbar.set_pulse_step(0.02)
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
         self.offset_hours_label = Gtk.Label(label=_("h "))
