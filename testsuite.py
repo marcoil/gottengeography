@@ -172,7 +172,7 @@ N 48.44034, W 89.20475
         # to sexagesimal and then back, and ensure that they are always equal.
         for i in range(100):
             # Oh, and test altitudes too
-            altitude = round(random.random() * 100, 6)
+            altitude = round(abs(random_coord(100)), 6)
             fraction = self.gui.float_to_rational(altitude)
             self.assertAlmostEqual(
                 altitude,
@@ -180,8 +180,8 @@ N 48.44034, W 89.20475
                 5
             )
             
-            decimal_lat = round(random.random() * 180 - 90,  6)
-            decimal_lon = round(random.random() * 360 - 180, 6)
+            decimal_lat = round(random_coord(90),  6)
+            decimal_lon = round(random_coord(180), 6)
             
             self.assertTrue(self.gui.valid_coords(decimal_lat, decimal_lon))
             
@@ -229,8 +229,8 @@ N 48.44034, W 89.20475
         ])
         
         self.gui.map_view.center_on(
-            round(random.random() * 160 - 80,  6),
-            round(random.random() * 360 - 180, 6)
+            round(random_coord(90),  6),
+            round(random_coord(180), 6)
         )
         
         coords.append([
@@ -242,8 +242,8 @@ N 48.44034, W 89.20475
         self.assertEqual(history_length + 2, len(self.gui.history))
         
         self.gui.map_view.center_on(
-            round(random.random() * 160 - 80,  6),
-            round(random.random() * 360 - 180, 6)
+            round(random_coord(90),  6),
+            round(random_coord(180), 6)
         )
         
         self.gui.return_to_last()
@@ -269,8 +269,8 @@ N 48.44034, W 89.20475
     def test_map_markers(self):
         """Put a marker on the map, and then take it off."""
         
-        lat = random.random() * 180 - 90
-        lon = random.random() * 360 - 180
+        lat = random_coord(90)
+        lon = random_coord(180)
         
         marker = self.gui.add_marker("foobar", lat, lon)
         
@@ -286,6 +286,11 @@ N 48.44034, W 89.20475
 #    def test_writing_files(self):
 #        pass
 #        # TODO
+
+def random_coord(maximum=180):
+    """Generate a random number -maximum <= x <= maximum."""
+    
+    return (random.random() * maximum * 2) - maximum
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(GottenGeographyTester)
