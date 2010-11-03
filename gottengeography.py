@@ -57,6 +57,8 @@ class GottenGeography:
     def _pretty_time(self, timestamp):
         """Convert epoch seconds into something human-readable."""
         
+        if timestamp is None: return "No timestamp"
+        
         if type(timestamp) is int:
             return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
         else:
@@ -803,10 +805,6 @@ class GottenGeography:
         
         image = Gtk.Image()
         image.set_from_pixbuf(thumb)
-        
-        if timestamp is None: 
-            chooser.set_preview_widget_active(False)
-            return
         
         label = self._pretty_time(timestamp)
         
