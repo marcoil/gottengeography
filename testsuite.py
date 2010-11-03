@@ -5,6 +5,7 @@ from __future__ import division
 import unittest, os, re, time, math, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
+from gi.repository import Gdk
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
@@ -218,6 +219,7 @@ N 48.44034, W 89.20475
         
         history_length = len(self.gui.history)
         
+        self.assertEqual(history_length, 0)
         self.gui.remember_location()
         self.assertEqual(history_length + 1, len(self.gui.history))
         
@@ -228,43 +230,52 @@ N 48.44034, W 89.20475
             self.gui.map_view.get_property('longitude')
         ])
         
-        self.gui.map_view.center_on(
-            round(random_coord(90),  6),
-            round(random_coord(180), 6)
-        )
+        lat = round(random_coord(90),  6)
+        lon = round(random_coord(180), 6)
         
-        coords.append([
-            self.gui.map_view.get_property('latitude'),
-            self.gui.map_view.get_property('longitude')
-        ])
+        self.gui.map_view.center_on(lat, lon)
+        
+        coords.append([lat, lon])
+        zoom = self.gui.map_view.get_zoom_level()
         
         self.gui.remember_location()
         self.assertEqual(history_length + 2, len(self.gui.history))
+        self.assertAlmostEqual(lat, self.gui.history[-1][0], 1)
+        self.assertAlmostEqual(lon, self.gui.history[-1][1], 1)
         
-        self.gui.map_view.center_on(
-            round(random_coord(90),  6),
-            round(random_coord(180), 6)
-        )
+        lat = round(random_coord(90),  6)
+        lon = round(random_coord(180), 6)
+        
+        self.gui.map_view.center_on(lat, lon)
+        
+        self.gui.map_view.set_zoom_level(1)
+        self.gui.zoom_in()
+        self.assertEqual(2, self.gui.map_view.get_zoom_level())
+        self.gui.zoom_in()
+        self.assertEqual(3, self.gui.map_view.get_zoom_level())
+        self.gui.zoom_out()
+        self.assertEqual(2, self.gui.map_view.get_zoom_level())
         
         self.gui.return_to_last()
         self.assertEqual(history_length + 1, len(self.gui.history))
-        
-        # These assertAlmostEqual calls are less accurate than the other ones
-        # because they're testing the ChamplainView coordinates more than
-        # anything else, which rounds a bit more loosely than my own code does.
-        self.assertAlmostEqual(
-            self.gui.map_view.get_property('latitude'),
-            coords[-1][0],
-            2
-        )
-        self.assertAlmostEqual(
-            self.gui.map_view.get_property('longitude'),
-            coords[-1][1],
-            2
-        )
+        self.assertEqual(zoom, self.gui.map_view.get_zoom_level())
         
         self.gui.return_to_last()
         self.assertEqual(history_length, len(self.gui.history))
+        
+        self.gui.map_view.set_zoom_level(0)
+        
+        lon = self.gui.map_view.get_property('longitude')
+        self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
+        self.assertEqual(lon-10, self.gui.map_view.get_property('longitude'))
+        self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
+        self.assertEqual(lon, self.gui.map_view.get_property('longitude'))
+        
+        lat = self.gui.map_view.get_property('latitude')
+        self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        self.assertEqual(lat+10, self.gui.map_view.get_property('latitude'))
+        self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
+        self.assertEqual(lat, self.gui.map_view.get_property('latitude'))
     
     def test_map_markers(self):
         """Put a marker on the map, and then take it off."""
