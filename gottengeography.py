@@ -137,12 +137,12 @@ class GottenGeography:
         fraction = Fraction(str(decimal)).limit_denominator(10000)
         return pyexiv2.Rational(fraction.numerator, fraction.denominator)
     
-    def valid_coords(self, lat=None, lon=None):
+    def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
         
-        # Note that None <= 90 will evaluate to True, but None >= -90 is False.
-        # Because these tests are all chained together with "and" logic,
-        # the entire thing will be False if given a None.
+        if type(lat) is not float: return False
+        if type(lon) is not float: return False
+        
         return lat >= -90 and lat <= 90 and lon >= -180 and lon <= 180
     
 ################################################################################
