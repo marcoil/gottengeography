@@ -34,7 +34,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.modified), 0)
         self.assertEqual(len(self.gui.polygons), 0)
-        self.assertEqual(self.gui.current['lowest'],  None)
+        self.assertEqual(self.gui.current['lowest'],  "")
         self.assertEqual(self.gui.current['highest'], None)
         self.assertEqual(
             self.gui.current['area'], 

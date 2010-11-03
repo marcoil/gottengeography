@@ -314,7 +314,7 @@ class GottenGeography:
             # so these make sensible default values that we can easily clobber
             'area':    [ "", "", None, None, False ], 
             'highest': None, 
-            'lowest':  None 
+            'lowest':  "" 
         }
         
         self.update_sensitivity()
@@ -485,12 +485,9 @@ class GottenGeography:
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
-        highest = self.current['highest']
-        lowest = self.current['lowest']
-        
-        if timestamp > highest or highest is None: 
+        if timestamp > self.current['highest']: 
             self.current['highest'] = timestamp
-        if timestamp < lowest or lowest is None: 
+        if timestamp < self.current['lowest']: 
             self.current['lowest'] = timestamp
         
         if lat < self.current['area'][0]: self.current['area'][0] = lat
