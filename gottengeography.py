@@ -76,14 +76,14 @@ class GottenGeography:
         
         return "\n%.1f%s" % (abs(ele), label)
     
-    def _create_summary(self, file, timestamp, lat, lon, ele, modified=False, short=False):
+    def _create_summary(self, file, timestamp, lat, lon, ele, modified=False):
         """Describe photo metadata with Pango formatting."""
         
         summary = "%s\n%s%s" % (self._pretty_time(timestamp),
                                 self._pretty_coords(lat, lon),
                                 self._pretty_elevation(ele))
         
-        if short: return summary
+        if file is None: return summary
         
         # Pango magic
         summary = "".join( [
@@ -826,9 +826,7 @@ class GottenGeography:
         image.set_from_pixbuf(thumb)
         
         label = Gtk.Label(
-            label=self._create_summary(
-                filename, timestamp, lat, lon, ele, False, True
-            )
+            label=self._create_summary(None, timestamp, lat, lon, ele)
         )
         
         label.set_justify(Gtk.Justification.CENTER)
