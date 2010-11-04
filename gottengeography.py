@@ -81,7 +81,7 @@ class GottenGeography:
         # N nn.nnnnn, W nnn.nnnnn
         # 540.6m above sea level
         summary = (
-            '%s\n<span color="#BBBBBB" size="smaller">%s</span>' % 
+            '<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % 
             (os.path.basename(file), summary)
         )
         
