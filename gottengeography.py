@@ -117,15 +117,14 @@ class GottenGeography:
             if decimal > 0: sign = "E"
             else:           sign = "W"
         
-        decimal = abs(decimal)
-        
         # math.modf splits a float into it's remainder and largest whole number
-        (remainder, degrees) = math.modf(decimal)
+        (remainder, degrees) = math.modf(abs(decimal))
         (remainder, minutes) = math.modf(remainder * 60)
         seconds              = remainder * 60
         
-        return [ pyexiv2.Rational(degrees, 1), pyexiv2.Rational(minutes, 1),
-            self.float_to_rational(seconds) ], sign
+        return [ pyexiv2.Rational(degrees, 1),
+                 pyexiv2.Rational(minutes, 1),
+                 self.float_to_rational(seconds) ], sign
     
     def float_to_rational(self, decimal):
         """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
