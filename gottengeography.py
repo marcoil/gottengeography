@@ -1130,23 +1130,6 @@ class GottenGeography:
         
         self.stage = self.map_view.get_stage()
         
-        self.crosshair = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 128)
-        )
-        self.crosshair.set_property('has-border', False)
-        self.crosshair.set_size(6, 6)
-        self.crosshair.set_parent(self.stage)
-        self.crosshair.set_rotation(
-            Clutter.RotateAxis.Z_AXIS,
-            45, # Degrees
-            self.crosshair.get_width()/2,
-            self.crosshair.get_height()/2,
-            0
-        )
-        self.crosshair.raise_top()
-        self.position_crosshair()
-        self.crosshair.show()
-        
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
         self.progressbar.set_pulse_step(0.02)
@@ -1240,6 +1223,24 @@ class GottenGeography:
         # Various bits of state for the GPX parser
         self.polygons = []
         self.clear_all_gpx()
+        
+        self.crosshair = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 32)
+        )
+        self.crosshair.set_property('has-border', True)
+        self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
+        self.crosshair.set_border_width(1)
+        self.crosshair.set_parent(self.stage)
+        self.crosshair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
+        self.crosshair.raise_top()
+        self.position_crosshair()
+        self.crosshair.show()
+        
+        # Animate in the crosshair
+        for i in range(1000, 6, -4):
+            self.crosshair.set_size(i, i)
+            self.position_crosshair()
+            self._redraw_interface()
     
     def create_spin_button(self, value):
         """Create a SpinButton for use as a clock offset setting."""
