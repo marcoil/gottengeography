@@ -491,7 +491,7 @@ class GottenGeography:
         if not self.valid_coords(lat, lon): return
         
         self.tracks[timestamp] = {
-            'elevation': float(self.current['ele']),
+            'elevation': float(self.current.get('ele', 0.0)),
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
