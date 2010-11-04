@@ -1175,7 +1175,6 @@ class GottenGeography:
         self.offset_seconds.connect("value-changed", self.time_offset_value_changed)
         self.offset_minutes.connect("value-changed", self.time_offset_value_changed)
         self.offset_hours.connect("value-changed", self.time_offset_value_changed)
-        self.stage.connect("paint", self.position_crosshair)
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
@@ -1204,6 +1203,7 @@ class GottenGeography:
         # Various bits of state for the GPX parser
         self.polygons = []
         self.clear_all_gpx()
+        self._redraw_interface()
         
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
@@ -1218,10 +1218,15 @@ class GottenGeography:
         self.crosshair.show()
         
         # Animate in the crosshair
-        for i in range(1000, 6, -4):
+        for i in range(500, 6, -4):
             self.crosshair.set_size(i, i)
+            self.crosshair.set_z_rotation_from_gravity(53-i,
+                Clutter.Gravity.CENTER)
             self.position_crosshair()
             self._redraw_interface()
+            time.sleep(0.001)
+        
+        self.stage.connect("paint", self.position_crosshair)
     
     def create_spin_button(self, value):
         """Create a SpinButton for use as a clock offset setting."""
