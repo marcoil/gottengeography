@@ -138,11 +138,11 @@ class GottenGeographyTester(unittest.TestCase):
         )
         self.assertEqual(
             self.gui._pretty_elevation(-10.20005),
-            "\n10.2m below sea level"
+            "10.2m below sea level"
         )
         self.assertEqual(
             self.gui._pretty_elevation(600.71),
-            "\n600.7m above sea level"
+            "600.7m above sea level"
         )
     
     def test_gps_math(self):

@@ -74,14 +74,16 @@ class GottenGeography:
         if ele >= 0: label = _("m above sea level")
         else:        label = _("m below sea level")
         
-        return "\n%.1f%s" % (abs(ele), label)
+        return "%.1f%s" % (abs(ele), label)
     
     def _create_summary(self, file, timestamp, lat, lon, ele, modified=False):
         """Describe photo metadata with Pango formatting."""
         
-        summary = "%s\n%s%s" % (self._pretty_time(timestamp),
-                                self._pretty_coords(lat, lon),
-                                self._pretty_elevation(ele))
+        summary = "\n".join( [
+            self._pretty_time(timestamp),
+            self._pretty_coords(lat, lon),
+            self._pretty_elevation(ele)
+        ] ).strip()
         
         if file is None: return summary
         
