@@ -293,7 +293,6 @@ class GottenGeography:
         marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
         marker.show()
-        marker.raise_top()
         return marker
     
     def remove_marker(self, photos, iter):
@@ -712,10 +711,9 @@ class GottenGeography:
     def _insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
         
-        self.remove_marker(photos, iter)
-        
-        filename = photos.get_value(iter, self.PHOTO_PATH)
+        filename =  photos.get_value(iter, self.PHOTO_PATH)
         timestamp = photos.get_value(iter, self.PHOTO_TIMESTAMP)
+        marker =    photos.get_value(iter, self.PHOTO_MARKER)
         
         if modified: self.modified[filename] = True
         
@@ -727,8 +725,12 @@ class GottenGeography:
             photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
             photos.set_value(iter, self.PHOTO_SUMMARY,
                 self._create_summary(filename, timestamp, lat, lon, ele, modified))
-            photos.set_value(iter, self.PHOTO_MARKER,
-                self.add_marker(filename, lat, lon))
+            
+            try:
+                marker.set_position(lat, lon)
+            except AttributeError:
+                photos.set_value(iter, self.PHOTO_MARKER,
+                    self.add_marker(filename, lat, lon))
     
     def _find_existing_photo(self, photos, path, iter, (loaded, filename)):
         """Determine if a photo has already been loaded or not."""
