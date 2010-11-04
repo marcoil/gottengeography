@@ -988,25 +988,27 @@ class GottenGeography:
         self.toolbar = Gtk.Toolbar()
         
         self.open_button = self.create_tool_button(Gtk.STOCK_OPEN,
-            _("Load photos or GPS data (Ctrl+O)"))
+            self.add_files_dialog, _("Load photos or GPS data (Ctrl+O)"))
         
         self.save_button = self.create_tool_button(Gtk.STOCK_SAVE,
+            self.save_all_files,
             _("Save all modified GPS data into your photos (Ctrl+S)"),
             _("Save All"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
         self.clear_gpx_button = self.create_tool_button(Gtk.STOCK_CLEAR,
-            _("Unload all GPS data (Ctrl+X)"),
+            self.clear_all_gpx, _("Unload all GPS data (Ctrl+X)"),
             _("Clear GPX"))
         
         self.close_button = self.create_tool_button(Gtk.STOCK_CLOSE,
-            _("Close selected photos (Ctrl+W)"),
+            self.close_selected_photos, _("Close selected photos (Ctrl+W)"),
             _("Close Photo"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
         self.revert_button = self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
+            self.revert_selected_photos,
             _("Reload selected photos, losing all changes (Ctrl+Z)"))
         
         self.toolbar_spacer = Gtk.SeparatorToolItem()
@@ -1015,20 +1017,20 @@ class GottenGeography:
         self.toolbar.add(self.toolbar_spacer)
         
         self.zoom_out_button = self.create_tool_button(Gtk.STOCK_ZOOM_OUT,
-            _("Zoom the map out one step."))
+            self.zoom_out, _("Zoom the map out one step."))
         
         self.zoom_in_button = self.create_tool_button(Gtk.STOCK_ZOOM_IN,
-            _("Enhance!"))
+            self.zoom_in, _("Enhance!"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
         self.back_button = self.create_tool_button(Gtk.STOCK_GO_BACK,
-            _("Return to previous location in map view."))
+            self.return_to_last, _("Return to previous location in map view."))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
         self.about_button = self.create_tool_button(Gtk.STOCK_ABOUT,
-            _("About GottenGeography"))
+            self.about_dialog, _("About GottenGeography"))
         
         self.photos_and_map_container = Gtk.HPaned()
         
@@ -1087,6 +1089,7 @@ class GottenGeography:
         self.apply_button = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
         self.apply_button.set_tooltip_text(
             _("Place selected photos onto center of map (Ctrl+Return)"))
+        self.apply_button.connect("clicked", self.apply_selected_photos)
         
         self.select_all_button = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
         self.select_all_button.set_use_stock(True)
@@ -1159,16 +1162,6 @@ class GottenGeography:
         
         # Connect all my precious signal handlers
         self.window.connect("delete_event", self.confirm_quit_dialog)
-        self.open_button.connect("clicked", self.add_files_dialog)
-        self.save_button.connect("clicked", self.save_all_files)
-        self.apply_button.connect("clicked", self.apply_selected_photos)
-        self.revert_button.connect("clicked", self.revert_selected_photos)
-        self.close_button.connect("clicked", self.close_selected_photos)
-        self.clear_gpx_button.connect("clicked", self.clear_all_gpx)
-        self.zoom_out_button.connect("clicked", self.zoom_out)
-        self.zoom_in_button.connect("clicked", self.zoom_in)
-        self.back_button.connect("clicked", self.return_to_last)
-        self.about_button.connect("clicked", self.about_dialog)
         self.select_all_button.connect("released", self.toggle_selected_photos)
         self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
@@ -1244,11 +1237,12 @@ class GottenGeography:
         
         return button
     
-    def create_tool_button(self, stock_id, tooltip, label=None):
+    def create_tool_button(self, stock_id, action, tooltip, label=None):
         """Create a ToolButton for use on the toolbar."""
         
         button = Gtk.ToolButton(stock_id=stock_id)
         button.set_tooltip_text(tooltip)
+        button.connect("clicked", action)
         
         if label is not None: button.set_label(label)
         
