@@ -45,6 +45,8 @@ class GottenGeography:
     def _pretty_coords(self, lat, lon):
         """Add cardinal directions to decimal coordinates."""
         
+        if not self.valid_coords(lat, lon): return _("Not geotagged")
+        
         if lat > 0: lat_sign = _("N")
         else:       lat_sign = _("S")
         if lon > 0: lon_sign = _("E")
@@ -59,31 +61,35 @@ class GottenGeography:
         
         Takes either a datetime.datetime or epoch seconds in int/float."""
         
-        if timestamp is None: return "No timestamp"
+        if timestamp is None: return _("No timestamp")
         
         try:    return timestamp.strftime("%Y-%m-%d %X")
         except: return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
     
-    def _create_summary(self, file, timestamp, lat=None, lon=None, ele=None, modified=False):
+    def _pretty_elevation(self, ele):
+        """Print elevation in a human readable way."""
+        
+        if ele is None: return ""
+        
+        if ele >= 0: label = _("m above sea level")
+        else:        label = _("m below sea level")
+        
+        return "\n%.1f%s" % (abs(ele), label)
+    
+    def _create_summary(self, file, timestamp, lat, lon, ele, modified=False, short=False):
         """Describe photo metadata with Pango formatting."""
         
-        if self.valid_coords(lat, lon): 
-            summary = self._pretty_coords(lat, lon)
-        else:
-            summary = _("Not geotagged")
+        summary = "%s\n%s%s" % (self._pretty_time(timestamp), 
+                                self._pretty_coords(lat, lon),
+                                self._pretty_elevation(ele))
         
-        summary = "%s\n%s" % (self._pretty_time(timestamp), summary)
+        if short: return summary
         
-        if ele: summary += "\n%.1f%s" % (ele, _("m above sea level"))
-        
-        # Eg:
-        # filename.jpg
-        # N nn.nnnnn, W nnn.nnnnn
-        # 540.6m above sea level
-        summary = (
-            '<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % 
-            (os.path.basename(file), summary)
-        )
+        # Pango magic
+        summary = "".join( [
+            '<span size="larger">', os.path.basename(file), '</span>\n',
+            '<span style="italic" size="smaller">', summary, '</span>'
+        ] )
         
         # Embolden text if this image has unsaved data
         if modified: summary = '<b>%s</b>' % summary
@@ -819,17 +825,11 @@ class GottenGeography:
         image = Gtk.Image()
         image.set_from_pixbuf(thumb)
         
-        label = self._pretty_time(timestamp)
-        
-        if self.valid_coords(lat, lon): 
-            label = "%s\n%s" % (label, self._pretty_coords(lat, lon))
-        else:
-            label = "%s\n%s" % (label, _("Not geotagged"))
-        
-        if ele: label = "%s\n%.1f%s" % (label, ele, _("m above sea level"))
-        
-        # Is this a label? This should be a label.
-        label = Gtk.Label(label=label)
+        label = Gtk.Label(
+            label=self._create_summary(
+                filename, timestamp, lat, lon, ele, False, True
+            )
+        )
         
         label.set_justify(Gtk.Justification.CENTER)
         

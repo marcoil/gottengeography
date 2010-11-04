@@ -107,11 +107,15 @@ class GottenGeographyTester(unittest.TestCase):
         """Ensure that strings print properly."""
         
         self.assertEqual(
-            self.gui._pretty_coords(10, 10),
+            self.gui._pretty_coords(None, None),
+            "Not geotagged"
+        )
+        self.assertEqual(
+            self.gui._pretty_coords(10.0, 10.0),
             "N 10.00000, E 10.00000"
         )
         self.assertEqual(
-            self.gui._pretty_coords(-10, -10),
+            self.gui._pretty_coords(-10.0, -10.0),
             "S 10.00000, W 10.00000"
         )
         
@@ -119,15 +123,26 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui._pretty_time(999999999), 
             "2001-09-08 07:46:39 PM"
         )
-        
         self.assertEqual(
             self.gui._pretty_time(datetime.datetime.fromtimestamp(999999999)),
             "2001-09-08 07:46:39 PM"
         )
-        
         self.assertEqual(
             self.gui._pretty_time(None),
             "No timestamp"
+        )
+        
+        self.assertEqual(
+            self.gui._pretty_elevation(None),
+            ""
+        )
+        self.assertEqual(
+            self.gui._pretty_elevation(-10.20005),
+            "\n10.2m below sea level"
+        )
+        self.assertEqual(
+            self.gui._pretty_elevation(600.71),
+            "\n600.7m above sea level"
         )
     
     def test_gps_math(self):
