@@ -216,13 +216,14 @@ class GottenGeography:
         polygon = Champlain.Polygon()
         polygon.set_property('closed-path', False)
         polygon.set_property('mark-points', False)
+        polygon.set_fill(False)
         polygon.set_stroke(True)
         polygon.set_stroke_width(5)
         polygon.set_stroke_color(self.track_color)
-        polygon.set_fill(False)
+        
         self.map_view.add_polygon(polygon)
+        self.polygons.append(polygon)
         polygon.show()
-        return polygon
     
     def position_crosshair(self, stage=None):
         """Ensure that the crosshair is precisely in the center of the map."""
@@ -452,7 +453,7 @@ class GottenGeography:
         
         # New track segment, create a new polygon for it
         if name == "trkseg":
-            self.polygons.append(self.create_polygon())
+            self.create_polygon()
         
         # Eg, <trkpt lat="45.147445" lon="-81.469507">
         if 'lat' in attributes:
