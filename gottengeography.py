@@ -705,6 +705,7 @@ class GottenGeography:
             filename = photos.get_value(iter, self.PHOTO_PATH)
             if filename in self.modified:   del self.modified[filename]
             if filename in self.has_manual: del self.has_manual[filename]
+            del self.loaded_photo_iters[filename]
             self.remove_marker(photos, iter)
             photos.remove(iter)
         
@@ -738,13 +739,6 @@ class GottenGeography:
             try:    marker.hide()
             except: pass
     
-    def _find_existing_photo(self, photos, path, iter, (loaded, filename)):
-        """Determine if a photo has already been loaded or not."""
-        
-        if filename == photos.get_value(iter, self.PHOTO_PATH):
-            loaded.append(iter.copy())
-            return True
-    
     def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
         """Create or update a row in the ListStore.
         
@@ -765,7 +759,6 @@ class GottenGeography:
         (timestamp, lat, lon, ele, thumb
             ) = self.load_exif_from_file(filename, 200)
         
-        # Update the progressbar
         (current, total) = data
         current.append(filename)
         self._redraw_interface(
@@ -780,19 +773,13 @@ class GottenGeography:
             # Eh, better than nothing.
             timestamp = int(os.stat(filename).st_mtime)
         
-        # Make sure we're not loading a file that's already loaded.
+        # If file already loaded, grab it's iter to reload data into.
         if iter is None:
-            files = []
-            photos.foreach(self._find_existing_photo, [files, filename])
-            
-            # The user is loading a NEW file! Yay!
-            if files == []:
+            try:
+                iter = self.loaded_photo_iters[filename]
+            except KeyError:
                 iter = photos.append([None] * photos.get_n_columns())
-            
-            # The user is trying to open a file that already was loaded
-            # so reload the file into the already-existing iter
-            else: 
-                iter = files[0]
+                self.loaded_photo_iters[filename] = iter
         
         photos.set_value(iter, self.PHOTO_PATH,      filename)
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
@@ -974,6 +961,9 @@ class GottenGeography:
         # Keeps track of which files have manually-applied tags, so that the
         # auto-tagger doesn't discard the users hard work.
         self.has_manual = {}
+        
+        # Keys are full filename paths, values are GtkTreeIters
+        self.loaded_photo_iters = {}
         
         # Stores a list of locations that the user was viewing immediately
         # prior to any point at which the view was changed programmatically.
