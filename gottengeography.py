@@ -986,54 +986,49 @@ class GottenGeography:
         
         # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
-        self.open_button = Gtk.ToolButton(stock_id=Gtk.STOCK_OPEN)
-        self.open_button.set_tooltip_text(
+        
+        self.open_button = self.create_tool_button(Gtk.STOCK_OPEN,
             _("Load photos or GPS data (Ctrl+O)"))
         
-        self.save_button = Gtk.ToolButton(stock_id=Gtk.STOCK_SAVE)
-        self.save_button.set_tooltip_text(
-            _("Save all modified GPS data into your photos (Ctrl+S)"))
-        self.save_button.set_label(_("Save All"))
+        self.save_button = self.create_tool_button(Gtk.STOCK_SAVE,
+            _("Save all modified GPS data into your photos (Ctrl+S)"),
+            _("Save All"))
         
-        self.toolbar_first_spacer = Gtk.SeparatorToolItem()
+        self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.clear_gpx_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLEAR)
-        self.clear_gpx_button.set_tooltip_text(
-            _("Unload all GPS data (Ctrl+X)"))
-        self.clear_gpx_button.set_label(_("Clear GPX"))
+        self.clear_gpx_button = self.create_tool_button(Gtk.STOCK_CLEAR,
+            _("Unload all GPS data (Ctrl+X)"),
+            _("Clear GPX"))
         
-        self.close_button = Gtk.ToolButton(stock_id=Gtk.STOCK_CLOSE)
-        self.close_button.set_tooltip_text(
-            _("Close selected photos (Ctrl+W)"))
-        self.close_button.set_label(_("Close Photo"))
+        self.close_button = self.create_tool_button(Gtk.STOCK_CLOSE,
+            _("Close selected photos (Ctrl+W)"),
+            _("Close Photo"))
         
-        self.toolbar_second_spacer = Gtk.SeparatorToolItem()
+        self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.revert_button = Gtk.ToolButton(stock_id=Gtk.STOCK_REVERT_TO_SAVED)
-        self.revert_button.set_tooltip_text(
+        self.revert_button = self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
             _("Reload selected photos, losing all changes (Ctrl+Z)"))
         
-        self.toolbar_third_spacer = Gtk.SeparatorToolItem()
-        self.toolbar_third_spacer.set_expand(True)
-        self.toolbar_third_spacer.set_draw(False)
+        self.toolbar_spacer = Gtk.SeparatorToolItem()
+        self.toolbar_spacer.set_expand(True)
+        self.toolbar_spacer.set_draw(False)
+        self.toolbar.add(self.toolbar_spacer)
         
-        self.zoom_out_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_OUT)
-        self.zoom_out_button.set_tooltip_text(
+        self.zoom_out_button = self.create_tool_button(Gtk.STOCK_ZOOM_OUT,
             _("Zoom the map out one step."))
         
-        self.zoom_in_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ZOOM_IN)
-        self.zoom_in_button.set_tooltip_text(
+        self.zoom_in_button = self.create_tool_button(Gtk.STOCK_ZOOM_IN,
             _("Enhance!"))
         
-        self.toolbar_fourth_spacer = Gtk.SeparatorToolItem()
+        self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.back_button = Gtk.ToolButton(stock_id=Gtk.STOCK_GO_BACK)
-        self.back_button.set_tooltip_text(
+        self.back_button = self.create_tool_button(Gtk.STOCK_GO_BACK,
             _("Return to previous location in map view."))
         
-        self.toolbar_fifth_spacer = Gtk.SeparatorToolItem()
+        self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.about_button = Gtk.ToolButton(stock_id=Gtk.STOCK_ABOUT)
+        self.about_button = self.create_tool_button(Gtk.STOCK_ABOUT,
+            _("About GottenGeography"))
         
         self.photos_and_map_container = Gtk.HPaned()
         
@@ -1157,20 +1152,6 @@ class GottenGeography:
         self.photo_scroller.add(self.photos_view)
         self.photos_and_map_container.add(self.photos_with_buttons)
         self.photos_and_map_container.add(self.champlain)
-        self.toolbar.add(self.open_button)
-        self.toolbar.add(self.save_button)
-        self.toolbar.add(self.toolbar_first_spacer)
-        self.toolbar.add(self.clear_gpx_button)
-        self.toolbar.add(self.close_button)
-        self.toolbar.add(self.toolbar_second_spacer)
-        self.toolbar.add(self.revert_button)
-        self.toolbar.add(self.toolbar_third_spacer)
-        self.toolbar.add(self.zoom_out_button)
-        self.toolbar.add(self.zoom_in_button)
-        self.toolbar.add(self.toolbar_fourth_spacer)
-        self.toolbar.add(self.back_button)
-        self.toolbar.add(self.toolbar_fifth_spacer)
-        self.toolbar.add(self.about_button)
         self.app_container.pack_start(self.toolbar, False, True, 0)
         self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
         self.app_container.pack_end(self.statusbar, False, True, 0)
@@ -1255,6 +1236,18 @@ class GottenGeography:
         button.set_snap_to_ticks(True)
         button.set_tooltip_text(
             _("Is the clock on your camera wrong? Correct it here."))
+        
+        return button
+    
+    def create_tool_button(self, stock_id, tooltip, label=None):
+        """Create a ToolButton for use on the toolbar."""
+        
+        button = Gtk.ToolButton(stock_id=stock_id)
+        button.set_tooltip_text(tooltip)
+        
+        if label is not None: button.set_label(label)
+        
+        self.toolbar.add(button)
         
         return button
     
