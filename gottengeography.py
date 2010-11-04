@@ -642,13 +642,13 @@ class GottenGeography:
         seconds = self.offset_seconds.get_value()
         minutes = self.offset_minutes.get_value()
         
-        if seconds == -60 or seconds == 60:
+        if abs(seconds) == 60:
             self.offset_seconds.set_value(0)
             self.offset_minutes.set_value(
                 self.offset_minutes.get_value() + (seconds/60)
             )
         
-        if minutes == -60 or minutes == 60:
+        if abs(minutes) == 60:
             self.offset_minutes.set_value(0)
             self.offset_hours.set_value(
                 self.offset_hours.get_value() + (minutes/60)
