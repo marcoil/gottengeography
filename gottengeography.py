@@ -55,14 +55,14 @@ class GottenGeography:
             (lat_sign, abs(lat), lon_sign, abs(lon)))
     
     def _pretty_time(self, timestamp):
-        """Convert epoch seconds into something human-readable."""
+        """Print time in a human readable way.
+        
+        Takes either a datetime.datetime or epoch seconds in int/float."""
         
         if timestamp is None: return "No timestamp"
         
-        if type(timestamp) is int:
-            return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
-        else:
-            return timestamp.ctime()
+        try:    return timestamp.strftime("%Y-%m-%d %X")
+        except: return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
     
     def _create_summary(self, file, timestamp, lat=None, lon=None, ele=None, modified=False):
         """Describe photo metadata with Pango formatting."""

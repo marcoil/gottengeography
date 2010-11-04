@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from __future__ import division
-import unittest, os, re, time, math, random
+import unittest, os, re, datetime, time, math, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk
@@ -117,6 +117,11 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.assertEqual(
             self.gui._pretty_time(999999999), 
+            "2001-09-08 07:46:39 PM"
+        )
+        
+        self.assertEqual(
+            self.gui._pretty_time(datetime.datetime.fromtimestamp(999999999)),
             "2001-09-08 07:46:39 PM"
         )
         
