@@ -240,8 +240,8 @@ class GottenGeography:
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
         
-        if marker is None:          return
-        if not marker.get_parent(): return
+        if marker is None:                     return
+        if not marker.get_property('visible'): return
         
         highlighted = area is not None
         
@@ -730,9 +730,13 @@ class GottenGeography:
             
             try:
                 marker.set_position(lat, lon)
+                marker.show()
             except AttributeError:
                 photos.set_value(iter, self.PHOTO_MARKER,
                     self.add_marker(filename, lat, lon))
+        else:
+            try:    marker.hide()
+            except: pass
     
     def _find_existing_photo(self, photos, path, iter, (loaded, filename)):
         """Determine if a photo has already been loaded or not."""
