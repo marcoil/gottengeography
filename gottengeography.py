@@ -541,13 +541,13 @@ class GottenGeography:
         with open(filename) as gpx:
             status = gpx_parser.ParseFile(gpx)
         
-        self.update_sensitivity()
-        
         self._status_message(
             _("%d points loaded in %.2fs.") % 
             (self.current['count'], time.clock()-start_time),
             False
         )
+        
+        self.update_sensitivity()
         
         if len(self.tracks) > 0:
             self.map_view.ensure_visible(*self.current['area'])
