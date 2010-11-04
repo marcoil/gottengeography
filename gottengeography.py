@@ -635,7 +635,7 @@ class GottenGeography:
         
         self._insert_coordinates(photos, iter, lat, lon, ele)
     
-    def time_offset_value_changed(self, widget):
+    def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         
         # Some magic to let minutes and seconds settings wrap around.
@@ -978,12 +978,6 @@ class GottenGeography:
             'zoom': '/apps/gottengeography/last_zoom_level'
         }
         
-        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("GottenGeography")
-        self.window.set_size_request(900,700)
-        
-        self.app_container = Gtk.VBox(spacing=0)
-        
         # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
         
@@ -1032,8 +1026,6 @@ class GottenGeography:
         self.about_button = self.create_tool_button(Gtk.STOCK_ABOUT,
             self.about_dialog, _("About GottenGeography"))
         
-        self.photos_and_map_container = Gtk.HPaned()
-        
         # This code defines how the photo list will appear
         self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
@@ -1057,17 +1049,8 @@ class GottenGeography:
             Gtk.SortType.ASCENDING
         )
         
-        self.photos_view = Gtk.TreeView(model=self.loaded_photos)
-        self.photos_view.set_enable_search(False)
-        self.photos_view.set_reorderable(False)
-        self.photos_view.set_headers_visible(False)
-        self.photos_view.set_rubber_banding(True)
-        
-        self.photo_selection = self.photos_view.get_selection()
-        self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        
         self.cell_string = Gtk.CellRendererText()
-        self.cell_thumb = Gtk.CellRendererPixbuf()
+        self.cell_thumb  = Gtk.CellRendererPixbuf()
         self.cell_thumb.set_property('stock-id', Gtk.STOCK_MISSING_IMAGE)
         self.cell_thumb.set_property('ypad', 6)
         self.cell_thumb.set_property('xpad', 6)
@@ -1078,9 +1061,21 @@ class GottenGeography:
         self.column.pack_start(self.cell_string, False)
         self.column.add_attribute(self.cell_string, 'markup', self.PHOTO_SUMMARY)
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        
+        self.photos_view = Gtk.TreeView(model=self.loaded_photos)
+        self.photos_view.set_enable_search(False)
+        self.photos_view.set_reorderable(False)
+        self.photos_view.set_headers_visible(False)
+        self.photos_view.set_rubber_banding(True)
         self.photos_view.append_column(self.column)
         
+        self.photo_selection = self.photos_view.get_selection()
+        self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.photo_selection.connect("changed", self.update_sensitivity)
+        self.photo_selection.connect("changed", self.update_all_marker_highlights)
+        
         self.photo_scroller = Gtk.ScrolledWindow()
+        self.photo_scroller.add(self.photos_view)
         self.photo_scroller.set_policy(
             Gtk.PolicyType.NEVER,
             Gtk.PolicyType.AUTOMATIC
@@ -1095,6 +1090,7 @@ class GottenGeography:
         self.select_all_button.set_use_stock(True)
         self.select_all_button.set_tooltip_text(
             _("Toggle whether all photos are selected (Ctrl+A)"))
+        self.select_all_button.connect("released", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
         self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
@@ -1114,19 +1110,9 @@ class GottenGeography:
         self.map_view.add_layer(self.map_photo_layer)
         self.map_photo_layer.show()
         
-        # color to use for GPX tracks
-        self.track_color = Clutter.Color.new(255, 0, 0, 128)
-        
-        # Load last used location from GConf
-        self.map_view.center_on(
-            self.gconf_client.get_float(self.gconf_keys['lat']),
-            self.gconf_client.get_float(self.gconf_keys['lon'])
-        ) 
-        self.map_view.set_zoom_level(
-            self.gconf_client.get_int(self.gconf_keys['zoom'])
-        )
-        
-        self.stage = self.map_view.get_stage()
+        self.photos_and_map_container = Gtk.HPaned()
+        self.photos_and_map_container.add(self.photos_with_buttons)
+        self.photos_and_map_container.add(self.champlain)
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
@@ -1141,6 +1127,10 @@ class GottenGeography:
         self.offset_minutes = self.create_spin_button(60)
         self.offset_seconds = self.create_spin_button(60)
         
+        self.offset_hours.connect("value-changed", self.time_offset_changed)
+        self.offset_minutes.connect("value-changed", self.time_offset_changed)
+        self.offset_seconds.connect("value-changed", self.time_offset_changed)
+        
         self.statusbar = Gtk.Statusbar()
         self.statusbar.pack_start(self.progressbar, True, True, 6)
         self.statusbar.pack_end(self.offset_seconds_label, False, False, 0)
@@ -1152,22 +1142,30 @@ class GottenGeography:
         self.statusbar.pack_end(self.offset_label, False, False, 0)
         
         # This adds each widget into it's place in the window.
-        self.photo_scroller.add(self.photos_view)
-        self.photos_and_map_container.add(self.photos_with_buttons)
-        self.photos_and_map_container.add(self.champlain)
+        self.app_container = Gtk.VBox(spacing=0)
         self.app_container.pack_start(self.toolbar, False, True, 0)
         self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
         self.app_container.pack_end(self.statusbar, False, True, 0)
+        
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+        self.window.set_title("GottenGeography")
+        self.window.set_size_request(900,700)
+        self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
         
-        # Connect all my precious signal handlers
-        self.window.connect("delete_event", self.confirm_quit_dialog)
-        self.select_all_button.connect("released", self.toggle_selected_photos)
-        self.photo_selection.connect("changed", self.update_sensitivity)
-        self.photo_selection.connect("changed", self.update_all_marker_highlights)
-        self.offset_seconds.connect("value-changed", self.time_offset_value_changed)
-        self.offset_minutes.connect("value-changed", self.time_offset_value_changed)
-        self.offset_hours.connect("value-changed", self.time_offset_value_changed)
+        # color to use for GPX tracks
+        self.track_color = Clutter.Color.new(255, 0, 0, 128)
+        
+        # Load last used location from GConf
+        self.map_view.center_on(
+            self.gconf_client.get_float(self.gconf_keys['lat']),
+            self.gconf_client.get_float(self.gconf_keys['lon'])
+        )
+        self.map_view.set_zoom_level(
+            self.gconf_client.get_int(self.gconf_keys['zoom'])
+        )
+        
+        self.stage = self.map_view.get_stage()
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
@@ -1177,16 +1175,14 @@ class GottenGeography:
             self.accel.connect(
                 Gdk.keyval_from_name(key),
                 Gdk.ModifierType.CONTROL_MASK,
-                0,
-                self.key_accel
+                0, self.key_accel
             )
         
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             self.accel.connect(
                 Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK,
-                0,
-                self.move_map_view_by_arrow_keys
+                0, self.move_map_view_by_arrow_keys
             )
         
         # Ensure all widgets are displayed properly
@@ -1205,7 +1201,6 @@ class GottenGeography:
         self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.crosshair.set_border_width(1)
         self.crosshair.set_parent(self.stage)
-        self.crosshair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
         self.crosshair.raise_top()
         self.position_crosshair()
         self.crosshair.show()
@@ -1213,7 +1208,7 @@ class GottenGeography:
         # Animate in the crosshair
         for i in range(500, 6, -4):
             self.crosshair.set_size(i, i)
-            self.crosshair.set_z_rotation_from_gravity(53-i,
+            self.crosshair.set_z_rotation_from_gravity(53-i, #will end at 45 deg
                 Clutter.Gravity.CENTER)
             self.position_crosshair()
             self._redraw_interface()
