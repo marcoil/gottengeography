@@ -190,21 +190,17 @@ class GottenGeography:
         self.update_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
-        """Move the map view, taking into account the current zoom."""
+        """Move the map view in discrete steps."""
         
-        lat = self.map_view.get_property('latitude')
-        lon = self.map_view.get_property('longitude')
+        x = int(self.map_view.get_width()/2)
+        y = int(self.map_view.get_height()/2)
         
-        # 10 / (1 + 4zoom^3) where zoom is the map zoom level from 0 to 20)
-        # This makes the map move by 10 degrees at zoom level 0, but only
-        # 0.0003125 degrees at maximum zoom (which is roughly one quarter of
-        # a city block in my neighborhood)
-        move_by = 10 / (1 + (4 * (self.map_view.get_zoom_level() ** 3)))
+        if   keyval == Gdk.keyval_from_name("Left"):  x += x * -0.4
+        elif keyval == Gdk.keyval_from_name("Up"):    y += y * -0.4
+        elif keyval == Gdk.keyval_from_name("Right"): x += x *  0.4
+        elif keyval == Gdk.keyval_from_name("Down"):  y += y *  0.4
         
-        if   keyval == Gdk.keyval_from_name("Left"):  lon += move_by * -1
-        elif keyval == Gdk.keyval_from_name("Up"):    lat += move_by
-        elif keyval == Gdk.keyval_from_name("Right"): lon += move_by
-        elif keyval == Gdk.keyval_from_name("Down"):  lat += move_by * -1
+        (lat, lon) = self.map_view.get_coords_at(x, y)[1:3]
         
         if self.valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
