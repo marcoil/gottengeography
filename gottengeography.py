@@ -390,6 +390,11 @@ class GottenGeography:
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module."""
         
+        # This will raise IOError on various invalid filetypes, with the
+        # unfortunate exception of XML files (such as GPX or XMP).
+        exif = pyexiv2.Image(filename)
+        exif.readMetadata()
+        
         try: 
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 filename, 
@@ -397,26 +402,20 @@ class GottenGeography:
                 thumb_size
             )
         except RuntimeError:
-            # IOErrror is what I'm using to indicate "invalid filetype"
-            # because that's what pyexiv2 raises for certain invalid files.
+            # I raise IOError on anything for which I can't get a thumbnail.
             # This means my program will refuse to open files that GdkPixbuf
-            # can't create a thumbnail for, which might pose a problem in the 
+            # can't create a thumbnail for, which might pose a problem in the
             # event that there's some image format that is supported by
             # pyexiv2 but not GdkPixbuf. Works with JPG and DNG at least.
             raise IOError
         
-        exif = pyexiv2.Image(filename)
-        exif.readMetadata()
-        
         try:
+            # This assumes that the camera and computer have the same timezone.
             timestamp = exif['Exif.Photo.DateTimeOriginal']
-        except KeyError: 
-            timestamp = None
-        
-        # pyexiv2 provides a string when it can't parse invalid data
-        # So I just discard it here.
-        if type(timestamp) == str:
-            timestamp = None
+            timestamp = int(time.mktime(timestamp.timetuple()))
+        except:
+            # Eh, better than nothing.
+            timestamp = int(os.stat(filename).st_mtime)
         
         try:
             lat = self.dms_to_decimal(
@@ -765,13 +764,6 @@ class GottenGeography:
             len(current) / total,
             _("Loading %s...") % os.path.basename(filename)
         )
-        
-        if timestamp:
-            # Your computer's timezone must be set the same as your camera.
-            timestamp = int(time.mktime(timestamp.timetuple()))
-        else:
-            # Eh, better than nothing.
-            timestamp = int(os.stat(filename).st_mtime)
         
         # If file already loaded, grab it's iter to reload data into.
         if iter is None:
