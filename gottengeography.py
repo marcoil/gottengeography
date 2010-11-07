@@ -1082,7 +1082,7 @@ class GottenGeography:
         self.select_all_button.set_use_stock(True)
         self.select_all_button.set_tooltip_text(
             _("Toggle whether all photos are selected (Ctrl+A)"))
-        self.select_all_button.connect("released", self.toggle_selected_photos)
+        self.select_all_button.connect("clicked", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
         self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
@@ -1162,7 +1162,7 @@ class GottenGeography:
         # Key bindings
         self.accel = Gtk.AccelGroup()
         self.window.add_accel_group(self.accel)
-        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash',
+        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'a', 'Return', 'slash',
         'question', 'equal', 'minus', 'Left' ]:
             self.accel.connect(
                 Gdk.keyval_from_name(key),
@@ -1241,8 +1241,13 @@ class GottenGeography:
         
         return button
     
-    def toggle_selected_photos(self, button):
+    def toggle_selected_photos(self, button=None):
         """Toggle the selection of photos."""
+        
+        if button is None:
+            # User typed Ctrl+a, so select all!
+            button = self.select_all_button
+            button.set_active(True)
         
         if button.get_active():
             self.photo_selection.select_all()
@@ -1270,6 +1275,7 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit_dialog()
         elif keyval == Gdk.keyval_from_name("/"):      self.about_dialog()
         elif keyval == Gdk.keyval_from_name("?"):      self.about_dialog()
+        elif keyval == Gdk.keyval_from_name("a"):      self.toggle_selected_photos()
         
         # Prevent the following keybindings from executing if there are no unsaved files
         if len(self.modified) == 0: return
@@ -1314,9 +1320,6 @@ class GottenGeography:
         # Apply and Close buttons get activated if any photo is selected
         self.apply_button.set_sensitive(sensitivity)
         self.close_button.set_sensitive(sensitivity)
-        
-        # Select button needs to show as toggled if there is any selection
-        self.select_all_button.set_property('active', sensitivity)
         
         # Revert button is only activated if the selection has unsaved files.
         modified_in_selection = []
