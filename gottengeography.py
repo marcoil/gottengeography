@@ -233,22 +233,21 @@ class GottenGeography:
         
         marker = photos.get_value(iter, self.PHOTO_MARKER)
         
-        if marker is None:                     return
-        if not marker.get_property('visible'): return
-        
-        highlighted = area is not None
+        try:
+            if not marker.get_property('visible'): return
+        except AttributeError:                     return
         
         if transparent: marker.set_property('opacity', 64)
         else:           marker.set_property('opacity', 255)
         
-        marker.set_highlighted(highlighted)
-        
-        if highlighted:
-            marker.set_scale(1.2, 1.2)
-            marker.raise_top()
-        else:
+        if area is None:
+            marker.set_highlighted(False)
             marker.set_scale(1, 1)
             return
+        
+        marker.set_highlighted(True)
+        marker.set_scale(1.2, 1.2)
+        marker.raise_top()
         
         lat = marker.get_property('latitude')
         lon = marker.get_property('longitude')
