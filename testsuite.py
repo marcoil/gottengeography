@@ -37,11 +37,11 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.modified), 0)
         self.assertEqual(len(self.gui.polygons), 0)
-        self.assertEqual(self.gui.current['lowest'],  "")
-        self.assertEqual(self.gui.current['highest'], None)
+        self.assertEqual(self.gui.current['lowest'],  float('inf'))
+        self.assertEqual(self.gui.current['highest'], float('-inf'))
         self.assertEqual(
-            self.gui.current['area'], 
-            ['', '', None, None, False]
+            self.gui.current['area'],
+            [float('inf'), float('inf'), float('-inf'), float('-inf'), False]
         )
         
         # Load only the photos first
@@ -49,7 +49,7 @@ class GottenGeographyTester(unittest.TestCase):
         for demo in os.listdir('.'):
             filename = "%s/%s" % (os.getcwd(), demo)
             if not re.search(r'gpx$', demo):
-                self.assertRaises(ExpatError, 
+                self.assertRaises(ExpatError,
                     self.gui.load_gpx_from_file,
                     filename
                 )
@@ -63,7 +63,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Test that a photo has no coordinates to begin with
         self.assertEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE), 
+            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE),
             0.0
         )
         self.assertEqual(
@@ -73,7 +73,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Load the GPX
         filename="%s/%s" % (os.getcwd(), "20101016.gpx")
-        self.assertRaises(IOError, 
+        self.assertRaises(IOError,
             self.gui.add_or_reload_photo,
             filename=filename,
             data=[[], 1]
@@ -88,14 +88,14 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.current['lowest'],  1287259751)
         self.assertEqual(self.gui.current['highest'], 1287260756)
         self.assertEqual(
-            self.gui.current['area'], 
-            [53.522495999999997, -113.453148, 
+            self.gui.current['area'],
+            [53.522495999999997, -113.453148,
              53.537399000000001, -113.443061, False]
         )
         
         # check that a photo has the correct coordinates.
         self.assertAlmostEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE), 
+            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE),
             53.529963999999993, 9
         )
         self.assertAlmostEqual(

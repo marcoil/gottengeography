@@ -272,10 +272,13 @@ class GottenGeography:
         if selection is None: selection = self.photo_selection
         
         # The first two values are minimums, and the second two are maximums.
-        # 'float < ""' is always true, and 'float > None' is always true, so
-        # these are sensible default values that get immediately clobbered
+        # These are sensible default values that get immediately clobbered
         # whenever compared against a real value.
-        area = [ "", "", None, None, False ]
+        area = [
+            float('inf'), float('inf'),
+            float('-inf'), float('-inf'),
+            False
+        ]
         
         if selection.count_selected_rows() > 0:
             self.loaded_photos.foreach(self.set_marker_highlight, (None, True))
@@ -318,13 +321,14 @@ class GottenGeography:
         
         self.tracks = {}
         
+        # Default values for easy clobbering with real data
         self.current = {
             'count':   0.0,
-            # 'float < ""' is always true, and 'float > None' is always true,
-            # so these make sensible default values that we can easily clobber
-            'area':    [ "", "", None, None, False ],
-            'highest': None,
-            'lowest':  ""
+            'area':    [ float('inf'), float('inf'),
+                         float('-inf'), float('-inf'),
+                         False ],
+            'highest': float('-inf'),
+            'lowest':  float('inf')
         }
         
         self.update_sensitivity()
