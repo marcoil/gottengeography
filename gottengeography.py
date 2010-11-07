@@ -53,7 +53,7 @@ class GottenGeography:
         else:       lon_sign = _("W")
         
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
-        return ("%s %.5f, %s %.5f" % 
+        return ("%s %.5f, %s %.5f" %
             (lat_sign, abs(lat), lon_sign, abs(lon)))
     
     def _pretty_time(self, timestamp):
@@ -396,10 +396,10 @@ class GottenGeography:
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
-        try: 
+        try:
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                filename, 
-                thumb_size, 
+                filename,
+                thumb_size,
                 thumb_size
             )
         except RuntimeError:
@@ -604,15 +604,15 @@ class GottenGeography:
         
         # Failing that, however, we have to find the two track points that
         # are nearest to the photo timestamp, and then proportionally calculate
-        # the location in between. 
-        except KeyError: 
+        # the location in between.
+        except KeyError:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
             for point in self.tracks:
                 if (point > photo) and (point < hi): hi = point
                 if (point < photo) and (point > lo): lo = point
             
-            # delta is the number of seconds between 
+            # delta is the number of seconds between
             # the two points we're averaging
             delta = hi - lo
             
@@ -660,8 +660,8 @@ class GottenGeography:
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
         
-        self._insert_coordinates(photos, iter, 
-            self.map_view.get_property('latitude'), 
+        self._insert_coordinates(photos, iter,
+            self.map_view.get_property('latitude'),
             self.map_view.get_property('longitude')
         )
         
@@ -744,10 +744,10 @@ class GottenGeography:
         
         Checks if the file has already been loaded, and if not, creates a new
         row in the ListStore. Either way, it then populates that row with
-        photo metadata as read from disk. Effectively, this is used both for 
+        photo metadata as read from disk. Effectively, this is used both for
         loading new photos, and reverting old photos, discarding any changes.
         
-        Must be passed either an iter or filename, or both. Raises IOError if 
+        Must be passed either an iter or filename, or both. Raises IOError if
         filename refers to a file that is not a photograph.
         """
         
@@ -777,7 +777,7 @@ class GottenGeography:
         photos.set_value(iter, self.PHOTO_PATH,      filename)
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
         photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
-        photos.set_value(iter, self.PHOTO_SUMMARY, 
+        photos.set_value(iter, self.PHOTO_SUMMARY,
             self._create_summary(filename, timestamp, lat, lon, ele))
         
         self._insert_coordinates(photos, iter, lat, lon, ele, False)
@@ -867,10 +867,10 @@ class GottenGeography:
             try:
                 try:
                     self.add_or_reload_photo(
-                        filename=filename, 
+                        filename=filename,
                         data=[loaded_files, len(files)]
                     )
-                except IOError: 
+                except IOError:
                     self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
@@ -885,7 +885,7 @@ class GottenGeography:
         
         # Remember the last viewed location so we can return to it next run
         self.gconf_client.set_float(self.gconf_keys['lat'],
-            self.map_view.get_property('latitude')) 
+            self.map_view.get_property('latitude'))
         self.gconf_client.set_float(self.gconf_keys['lon'],
             self.map_view.get_property('longitude'))
         self.gconf_client.set_int(self.gconf_keys['zoom'],
@@ -1038,7 +1038,7 @@ class GottenGeography:
         ) = range(self.loaded_photos.get_n_columns())
         
         self.loaded_photos.set_sort_column_id(
-            self.PHOTO_TIMESTAMP, 
+            self.PHOTO_TIMESTAMP,
             Gtk.SortType.ASCENDING
         )
         
@@ -1164,7 +1164,7 @@ class GottenGeography:
         self.accel = Gtk.AccelGroup()
         self.window.add_accel_group(self.accel)
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'Return', 'slash',
-        'question', 'equal', 'minus', 'Left' ]: 
+        'question', 'equal', 'minus', 'Left' ]:
             self.accel.connect(
                 Gdk.keyval_from_name(key),
                 Gdk.ModifierType.CONTROL_MASK,
@@ -1246,7 +1246,7 @@ class GottenGeography:
         else:
             self.photo_selection.unselect_all()
     
-    # TODO make sure these key choices actually make sense 
+    # TODO make sure these key choices actually make sense
     # and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
         """Respond to keyboard shortcuts as typed by user."""
@@ -1286,7 +1286,7 @@ class GottenGeography:
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
         
         Primarily used to update the progressbar, but also for disappearing
-        some dialogs while things are processing in the background. Won't 
+        some dialogs while things are processing in the background. Won't
         modify the progressbar if called with no arguments.
         """
         
@@ -1297,7 +1297,7 @@ class GottenGeography:
     def _append_if_modified(self, photos, path, iter, pathlist):
         """Append the given photo to the pathlist if it's been modified."""
         
-        if photos.get_value(iter, self.PHOTO_PATH) in self.modified: 
+        if photos.get_value(iter, self.PHOTO_PATH) in self.modified:
             pathlist.append(path)
             return True
     
@@ -1321,7 +1321,7 @@ class GottenGeography:
         # Revert button is only activated if the selection has unsaved files.
         modified_in_selection = []
         self.photo_selection.selected_foreach(
-            self._append_if_modified, 
+            self._append_if_modified,
             modified_in_selection
         )
         self.revert_button.set_sensitive(len(modified_in_selection) > 0)
