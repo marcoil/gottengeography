@@ -544,8 +544,7 @@ class GottenGeography:
         
         self._status_message(
             _("%d points loaded in %.2fs.") %
-            (self.current['count'], time.clock()-start_time),
-            False
+            (self.current['count'], time.clock()-start_time)
         )
         
         self.update_sensitivity()
@@ -1278,13 +1277,10 @@ class GottenGeography:
         if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
     
-    def _status_message(self, message, error=True):
+    def _status_message(self, message):
         """Display a message on the GtkStatusBar."""
         
-        if error: context_id = "error"
-        else:     context_id = "message"
-        
-        self.statusbar.push(self.statusbar.get_context_id(context_id), message)
+        self.statusbar.push(self.statusbar.get_context_id("msg"), message)
     
     def _redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
