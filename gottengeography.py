@@ -57,14 +57,11 @@ class GottenGeography:
             (lat_sign, abs(lat), lon_sign, abs(lon)))
     
     def _pretty_time(self, timestamp):
-        """Print time in a human readable way.
+        """Print epoch seconds in a human readable way."""
         
-        Takes either a datetime.datetime or epoch seconds in int/float."""
+        if type(timestamp) is not int: return _("No timestamp")
         
-        if timestamp is None: return _("No timestamp")
-        
-        try:    return timestamp.strftime("%Y-%m-%d %X")
-        except: return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
+        return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
     
     def _pretty_elevation(self, ele):
         """Print elevation in a human readable way."""

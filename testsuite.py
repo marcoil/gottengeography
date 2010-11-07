@@ -124,10 +124,6 @@ class GottenGeographyTester(unittest.TestCase):
             "2001-09-08 07:46:39 PM"
         )
         self.assertEqual(
-            self.gui._pretty_time(datetime.datetime.fromtimestamp(999999999)),
-            "2001-09-08 07:46:39 PM"
-        )
-        self.assertEqual(
             self.gui._pretty_time(None),
             "No timestamp"
         )
