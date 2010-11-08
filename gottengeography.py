@@ -865,8 +865,10 @@ class GottenGeography:
                     self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
-                self._status_message(_("Could not open: %s") %
-                    ", ".join(invalid_files))
+        
+        if len(invalid_files) > 0:
+            self._status_message(_("Could not open: %s") %
+                ", ".join(invalid_files))
         
         self.progressbar.hide()
         self.update_sensitivity()
