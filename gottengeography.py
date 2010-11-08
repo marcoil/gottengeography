@@ -406,7 +406,7 @@ class GottenGeography:
             # This means my program will refuse to open files that GdkPixbuf
             # can't create a thumbnail for, which might pose a problem in the
             # event that there's some image format that is supported by
-            # pyexiv2 but not GdkPixbuf. Works with JPG and DNG at least.
+            # pyexiv2 but not GdkPixbuf. Known to work on JPG, DNG, and PNG.
             raise IOError
         
         try:
@@ -817,6 +817,7 @@ class GottenGeography:
         )
         
         label.set_justify(Gtk.Justification.CENTER)
+        label.set_selectable(True)
         
         preview_widget = Gtk.VBox(spacing=6)
         preview_widget.pack_start(image, False, False, 0)
