@@ -73,7 +73,7 @@ class GottenGeography:
         
         return "%.1f%s" % (abs(ele), label)
     
-    def _create_summary(self, file, timestamp, lat, lon, ele, modified=False):
+    def _create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
         
         summary = "\n".join( [
@@ -82,16 +82,16 @@ class GottenGeography:
             self._pretty_elevation(ele)
         ] ).strip()
         
-        if file is None: return summary
+        if filename is None: return summary
         
         # Pango magic
         summary = "".join( [
-            '<span size="larger">', os.path.basename(file), '</span>\n',
+            '<span size="larger">', os.path.basename(filename), '</span>\n',
             '<span style="italic" size="smaller">', summary, '</span>'
         ] )
         
         # Embolden text if this image has unsaved data
-        if modified: summary = '<b>%s</b>' % summary
+        if filename in self.modified: summary = '<b>%s</b>' % summary
         
         return summary
     
@@ -719,7 +719,7 @@ class GottenGeography:
             photos.set_value(iter, self.PHOTO_LATITUDE,  lat)
             photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
             photos.set_value(iter, self.PHOTO_SUMMARY,
-                self._create_summary(filename, timestamp, lat, lon, ele, modified))
+                self._create_summary(filename, timestamp, lat, lon, ele))
             
             try:
                 marker.set_position(lat, lon)
