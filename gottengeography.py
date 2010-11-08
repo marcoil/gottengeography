@@ -957,15 +957,10 @@ class GottenGeography:
         self.history = []
         
         # Defaults for the preview widget in the FileChooserDialog
-        self.preview_image = Gtk.Image.new_from_stock(
-            Gtk.STOCK_MISSING_IMAGE,
-            Gtk.IconSize.LARGE_TOOLBAR
-        )
-        
-        self.preview_label = Gtk.Label(label=_("No preview available"))
+        self.preview_image = Gtk.Image()
+        self.preview_label = Gtk.Label()
         self.preview_label.set_justify(Gtk.Justification.CENTER)
         self.preview_label.set_selectable(True)
-        
         self.preview_widget = Gtk.VBox(spacing=6)
         self.preview_widget.set_size_request(310, -1)
         self.preview_widget.pack_start(self.preview_image, False, False, 0)
