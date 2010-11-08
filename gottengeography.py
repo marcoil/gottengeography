@@ -718,8 +718,6 @@ class GottenGeography:
         if self.valid_coords(lat, lon):
             photos.set_value(iter, self.PHOTO_LATITUDE,  lat)
             photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
-            photos.set_value(iter, self.PHOTO_SUMMARY,
-                self._create_summary(filename, timestamp, lat, lon, ele))
             
             try:
                 marker.set_position(lat, lon)
@@ -730,6 +728,9 @@ class GottenGeography:
         else:
             try:    marker.hide()
             except: pass
+        
+        photos.set_value(iter, self.PHOTO_SUMMARY,
+            self._create_summary(filename, timestamp, lat, lon, ele))
     
     def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
         """Create or update a row in the ListStore.
@@ -749,7 +750,7 @@ class GottenGeography:
         if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
         
         (timestamp, lat, lon, ele, thumb
-            ) = self.load_exif_from_file(filename, 200)
+            ) = self.load_exif_from_file(filename)
         
         (current, total) = data
         current.append(filename)
@@ -769,8 +770,6 @@ class GottenGeography:
         photos.set_value(iter, self.PHOTO_PATH,      filename)
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
         photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
-        photos.set_value(iter, self.PHOTO_SUMMARY,
-            self._create_summary(filename, timestamp, lat, lon, ele))
         
         self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
