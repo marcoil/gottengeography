@@ -292,12 +292,6 @@ class GottenGeography:
         marker.show()
         return marker
     
-    def remove_marker(self, photos, iter):
-        """Remove any marker associated with the given photo from the map."""
-        
-        old_marker = photos.get_value(iter, self.PHOTO_MARKER)
-        if old_marker: old_marker.destroy()
-    
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
         
@@ -697,10 +691,14 @@ class GottenGeography:
         for path in pathlist:
             iter = photos.get_iter(path)[1]
             filename = photos.get_value(iter, self.PHOTO_PATH)
+            
             if filename in self.modified:   del self.modified[filename]
             if filename in self.has_manual: del self.has_manual[filename]
             del self.loaded_photo_iters[filename]
-            self.remove_marker(photos, iter)
+            
+            try: photos.get_value(iter, self.PHOTO_MARKER).destroy()
+            except: pass
+            
             photos.remove(iter)
         
         self.update_sensitivity()
