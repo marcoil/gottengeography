@@ -798,34 +798,38 @@ class GottenGeography:
         
         filename = chooser.get_preview_filename()
         
-        if not os.path.isfile(str(filename)):
-            chooser.set_preview_widget_active(False)
-            return
-        
-        try:
-            (timestamp, lat, lon, ele, thumb
-                ) = self.load_exif_from_file(filename, 400)
-        except IOError:
-            chooser.set_preview_widget_active(False)
-            return
-        
-        image = Gtk.Image()
-        image.set_from_pixbuf(thumb)
-        
-        label = Gtk.Label(
-            label=self._create_summary(None, timestamp, lat, lon, ele)
+        # By default, we create a 'missing image' icon and a label that says
+        # 'no preview available', and then make that active. Afterwards, we try
+        # to load a thumbnail. if it works, we set it, if not, it stays as is.
+        image = Gtk.Image.new_from_stock(
+            Gtk.STOCK_MISSING_IMAGE,
+            Gtk.IconSize.LARGE_TOOLBAR
         )
         
+        label = Gtk.Label(label=_("No preview available"))
         label.set_justify(Gtk.Justification.CENTER)
         label.set_selectable(True)
         
         preview_widget = Gtk.VBox(spacing=6)
+        preview_widget.set_size_request(310, -1)
         preview_widget.pack_start(image, False, False, 0)
         preview_widget.pack_start(label, False, False, 0)
         preview_widget.show_all()
         
         chooser.set_preview_widget(preview_widget)
         chooser.set_preview_widget_active(True)
+        
+        if not os.path.isfile(str(filename)): return
+        
+        try:
+            (timestamp, lat, lon, ele, thumb
+                ) = self.load_exif_from_file(filename, 300)
+        except IOError:
+            return
+        
+        image.set_from_pixbuf(thumb)
+        
+        label.set_text(self._create_summary(None, timestamp, lat, lon, ele))
     
     # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files_dialog(self, widget=None, data=None):
