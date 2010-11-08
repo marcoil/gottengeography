@@ -155,6 +155,16 @@ class GottenGeography:
 # Champlain. This section contains methods that manipulate the map.
 ################################################################################
     
+    def remember_location_with_gconf(self):
+        """Use GConf for persistent storage of the currently viewed location."""
+        
+        self.gconf_client.set_float(self.gconf_keys['lat'],
+            self.map_view.get_property('latitude'))
+        self.gconf_client.set_float(self.gconf_keys['lon'],
+            self.map_view.get_property('longitude'))
+        self.gconf_client.set_int(self.gconf_keys['zoom'],
+            self.map_view.get_zoom_level())
+    
     def remember_location(self):
         """Add the current location to the history stack."""
         
@@ -876,13 +886,7 @@ class GottenGeography:
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
         
-        # Remember the last viewed location so we can return to it next run
-        self.gconf_client.set_float(self.gconf_keys['lat'],
-            self.map_view.get_property('latitude'))
-        self.gconf_client.set_float(self.gconf_keys['lon'],
-            self.map_view.get_property('longitude'))
-        self.gconf_client.set_int(self.gconf_keys['zoom'],
-            self.map_view.get_zoom_level())
+        self.remember_location_with_gconf()
         
         # If there's no unsaved data, just close without confirmation.
         if len(self.modified) == 0: Gtk.main_quit(); return True
@@ -1307,6 +1311,10 @@ class GottenGeography:
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
         """
+        
+        # This might be overkill here, but I was getting annoyed with crashes
+        # preventing us from getting back to the last location.
+        self.remember_location_with_gconf()
         
         if selection is None: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
