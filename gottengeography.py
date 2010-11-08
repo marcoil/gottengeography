@@ -798,25 +798,14 @@ class GottenGeography:
         
         filename = chooser.get_preview_filename()
         
-        # By default, we create a 'missing image' icon and a label that says
-        # 'no preview available', and then make that active. Afterwards, we try
-        # to load a thumbnail. if it works, we set it, if not, it stays as is.
-        image = Gtk.Image.new_from_stock(
+        self.preview_image.set_from_stock(
             Gtk.STOCK_MISSING_IMAGE,
             Gtk.IconSize.LARGE_TOOLBAR
         )
         
-        label = Gtk.Label(label=_("No preview available"))
-        label.set_justify(Gtk.Justification.CENTER)
-        label.set_selectable(True)
+        self.preview_label.set_text(_("No preview available"))
         
-        preview_widget = Gtk.VBox(spacing=6)
-        preview_widget.set_size_request(310, -1)
-        preview_widget.pack_start(image, False, False, 0)
-        preview_widget.pack_start(label, False, False, 0)
-        preview_widget.show_all()
-        
-        chooser.set_preview_widget(preview_widget)
+        chooser.set_preview_widget(self.preview_widget)
         chooser.set_preview_widget_active(True)
         
         if not os.path.isfile(str(filename)): return
@@ -827,9 +816,11 @@ class GottenGeography:
         except IOError:
             return
         
-        image.set_from_pixbuf(thumb)
+        self.preview_image.set_from_pixbuf(thumb)
         
-        label.set_text(self._create_summary(None, timestamp, lat, lon, ele))
+        self.preview_label.set_text(
+            self._create_summary(None, timestamp, lat, lon, ele)
+        )
     
     # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files_dialog(self, widget=None, data=None):
@@ -964,6 +955,22 @@ class GottenGeography:
         # prior to any point at which the view was changed programmatically.
         # Allows the user to go "back", eg, after GPX load has changed the view.
         self.history = []
+        
+        # Defaults for the preview widget in the FileChooserDialog
+        self.preview_image = Gtk.Image.new_from_stock(
+            Gtk.STOCK_MISSING_IMAGE,
+            Gtk.IconSize.LARGE_TOOLBAR
+        )
+        
+        self.preview_label = Gtk.Label(label=_("No preview available"))
+        self.preview_label.set_justify(Gtk.Justification.CENTER)
+        self.preview_label.set_selectable(True)
+        
+        self.preview_widget = Gtk.VBox(spacing=6)
+        self.preview_widget.set_size_request(310, -1)
+        self.preview_widget.pack_start(self.preview_image, False, False, 0)
+        self.preview_widget.pack_start(self.preview_label, False, False, 0)
+        self.preview_widget.show_all()
         
         # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
