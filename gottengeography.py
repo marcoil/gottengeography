@@ -805,9 +805,6 @@ class GottenGeography:
         
         self.preview_label.set_text(_("No preview available"))
         
-        chooser.set_preview_widget(self.preview_widget)
-        chooser.set_preview_widget_active(True)
-        
         if not os.path.isfile(str(filename)): return
         
         try:
@@ -837,7 +834,19 @@ class GottenGeography:
         chooser.set_default_response(Gtk.ResponseType.OK)
         chooser.set_select_multiple(True)
         
-        # make a file preview thingo
+        # preview widget
+        self.preview_image = Gtk.Image()
+        self.preview_label = Gtk.Label()
+        self.preview_label.set_justify(Gtk.Justification.CENTER)
+        self.preview_label.set_selectable(True)
+        self.preview_widget = Gtk.VBox(spacing=6)
+        self.preview_widget.set_size_request(310, -1)
+        self.preview_widget.pack_start(self.preview_image, False, False, 0)
+        self.preview_widget.pack_start(self.preview_label, False, False, 0)
+        self.preview_widget.show_all()
+        
+        chooser.set_preview_widget(self.preview_widget)
+        chooser.set_preview_widget_active(True)
         chooser.connect("selection-changed", self.update_preview)
         
         # Exit if the user clicked anything other than "OK"
@@ -955,17 +964,6 @@ class GottenGeography:
         # prior to any point at which the view was changed programmatically.
         # Allows the user to go "back", eg, after GPX load has changed the view.
         self.history = []
-        
-        # Defaults for the preview widget in the FileChooserDialog
-        self.preview_image = Gtk.Image()
-        self.preview_label = Gtk.Label()
-        self.preview_label.set_justify(Gtk.Justification.CENTER)
-        self.preview_label.set_selectable(True)
-        self.preview_widget = Gtk.VBox(spacing=6)
-        self.preview_widget.set_size_request(310, -1)
-        self.preview_widget.pack_start(self.preview_image, False, False, 0)
-        self.preview_widget.pack_start(self.preview_label, False, False, 0)
-        self.preview_widget.show_all()
         
         # GConf is used to store the last viewed location
         self.gconf_client = GConf.Client.get_default()
