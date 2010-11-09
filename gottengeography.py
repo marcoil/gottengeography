@@ -799,7 +799,7 @@ class GottenGeography:
         filename = chooser.get_preview_filename()
         
         self.preview_image.set_from_stock(
-            Gtk.STOCK_MISSING_IMAGE,
+            Gtk.STOCK_FILE,
             Gtk.IconSize.LARGE_TOOLBAR
         )
         
