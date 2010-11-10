@@ -238,6 +238,16 @@ class GottenGeography:
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
+    def display_coords(self, stage=None):
+        """Display the map center coordinates in a label beneath the map."""
+        
+        self.coords_label.set_text(
+            self._pretty_coords(
+                self.map_view.get_property('latitude'),
+                self.map_view.get_property('longitude')
+            )
+        )
+    
     def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
@@ -1099,9 +1109,16 @@ class GottenGeography:
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         
+        self.coords_label = Gtk.Label(label="")
+        self.coords_label.set_selectable(True)
+        
+        self.map_container = Gtk.VBox()
+        self.map_container.pack_start(self.champlain, True, True, 0)
+        self.map_container.pack_end(self.coords_label, False, False, 3)
+        
         self.photos_and_map_container = Gtk.HPaned()
         self.photos_and_map_container.add(self.photos_with_buttons)
-        self.photos_and_map_container.add(self.champlain)
+        self.photos_and_map_container.add(self.map_container)
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
@@ -1182,6 +1199,7 @@ class GottenGeography:
         self._redraw_interface()
         
         self.stage = self.map_view.get_stage()
+        self.stage.connect("paint", self.display_coords)
         
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
