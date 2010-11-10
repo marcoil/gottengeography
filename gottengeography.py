@@ -42,7 +42,7 @@ class GottenGeography:
 # that are suitable for displaying to the user.
 ################################################################################
     
-    def _pretty_coords(self, lat, lon):
+    def _pretty_coords(self, lat, lon, link=True):
         """Add cardinal directions to decimal coordinates."""
         
         if not self.valid_coords(lat, lon): return _("Not geotagged")
@@ -53,8 +53,15 @@ class GottenGeography:
         else:       lon_sign = _("W")
         
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
-        return ("%s %.5f, %s %.5f" %
-            (lat_sign, abs(lat), lon_sign, abs(lon)))
+        coords = '%s %.5f, %s %.5f' % (lat_sign, abs(lat), lon_sign, abs(lon))
+        
+        if not link:
+            return coords
+        else:
+            return (
+                '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>'
+                % (lat, lon, coords)
+            )
     
     def _pretty_time(self, timestamp):
         """Print epoch seconds in a human readable way."""
@@ -76,9 +83,11 @@ class GottenGeography:
     def _create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
         
+        # filename will be None in the FileChooserDialog. We want a shorter
+        # summary there, but with the added google maps link.
         summary = "\n".join( [
             self._pretty_time(timestamp),
-            self._pretty_coords(lat, lon),
+            self._pretty_coords(lat, lon, filename is None),
             self._pretty_elevation(ele)
         ] ).strip()
         
@@ -241,10 +250,11 @@ class GottenGeography:
     def display_coords(self, stage=None):
         """Display the map center coordinates in a label beneath the map."""
         
-        self.coords_label.set_text(
+        self.coords_label.set_label(
             self._pretty_coords(
                 self.map_view.get_property('latitude'),
-                self.map_view.get_property('longitude')
+                self.map_view.get_property('longitude'),
+                True
             )
         )
     
@@ -253,6 +263,7 @@ class GottenGeography:
         
         for filename in self.loaded_photo_iters:
             if os.path.basename(filename) == marker.get_text():
+                self.select_all_button.set_active(False)
                 self.photo_selection.unselect_all()
                 self.photo_selection.select_iter(
                     self.loaded_photo_iters[filename]
@@ -850,7 +861,7 @@ class GottenGeography:
             Gtk.IconSize.LARGE_TOOLBAR
         )
         
-        self.preview_label.set_text(_("No preview available"))
+        self.preview_label.set_label(_("No preview available"))
         
         if not os.path.isfile(str(filename)): return
         
@@ -862,7 +873,7 @@ class GottenGeography:
         
         self.preview_image.set_from_pixbuf(thumb)
         
-        self.preview_label.set_text(
+        self.preview_label.set_label(
             self._create_summary(None, timestamp, lat, lon, ele)
         )
     
@@ -886,6 +897,7 @@ class GottenGeography:
         self.preview_label = Gtk.Label()
         self.preview_label.set_justify(Gtk.Justification.CENTER)
         self.preview_label.set_selectable(True)
+        self.preview_label.set_use_markup(True)
         self.preview_widget = Gtk.VBox(spacing=6)
         self.preview_widget.set_size_request(310, -1)
         self.preview_widget.pack_start(self.preview_image, False, False, 0)
@@ -1140,6 +1152,7 @@ class GottenGeography:
         
         self.coords_label = Gtk.Label(label="")
         self.coords_label.set_selectable(True)
+        self.coords_label.set_use_markup(True)
         
         self.map_container = Gtk.VBox()
         self.map_container.pack_start(self.champlain, True, True, 0)
