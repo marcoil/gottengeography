@@ -319,6 +319,7 @@ class GottenGeography:
         
         # Default values for easy clobbering with real data
         self.current = {
+            'offset':  0,
             'area':    [ float('inf'), float('inf'),
                          float('-inf'), float('-inf'),
                          False ],
@@ -554,7 +555,7 @@ class GottenGeography:
         
         # Cleanup leftover data from parser
         for key in self.current.keys():
-            if key not in [ 'area', 'highest', 'lowest' ]:
+            if key not in [ 'offset', 'area', 'highest', 'lowest' ]:
                 del self.current[key]
     
 ################################################################################
@@ -572,9 +573,7 @@ class GottenGeography:
         
         # photo is the timestamp in epoch seconds,
         photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
-        photo += self.offset_hours.get_value() * 3600
-        photo += self.offset_minutes.get_value() * 60
-        photo += self.offset_seconds.get_value()
+        photo += self.current['offset']
         
         # hi and lo begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
@@ -634,9 +633,11 @@ class GottenGeography:
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         
-        # Some magic to let minutes and seconds settings wrap around.
         seconds = self.offset_seconds.get_value()
         minutes = self.offset_minutes.get_value()
+        hours   = self.offset_hours.get_value()
+        
+        offset = (hours * 3600) + (minutes * 60) + seconds
         
         if abs(seconds) == 60:
             self.offset_seconds.set_value(0)
@@ -650,8 +651,11 @@ class GottenGeography:
                 self.offset_hours.get_value() + (minutes/60)
             )
         
-        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
-        self.update_all_marker_highlights()
+        if offset <> self.current['offset']:
+            self.current['offset'] = int(offset)
+            
+            self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+            self.update_all_marker_highlights()
     
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
