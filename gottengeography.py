@@ -957,15 +957,13 @@ class GottenGeography:
     def __init__(self):
         """Initialize all necessary state."""
         
-        # Keeps track of which files have been modified, mostly for counting
-        # purposes. Keys are absolute paths to files, values are True.
+        # Keys are filenames that have been modified, values are True.
         self.modified = {}
         
-        # Keeps track of which files have manually-applied tags, so that the
-        # auto-tagger doesn't discard the users hard work.
+        # Keys are filenames that have been manually tagged, values are True.
         self.has_manual = {}
         
-        # Keys are full filename paths, values are GtkTreeIters
+        # Keys are filenames that are loaded, values are GtkTreeIters.
         self.loaded_photo_iters = {}
         
         # Stores a list of locations that the user was viewing immediately
@@ -973,23 +971,13 @@ class GottenGeography:
         # Allows the user to go "back", eg, after GPX load has changed the view.
         self.history = []
         
-        # GConf is used to store the last viewed location
-        self.gconf_client = GConf.Client.get_default()
-        self.gconf_keys = {
-            'lat':  '/apps/gottengeography/last_latitude',
-            'lon':  '/apps/gottengeography/last_longitude',
-            'zoom': '/apps/gottengeography/last_zoom_level'
-        }
-        
-        # Create the toolbar with standard buttons and some tooltips
         self.toolbar = Gtk.Toolbar()
         
         self.open_button = self.create_tool_button(Gtk.STOCK_OPEN,
             self.add_files_dialog, _("Load photos or GPS data (Ctrl+O)"))
         
         self.save_button = self.create_tool_button(Gtk.STOCK_SAVE,
-            self.save_all_files,
-            _("Save all modified GPS data into your photos (Ctrl+S)"),
+            self.save_all_files, _("Save all photos (Ctrl+S)"),
             _("Save All"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
@@ -1029,7 +1017,6 @@ class GottenGeography:
         self.about_button = self.create_tool_button(Gtk.STOCK_ABOUT,
             self.about_dialog, _("About GottenGeography"))
         
-        # This code defines how the photo list will appear
         self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
             GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
@@ -1111,7 +1098,6 @@ class GottenGeography:
         self.map_view.set_property('show-scale', True)
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
-        self.map_photo_layer.show()
         
         self.photos_and_map_container = Gtk.HPaned()
         self.photos_and_map_container.add(self.photos_with_buttons)
@@ -1122,29 +1108,23 @@ class GottenGeography:
         self.progressbar.set_pulse_step(0.02)
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
-        self.offset_hours_label = Gtk.Label(label=_("h "))
-        self.offset_minutes_label = Gtk.Label(label=_("m "))
-        self.offset_seconds_label = Gtk.Label(label=_("s "))
         
-        self.offset_hours   = self.create_spin_button(24)
-        self.offset_minutes = self.create_spin_button(60)
-        self.offset_seconds = self.create_spin_button(60)
+        self.offset_hours   = self.create_spin_button(24, _("hours"))
+        self.offset_minutes = self.create_spin_button(60, _("minutes"))
+        self.offset_seconds = self.create_spin_button(60, _("seconds"))
         
         self.offset_hours.connect("value-changed", self.time_offset_changed)
         self.offset_minutes.connect("value-changed", self.time_offset_changed)
         self.offset_seconds.connect("value-changed", self.time_offset_changed)
         
         self.statusbar = Gtk.Statusbar()
+        self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 6)
-        self.statusbar.pack_end(self.offset_seconds_label, False, False, 0)
         self.statusbar.pack_end(self.offset_seconds, False, False, 0)
-        self.statusbar.pack_end(self.offset_minutes_label, False, False, 0)
         self.statusbar.pack_end(self.offset_minutes, False, False, 0)
-        self.statusbar.pack_end(self.offset_hours_label, False, False, 0)
         self.statusbar.pack_end(self.offset_hours, False, False, 0)
         self.statusbar.pack_end(self.offset_label, False, False, 0)
         
-        # This adds each widget into it's place in the window.
         self.app_container = Gtk.VBox(spacing=0)
         self.app_container.pack_start(self.toolbar, False, True, 0)
         self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
@@ -1156,8 +1136,14 @@ class GottenGeography:
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
         
-        # color to use for GPX tracks
         self.track_color = Clutter.Color.new(255, 0, 0, 128)
+        
+        self.gconf_client = GConf.Client.get_default()
+        self.gconf_keys = {
+            'lat':  '/apps/gottengeography/last_latitude',
+            'lon':  '/apps/gottengeography/last_longitude',
+            'zoom': '/apps/gottengeography/last_zoom_level'
+        }
         
         # Load last used location from GConf
         self.map_view.center_on(
@@ -1167,8 +1153,6 @@ class GottenGeography:
         self.map_view.set_zoom_level(
             self.gconf_client.get_int(self.gconf_keys['zoom'])
         )
-        
-        self.stage = self.map_view.get_stage()
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
@@ -1197,6 +1181,8 @@ class GottenGeography:
         self.clear_all_gpx()
         self._redraw_interface()
         
+        self.stage = self.map_view.get_stage()
+        
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
         )
@@ -1223,7 +1209,7 @@ class GottenGeography:
         
         self.stage.connect("paint", self.position_crosshair)
     
-    def create_spin_button(self, value):
+    def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
         
         button = Gtk.SpinButton()
@@ -1235,7 +1221,7 @@ class GottenGeography:
         button.set_numeric(True)
         button.set_snap_to_ticks(True)
         button.set_tooltip_text(
-            _("Is the clock on your camera wrong? Correct it here."))
+            _("Add or subtract %s from your camera's clock.") % label)
         
         return button
     
@@ -1350,9 +1336,7 @@ class GottenGeography:
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
         for widget in [self.clear_gpx_button, self.offset_hours,
-        self.offset_minutes, self.offset_seconds, self.offset_hours_label,
-        self.offset_minutes_label, self.offset_seconds_label,
-        self.offset_label]:
+        self.offset_minutes, self.offset_seconds, self.offset_label]:
             widget.set_sensitive(gpx_sensitive)
         
         # Zoom buttons should not be able to zoom beyond their ability
