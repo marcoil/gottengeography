@@ -214,10 +214,11 @@ class GottenGeography:
         x = int(self.map_view.get_width()/2)
         y = int(self.map_view.get_height()/2)
         
-        if   keyval == Gdk.keyval_from_name("Left"):  x += x * -0.4
-        elif keyval == Gdk.keyval_from_name("Up"):    y += y * -0.4
-        elif keyval == Gdk.keyval_from_name("Right"): x += x *  0.4
-        elif keyval == Gdk.keyval_from_name("Down"):  y += y *  0.4
+        # moves by 1/5 (40% of half) screen length in the given direction
+        if   keyval == Gdk.keyval_from_name("Left"):  x *= 0.6
+        elif keyval == Gdk.keyval_from_name("Up"):    y *= 0.6
+        elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
+        elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
         
         (lat, lon) = self.map_view.get_coords_at(x, y)[1:3]
         
