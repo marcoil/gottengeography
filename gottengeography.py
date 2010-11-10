@@ -392,10 +392,6 @@ class GottenGeography:
         
         current.append(path)
         
-        altitude  = photos.get_value(iter, self.PHOTO_ALTITUDE)
-        latitude  = photos.get_value(iter, self.PHOTO_LATITUDE)
-        longitude = photos.get_value(iter, self.PHOTO_LONGITUDE)
-        
         self._redraw_interface(len(current) / total,
             _("Saving %s...") % os.path.basename(filename))
         
@@ -404,14 +400,22 @@ class GottenGeography:
         
         exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
         
-        exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
-        exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(altitude)
+        ele = photos.get_value(iter, self.PHOTO_ALTITUDE)
+        if ele >= 0: exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
+        else:        exif['Exif.GPSInfo.GPSAltitudeRef'] = 1
+        exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
         
-        (exif['Exif.GPSInfo.GPSLatitude'], exif['Exif.GPSInfo.GPSLatitudeRef']
-            ) = self.decimal_to_dms(latitude, True)
+        (exif['Exif.GPSInfo.GPSLatitude'],
+         exif['Exif.GPSInfo.GPSLatitudeRef']
+        ) = self.decimal_to_dms(
+            photos.get_value(iter, self.PHOTO_LATITUDE), True
+        )
         
-        (exif['Exif.GPSInfo.GPSLongitude'], exif['Exif.GPSInfo.GPSLongitudeRef']
-            ) = self.decimal_to_dms(longitude, False)
+        (exif['Exif.GPSInfo.GPSLongitude'],
+         exif['Exif.GPSInfo.GPSLongitudeRef']
+        ) = self.decimal_to_dms(
+            photos.get_value(iter, self.PHOTO_LONGITUDE), False
+        )
         
         try:
             exif.writeMetadata()
@@ -482,6 +486,7 @@ class GottenGeography:
         try:
             ele = exif['Exif.GPSInfo.GPSAltitude']
             ele = ele.numerator / ele.denominator
+            if int(exif['Exif.GPSInfo.GPSAltitudeRef']) > 0: ele *= -1
         except:
             ele = None
         
