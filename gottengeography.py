@@ -639,18 +639,24 @@ class GottenGeography:
         
         offset = (hours * 3600) + (minutes * 60) + seconds
         
+        # Normally, this method is only called once when the value changes.
+        # However, the following calls to set_value() emit the value-changed
+        # signal, which in turn calls this method again, resulting in multiple
+        # calls per real user event. This is the breakdown of calls:
+        # 0:59:59 --> 1:00:00 results in 5 calls.
+        # 0:00:59 --> 0:01:00 results in 3 calls.
+        # [everything else]   results in 1 call.
         if abs(seconds) == 60:
             self.offset_seconds.set_value(0)
-            self.offset_minutes.set_value(
-                self.offset_minutes.get_value() + (seconds/60)
-            )
+            self.offset_minutes.set_value(minutes + (seconds/60))
         
         if abs(minutes) == 60:
             self.offset_minutes.set_value(0)
-            self.offset_hours.set_value(
-                self.offset_hours.get_value() + (minutes/60)
-            )
+            self.offset_hours.set_value(hours + (minutes/60))
         
+        # Fortunately, all the duplicate calls end up calculating identical
+        # offset values. So don't bother to call auto_timestamp_comparison()
+        # unless the offset value is actually different than before.
         if offset <> self.current['offset']:
             self.current['offset'] = int(offset)
             
