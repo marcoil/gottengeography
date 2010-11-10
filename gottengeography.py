@@ -368,6 +368,8 @@ class GottenGeography:
         
         self.tracks = {}
         
+        self.gpx_state = {}
+        
         # Default values for easy clobbering with real data
         self.current = {
             'offset':  0,
@@ -505,7 +507,7 @@ class GottenGeography:
         self.current['element-name'] = name
         
         # give us a blank string to append to from the data handler
-        self.current[name] = ""
+        self.gpx_state[name] = ""
         
         # New track segment, create a new polygon for it
         if name == "trkseg":
@@ -513,7 +515,7 @@ class GottenGeography:
         
         # Eg, <trkpt lat="45.147445" lon="-81.469507">
         if 'lat' in attributes:
-            self.current.update(attributes)
+            self.gpx_state.update(attributes)
     
     def gpx_element_data(self, data):
         """Callback function for Expat CharacterDataHandler."""
@@ -524,7 +526,7 @@ class GottenGeography:
         # This is where we collect elevation and time data
         # Sometimes expat calls this handler multiple times each with just
         # a chunk of the whole data, so += is necessary to collect all of it.
-        self.current[self.current['element-name']] += data
+        self.gpx_state[self.current['element-name']] += data
     
     def gpx_element_end(self, name):
         """Callback function for Expat EndElementHandler."""
@@ -535,16 +537,16 @@ class GottenGeography:
         
         # GPX is only UTC, as far as I'm aware
         timestamp = calendar.timegm(
-            time.strptime(self.current['time'], '%Y-%m-%dT%H:%M:%SZ')
+            time.strptime(self.gpx_state['time'], '%Y-%m-%dT%H:%M:%SZ')
         )
         
-        lat = float(self.current['lat'])
-        lon = float(self.current['lon'])
+        lat = float(self.gpx_state['lat'])
+        lon = float(self.gpx_state['lon'])
         
         if not self.valid_coords(lat, lon): return
         
         self.tracks[timestamp] = {
-            'elevation': float(self.current.get('ele', 0.0)),
+            'elevation': float(self.gpx_state.get('ele', 0.0)),
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
@@ -558,23 +560,13 @@ class GottenGeography:
         if lat > self.current['area'][2]: self.current['area'][2] = lat
         if lon > self.current['area'][3]: self.current['area'][3] = lon
         
-        # Refreshing the screen for every single track point seems to be
-        # the slowest part of this whole operation, so I'm only going to do
-        # it every 200th point.
+        # This is by far the slowest part, so only do it every 200th point.
         if len(self.tracks) % 200 == 0:
             self.progressbar.pulse()
             self.map_view.ensure_visible(*self.current['area'])
             self._redraw_interface()
         
-        # Clear all four coordinates of our four-dimensional location
-        # so that it can't accidentally be re-used for the next point
-        try:
-            del self.current['lat']
-            del self.current['lon']
-            del self.current['ele']
-            del self.current['time']
-        except KeyError:
-            pass
+        self.gpx_state.clear()
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -587,11 +579,9 @@ class GottenGeography:
         start_points = len(self.tracks)
         
         gpx_parser = expat.ParserCreate()
-        
-        # Callback functions which do all of the parsing.
-        gpx_parser.StartElementHandler = self.gpx_element_start
+        gpx_parser.StartElementHandler  = self.gpx_element_start
         gpx_parser.CharacterDataHandler = self.gpx_element_data
-        gpx_parser.EndElementHandler = self.gpx_element_end
+        gpx_parser.EndElementHandler    = self.gpx_element_end
         
         with open(filename) as gpx:
             status = gpx_parser.ParseFile(gpx)
@@ -610,9 +600,8 @@ class GottenGeography:
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         # Cleanup leftover data from parser
-        for key in self.current.keys():
-            if key not in [ 'offset', 'area', 'highest', 'lowest' ]:
-                del self.current[key]
+        self.gpx_state.clear()
+        if 'element-name' in self.current: del self.current['element-name']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
