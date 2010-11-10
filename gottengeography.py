@@ -155,6 +155,18 @@ class GottenGeography:
 # Champlain. This section contains methods that manipulate the map.
 ################################################################################
     
+    def marker_clicked(self, marker, event):
+        """When a ChamplainMarker is clicked, select it in the GtkListStore."""
+        
+        for filename in self.loaded_photo_iters:
+            if os.path.basename(filename) == marker.get_text():
+                self.photo_selection.unselect_all()
+                self.photo_selection.select_iter(
+                    self.loaded_photo_iters[filename]
+                )
+                
+                return
+    
     def remember_location_with_gconf(self):
         """Use GConf for persistent storage of the currently viewed location."""
         
@@ -310,6 +322,11 @@ class GottenGeography:
         marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
         marker.show()
+        
+        marker.set_property('reactive', True)
+        
+        marker.connect("button-press-event", self.marker_clicked)
+        
         return marker
     
     def clear_all_gpx(self, widget=None):
