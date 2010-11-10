@@ -155,18 +155,6 @@ class GottenGeography:
 # Champlain. This section contains methods that manipulate the map.
 ################################################################################
     
-    def marker_clicked(self, marker, event):
-        """When a ChamplainMarker is clicked, select it in the GtkListStore."""
-        
-        for filename in self.loaded_photo_iters:
-            if os.path.basename(filename) == marker.get_text():
-                self.photo_selection.unselect_all()
-                self.photo_selection.select_iter(
-                    self.loaded_photo_iters[filename]
-                )
-                
-                return
-    
     def remember_location_with_gconf(self):
         """Use GConf for persistent storage of the currently viewed location."""
         
@@ -260,6 +248,28 @@ class GottenGeography:
             )
         )
     
+    def marker_clicked(self, marker, event):
+        """When a ChamplainMarker is clicked, select it in the GtkListStore."""
+        
+        for filename in self.loaded_photo_iters:
+            if os.path.basename(filename) == marker.get_text():
+                self.photo_selection.unselect_all()
+                self.photo_selection.select_iter(
+                    self.loaded_photo_iters[filename]
+                )
+                
+                return
+    
+    def marker_mouse_in(self, marker, event):
+        """Enlarge a hovered-over ChamplainMarker by 5%."""
+        
+        marker.set_scale(*map(lambda x:x*1.05, marker.get_scale()))
+    
+    def marker_mouse_out(self, marker, event):
+        """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
+        
+        marker.set_scale(*map(lambda x:x/1.05, marker.get_scale()))
+    
     def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
@@ -326,6 +336,8 @@ class GottenGeography:
         marker.set_property('reactive', True)
         
         marker.connect("button-press-event", self.marker_clicked)
+        marker.connect("enter-event", self.marker_mouse_in)
+        marker.connect("leave-event", self.marker_mouse_out)
         
         return marker
     
