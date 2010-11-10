@@ -111,11 +111,11 @@ class GottenGeographyTester(unittest.TestCase):
             "Not geotagged"
         )
         self.assertEqual(
-            self.gui._pretty_coords(10.0, 10.0),
+            self.gui._pretty_coords(10.0, 10.0, False),
             "N 10.00000, E 10.00000"
         )
         self.assertEqual(
-            self.gui._pretty_coords(-10.0, -10.0),
+            self.gui._pretty_coords(-10.0, -10.0, False),
             "S 10.00000, W 10.00000"
         )
         
