@@ -319,7 +319,6 @@ class GottenGeography:
         
         # Default values for easy clobbering with real data
         self.current = {
-            'count':   0.0,
             'area':    [ float('inf'), float('inf'),
                          float('-inf'), float('-inf'),
                          False ],
@@ -477,8 +476,6 @@ class GottenGeography:
         # there is a new, fully-loaded GPX point to play with.
         if name <> "trkpt": return
         
-        self.current['count'] += 1.0
-        
         # GPX is only UTC, as far as I'm aware
         timestamp = calendar.timegm(
             time.strptime(self.current['time'], '%Y-%m-%dT%H:%M:%SZ')
@@ -507,7 +504,7 @@ class GottenGeography:
         # Refreshing the screen for every single track point seems to be
         # the slowest part of this whole operation, so I'm only going to do
         # it every 200th point.
-        if self.current['count'] % 200 == 0:
+        if len(self.tracks) % 200 == 0:
             self.progressbar.pulse()
             self.map_view.ensure_visible(*self.current['area'])
             self._redraw_interface()
@@ -530,6 +527,7 @@ class GottenGeography:
         self.remember_location()
         
         start_time = time.clock()
+        start_points = len(self.tracks)
         
         gpx_parser = expat.ParserCreate()
         
@@ -543,7 +541,8 @@ class GottenGeography:
         
         self._status_message(
             _("%d points loaded in %.2fs.") %
-            (self.current['count'], time.clock()-start_time)
+            (len(self.tracks)-start_points,
+            time.clock()-start_time)
         )
         
         self.update_sensitivity()
@@ -554,9 +553,8 @@ class GottenGeography:
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         # Cleanup leftover data from parser
-        self.current['count'] = 0.0
         for key in self.current.keys():
-            if key not in [ 'count', 'area', 'highest', 'lowest' ]:
+            if key not in [ 'area', 'highest', 'lowest' ]:
                 del self.current[key]
     
 ################################################################################
