@@ -55,13 +55,12 @@ class GottenGeography:
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
         coords = '%s %.5f, %s %.5f' % (lat_sign, abs(lat), lon_sign, abs(lon))
         
-        if not link:
-            return coords
-        else:
-            return (
-                '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>'
-                % (lat, lon, coords)
-            )
+        if link: coords = (
+            '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>'
+            % (lat, lon, coords)
+        )
+        
+        return coords
     
     def _pretty_time(self, timestamp):
         """Print epoch seconds in a human readable way."""
