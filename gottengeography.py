@@ -513,8 +513,7 @@ class GottenGeography:
             self.create_polygon()
         
         # Eg, <trkpt lat="45.147445" lon="-81.469507">
-        if 'lat' in attributes:
-            self.gpx_state.update(attributes)
+        self.gpx_state.update(attributes)
     
     def gpx_element_data(self, data):
         """Callback function for Expat CharacterDataHandler."""
@@ -534,13 +533,16 @@ class GottenGeography:
         # there is a new, fully-loaded GPX point to play with.
         if name <> "trkpt": return
         
-        # GPX is only UTC, as far as I'm aware
-        timestamp = calendar.timegm(
-            time.strptime(self.gpx_state['time'], '%Y-%m-%dT%H:%M:%SZ')
-        )
-        
-        lat = float(self.gpx_state['lat'])
-        lon = float(self.gpx_state['lon'])
+        try:
+            timestamp = calendar.timegm(
+                time.strptime(self.gpx_state['time'], '%Y-%m-%dT%H:%M:%SZ')
+            )
+            lat = float(self.gpx_state['lat'])
+            lon = float(self.gpx_state['lon'])
+        except:
+            # If any of lat, lon, or time is missing, we cannot continue.
+            # Better to just give up on this track point and go to the next.
+            return
         
         if not self.valid_coords(lat, lon): return
         
