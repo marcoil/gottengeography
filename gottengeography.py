@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-#from __future__ import calculus # too advanced for us cavemen
 
 import pyexiv2, os, re, time, calendar, math, gettext
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
@@ -254,7 +253,7 @@ class GottenGeography:
             self._pretty_coords(
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'),
-                True
+                True # enable link to Google Maps
             )
         )
     
@@ -345,7 +344,6 @@ class GottenGeography:
         marker.show()
         
         marker.set_property('reactive', True)
-        
         marker.connect("button-press-event", self.marker_clicked)
         marker.connect("enter-event", self.marker_mouse_in)
         marker.connect("leave-event", self.marker_mouse_out)
@@ -452,17 +450,16 @@ class GottenGeography:
         exif.readMetadata()
         
         try:
+            # I have tested this successfully on JPG, PNG, DNG, and NEF.
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 filename,
                 thumb_size,
                 thumb_size
             )
         except RuntimeError:
-            # I raise IOError on anything for which I can't get a thumbnail.
-            # This means my program will refuse to open files that GdkPixbuf
-            # can't create a thumbnail for, which might pose a problem in the
-            # event that there's some image format that is supported by
-            # pyexiv2 but not GdkPixbuf. Known to work on JPG, DNG, and PNG.
+            # If GdkPixbuf can't open it, it's most likely not a photo. However,
+            # if there exists an image format that is supported by pyexiv2 but
+            # not GdkPixbuf, then this is a bug.
             raise IOError
         
         try:
