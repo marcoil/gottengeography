@@ -683,7 +683,7 @@ class GottenGeography:
         minutes = self.offset_minutes.get_value()
         hours   = self.offset_hours.get_value()
         
-        offset = (hours * 3600) + (minutes * 60) + seconds
+        offset = int((hours * 3600) + (minutes * 60) + seconds)
         
         # Normally, this method is only called once when the value changes.
         # However, the following calls to set_value() emit the value-changed
@@ -704,7 +704,7 @@ class GottenGeography:
         # offset values. So don't bother to call auto_timestamp_comparison()
         # unless the offset value is actually different than before.
         if offset <> self.current['offset']:
-            self.current['offset'] = int(offset)
+            self.current['offset'] = offset
             
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
