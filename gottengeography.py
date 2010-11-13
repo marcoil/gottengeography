@@ -120,14 +120,10 @@ class GottenGeography:
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
         
-        # Don't translate these strings as they're stored in EXIF, which
-        # defines them in English only.
-        if is_latitude:
-            if decimal > 0: sign = "N"
-            else:           sign = "S"
-        else:
-            if decimal > 0: sign = "E"
-            else:           sign = "W"
+        # cardinal[1] is "N"/"E" and cardinal[-1] is "S"/"W". further down,
+        # I use math.copysign(1, decimal) to get either 1 or -1 as a list index
+        if is_latitude: cardinal = [ None, "N", "S" ]
+        else:           cardinal = [ None, "E", "W" ]
         
         # math.modf splits a float into it's remainder and largest whole number
         (remainder, degrees) = math.modf(abs(decimal))
@@ -136,7 +132,8 @@ class GottenGeography:
         
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
-                 self.float_to_rational(seconds) ], sign
+                 self.float_to_rational(seconds)
+               ], cardinal[int(math.copysign(1, decimal))]
     
     def float_to_rational(self, decimal):
         """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
