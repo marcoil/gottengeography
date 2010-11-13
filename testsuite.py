@@ -37,10 +37,10 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.modified), 0)
         self.assertEqual(len(self.gui.polygons), 0)
-        self.assertEqual(self.gui.current['lowest'],  float('inf'))
-        self.assertEqual(self.gui.current['highest'], float('-inf'))
+        self.assertEqual(self.gui.metadata['first-point'],  float('inf'))
+        self.assertEqual(self.gui.metadata['last-point'], float('-inf'))
         self.assertEqual(
-            self.gui.current['area'],
+            self.gui.metadata['area'],
             [float('inf'), float('inf'), float('-inf'), float('-inf'), False]
         )
         
@@ -83,12 +83,12 @@ class GottenGeographyTester(unittest.TestCase):
         # Check that the GPX is loaded
         self.assertEqual(len(self.gui.tracks),   374)
         self.assertEqual(len(self.gui.modified), 6)
-        self.assertEqual(len(self.gui.current),  4)
+        self.assertEqual(len(self.gui.metadata),  4)
         self.assertEqual(len(self.gui.polygons), 1)
-        self.assertEqual(self.gui.current['lowest'],  1287259751)
-        self.assertEqual(self.gui.current['highest'], 1287260756)
+        self.assertEqual(self.gui.metadata['first-point'],  1287259751)
+        self.assertEqual(self.gui.metadata['last-point'], 1287260756)
         self.assertEqual(
-            self.gui.current['area'],
+            self.gui.metadata['area'],
             [53.522495999999997, -113.453148,
              53.537399000000001, -113.443061, False]
         )

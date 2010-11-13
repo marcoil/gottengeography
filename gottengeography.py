@@ -365,13 +365,13 @@ class GottenGeography:
         self.gpx_state = {}
         
         # Default values for easy clobbering with real data
-        self.current = {
-            'offset':  0,
-            'area':    [ float('inf'), float('inf'),
-                         float('-inf'), float('-inf'),
-                         False ],
-            'highest': float('-inf'),
-            'lowest':  float('inf')
+        self.metadata = {
+            'offset':      0,
+            'area':        [ float('inf'), float('inf'),
+                             float('-inf'), float('-inf'),
+                             False ],
+            'last-point':  float('-inf'),
+            'first-point': float('inf')
         }
         
         self.update_sensitivity()
@@ -493,11 +493,11 @@ class GottenGeography:
         
         # If the root element is not GPX, don't even bother with it, just
         # barf right away and get it over with.
-        if 'element-name' not in self.current and name <> 'gpx':
+        if 'element-name' not in self.metadata and name <> 'gpx':
             raise expat.ExpatError
         
         # This is how the data handler knows what element it's in
-        self.current['element-name'] = name
+        self.metadata['element-name'] = name
         
         # give us a blank string to append to from the data handler
         self.gpx_state[name] = ""
@@ -518,7 +518,7 @@ class GottenGeography:
         # This is where we collect elevation and time data
         # Sometimes expat calls this handler multiple times each with just
         # a chunk of the whole data, so += is necessary to collect all of it.
-        self.gpx_state[self.current['element-name']] += data
+        self.gpx_state[self.metadata['element-name']] += data
     
     def gpx_element_end(self, name):
         """Callback function for Expat EndElementHandler."""
@@ -545,20 +545,20 @@ class GottenGeography:
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
-        if timestamp > self.current['highest']:
-            self.current['highest'] = timestamp
-        if timestamp < self.current['lowest']:
-            self.current['lowest'] = timestamp
+        if timestamp > self.metadata['last-point']:
+            self.metadata['last-point'] = timestamp
+        if timestamp < self.metadata['first-point']:
+            self.metadata['first-point'] = timestamp
         
-        if lat < self.current['area'][0]: self.current['area'][0] = lat
-        if lon < self.current['area'][1]: self.current['area'][1] = lon
-        if lat > self.current['area'][2]: self.current['area'][2] = lat
-        if lon > self.current['area'][3]: self.current['area'][3] = lon
+        if lat < self.metadata['area'][0]: self.metadata['area'][0] = lat
+        if lon < self.metadata['area'][1]: self.metadata['area'][1] = lon
+        if lat > self.metadata['area'][2]: self.metadata['area'][2] = lat
+        if lon > self.metadata['area'][3]: self.metadata['area'][3] = lon
         
         # This is by far the slowest part, so only do it every 200th point.
         if len(self.tracks) % 200 == 0:
             self.progressbar.pulse()
-            self.map_view.ensure_visible(*self.current['area'])
+            self.map_view.ensure_visible(*self.metadata['area'])
             self._redraw_interface()
         
         self.gpx_state.clear()
@@ -590,13 +590,13 @@ class GottenGeography:
         self.update_sensitivity()
         
         if len(self.tracks) > 0:
-            self.map_view.ensure_visible(*self.current['area'])
+            self.map_view.ensure_visible(*self.metadata['area'])
         
         self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
         
         # Cleanup leftover data from parser
         self.gpx_state.clear()
-        if 'element-name' in self.current: del self.current['element-name']
+        if 'element-name' in self.metadata: del self.metadata['element-name']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
@@ -613,14 +613,14 @@ class GottenGeography:
         
         # photo is the timestamp in epoch seconds,
         photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
-        photo += self.current['offset']
+        photo += self.metadata['offset']
         
         # hi and lo begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
         # iterate over the list, searching for the two timestamps
         # that are nearest to the photo
-        hi = self.current['highest']
-        lo = self.current['lowest']
+        hi = self.metadata['last-point']
+        lo = self.metadata['first-point']
         
         # If the photo is out of range, simply peg it to the end of the range.
         # I think this makes sense. If it doesn't, the user isn't obligated to
@@ -697,8 +697,8 @@ class GottenGeography:
         # Fortunately, all the duplicate calls end up calculating identical
         # offset values. So don't bother to call auto_timestamp_comparison()
         # unless the offset value is actually different than before.
-        if offset <> self.current['offset']:
-            self.current['offset'] = offset
+        if offset <> self.metadata['offset']:
+            self.metadata['offset'] = offset
             
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
