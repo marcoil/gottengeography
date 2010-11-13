@@ -686,9 +686,9 @@ class GottenGeography:
         offset = int((hours * 3600) + (minutes * 60) + seconds)
         
         if abs(seconds) == 60:
+            minutes += seconds/60
             self.offset_seconds.set_value(0)
-            self.offset_minutes.set_value(minutes + (seconds/60))
-            minutes = self.offset_minutes.get_value()
+            self.offset_minutes.set_value(minutes)
         
         if abs(minutes) == 60:
             self.offset_minutes.set_value(0)
