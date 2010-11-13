@@ -685,8 +685,6 @@ class GottenGeography:
         
         offset = int((hours * 3600) + (minutes * 60) + seconds)
         
-        print hours, minutes, seconds, offset
-        
         if abs(seconds) == 60:
             self.offset_seconds.set_value(0)
             self.offset_minutes.set_value(minutes + (seconds/60))
@@ -698,7 +696,6 @@ class GottenGeography:
         
         if offset <> self.metadata['offset']:
             self.metadata['offset'] = offset
-            print "running comparison!"
             
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
