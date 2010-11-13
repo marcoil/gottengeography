@@ -673,35 +673,38 @@ class GottenGeography:
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         
+        # The following set_value() calls cause the 'value-changed' signal to be
+        # emitted, which then invokes this method up to 5 times. This suppresses
+        # the extraneous invocations.
+        for w in [self.offset_hours, self.offset_minutes, self.offset_seconds]:
+            w.handler_block_by_func(self.time_offset_changed)
+        
         seconds = self.offset_seconds.get_value()
         minutes = self.offset_minutes.get_value()
         hours   = self.offset_hours.get_value()
         
         offset = int((hours * 3600) + (minutes * 60) + seconds)
         
-        # Normally, this method is only called once when the value changes.
-        # However, the following calls to set_value() emit the value-changed
-        # signal, which in turn calls this method again, resulting in multiple
-        # calls per real user event. This is the breakdown of calls:
-        # 0:59:59 --> 1:00:00 results in 5 calls.
-        # 0:00:59 --> 0:01:00 results in 3 calls.
-        # [everything else]   results in 1 call.
+        print hours, minutes, seconds, offset
+        
         if abs(seconds) == 60:
             self.offset_seconds.set_value(0)
             self.offset_minutes.set_value(minutes + (seconds/60))
+            minutes = self.offset_minutes.get_value()
         
         if abs(minutes) == 60:
             self.offset_minutes.set_value(0)
             self.offset_hours.set_value(hours + (minutes/60))
         
-        # Fortunately, all the duplicate calls end up calculating identical
-        # offset values. So don't bother to call auto_timestamp_comparison()
-        # unless the offset value is actually different than before.
         if offset <> self.metadata['offset']:
             self.metadata['offset'] = offset
+            print "running comparison!"
             
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
+        
+        for w in [self.offset_hours, self.offset_minutes, self.offset_seconds]:
+            w.handler_unblock_by_func(self.time_offset_changed)
     
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
