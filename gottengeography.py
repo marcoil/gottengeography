@@ -184,7 +184,7 @@ class GottenGeography:
         try:
             last = self.history.pop()
         except IndexError:
-            self.back_button.set_sensitive(False)
+            self.button['gtk-go-back'].set_sensitive(False)
         else:
             self.map_view.center_on(last[0], last[1])
             self.map_view.set_zoom_level(last[2])
@@ -259,7 +259,7 @@ class GottenGeography:
         
         for filename in self.loaded_photo_iters:
             if os.path.basename(filename) == marker.get_text():
-                self.select_all_button.set_active(False)
+                self.button['gtk-select-all'].set_active(False)
                 self.photo_selection.unselect_all()
                 self.photo_selection.select_iter(
                     self.loaded_photo_iters[filename]
@@ -1012,28 +1012,28 @@ class GottenGeography:
         # Allows the user to go "back", eg, after GPX load has changed the view.
         self.history = []
         
+        # Holds various buttons used throughout the interface
+        self.button = {}
+        
         self.toolbar = Gtk.Toolbar()
         
-        self.open_button = self.create_tool_button(Gtk.STOCK_OPEN,
-            self.add_files_dialog, _("Load photos or GPS data (Ctrl+O)"))
+        self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
+            _("Load photos or GPS data (Ctrl+O)"))
         
-        self.save_button = self.create_tool_button(Gtk.STOCK_SAVE,
-            self.save_all_files, _("Save all photos (Ctrl+S)"),
-            _("Save All"))
-        
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        
-        self.clear_gpx_button = self.create_tool_button(Gtk.STOCK_CLEAR,
-            self.clear_all_gpx, _("Unload all GPS data (Ctrl+X)"),
-            _("Clear GPX"))
-        
-        self.close_button = self.create_tool_button(Gtk.STOCK_CLOSE,
-            self.close_selected_photos, _("Close selected photos (Ctrl+W)"),
-            _("Close Photo"))
+        self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
+            _("Save all photos (Ctrl+S)"), _("Save All"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.revert_button = self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
+        self.create_tool_button(Gtk.STOCK_CLEAR, self.clear_all_gpx,
+            _("Unload all GPS data (Ctrl+X)"), _("Clear GPX"))
+        
+        self.create_tool_button(Gtk.STOCK_CLOSE, self.close_selected_photos,
+            _("Close selected photos (Ctrl+W)"), _("Close Photo"))
+        
+        self.toolbar.add(Gtk.SeparatorToolItem())
+        
+        self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
             self.revert_selected_photos,
             _("Reload selected photos, losing all changes (Ctrl+Z)"))
         
@@ -1042,21 +1042,20 @@ class GottenGeography:
         self.toolbar_spacer.set_draw(False)
         self.toolbar.add(self.toolbar_spacer)
         
-        self.zoom_out_button = self.create_tool_button(Gtk.STOCK_ZOOM_OUT,
-            self.zoom_out, _("Zoom the map out one step."))
+        self.create_tool_button(Gtk.STOCK_ZOOM_OUT, self.zoom_out,
+            _("Zoom the map out one step."))
         
-        self.zoom_in_button = self.create_tool_button(Gtk.STOCK_ZOOM_IN,
-            self.zoom_in, _("Enhance!"))
-        
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        
-        self.back_button = self.create_tool_button(Gtk.STOCK_GO_BACK,
-            self.return_to_last, _("Return to previous location in map view."))
+        self.create_tool_button(Gtk.STOCK_ZOOM_IN, self.zoom_in, _("Enhance!"))
         
         self.toolbar.add(Gtk.SeparatorToolItem())
         
-        self.about_button = self.create_tool_button(Gtk.STOCK_ABOUT,
-            self.about_dialog, _("About GottenGeography"))
+        self.create_tool_button(Gtk.STOCK_GO_BACK, self.return_to_last,
+            _("Return to previous location in map view."))
+        
+        self.toolbar.add(Gtk.SeparatorToolItem())
+        
+        self.create_tool_button(Gtk.STOCK_ABOUT, self.about_dialog,
+            _("About GottenGeography"))
         
         self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
@@ -1112,20 +1111,20 @@ class GottenGeography:
             Gtk.PolicyType.AUTOMATIC
         )
         
-        self.apply_button = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
-        self.apply_button.set_tooltip_text(
+        self.button['gtk-apply'] = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
+        self.button['gtk-apply'].set_tooltip_text(
             _("Place selected photos onto center of map (Ctrl+Return)"))
-        self.apply_button.connect("clicked", self.apply_selected_photos)
+        self.button['gtk-apply'].connect("clicked", self.apply_selected_photos)
         
-        self.select_all_button = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
-        self.select_all_button.set_use_stock(True)
-        self.select_all_button.set_tooltip_text(
+        self.button['gtk-select-all'] = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
+        self.button['gtk-select-all'].set_use_stock(True)
+        self.button['gtk-select-all'].set_tooltip_text(
             _("Toggle whether all photos are selected (Ctrl+A)"))
-        self.select_all_button.connect("clicked", self.toggle_selected_photos)
+        self.button['gtk-select-all'].connect("clicked", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
-        self.photo_button_bar.pack_start(self.select_all_button, True, True, 0)
-        self.photo_button_bar.pack_start(self.apply_button, True, True, 0)
+        self.photo_button_bar.pack_start(self.button['gtk-select-all'], True, True, 0)
+        self.photo_button_bar.pack_start(self.button['gtk-apply'], True, True, 0)
         self.photo_button_bar.set_border_width(3)
         
         self.photos_with_buttons = Gtk.VBox()
@@ -1231,7 +1230,8 @@ class GottenGeography:
         self._redraw_interface()
         
         self.stage = self.map_view.get_stage()
-        self.stage.connect("paint", self.display_coords)
+        
+        self.display_coords()
         
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
@@ -1258,6 +1258,7 @@ class GottenGeography:
             time.sleep(0.001)
         
         self.stage.connect("paint", self.position_crosshair)
+        self.stage.connect("paint", self.display_coords)
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
@@ -1285,15 +1286,14 @@ class GottenGeography:
         if label is not None: button.set_label(label)
         
         self.toolbar.add(button)
-        
-        return button
+        self.button[button.get_stock_id()] = button
     
     def toggle_selected_photos(self, button=None):
         """Toggle the selection of photos."""
         
         if button is None:
             # User typed Ctrl+a, so select all!
-            button = self.select_all_button
+            button = self.button['gtk-select-all']
             button.set_active(True)
         
         if button.get_active():
@@ -1369,8 +1369,8 @@ class GottenGeography:
         sensitivity = selection.count_selected_rows() > 0
         
         # Apply and Close buttons get activated if any photo is selected
-        self.apply_button.set_sensitive(sensitivity)
-        self.close_button.set_sensitive(sensitivity)
+        self.button['gtk-apply'].set_sensitive(sensitivity)
+        self.button['gtk-close'].set_sensitive(sensitivity)
         
         # Revert button is only activated if the selection has unsaved files.
         modified_in_selection = []
@@ -1378,26 +1378,26 @@ class GottenGeography:
             self._append_if_modified,
             modified_in_selection
         )
-        self.revert_button.set_sensitive(len(modified_in_selection) > 0)
+        self.button['gtk-revert-to-saved'].set_sensitive(len(modified_in_selection) > 0)
         
         # Save button is only activated if there are modified files.
-        self.save_button.set_sensitive(len(self.modified) > 0)
+        self.button['gtk-save'].set_sensitive(len(self.modified) > 0)
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
-        for widget in [self.clear_gpx_button, self.offset_hours,
+        for widget in [self.button['gtk-clear'], self.offset_hours,
         self.offset_minutes, self.offset_seconds, self.offset_label]:
             widget.set_sensitive(gpx_sensitive)
         
         # Zoom buttons should not be able to zoom beyond their ability
         zoom_level = self.map_view.get_zoom_level()
-        self.zoom_in_button.set_sensitive(
+        self.button['gtk-zoom-in'].set_sensitive(
             self.map_view.get_max_zoom_level() is not zoom_level)
-        self.zoom_out_button.set_sensitive(
+        self.button['gtk-zoom-out'].set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
         
         # Back button should not be sensitive if there's no history yet.
-        self.back_button.set_sensitive(len(self.history) > 0)
+        self.button['gtk-go-back'].set_sensitive(len(self.history) > 0)
         
         # GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
