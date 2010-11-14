@@ -676,23 +676,23 @@ class GottenGeography:
         # The following set_value() calls cause the 'value-changed' signal to be
         # emitted, which then invokes this method up to 5 times. This suppresses
         # the extraneous invocations.
-        for w in [self.offset_hours, self.offset_minutes, self.offset_seconds]:
-            w.handler_block_by_func(self.time_offset_changed)
+        for spinbutton in self.offset.values():
+            spinbutton.handler_block_by_func(self.time_offset_changed)
         
-        seconds = self.offset_seconds.get_value()
-        minutes = self.offset_minutes.get_value()
-        hours   = self.offset_hours.get_value()
+        seconds = self.offset['s'].get_value()
+        minutes = self.offset['m'].get_value()
+        hours   = self.offset['h'].get_value()
         
         offset = int((hours * 3600) + (minutes * 60) + seconds)
         
         if abs(seconds) == 60:
             minutes += seconds/60
-            self.offset_seconds.set_value(0)
-            self.offset_minutes.set_value(minutes)
+            self.offset['s'].set_value(0)
+            self.offset['m'].set_value(minutes)
         
         if abs(minutes) == 60:
-            self.offset_minutes.set_value(0)
-            self.offset_hours.set_value(hours + (minutes/60))
+            self.offset['m'].set_value(0)
+            self.offset['h'].set_value(hours + (minutes/60))
         
         if offset <> self.metadata['offset']:
             self.metadata['offset'] = offset
@@ -700,8 +700,8 @@ class GottenGeography:
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
         
-        for w in [self.offset_hours, self.offset_minutes, self.offset_seconds]:
-            w.handler_unblock_by_func(self.time_offset_changed)
+        for spinbutton in self.offset.values():
+            spinbutton.handler_unblock_by_func(self.time_offset_changed)
     
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
@@ -1157,20 +1157,15 @@ class GottenGeography:
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
         
-        self.offset_hours   = self.create_spin_button(24, _("hours"))
-        self.offset_minutes = self.create_spin_button(60, _("minutes"))
-        self.offset_seconds = self.create_spin_button(60, _("seconds"))
-        
-        self.offset_hours.connect("value-changed", self.time_offset_changed)
-        self.offset_minutes.connect("value-changed", self.time_offset_changed)
-        self.offset_seconds.connect("value-changed", self.time_offset_changed)
-        
         self.statusbar = Gtk.Statusbar()
         self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 6)
-        self.statusbar.pack_end(self.offset_seconds, False, False, 0)
-        self.statusbar.pack_end(self.offset_minutes, False, False, 0)
-        self.statusbar.pack_end(self.offset_hours, False, False, 0)
+        
+        self.offset = {}
+        self.create_spin_button(60, _("seconds"), 's')
+        self.create_spin_button(60, _("minutes"), 'm')
+        self.create_spin_button(24, _("hours"),   'h')
+        
         self.statusbar.pack_end(self.offset_label, False, False, 0)
         
         self.app_container = Gtk.VBox(spacing=0)
@@ -1260,7 +1255,7 @@ class GottenGeography:
         self.stage.connect("paint", self.position_crosshair)
         self.stage.connect("paint", self.display_coords)
     
-    def create_spin_button(self, value, label):
+    def create_spin_button(self, value, label, name):
         """Create a SpinButton for use as a clock offset setting."""
         
         button = Gtk.SpinButton()
@@ -1274,7 +1269,9 @@ class GottenGeography:
         button.set_tooltip_text(
             _("Add or subtract %s from your camera's clock.") % label)
         
-        return button
+        button.connect("value-changed", self.time_offset_changed)
+        self.statusbar.pack_end(button, False, False, 0)
+        self.offset[name] = button
     
     def create_tool_button(self, stock_id, action, tooltip, label=None):
         """Create a ToolButton for use on the toolbar."""
@@ -1385,8 +1382,8 @@ class GottenGeography:
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
-        for widget in [self.button['gtk-clear'], self.offset_hours,
-        self.offset_minutes, self.offset_seconds, self.offset_label]:
+        for widget in self.offset.values() + [ self.offset_label,
+        self.button['gtk-clear'] ]:
             widget.set_sensitive(gpx_sensitive)
         
         # Zoom buttons should not be able to zoom beyond their ability
