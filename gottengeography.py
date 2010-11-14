@@ -22,6 +22,7 @@ from __future__ import division
 import pyexiv2, os, re, time, calendar, math, gettext
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gi.repository import Clutter, Champlain, GtkChamplain
+from gettext import gettext as _
 from xml.parsers import expat
 from fractions import Fraction
 
@@ -30,11 +31,10 @@ from fractions import Fraction
 
 VERSION = "0.2"
 
+gettext.bindtextdomain('gottengeography')
+gettext.textdomain('gottengeography')
+
 class GottenGeography:
-    
-    t = gettext.translation("gottengeography", "/usr/share/locale/")
-    _ = t.ugettext
-    t.install()
     
 ################################################################################
 # Pretty string methods. These methods take numbers as input and return strings
