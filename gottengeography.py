@@ -829,10 +829,10 @@ class GottenGeography:
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
         photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
         
-        self._insert_coordinates(photos, iter, lat, lon, ele, False)
-        
         if filename in self.modified:   del self.modified[filename]
         if filename in self.has_manual: del self.has_manual[filename]
+        
+        self._insert_coordinates(photos, iter, lat, lon, ele, False)
         
         self.auto_timestamp_comparison(photos, None, iter)
         self.update_sensitivity()
