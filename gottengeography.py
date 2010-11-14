@@ -759,6 +759,7 @@ class GottenGeography:
             
             photos.remove(iter)
         
+        self.button['gtk-select-all'].set_active(False)
         self.update_sensitivity()
     
     def _insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
