@@ -1,12 +1,12 @@
-# GottenGeography translation template. 
-# Copyright (C) 
+# GottenGeography translation template.
+# Copyright (C)
 # Robert Park <rbpark@exolucere.ca> 2010
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gottengeography 0.1\n"
-"POT-Creation-Date: 2010-11-01 11:46+MDT\n"
-"PO-Revision-Date: 2010-11-01 11:55-0600\n"
+"Project-Id-Version: gottengeography 0.2\n"
+"POT-Creation-Date: 2010-11-13 18:43+MST\n"
+"PO-Revision-Date: 2010-11-13 18:52-0700\n"
 "Last-Translator: Robert Park <rbpark@exolucere.ca>\n"
 "Language-Team: English\n"
 "MIME-Version: 1.0\n"
@@ -16,143 +16,151 @@ msgstr ""
 "Language: en_CA\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: Single-letter abbreviation for "North"
-msgid "N"
-msgstr "N"
-
-#: Single-letter abbreviation for "South"
-msgid "S"
-msgstr "S"
-
-#: Single-letter abbreviation for "East"
-msgid "E"
-msgstr "E"
-
-#: Single-letter abbreviation for "West"
-msgid "W"
-msgstr "W"
-
-#: gottengeography.py:71 gottengeography.py:834
+#: gottengeography.py:47
 msgid "Not geotagged"
 msgstr "Not geotagged"
 
-#: "meters above sea level"
+#: gottengeography.py:49
+msgid "N"
+msgstr "N"
+
+#: gottengeography.py:50
+msgid "S"
+msgstr "S"
+
+#: gottengeography.py:51
+msgid "E"
+msgstr "E"
+
+#: gottengeography.py:52
+msgid "W"
+msgstr "W"
+
+#: gottengeography.py:67
+msgid "No timestamp"
+msgstr "No timestamp"
+
+#: gottengeography.py:76
 msgid "m above sea level"
 msgstr "m above sea level"
 
-#: gottengeography.py:142
-msgid "Rounding discarded %s. Please inform %s!"
-msgstr "Rounding discarded %s. Please inform %s!"
+#: gottengeography.py:77
+msgid "m below sea level"
+msgstr "m below sea level"
 
-#: user presses "Back" button and there's no history to go back
-msgid "That's as far back as I can remember!"
-msgstr "That's as far back as I can remember!"
-
-#: gottengeography.py:358
+#: gottengeography.py:393
 msgid "Saving %s..."
 msgstr "Saving %s..."
 
-#: gottengeography.py:541
+#: gottengeography.py:569
 msgid "Parsing GPX data..."
 msgstr "Parsing GPX data..."
 
-#: x points loaded in y seconds
+#: gottengeography.py:585
 msgid "%d points loaded in %.2fs."
 msgstr "%d points loaded in %.2fs."
 
-#: gottengeography.py:761
+#: gottengeography.py:817
 msgid "Loading %s..."
 msgstr "Loading %s..."
 
-#: gottengeography.py:856
+#: gottengeography.py:854
+msgid "No preview available"
+msgstr "No preview available"
+
+#: gottengeography.py:875
 msgid "Open files..."
 msgstr "Open files..."
 
-#: gottengeography.py:900
+#: gottengeography.py:934
 msgid "Could not open: %s"
 msgstr "Could not open: %s"
 
-#: gottengeography.py:927
+#: gottengeography.py:955
 msgid "Close _without Saving"
 msgstr "Close _without Saving"
 
-#: gottengeography.py:1004
+#: gottengeography.py:1021
 msgid "Load photos or GPS data (Ctrl+O)"
 msgstr "Load photos or GPS data (Ctrl+O)"
 
-#: gottengeography.py:1008
-msgid "Save all modified GPS data into your photos (Ctrl+S)"
-msgstr "Save all modified GPS data into your photos (Ctrl+S)"
-
-#: gottengeography.py:1009
+#: gottengeography.py:1024
 msgid "Save All"
 msgstr "Save All"
 
-#: gottengeography.py:1015
-msgid "Unload all GPS data (Ctrl+X)"
-msgstr "Unload all GPS data (Ctrl+X)"
+#: gottengeography.py:1024
+msgid "Save all photos (Ctrl+S)"
+msgstr "Save all photos (Ctrl+S)"
 
-#: gottengeography.py:1016
+#: gottengeography.py:1029
 msgid "Clear GPX"
 msgstr "Clear GPX"
 
-#: gottengeography.py:1020
-msgid "Close selected photos (Ctrl+W)"
-msgstr "Close selected photos (Ctrl+W)"
+#: gottengeography.py:1029
+msgid "Unload all GPS data (Ctrl+X)"
+msgstr "Unload all GPS data (Ctrl+X)"
 
-#: gottengeography.py:1021
+#: gottengeography.py:1032
 msgid "Close Photo"
 msgstr "Close Photo"
 
-#: gottengeography.py:1027
+#: gottengeography.py:1032
+msgid "Close selected photos (Ctrl+W)"
+msgstr "Close selected photos (Ctrl+W)"
+
+#: gottengeography.py:1038
 msgid "Reload selected photos, losing all changes (Ctrl+Z)"
 msgstr "Reload selected photos, losing all changes (Ctrl+Z)"
 
-#: Tooltip for zoom out button
+#: gottengeography.py:1046
 msgid "Zoom the map out one step."
 msgstr "Zoom the map out one step."
 
-#: Tooltip for zoom in button
+#: gottengeography.py:1048
 msgid "Enhance!"
 msgstr "Enhance!"
 
-#: gottengeography.py:1045
+#: gottengeography.py:1053
 msgid "Return to previous location in map view."
 msgstr "Return to previous location in map view."
 
-#: gottengeography.py:1107
+#: gottengeography.py:1058
+msgid "About GottenGeography"
+msgstr "About GottenGeography"
+
+#: gottengeography.py:1116
 msgid "Place selected photos onto center of map (Ctrl+Return)"
 msgstr "Place selected photos onto center of map (Ctrl+Return)"
 
-#: gottengeography.py:1112
+#: gottengeography.py:1122
 msgid "Toggle whether all photos are selected (Ctrl+A)"
 msgstr "Toggle whether all photos are selected (Ctrl+A)"
 
-#: gottengeography.py:1163
+#: gottengeography.py:1158
 msgid "Clock Offset: "
 msgstr "Clock Offset: "
 
-#: Single-letter abbreviation for "hours", followed by a space
-msgid "h "
-msgstr "h "
+#: gottengeography.py:1165
+msgid "seconds"
+msgstr "seconds"
 
-#: Single-letter abbreviation for "minutes", followed by a space
-msgid "m "
-msgstr "m "
+#: gottengeography.py:1166
+msgid "minutes"
+msgstr "minutes"
 
-#: Single-letter abbreviation for "seconds", followed by a space
-msgid "s "
-msgstr "s "
+#: gottengeography.py:1167
+msgid "hours"
+msgstr "hours"
 
-#: gottengeography.py:1265
-msgid "Is the clock on your camera wrong? Correct it here."
-msgstr "Is the clock on your camera wrong? Correct it here."
+#: gottengeography.py:1270
+msgid "Add or subtract %s from your camera's clock."
+msgstr "Add or subtract %s from your camera's clock."
 
-#: gottengeography.py:1392
+#: gottengeography.py:1413
 msgid "Save changes to your photos before closing?"
 msgstr "Save changes to your photos before closing?"
 
-#: gottengeography.py:1395
+#: gottengeography.py:1416
 msgid ""
 "The changes you've made to %d of your photos will be permanently lost if you "
 "do not save."
@@ -160,7 +168,7 @@ msgstr ""
 "The changes you've made to %d of your photos will be permanently lost if you "
 "do not save."
 
-#: gottengeography.py:1398
+#: gottengeography.py:1419
 msgid ""
 "GottenGeography is written in the Python programming language, and allows "
 "you to geotag your photos. The name is an anagram of \"Python Geotagger\"."
