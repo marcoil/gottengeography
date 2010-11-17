@@ -489,13 +489,19 @@ class GottenGeography:
         
         return timestamp, lat, lon, ele, thumb
     
+    def gpx_element_root(self, name, attributes):
+        """Callback function for Expat StartElementHandler.
+        
+        This is only called on the top level element in the given XML file."""
+        
+        # Make sure the user gave us a GPX file, not something else.
+        if name <> 'gpx': raise expat.ExpatError
+        
+        # Otherwise, go ahead and actually parse all the sub elements.
+        self.gpx_parser.StartElementHandler = self.gpx_element_start
+    
     def gpx_element_start(self, name, attributes):
         """Callback function for Expat StartElementHandler."""
-        
-        # If the root element is not GPX, don't even bother with it, just
-        # barf right away and get it over with.
-        if 'element-name' not in self.metadata and name <> 'gpx':
-            raise expat.ExpatError
         
         # This is how the data handler knows what element it's in
         self.metadata['element-name'] = name
@@ -575,13 +581,13 @@ class GottenGeography:
         start_time = time.clock()
         start_points = len(self.tracks)
         
-        gpx_parser = expat.ParserCreate()
-        gpx_parser.StartElementHandler  = self.gpx_element_start
-        gpx_parser.CharacterDataHandler = self.gpx_element_data
-        gpx_parser.EndElementHandler    = self.gpx_element_end
+        self.gpx_parser = expat.ParserCreate()
+        self.gpx_parser.StartElementHandler  = self.gpx_element_root
+        self.gpx_parser.CharacterDataHandler = self.gpx_element_data
+        self.gpx_parser.EndElementHandler    = self.gpx_element_end
         
         with open(filename) as gpx:
-            status = gpx_parser.ParseFile(gpx)
+            status = self.gpx_parser.ParseFile(gpx)
         
         self._status_message(
             _("%d points loaded in %.2fs.") %
