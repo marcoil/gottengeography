@@ -1176,6 +1176,7 @@ class GottenGeography:
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("GottenGeography")
+        self.window.set_default_icon_name('gtk-new')
         self.window.set_size_request(900,700)
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
