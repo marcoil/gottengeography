@@ -1019,7 +1019,7 @@ class GottenGeography:
         self.toolbar = Gtk.Toolbar()
         
         self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
-            _("Load photos or GPS data (Ctrl+O)"))
+            _("Load photos or GPS data (Ctrl+O)"), _("Open files..."))
         
         self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
             _("Save all photos (Ctrl+S)"), _("Save All"))
@@ -1278,6 +1278,7 @@ class GottenGeography:
         """Create a ToolButton for use on the toolbar."""
         
         button = Gtk.ToolButton(stock_id=stock_id)
+        button.set_is_important(label is not None)
         button.set_tooltip_text(tooltip)
         button.connect("clicked", action)
         
