@@ -371,7 +371,8 @@ class GottenGeography:
                              float('-inf'), float('-inf'),
                              False ],
             'last-point':  float('-inf'),
-            'first-point': float('inf')
+            'first-point': float('inf'),
+            'last-update': time.clock()
         }
         
         self.update_sensitivity()
@@ -555,8 +556,9 @@ class GottenGeography:
         if lat > self.metadata['area'][2]: self.metadata['area'][2] = lat
         if lon > self.metadata['area'][3]: self.metadata['area'][3] = lon
         
-        # This is by far the slowest part, so only do it every 200th point.
-        if len(self.tracks) % 200 == 0:
+        # This is by far the slowest part, only do it every fifth of a second.
+        if time.clock() - self.metadata['last-update'] > .2:
+            self.metadata['last-update'] = time.clock()
             self.progressbar.pulse()
             self.map_view.ensure_visible(*self.metadata['area'])
             self._redraw_interface()
