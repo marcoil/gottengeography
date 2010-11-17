@@ -20,8 +20,8 @@
 from __future__ import division
 
 import pyexiv2, os, re, time, calendar, math, gettext
+from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
-from gi.repository import Clutter, Champlain, GtkChamplain
 from gettext import gettext as _
 from xml.parsers import expat
 from fractions import Fraction
