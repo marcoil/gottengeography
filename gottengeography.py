@@ -878,7 +878,7 @@ class GottenGeography:
         """Display a file chooser, and attempt to load chosen files."""
         
         chooser = Gtk.FileChooserDialog(
-            title=_("Open files..."),
+            title=_("Open Files"),
             buttons=(
                 Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
                 Gtk.STOCK_OPEN,    Gtk.ResponseType.OK
@@ -1024,7 +1024,7 @@ class GottenGeography:
         self.toolbar = Gtk.Toolbar()
         
         self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
-            _("Load photos or GPS data (Ctrl+O)"), _("Open files..."))
+            _("Load photos or GPS data (Ctrl+O)"), _("Open"))
         
         self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
             _("Save all photos (Ctrl+S)"), _("Save All"))
