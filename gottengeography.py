@@ -137,16 +137,11 @@ class GottenGeography:
                ], cardinal[int(math.copysign(1, decimal))]
     
     def float_to_rational(self, decimal):
-        """Converts a float to a pyexiv2.Rational using fractions.Fraction()."""
+        """Converts a float to a fractions.Fraction()."""
         
-        # fractions.Fraction() method claims to be able to convert a
-        # float to a fraction, but it seems to be broken. Fortunately,
-        # if I cast the float to a string first, that seems to work.
-        # limit_denominator() causes some rounding to occur which
-        # could reduce precision, but it's mostly just rounding out
-        # the imprecision inherent to a float.
-        fraction = Fraction(str(decimal)).limit_denominator(10000)
-        return pyexiv2.Rational(fraction.numerator, fraction.denominator)
+        # Fraction().limit_denominator() rounds slightly, which could reduce
+        # precision, but it's mostly just the imprecision inherent to a float.
+        return Fraction(decimal).limit_denominator(10000)
     
     def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
