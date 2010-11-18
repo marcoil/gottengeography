@@ -573,10 +573,10 @@ class GottenGeography:
         
         self.remember_location()
         
-        start_time = time.clock()
-        start_points = len(self.tracks)
-        
         self.delimiters = re.compile(r'[:TZ-]')
+        
+        start_points = len(self.tracks)
+        start_time   = time.clock()
         
         self.gpx_parser = expat.ParserCreate()
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
