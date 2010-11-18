@@ -139,8 +139,8 @@ class GottenGeography:
     def float_to_rational(self, decimal):
         """Converts a float to a fractions.Fraction()."""
         
-        # Fraction().limit_denominator() rounds slightly, which could reduce
-        # precision, but it's mostly just the imprecision inherent to a float.
+        # Fraction().limit_denominator() mostly just rounds out the inherent
+        # float imprecision rather than any real precision.
         return Fraction(decimal).limit_denominator(10000)
     
     def valid_coords(self, lat, lon):
@@ -1141,6 +1141,7 @@ class GottenGeography:
         self.champlain = GtkChamplain.Embed()
         self.map_view = self.champlain.get_view()
         self.map_view.set_property('show-scale', True)
+        self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         
