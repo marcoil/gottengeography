@@ -505,9 +505,7 @@ class GottenGeography:
         # give us a blank string to append to from the data handler
         self.gpx_state[name] = ""
         
-        # New track segment, create a new polygon for it
-        if name == "trkseg":
-            self.create_polygon()
+        if name == "trkseg": self.create_polygon()
         
         # Eg, <trkpt lat="45.147445" lon="-81.469507">
         self.gpx_state.update(attributes)
@@ -532,7 +530,8 @@ class GottenGeography:
         
         try:
             timestamp = calendar.timegm(
-                time.strptime(self.gpx_state['time'], '%Y-%m-%dT%H:%M:%SZ')
+                # Sadly, time.strptime() was too slow and had to be replaced.
+                map(int, self.delimiters.split(self.gpx_state['time'])[0:6])
             )
             lat = float(self.gpx_state['lat'])
             lon = float(self.gpx_state['lon'])
@@ -576,6 +575,8 @@ class GottenGeography:
         
         start_time = time.clock()
         start_points = len(self.tracks)
+        
+        self.delimiters = re.compile(r'[:TZ-]')
         
         self.gpx_parser = expat.ParserCreate()
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
