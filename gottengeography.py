@@ -1129,8 +1129,8 @@ class GottenGeography:
         self.button['gtk-select-all'].connect("clicked", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
-        self.photo_button_bar.pack_start(self.button['gtk-select-all'], True, True, 0)
-        self.photo_button_bar.pack_start(self.button['gtk-apply'], True, True, 0)
+        for button in [ 'gtk-select-all', 'gtk-apply' ]:
+            self.photo_button_bar.pack_start(self.button[button], True, True, 0)
         self.photo_button_bar.set_border_width(3)
         
         self.photos_with_buttons = Gtk.VBox()
