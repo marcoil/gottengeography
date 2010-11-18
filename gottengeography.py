@@ -1258,7 +1258,7 @@ class GottenGeography:
             self.crosshair.set_property('opacity', int(((508-i)/500)*255))
             self.position_crosshair()
             self._redraw_interface()
-            time.sleep(0.001)
+            time.sleep(0.005)
         
         self.stage.connect("paint", self.position_crosshair)
         self.stage.connect("paint", self.display_coords)
