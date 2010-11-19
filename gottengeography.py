@@ -1171,10 +1171,11 @@ class GottenGeography:
         self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 6)
         
-        self.offset = {}
-        self.create_spin_button(60, _("seconds"), 's')
-        self.create_spin_button(60, _("minutes"), 'm')
-        self.create_spin_button(24, _("hours"),   'h')
+        self.offset = {
+            's': self.create_spin_button(60, _("seconds")),
+            'm': self.create_spin_button(60, _("minutes")),
+            'h': self.create_spin_button(24, _("hours"))
+        }
         
         self.statusbar.pack_end(self.offset_label, False, False, 0)
         
@@ -1266,7 +1267,7 @@ class GottenGeography:
         self.stage.connect("paint", self.position_crosshair)
         self.stage.connect("paint", self.display_coords)
     
-    def create_spin_button(self, value, label, name):
+    def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
         
         button = Gtk.SpinButton()
@@ -1282,7 +1283,7 @@ class GottenGeography:
         
         button.connect("value-changed", self.time_offset_changed)
         self.statusbar.pack_end(button, False, False, 0)
-        self.offset[name] = button
+        return button
     
     def create_tool_button(self, stock_id, action, tooltip, label=None):
         """Create a ToolButton for use on the toolbar."""
