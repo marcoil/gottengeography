@@ -255,11 +255,14 @@ class GottenGeography:
         
         for filename in self.loaded_photo_iters:
             if os.path.basename(filename) == marker.get_text():
-                self.button['gtk-select-all'].set_active(False)
-                self.photo_selection.unselect_all()
-                self.photo_selection.select_iter(
-                    self.loaded_photo_iters[filename]
-                )
+                if marker.get_highlighted():
+                    self.photo_selection.unselect_iter(
+                        self.loaded_photo_iters[filename]
+                    )
+                else:
+                    self.photo_selection.select_iter(
+                        self.loaded_photo_iters[filename]
+                    )
                 
                 return
     
