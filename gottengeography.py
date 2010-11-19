@@ -171,18 +171,22 @@ class GottenGeography:
             self.map_view.get_zoom_level()
         ] )
     
-    def return_to_last(self, button=None):
+    def return_to_last(self, button=None, message=True):
         """Return the map view to where the user last set it."""
         
         try:
-            last = self.history.pop()
+            (lat, lon, zoom) = self.history.pop()
         except IndexError:
-            self.button['gtk-go-back'].set_sensitive(False)
-        else:
-            self.map_view.center_on(last[0], last[1])
-            self.map_view.set_zoom_level(last[2])
+            if message: self._status_message(
+                _("That's as far back as she goes, kiddo!")
+            )
+            
+            lat  = self.gconf_get('last_latitude',   float)
+            lon  = self.gconf_get('last_longitude',  float)
+            zoom = self.gconf_get('last_zoom_level', int)
         
-        self.update_sensitivity()
+        self.map_view.center_on(lat, lon)
+        self.map_view.set_zoom_level(zoom)
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
@@ -1203,15 +1207,7 @@ class GottenGeography:
         self.track_color = Clutter.Color.new(255, 0, 0, 128)
         
         self.gconf_client = GConf.Client.get_default()
-        
-        # Load last used location from GConf
-        self.map_view.center_on(
-            self.gconf_get('last_latitude', float),
-            self.gconf_get('last_longitude', float)
-        )
-        self.map_view.set_zoom_level(
-            self.gconf_get('last_zoom_level', int)
-        )
+        self.return_to_last(message=False)
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
@@ -1391,10 +1387,6 @@ class GottenGeography:
         eg, when modifying a photo in any way, and when the selection changes.
         """
         
-        # This might be overkill here, but I was getting annoyed with crashes
-        # preventing us from getting back to the last location.
-        self.remember_location_with_gconf()
-        
         if selection is None: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
         
@@ -1425,9 +1417,6 @@ class GottenGeography:
             self.map_view.get_max_zoom_level() is not zoom_level)
         self.button['gtk-zoom-out'].set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
-        
-        # Back button should not be sensitive if there's no history yet.
-        self.button['gtk-go-back'].set_sensitive(len(self.history) > 0)
         
         # GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
