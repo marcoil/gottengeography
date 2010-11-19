@@ -1244,14 +1244,15 @@ class GottenGeography:
         self.crosshair.show()
         
         # This causes the crosshair to start off huge and invisible, and it
-        # quickly shrinks, spins, and fades into existence. (The last value for
-        # i before it stops will be 8, so 53-i ends at 45 degrees, and
-        # 508-i ends at 500/500 or full opacity).
+        # quickly shrinks, spins, and fades into existence. The last value for
+        # i before it stops will be 8, so: 53-i ends at 45 degrees, and
+        # 260-(0.51*i) ends at 255 or full opacity. The numbers come from
+        # simplifying the formula ((508-i)/500) * 255.
         for i in range(500, 7, -4):
             self.crosshair.set_size(i, i)
             self.crosshair.set_z_rotation_from_gravity(53-i,
                 Clutter.Gravity.CENTER)
-            self.crosshair.set_property('opacity', int(((508-i)/500)*255))
+            self.crosshair.set_property('opacity', int(260-(0.51*i)))
             self.position_crosshair()
             self._redraw_interface()
             time.sleep(0.005)
