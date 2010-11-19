@@ -248,20 +248,32 @@ class GottenGeography:
         )
     
     def marker_clicked(self, marker, event):
-        """When a ChamplainMarker is clicked, select it in the GtkListStore."""
+        """When a ChamplainMarker is clicked, select it in the GtkListStore.
         
+        The interface defined by this method is consistent with the behavior of
+        the GtkListStore itself in the sense that a normal click will select
+        just one item, but Ctrl+clicking allows you to select multiple."""
+        
+        iter = None
         for filename in self.loaded_photo_iters:
             if os.path.basename(filename) == marker.get_text():
-                if marker.get_highlighted():
-                    self.photo_selection.unselect_iter(
-                        self.loaded_photo_iters[filename]
-                    )
-                else:
-                    self.photo_selection.select_iter(
-                        self.loaded_photo_iters[filename]
-                    )
-                
-                return
+                iter = self.loaded_photo_iters[filename]
+                break
+        
+        if iter is None: return
+        
+        if (event.get_state() == Clutter.ModifierType.CONTROL_MASK |
+                                 Clutter.ModifierType.MOD2_MASK):
+            # Ctrl+click toggles the selection of that photo.
+            if marker.get_highlighted():
+                self.photo_selection.unselect_iter(iter)
+            else:
+                self.photo_selection.select_iter(iter)
+        else:
+            # Normal click selects only one photo.
+            self.button['gtk-select-all'].set_active(False)
+            self.photo_selection.unselect_all()
+            self.photo_selection.select_iter(iter)
     
     def marker_mouse_in(self, marker, event):
         """Enlarge a hovered-over ChamplainMarker by 5%."""
