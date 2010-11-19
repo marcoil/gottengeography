@@ -30,10 +30,10 @@ from fractions import Fraction
 #                                    --- Isaac Newton
 
 VERSION = "0.2"
-APPNAME = "gottengeography"
+APPNAME = "GottenGeography"
 
-gettext.bindtextdomain(APPNAME)
-gettext.textdomain(APPNAME)
+gettext.bindtextdomain(APPNAME.lower())
+gettext.textdomain(APPNAME.lower())
 
 class GottenGeography:
     
@@ -158,12 +158,9 @@ class GottenGeography:
     def remember_location_with_gconf(self):
         """Use GConf for persistent storage of the currently viewed location."""
         
-        self.gconf_client.set_float(self.gconf_keys['lat'],
-            self.map_view.get_property('latitude'))
-        self.gconf_client.set_float(self.gconf_keys['lon'],
-            self.map_view.get_property('longitude'))
-        self.gconf_client.set_int(self.gconf_keys['zoom'],
-            self.map_view.get_zoom_level())
+        self.gconf_set('last_latitude',   self.map_view.get_property('latitude'))
+        self.gconf_set('last_longitude',  self.map_view.get_property('longitude'))
+        self.gconf_set('last_zoom_level', self.map_view.get_zoom_level())
     
     def remember_location(self):
         """Add the current location to the history stack."""
@@ -985,14 +982,14 @@ class GottenGeography:
         """Describe this application to the user."""
         
         dialog = Gtk.AboutDialog()
-        dialog.set_program_name("GottenGeography")
-        dialog.set_name("GottenGeography")
+        dialog.set_program_name(APPNAME)
+        dialog.set_name(APPNAME)
         dialog.set_version(VERSION)
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
         dialog.set_comments(COMMENTS)
         dialog.set_website("http://github.com/robru/GottenGeography/wiki")
-        dialog.set_website_label("GottenGeography Wiki")
+        dialog.set_website_label("%s Wiki" % APPNAME)
         dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
         dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
         #dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
@@ -1064,7 +1061,7 @@ class GottenGeography:
         self.toolbar.add(Gtk.SeparatorToolItem())
         
         self.create_tool_button(Gtk.STOCK_ABOUT, self.about_dialog,
-            _("About GottenGeography"))
+            _("About %s") % APPNAME)
         
         self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
@@ -1185,7 +1182,7 @@ class GottenGeography:
         self.app_container.pack_end(self.statusbar, False, True, 0)
         
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("GottenGeography")
+        self.window.set_title(APPNAME)
         self.window.set_default_icon_name('gtk-new')
         self.window.set_size_request(900,700)
         self.window.connect("delete_event", self.confirm_quit_dialog)
@@ -1194,19 +1191,14 @@ class GottenGeography:
         self.track_color = Clutter.Color.new(255, 0, 0, 128)
         
         self.gconf_client = GConf.Client.get_default()
-        self.gconf_keys = {
-            'lat':  '/apps/gottengeography/last_latitude',
-            'lon':  '/apps/gottengeography/last_longitude',
-            'zoom': '/apps/gottengeography/last_zoom_level'
-        }
         
         # Load last used location from GConf
         self.map_view.center_on(
-            self.gconf_client.get_float(self.gconf_keys['lat']),
-            self.gconf_client.get_float(self.gconf_keys['lon'])
+            self.gconf_get('last_latitude', float),
+            self.gconf_get('last_longitude', float)
         )
         self.map_view.set_zoom_level(
-            self.gconf_client.get_int(self.gconf_keys['zoom'])
+            self.gconf_get('last_zoom_level', int)
         )
         
         # Key bindings
@@ -1339,6 +1331,21 @@ class GottenGeography:
         
         if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
+    
+    def gconf_key(self, key):
+        return "/".join(['', 'apps', APPNAME.lower(), key])
+    
+    def gconf_set(self, key, value):
+        key = self.gconf_key(key)
+        
+        if   type(value) is float: self.gconf_client.set_float(key, value)
+        elif type(value) is int:   self.gconf_client.set_int(key, value)
+    
+    def gconf_get(self, key, type):
+        key = self.gconf_key(key)
+        
+        if   type is float: return self.gconf_client.get_float(key)
+        elif type is int:   return self.gconf_client.get_int(key)
     
     def _status_message(self, message):
         """Display a message on the GtkStatusBar."""
