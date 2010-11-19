@@ -171,13 +171,13 @@ class GottenGeography:
             self.map_view.get_zoom_level()
         ] )
     
-    def return_to_last(self, button=None, message=True):
+    def return_to_last(self, button=None):
         """Return the map view to where the user last set it."""
         
         try:
             (lat, lon, zoom) = self.history.pop()
         except IndexError:
-            if message: self._status_message(
+            if button is not None: self._status_message(
                 _("That's as far back as she goes, kiddo!")
             )
             
@@ -1207,7 +1207,7 @@ class GottenGeography:
         self.track_color = Clutter.Color.new(255, 0, 0, 128)
         
         self.gconf_client = GConf.Client.get_default()
-        self.return_to_last(message=False)
+        self.return_to_last()
         
         # Key bindings
         self.accel = Gtk.AccelGroup()
@@ -1327,7 +1327,7 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("w"):      self.close_selected_photos()
         elif keyval == Gdk.keyval_from_name("equal"):  self.zoom_in()
         elif keyval == Gdk.keyval_from_name("minus"):  self.zoom_out()
-        elif keyval == Gdk.keyval_from_name("Left"):   self.return_to_last()
+        elif keyval == Gdk.keyval_from_name("Left"):   self.return_to_last(True)
         elif keyval == Gdk.keyval_from_name("x"):      self.clear_all_gpx()
         elif keyval == Gdk.keyval_from_name("o"):      self.add_files_dialog()
         elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit_dialog()
