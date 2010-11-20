@@ -30,6 +30,9 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.window.get_size(), (900, 700))
         
         self.assertTrue(self.gui.app_container.get_visible())
+        
+        self.assertEqual(len(self.gui.button), 11)
+        self.assertEqual(len(self.gui.offset), 3)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -139,6 +142,9 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui._pretty_elevation(600.71),
             "600.7m above sea level"
         )
+        
+        self.gui.display_coords()
+        self.assertRegexpMatches(self.gui.coords_label.get_label(), r'href="http://maps.google.com')
     
     def test_gps_math(self):
         """Test coordinate conversion functions."""
@@ -163,7 +169,7 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertAlmostEqual(
                 altitude,
                 fraction.numerator / fraction.denominator,
-                5
+                3
             )
             
             decimal_lat = round(random_coord(90),  6)
@@ -254,28 +260,28 @@ class GottenGeographyTester(unittest.TestCase):
         lon = self.gui.map_view.get_property('longitude')
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
-        self.assertTrue(lon > self.gui.map_view.get_property('longitude'))
+        self.assertGreater(lon, self.gui.map_view.get_property('longitude'))
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
         #self.assertAlmostEqual(lon, self.gui.map_view.get_property('longitude'), 5)
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
-        self.assertTrue(lon < self.gui.map_view.get_property('longitude'))
+        self.assertLess(lon, self.gui.map_view.get_property('longitude'))
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
         #self.assertAlmostEqual(lon, self.gui.map_view.get_property('longitude'), 5)
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
         #self.assertAlmostEqual(lon, self.gui.map_view.get_property('longitude'), 5)
-        self.assertTrue(lat < self.gui.map_view.get_property('latitude'))
+        self.assertLess(lat, self.gui.map_view.get_property('latitude'))
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         #self.assertAlmostEqual(lon, self.gui.map_view.get_property('longitude'), 5)
         
         self.gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         #self.assertAlmostEqual(lon, self.gui.map_view.get_property('longitude'), 5)
-        self.assertTrue(lat > self.gui.map_view.get_property('latitude'))
+        self.assertGreater(lat, self.gui.map_view.get_property('latitude'))
     
-    def test_map_markers(self):
+    def test_map_objects(self):
         """Put a marker on the map, and then take it off."""
         
         lat = random_coord(90)
@@ -291,6 +297,47 @@ class GottenGeographyTester(unittest.TestCase):
         marker.destroy()
         
         self.assertFalse(marker.get_parent())
+        
+        self.assertEqual(len(self.gui.polygons), 0)
+        self.gui.create_polygon()
+        self.assertEqual(len(self.gui.polygons), 1)
+        self.gui.create_polygon()
+        self.assertEqual(len(self.gui.polygons), 2)
+    
+    def test_gconf(self):
+        self.assertEqual(
+            self.gui.gconf_key('foobar'),
+            '/apps/gottengeography/foobar'
+        )
+        
+        self.gui.gconf_set('last_zoom_level', 0)
+        self.assertEqual(self.gui.gconf_get('last_zoom_level', int), 0)
+        self.gui.gconf_set('last_zoom_level', 3)
+        self.assertEqual(self.gui.gconf_get('last_zoom_level', int), 3)
+        
+        self.gui.gconf_set('last_latitude', 10.0)
+        self.assertEqual(self.gui.gconf_get('last_latitude', float), 10.0)
+        self.gui.gconf_set('last_latitude', -53.0)
+        self.assertEqual(self.gui.gconf_get('last_latitude', float), -53.0)
+        
+        self.gui.gconf_set('last_longitude', 10.0)
+        self.assertEqual(self.gui.gconf_get('last_longitude', float), 10.0)
+        self.gui.gconf_set('last_longitude', 113.0)
+        self.assertEqual(self.gui.gconf_get('last_longitude', float), 113.0)
+        
+        lat = random_coord(90)
+        lon = random_coord(180)
+        
+        self.gui.map_view.center_on(lat, lon)
+        
+        self.gui.remember_location_with_gconf()
+        
+        self.assertAlmostEqual(lat, self.gui.gconf_get('last_latitude',  float), 4)
+        self.assertAlmostEqual(lon, self.gui.gconf_get('last_longitude', float), 4)
+        self.assertEqual(
+            self.gui.map_view.get_zoom_level(),
+            self.gui.gconf_get('last_zoom_level', int)
+        )
         
 #    def test_writing_files(self):
 #        pass
