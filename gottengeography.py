@@ -403,6 +403,7 @@ class GottenGeography:
         self._redraw_interface(len(current) / total,
             _("Saving %s...") % os.path.basename(filename))
         
+        # If this was gonna fail it would have failed during loading.
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
@@ -500,7 +501,7 @@ class GottenGeography:
         return timestamp, lat, lon, ele, thumb
     
     def gpx_element_root(self, name, attributes):
-        """Callback function for Expat StartElementHandler.
+        """Expat StartElementHandler.
         
         This is only called on the top level element in the given XML file."""
         
@@ -511,7 +512,14 @@ class GottenGeography:
         self.gpx_parser.StartElementHandler = self.gpx_element_start
     
     def gpx_element_start(self, name, attributes):
-        """Callback function for Expat StartElementHandler."""
+        """Expat StartElementHandler.
+        
+        This method is creates new ChamplainPolygons when necessary and
+        initializes variables for the CharacterDataHandler. It also extracts
+        latitude and longitude from GPX element attributes. For example:
+        
+        <trkpt lat="45.147445" lon="-81.469507">
+        """
         
         # This is how the data handler knows what element it's in
         self.metadata['element-name'] = name
@@ -521,22 +529,34 @@ class GottenGeography:
         
         if name == "trkseg": self.create_polygon()
         
-        # Eg, <trkpt lat="45.147445" lon="-81.469507">
         self.gpx_state.update(attributes)
     
     def gpx_element_data(self, data):
-        """Callback function for Expat CharacterDataHandler."""
+        """Expat CharacterDataHandler.
+        
+        This method extracts elevation and time data from GPX elements.
+        For example:
+        
+        <ele>671.092</ele>
+        <time>2010-10-16T20:09:13Z</time>
+        """
         
         data = data.strip()
         if not data: return
         
-        # This is where we collect elevation and time data
         # Sometimes expat calls this handler multiple times each with just
         # a chunk of the whole data, so += is necessary to collect all of it.
         self.gpx_state[self.metadata['element-name']] += data
     
     def gpx_element_end(self, name):
-        """Callback function for Expat EndElementHandler."""
+        """Expat EndElementHandler.
+        
+        This method does most of the heavy lifting, including parsing time
+        strings into UTC epoch seconds, appending to the ChamplainPolygons,
+        keeping track of the first and last points loaded, as well as the
+        entire area covered by the polygon, and occaisionally redrawing the
+        screen so that the user can see what's going on while stuff is
+        loading."""
         
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
@@ -587,6 +607,8 @@ class GottenGeography:
         
         self.remember_location()
         
+        # ISO 8601 dates look like 2010-10-16T20:09:13Z and this regex will be
+        # used to split that up into a list like 2010, 10, 16, 20, 09, 13.
         self.delimiters = re.compile(r'[:TZ-]')
         
         start_points = len(self.tracks)
@@ -1225,11 +1247,9 @@ class GottenGeography:
                 0, self.move_map_view_by_arrow_keys
             )
         
-        # Ensure all widgets are displayed properly
         self.window.show_all()
         self.progressbar.hide()
         
-        # Various bits of state for the GPX parser
         self.polygons = []
         self.clear_all_gpx()
         self._redraw_interface()
@@ -1340,15 +1360,24 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
     
     def gconf_key(self, key):
+        """Determine appropriate GConf key that is unique to this application.
+        
+        Returns /apps/gottengeography/key."""
+        
         return "/".join(['', 'apps', APPNAME.lower(), key])
     
     def gconf_set(self, key, value):
+        """Sets the given GConf key to the given value, automatically
+        determining whether it is a float or an int."""
+        
         key = self.gconf_key(key)
         
         if   type(value) is float: self.gconf_client.set_float(key, value)
         elif type(value) is int:   self.gconf_client.set_int(key, value)
     
     def gconf_get(self, key, type):
+        """Gets the given GConf key as the requested type."""
+        
         key = self.gconf_key(key)
         
         if   type is float: return self.gconf_client.get_float(key)
@@ -1393,12 +1422,12 @@ class GottenGeography:
         self.button['gtk-close'].set_sensitive(sensitivity)
         
         # Revert button is only activated if the selection has unsaved files.
-        modified_in_selection = []
+        modified = []
         self.photo_selection.selected_foreach(
             self._append_if_modified,
-            modified_in_selection
+            modified
         )
-        self.button['gtk-revert-to-saved'].set_sensitive(len(modified_in_selection) > 0)
+        self.button['gtk-revert-to-saved'].set_sensitive(len(modified) > 0)
         
         # Save button is only activated if there are modified files.
         self.button['gtk-save'].set_sensitive(len(self.modified) > 0)
