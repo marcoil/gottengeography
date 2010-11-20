@@ -258,13 +258,10 @@ class GottenGeography:
         the GtkListStore itself in the sense that a normal click will select
         just one item, but Ctrl+clicking allows you to select multiple."""
         
-        iter = None
-        for filename in self.loaded_photo_iters:
-            if os.path.basename(filename) == marker.get_text():
-                iter = self.loaded_photo_iters[filename]
-                break
-        
-        if iter is None: return
+        try:
+            iter = self.loaded_photo_iters[marker.get_name()]
+        except KeyError:
+            return
         
         if (event.get_state() == Clutter.ModifierType.CONTROL_MASK |
                                  Clutter.ModifierType.MOD2_MASK):
@@ -347,6 +344,7 @@ class GottenGeography:
         """Create a new ChamplainMarker and add it to the map."""
         
         marker = Champlain.Marker()
+        marker.set_name(label)
         marker.set_text(os.path.basename(label))
         marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
