@@ -1037,7 +1037,7 @@ class GottenGeography:
 # Initialization and Gtk boilerplate/housekeeping type stuff and such.
 ################################################################################
     
-    def __init__(self):
+    def __init__(self, animate_crosshair=True):
         """Initialize all necessary state."""
         
         # Keys are filenames that have been modified, values are True.
@@ -1268,6 +1268,8 @@ class GottenGeography:
         self.crosshair.raise_top()
         self.position_crosshair()
         self.crosshair.show()
+        
+        if not animate_crosshair: return
         
         # This causes the crosshair to start off huge and invisible, and it
         # quickly shrinks, spins, and fades into existence. The last value for
