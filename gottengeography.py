@@ -47,10 +47,9 @@ class GottenGeography:
         
         if not self.valid_coords(lat, lon): return _("Not geotagged")
         
-        if lat > 0: lat_sign = _("N")
-        else:       lat_sign = _("S")
-        if lon > 0: lon_sign = _("E")
-        else:       lon_sign = _("W")
+        # This doesn't use self.cardinal because it needs to be translatable.
+        lat_sign = _("N") if lat > 0 else _("S")
+        lon_sign = _("E") if lon > 0 else _("W")
         
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
         coords = '%s %.5f, %s %.5f' % (lat_sign, abs(lat), lon_sign, abs(lon))
@@ -74,8 +73,7 @@ class GottenGeography:
         
         if ele is None: return ""
         
-        if ele >= 0: label = _("m above sea level")
-        else:        label = _("m below sea level")
+        label = _("m above sea level") if ele > 0 else _("m below sea level")
         
         return "%.1f%s" % (abs(ele), label)
     
@@ -111,8 +109,7 @@ class GottenGeography:
         """Convert degrees, minutes, seconds into decimal degrees."""
         
         # The south and the west hemispheres are considered "negative"
-        if re.match("[SWsw]", sign): sign = -1
-        else:                        sign =  1
+        sign = -1 if re.match("[SWsw]", sign) else 1
         
         return ((degrees.numerator / degrees.denominator)         +
                 (minutes.numerator / minutes.denominator) / 60    +
@@ -120,11 +117,6 @@ class GottenGeography:
     
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
-        
-        # cardinal[1] is "N"/"E" and cardinal[-1] is "S"/"W". further down,
-        # I use math.copysign(1, decimal) to get either 1 or -1 as a list index
-        if is_latitude: cardinal = [ None, "N", "S" ]
-        else:           cardinal = [ None, "E", "W" ]
         
         # math.modf splits a float into it's remainder and largest whole number
         (remainder, degrees) = math.modf(abs(decimal))
@@ -134,7 +126,7 @@ class GottenGeography:
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
                  self.float_to_rational(seconds)
-               ], cardinal[int(math.copysign(1, decimal))]
+               ], self.cardinal[is_latitude][decimal <= 0]
     
     def float_to_rational(self, decimal):
         """Converts a float to a fractions.Fraction()."""
@@ -149,7 +141,7 @@ class GottenGeography:
         if type(lat) is not float: return False
         if type(lon) is not float: return False
         
-        return lat >= -90 and lat <= 90 and lon >= -180 and lon <= 180
+        return abs(lat) <= 90 and abs(lon) <= 180
     
 ################################################################################
 # Champlain. This section contains methods that manipulate the map.
@@ -203,8 +195,8 @@ class GottenGeography:
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view in discrete steps."""
         
-        x = int(self.map_view.get_width()/2)
-        y = int(self.map_view.get_height()/2)
+        x = self.map_view.get_width()  / 2
+        y = self.map_view.get_height() / 2
         
         # moves by 1/5 (40% of half) screen length in the given direction
         if   keyval == Gdk.keyval_from_name("Left"):  x *= 0.6
@@ -212,10 +204,9 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
         elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
         
-        (lat, lon) = self.map_view.get_coords_at(x, y)[1:3]
+        (lat, lon) = self.map_view.get_coords_at(int(x), int(y))[1:3]
         
-        if self.valid_coords(lat, lon):
-            self.map_view.center_on(lat, lon)
+        if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
@@ -295,8 +286,7 @@ class GottenGeography:
             if not marker.get_property('visible'): return
         except AttributeError:                     return
         
-        if transparent: marker.set_property('opacity', 64)
-        else:           marker.set_property('opacity', 255)
+        marker.set_property('opacity', 64 if transparent else 255)
         
         if area is None:
             marker.set_highlighted(False)
@@ -311,10 +301,10 @@ class GottenGeography:
         lon = marker.get_property('longitude')
         
         # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
-        if lat < area[0]: area[0] = lat
-        if lon < area[1]: area[1] = lon
-        if lat > area[2]: area[2] = lat
-        if lon > area[3]: area[3] = lon
+        area[0] = min(area[0], lat)
+        area[1] = min(area[1], lon)
+        area[2] = max(area[2], lat)
+        area[3] = max(area[3], lon)
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
@@ -374,15 +364,17 @@ class GottenGeography:
         
         self.gpx_state = {}
         
-        # Default values for easy clobbering with real data
+        # Sorry for nerding out on the greek names here, I was trying to find
+        # a way to say 'first' and 'last' with an equal number of letters, and
+        # then the rest just kind of happened.
         self.metadata = {
-            'offset':      0,
-            'area':        [ float('inf'), float('inf'),
-                             float('-inf'), float('-inf'),
-                             False ],
-            'last-point':  float('-inf'),
-            'first-point': float('inf'),
-            'last-update': time.clock()
+            'area':  [ float('inf'), float('inf'),
+                       float('-inf'), float('-inf'),
+                       False ],
+            'delta': 0,                  # Time offset
+            'omega': float('-inf'),      # Final GPX track point
+            'alpha': float('inf'),       # Initial GPX track point
+            'tau':   time.clock()        # Most recent time screen was updated
         }
         
         self.update_sensitivity()
@@ -410,21 +402,20 @@ class GottenGeography:
         exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
         
         ele = photos.get_value(iter, self.PHOTO_ALTITUDE)
-        if ele >= 0: exif['Exif.GPSInfo.GPSAltitudeRef'] = 0
-        else:        exif['Exif.GPSInfo.GPSAltitudeRef'] = 1
+        exif['Exif.GPSInfo.GPSAltitudeRef'] = 0 if ele >= 0 else 1
         exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
         
         (exif['Exif.GPSInfo.GPSLatitude'],
-         exif['Exif.GPSInfo.GPSLatitudeRef']
-        ) = self.decimal_to_dms(
-            photos.get_value(iter, self.PHOTO_LATITUDE), True
-        )
+         exif['Exif.GPSInfo.GPSLatitudeRef']) = \
+            self.decimal_to_dms(
+                photos.get_value(iter, self.PHOTO_LATITUDE), True
+            )
         
         (exif['Exif.GPSInfo.GPSLongitude'],
-         exif['Exif.GPSInfo.GPSLongitudeRef']
-        ) = self.decimal_to_dms(
-            photos.get_value(iter, self.PHOTO_LONGITUDE), False
-        )
+         exif['Exif.GPSInfo.GPSLongitudeRef']) = \
+            self.decimal_to_dms(
+                photos.get_value(iter, self.PHOTO_LONGITUDE), False
+            )
         
         try:
             exif.writeMetadata()
@@ -581,19 +572,17 @@ class GottenGeography:
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
-        if timestamp > self.metadata['last-point']:
-            self.metadata['last-point'] = timestamp
-        if timestamp < self.metadata['first-point']:
-            self.metadata['first-point'] = timestamp
+        self.metadata['omega'] = max(self.metadata['omega'], timestamp)
+        self.metadata['alpha'] = min(self.metadata['alpha'], timestamp)
         
-        if lat < self.metadata['area'][0]: self.metadata['area'][0] = lat
-        if lon < self.metadata['area'][1]: self.metadata['area'][1] = lon
-        if lat > self.metadata['area'][2]: self.metadata['area'][2] = lat
-        if lon > self.metadata['area'][3]: self.metadata['area'][3] = lon
+        self.metadata['area'][0] = min(self.metadata['area'][0], lat)
+        self.metadata['area'][1] = min(self.metadata['area'][1], lon)
+        self.metadata['area'][2] = max(self.metadata['area'][2], lat)
+        self.metadata['area'][3] = max(self.metadata['area'][3], lon)
         
         # This is by far the slowest part, only do it every fifth of a second.
-        if time.clock() - self.metadata['last-update'] > .2:
-            self.metadata['last-update'] = time.clock()
+        if time.clock() - self.metadata['tau'] > .2:
+            self.metadata['tau'] = time.clock()
             self.progressbar.pulse()
             self.map_view.ensure_visible(*self.metadata['area'])
             self._redraw_interface()
@@ -654,21 +643,21 @@ class GottenGeography:
         
         # photo is the timestamp in epoch seconds,
         photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
-        photo += self.metadata['offset']
+        photo += self.metadata['delta']
         
         # hi and lo begin by referring to the chronological first
         # and last timestamp created by the GPX device. We later
         # iterate over the list, searching for the two timestamps
         # that are nearest to the photo
-        hi = self.metadata['last-point']
-        lo = self.metadata['first-point']
+        hi = self.metadata['omega']
+        lo = self.metadata['alpha']
         
         # If the photo is out of range, simply peg it to the end of the range.
         # I think this makes sense. If it doesn't, the user isn't obligated to
         # save the result. They can always override with the 'apply' button,
         # or load in a different GPX file with correct data.
-        if photo < lo: photo = lo
-        if photo > hi: photo = hi
+        photo = max(photo, lo)
+        photo = min(photo, hi)
         
         # Check for GPX point with exact timestamp as photo. This is more likely
         # than you might think. Three out of the six supplied demo images match
@@ -735,8 +724,8 @@ class GottenGeography:
             self.offset['m'].set_value(0)
             self.offset['h'].set_value(hours + (minutes/60))
         
-        if offset <> self.metadata['offset']:
-            self.metadata['offset'] = offset
+        if offset <> self.metadata['delta']:
+            self.metadata['delta'] = offset
             
             self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
             self.update_all_marker_highlights()
@@ -849,8 +838,7 @@ class GottenGeography:
         if photos is None:   photos   = self.loaded_photos
         if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
         
-        (timestamp, lat, lon, ele, thumb
-            ) = self.load_exif_from_file(filename)
+        (timestamp, lat, lon, ele, thumb) = self.load_exif_from_file(filename)
         
         (current, total) = data
         current.append(filename)
@@ -860,12 +848,12 @@ class GottenGeography:
         )
         
         # If file already loaded, grab it's iter to reload data into.
+        if filename not in self.loaded_photo_iters:
+            self.loaded_photo_iters[filename] = \
+                photos.append([None] * photos.get_n_columns())
+            
         if iter is None:
-            try:
-                iter = self.loaded_photo_iters[filename]
-            except KeyError:
-                iter = photos.append([None] * photos.get_n_columns())
-                self.loaded_photo_iters[filename] = iter
+            iter = self.loaded_photo_iters[filename]
         
         photos.set_value(iter, self.PHOTO_PATH,      filename)
         photos.set_value(iter, self.PHOTO_THUMB,     thumb)
@@ -985,7 +973,9 @@ class GottenGeography:
         self.remember_location_with_gconf()
         
         # If there's no unsaved data, just close without confirmation.
-        if len(self.modified) == 0: Gtk.main_quit(); return True
+        if len(self.modified) == 0:
+            Gtk.main_quit()
+            return True
         
         dialog = Gtk.MessageDialog(
             parent=self.window,
@@ -1039,6 +1029,9 @@ class GottenGeography:
     
     def __init__(self, animate_crosshair=True):
         """Initialize all necessary state."""
+        
+        # cardinal[True][53 <= 0] == "N", cardinal[False][-113 <= 0] == "W".
+        self.cardinal = [[ "E", "W" ], [ "N", "S" ]]
         
         # Keys are filenames that have been modified, values are True.
         self.modified = {}
@@ -1327,10 +1320,8 @@ class GottenGeography:
             button = self.button['gtk-select-all']
             button.set_active(True)
         
-        if button.get_active():
-            self.photo_selection.select_all()
-        else:
-            self.photo_selection.unselect_all()
+        if button.get_active(): self.photo_selection.select_all()
+        else:                   self.photo_selection.unselect_all()
     
     # TODO make sure these key choices actually make sense
     # and are consistent with other apps
