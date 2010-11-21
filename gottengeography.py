@@ -54,12 +54,7 @@ class GottenGeography:
         # Eg, "N nn.nnnnn, W nnn.nnnnn"
         coords = '%s %.5f, %s %.5f' % (lat_sign, abs(lat), lon_sign, abs(lon))
         
-        if link: coords = (
-            '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>'
-            % (lat, lon, coords)
-        )
-        
-        return coords
+        return self.google_maps_link(lat, lon, coords) if link else coords
     
     def _pretty_time(self, timestamp):
         """Print epoch seconds in a human readable way."""
@@ -76,6 +71,12 @@ class GottenGeography:
         label = _("m above sea level") if ele > 0 else _("m below sea level")
         
         return "%.1f%s" % (abs(ele), label)
+    
+    def google_maps_link(self, lat, lon, anchor):
+        """Create a Pango link to Google Maps."""
+        
+        return ('<a href="http://maps.google.com/maps?q=%s,%s">%s</a>'
+                % (lat, lon, anchor))
     
     def _create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
@@ -223,8 +224,18 @@ class GottenGeography:
         self.polygons.append(polygon)
         polygon.show()
     
-    def position_crosshair(self, stage=None, parameter=None):
+    def position_actors(self, stage=None, parameter=None):
         """Ensure that the crosshair is precisely in the center of the map."""
+        
+        self.coords.set_position(
+            (self.stage.get_width()  - self.coords.get_width()) / 2,
+             self.stage.get_height() - 2 * self.coords.get_height()
+        )
+        
+        self.coords_background.set_position(
+            self.coords.get_x() - 5,
+            self.coords.get_y() - 5
+        )
         
         self.crosshair.set_position(
             (self.stage.get_width()  - self.crosshair.get_width())  / 2,
@@ -234,13 +245,14 @@ class GottenGeography:
     def display_coords(self, stage=None, parameter=None):
         """Display the map center coordinates in a label beneath the map."""
         
-        self.coords_label.set_label(
-            self._pretty_coords(
-                self.map_view.get_property('latitude'),
-                self.map_view.get_property('longitude'),
-                True # enable link to Google Maps
-            )
+        lat = self.map_view.get_property('latitude')
+        lon = self.map_view.get_property('longitude')
+        
+        self.coords_label.set_markup(
+            self.google_maps_link(lat, lon, _("Google Maps"))
         )
+        
+        self.coords.set_markup(self._pretty_coords(lat, lon, False))
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -1175,17 +1187,9 @@ class GottenGeography:
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
         
-        self.coords_label = Gtk.Label(label="")
-        self.coords_label.set_selectable(True)
-        self.coords_label.set_use_markup(True)
-        
-        self.map_container = Gtk.VBox()
-        self.map_container.pack_start(self.champlain, True, True, 0)
-        self.map_container.pack_end(self.coords_label, False, False, 3)
-        
         self.photos_and_map_container = Gtk.HPaned()
         self.photos_and_map_container.add(self.photos_with_buttons)
-        self.photos_and_map_container.add(self.map_container)
+        self.photos_and_map_container.add(self.champlain)
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(550, -1)
@@ -1193,7 +1197,7 @@ class GottenGeography:
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
         
-        self.statusbar = Gtk.Statusbar()
+        self.statusbar = Gtk.Statusbar(spacing=12)
         self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 6)
         
@@ -1204,6 +1208,9 @@ class GottenGeography:
         }
         
         self.statusbar.pack_end(self.offset_label, False, False, 0)
+        
+        self.coords_label = Gtk.Label()
+        self.statusbar.pack_end(self.coords_label, False, False, 0)
         
         self.app_container = Gtk.VBox(spacing=0)
         self.app_container.pack_start(self.toolbar, False, True, 0)
@@ -1249,7 +1256,25 @@ class GottenGeography:
         
         self.stage = self.map_view.get_stage()
         
+        self.coords_background = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(255, 255, 255, 160)
+        )
+        self.coords_background.set_parent(self.stage)
+        self.coords_background.raise_top()
+        self.coords_background.show()
+        
+        self.coords = Clutter.Text()
+        self.coords.set_single_line_mode(True)
+        self.coords.set_parent(self.stage)
+        self.coords.raise_top()
+        self.coords.show()
+        
         self.display_coords()
+        
+        self.coords_background.set_size(
+            self.coords.get_width()  + 10,
+            self.coords.get_height() + 10
+        )
         
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
@@ -1259,7 +1284,7 @@ class GottenGeography:
         self.crosshair.set_border_width(1)
         self.crosshair.set_parent(self.stage)
         self.crosshair.raise_top()
-        self.position_crosshair()
+        self.position_actors()
         self.crosshair.show()
         
         if not animate_crosshair: return
@@ -1274,12 +1299,12 @@ class GottenGeography:
             self.crosshair.set_z_rotation_from_gravity(53-i,
                 Clutter.Gravity.CENTER)
             self.crosshair.set_property('opacity', int(260-(0.51*i)))
-            self.position_crosshair()
+            self.position_actors()
             self._redraw_interface()
             time.sleep(0.005)
         
-        self.stage.connect('notify::height', self.position_crosshair)
-        self.stage.connect('notify::width',  self.position_crosshair)
+        self.stage.connect('notify::height', self.position_actors)
+        self.stage.connect('notify::width',  self.position_actors)
         
         self.map_view.connect('notify::latitude',  self.display_coords)
         self.map_view.connect('notify::longitude', self.display_coords)
