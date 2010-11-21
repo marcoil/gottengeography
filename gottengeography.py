@@ -68,7 +68,7 @@ class GottenGeography:
         
         if ele is None: return ""
         
-        label = _("m above sea level") if ele > 0 else _("m below sea level")
+        label = _("m above sea level") if ele >= 0 else _("m below sea level")
         
         return "%.1f%s" % (abs(ele), label)
     
@@ -109,12 +109,10 @@ class GottenGeography:
     def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
         
-        # The south and the west hemispheres are considered "negative"
-        sign = -1 if re.match("[SWsw]", sign) else 1
-        
-        return ((degrees.numerator / degrees.denominator)         +
-                (minutes.numerator / minutes.denominator) / 60    +
-                (seconds.numerator / seconds.denominator) / 3600) * sign
+        return ((degrees.numerator / degrees.denominator         +
+                 minutes.numerator / minutes.denominator / 60    +
+                 seconds.numerator / seconds.denominator / 3600) *
+                 (-1 if re.match("[SWsw]", sign) else 1))
     
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
