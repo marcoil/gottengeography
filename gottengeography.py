@@ -309,8 +309,8 @@ class GottenGeography:
         marker.set_scale(1.2, 1.2)
         marker.raise_top()
         
-        lat = marker.get_property('latitude')
-        lon = marker.get_property('longitude')
+        lat = marker.get_latitude()
+        lon = marker.get_longitude()
         
         # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
         area[0] = min(area[0], lat)
