@@ -223,7 +223,7 @@ class GottenGeography:
         self.polygons.append(polygon)
         polygon.show()
     
-    def position_crosshair(self, stage=None):
+    def position_crosshair(self, stage=None, parameter=None):
         """Ensure that the crosshair is precisely in the center of the map."""
         
         self.crosshair.set_position(
@@ -231,7 +231,7 @@ class GottenGeography:
             (self.stage.get_height() - self.crosshair.get_height()) / 2
         )
     
-    def display_coords(self, stage=None):
+    def display_coords(self, stage=None, parameter=None):
         """Display the map center coordinates in a label beneath the map."""
         
         self.coords_label.set_label(
@@ -1278,8 +1278,11 @@ class GottenGeography:
             self._redraw_interface()
             time.sleep(0.005)
         
-        self.stage.connect("paint", self.position_crosshair)
-        self.stage.connect("paint", self.display_coords)
+        self.stage.connect('notify::height', self.position_crosshair)
+        self.stage.connect('notify::width',  self.position_crosshair)
+        
+        self.map_view.connect('notify::latitude',  self.display_coords)
+        self.map_view.connect('notify::longitude', self.display_coords)
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
