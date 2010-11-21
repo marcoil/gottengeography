@@ -249,7 +249,7 @@ class GottenGeography:
         lon = self.map_view.get_property('longitude')
         
         self.coords_label.set_markup(
-            self.google_maps_link(lat, lon, _("Google Maps"))
+            self.google_maps_link(lat, lon, _("Go to Google Maps"))
         )
         
         self.coords.set_markup(self._pretty_coords(lat, lon, False))
