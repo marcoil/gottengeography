@@ -40,8 +40,8 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.modified), 0)
         self.assertEqual(len(self.gui.polygons), 0)
-        self.assertEqual(self.gui.metadata['first-point'],  float('inf'))
-        self.assertEqual(self.gui.metadata['last-point'], float('-inf'))
+        self.assertEqual(self.gui.metadata['alpha'], float('inf'))
+        self.assertEqual(self.gui.metadata['omega'], float('-inf'))
         self.assertEqual(
             self.gui.metadata['area'],
             [float('inf'), float('inf'), float('-inf'), float('-inf'), False]
@@ -87,8 +87,8 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks),   374)
         self.assertEqual(len(self.gui.modified), 6)
         self.assertEqual(len(self.gui.polygons), 1)
-        self.assertEqual(self.gui.metadata['first-point'],  1287259751)
-        self.assertEqual(self.gui.metadata['last-point'], 1287260756)
+        self.assertEqual(self.gui.metadata['alpha'], 1287259751)
+        self.assertEqual(self.gui.metadata['omega'], 1287260756)
         self.assertEqual(
             self.gui.metadata['area'],
             [53.522495999999997, -113.453148,
@@ -310,6 +310,10 @@ class GottenGeographyTester(unittest.TestCase):
             '/apps/gottengeography/foobar'
         )
         
+        orig_lat = self.gui.gconf_get('last_latitude', float)
+        orig_lon = self.gui.gconf_get('last_longitude', float)
+        orig_zoom = self.gui.gconf_get('last_zoom_level', int)
+        
         self.gui.gconf_set('last_zoom_level', 0)
         self.assertEqual(self.gui.gconf_get('last_zoom_level', int), 0)
         self.gui.gconf_set('last_zoom_level', 3)
@@ -338,6 +342,11 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui.map_view.get_zoom_level(),
             self.gui.gconf_get('last_zoom_level', int)
         )
+        
+        self.gui.gconf_set('last_latitude', orig_lat)
+        self.gui.gconf_set('last_longitude', orig_lon)
+        self.gui.gconf_set('last_zoom_level', orig_zoom)
+
         
 #    def test_writing_files(self):
 #        pass
