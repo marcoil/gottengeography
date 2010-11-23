@@ -72,8 +72,10 @@ class GottenGeography:
             _("m above sea level") if ele >= 0 else _("m below sea level")
         )
     
-    def maps_link(self, lat, lon, anchor):
+    def maps_link(self, lat, lon, anchor=None):
         """Create a Pango link to Google Maps."""
+        
+        if anchor is None: anchor = self.pretty_coords(lat, lon)
         
         if not self.valid_coords(lat, lon): return anchor
         
@@ -84,11 +86,11 @@ class GottenGeography:
     def create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
         
-        coords = self.pretty_coords(lat, lon)
-        
         summary = "\n".join( [
             self.pretty_time(timestamp),
-            self.maps_link(lat, lon, coords) if filename is None else coords,
+            self.maps_link(lat, lon)
+            if filename is None else
+            self.pretty_coords(lat, lon),
             self.pretty_elevation(ele)
         ] ).strip()
         
