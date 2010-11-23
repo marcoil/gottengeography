@@ -291,7 +291,7 @@ class GottenGeography:
     def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
-        marker = photos.get_value(iter, self.PHOTO_MARKER)
+        marker = photos.get_value(iter, self.col['Marker'])
         
         try:
             if not marker.get_property('visible'): return
@@ -397,7 +397,7 @@ class GottenGeography:
     def save_one_file(self, photos, path, iter, (current, total)):
         """Save the specified file, if necessary."""
         
-        filename = photos.get_value(iter, self.PHOTO_PATH)
+        filename = photos.get_value(iter, self.col['Path'])
         
         if filename not in self.modified: return
         
@@ -412,21 +412,17 @@ class GottenGeography:
         
         exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
         
-        ele = photos.get_value(iter, self.PHOTO_ALTITUDE)
+        ele = photos.get_value(iter, self.col['Altitude'])
         exif['Exif.GPSInfo.GPSAltitudeRef'] = 0 if ele >= 0 else 1
         exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
         
-        (exif['Exif.GPSInfo.GPSLatitude'],
-         exif['Exif.GPSInfo.GPSLatitudeRef']) = \
-            self.decimal_to_dms(
-                photos.get_value(iter, self.PHOTO_LATITUDE), True
-            )
-        
-        (exif['Exif.GPSInfo.GPSLongitude'],
-         exif['Exif.GPSInfo.GPSLongitudeRef']) = \
-            self.decimal_to_dms(
-                photos.get_value(iter, self.PHOTO_LONGITUDE), False
-            )
+        for name in [ 'Latitude', 'Longitude' ]:
+            (exif['Exif.GPSInfo.GPS%s' % name],
+             exif['Exif.GPSInfo.GPS%sRef' % name]) = \
+                self.decimal_to_dms(
+                    photos.get_value(iter, self.col[name]),
+                    name == 'Latitude'
+                )
         
         try:
             exif.writeMetadata()
@@ -435,10 +431,10 @@ class GottenGeography:
         else:
             del self.modified[filename]
             photos.set_value(
-                iter, self.PHOTO_SUMMARY,
+                iter, self.col['Summary'],
                 re.sub(
                     r'</?b>', '',
-                    photos.get_value(iter, self.PHOTO_SUMMARY)
+                    photos.get_value(iter, self.col['Summary'])
                 )
             )
     
@@ -651,10 +647,10 @@ class GottenGeography:
         if len(self.tracks) < 2: return
         
         # User has manually tagged a photo, we should respect that
-        if photos.get_value(iter, self.PHOTO_PATH) in self.has_manual: return
+        if photos.get_value(iter, self.col['Path']) in self.has_manual: return
         
         # photo is the timestamp in epoch seconds,
-        photo = photos.get_value(iter, self.PHOTO_TIMESTAMP)
+        photo = photos.get_value(iter, self.col['Timestamp'])
         photo += self.metadata['delta']
         
         # hi and lo begin by referring to the chronological first and last
@@ -752,7 +748,7 @@ class GottenGeography:
             self.map_view.get_property('longitude')
         )
         
-        self.has_manual[photos.get_value(iter, self.PHOTO_PATH)] = True
+        self.has_manual[photos.get_value(iter, self.col['Path'])] = True
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -789,13 +785,13 @@ class GottenGeography:
         
         for path in pathlist:
             iter = photos.get_iter(path)[1]
-            filename = photos.get_value(iter, self.PHOTO_PATH)
+            filename = photos.get_value(iter, self.col['Path'])
             
             if filename in self.modified:   del self.modified[filename]
             if filename in self.has_manual: del self.has_manual[filename]
             del self.loaded_photo_iters[filename]
             
-            try: photos.get_value(iter, self.PHOTO_MARKER).destroy()
+            try: photos.get_value(iter, self.col['Marker']).destroy()
             except: pass
             
             photos.remove(iter)
@@ -806,30 +802,30 @@ class GottenGeography:
     def insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
         
-        filename =  photos.get_value(iter, self.PHOTO_PATH)
-        timestamp = photos.get_value(iter, self.PHOTO_TIMESTAMP)
-        marker =    photos.get_value(iter, self.PHOTO_MARKER)
+        filename  = photos.get_value(iter, self.col['Path'])
+        timestamp = photos.get_value(iter, self.col['Timestamp'])
+        marker    = photos.get_value(iter, self.col['Marker'])
         
         if modified: self.modified[filename] = True
         
         if ele:
-            photos.set_value(iter, self.PHOTO_ALTITUDE,  ele)
+            photos.set_value(iter, self.col['Altitude'],  ele)
         
         if self.valid_coords(lat, lon):
-            photos.set_value(iter, self.PHOTO_LATITUDE,  lat)
-            photos.set_value(iter, self.PHOTO_LONGITUDE, lon)
+            photos.set_value(iter, self.col['Latitude'],  lat)
+            photos.set_value(iter, self.col['Longitude'], lon)
             
             try:
                 marker.set_position(lat, lon)
                 marker.show()
             except AttributeError:
-                photos.set_value(iter, self.PHOTO_MARKER,
+                photos.set_value(iter, self.col['Marker'],
                     self.add_marker(filename, lat, lon))
         else:
             try:    marker.hide()
             except: pass
         
-        photos.set_value(iter, self.PHOTO_SUMMARY,
+        photos.set_value(iter, self.col['Summary'],
             self.create_summary(filename, timestamp, lat, lon, ele))
     
     def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
@@ -847,7 +843,7 @@ class GottenGeography:
         if iter is None and filename is None: return
         
         if photos is None:   photos   = self.loaded_photos
-        if filename is None: filename = photos.get_value(iter, self.PHOTO_PATH)
+        if filename is None: filename = photos.get_value(iter, self.col['Path'])
         
         (timestamp, lat, lon, ele, thumb) = self.load_exif_from_file(filename)
         
@@ -866,9 +862,9 @@ class GottenGeography:
         if iter is None:
             iter = self.loaded_photo_iters[filename]
         
-        photos.set_value(iter, self.PHOTO_PATH,      filename)
-        photos.set_value(iter, self.PHOTO_THUMB,     thumb)
-        photos.set_value(iter, self.PHOTO_TIMESTAMP, timestamp)
+        photos.set_value(iter, self.col['Path'],      filename)
+        photos.set_value(iter, self.col['Thumb'],     thumb)
+        photos.set_value(iter, self.col['Timestamp'], timestamp)
         
         if filename in self.modified:   del self.modified[filename]
         if filename in self.has_manual: del self.has_manual[filename]
@@ -1105,7 +1101,7 @@ class GottenGeography:
         
         self.loaded_photos = Gtk.ListStore(
             GObject.TYPE_STRING,  # 0 Path to image file
-            GObject.TYPE_STRING,  # 1 "Nice" name for display purposes
+            GObject.TYPE_STRING,  # 1 Pango-formatted summary
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
             GObject.TYPE_DOUBLE,  # 4 Latitude
@@ -1114,14 +1110,17 @@ class GottenGeography:
             GObject.TYPE_OBJECT   # 7 ChamplainMarker representing photo on map
         )
         
-        # These constants will make referencing the above columns much easier
-        (self.PHOTO_PATH, self.PHOTO_SUMMARY, self.PHOTO_THUMB,
-        self.PHOTO_TIMESTAMP, self.PHOTO_LATITUDE, self.PHOTO_LONGITUDE,
-        self.PHOTO_ALTITUDE, self.PHOTO_MARKER
-        ) = range(self.loaded_photos.get_n_columns())
+        # Keys are column names and values are ints referring to the columns in
+        # the above GtkListStore. Makes code more readable to reference columns
+        # by name rather than cryptic numbers.
+        self.col = dict(zip(
+            [ 'Path', 'Summary', 'Thumb', 'Timestamp', 'Latitude', 'Longitude',
+              'Altitude', 'Marker' ],
+            range(self.loaded_photos.get_n_columns())
+        ))
         
         self.loaded_photos.set_sort_column_id(
-            self.PHOTO_TIMESTAMP,
+            self.col['Timestamp'],
             Gtk.SortType.ASCENDING
         )
         
@@ -1133,9 +1132,9 @@ class GottenGeography:
         
         self.column = Gtk.TreeViewColumn('Photos')
         self.column.pack_start(self.cell_thumb, False)
-        self.column.add_attribute(self.cell_thumb, 'pixbuf', self.PHOTO_THUMB)
+        self.column.add_attribute(self.cell_thumb, 'pixbuf', self.col['Thumb'])
         self.column.pack_start(self.cell_string, False)
-        self.column.add_attribute(self.cell_string, 'markup', self.PHOTO_SUMMARY)
+        self.column.add_attribute(self.cell_string, 'markup', self.col['Summary'])
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         self.photos_view = Gtk.TreeView(model=self.loaded_photos)
@@ -1424,7 +1423,7 @@ class GottenGeography:
     def append_if_modified(self, photos, path, iter, pathlist):
         """Append the given photo to the pathlist if it's been modified."""
         
-        if photos.get_value(iter, self.PHOTO_PATH) in self.modified:
+        if photos.get_value(iter, self.col['Path']) in self.modified:
             pathlist.append(path)
             return True
     

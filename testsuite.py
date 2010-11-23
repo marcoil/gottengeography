@@ -66,11 +66,11 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Test that a photo has no coordinates to begin with
         self.assertEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE),
+            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Latitude']),
             0.0
         )
         self.assertEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LONGITUDE),
+            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Longitude']),
             0.0
         )
         
@@ -97,11 +97,11 @@ class GottenGeographyTester(unittest.TestCase):
         
         # check that a photo has the correct coordinates.
         self.assertAlmostEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LATITUDE),
+            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Latitude']),
             53.529963999999993, 9
         )
         self.assertAlmostEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.PHOTO_LONGITUDE),
+            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Longitude']),
             -113.44800866666665, 9
         )
     
