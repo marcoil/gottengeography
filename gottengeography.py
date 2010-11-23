@@ -516,9 +516,9 @@ class GottenGeography:
     def gpx_element_start(self, name, attributes):
         """Expat StartElementHandler.
         
-        This method is creates new ChamplainPolygons when necessary and
-        initializes variables for the CharacterDataHandler. It also extracts
-        latitude and longitude from GPX element attributes. For example:
+        This method creates new ChamplainPolygons when necessary and initializes
+        variables for the CharacterDataHandler. It also extracts latitude and
+        longitude from GPX element attributes. For example:
         
         <trkpt lat="45.147445" lon="-81.469507">
         """
@@ -2114,6 +2114,4 @@ copy of the Program in return for a fee.
                      END OF TERMS AND CONDITIONS
 """
 
-if __name__ == "__main__":
-    gui = GottenGeography()
-    gui.main()
+if __name__ == "__main__": GottenGeography().main()
