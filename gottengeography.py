@@ -120,9 +120,9 @@ class GottenGeography:
         """Convert decimal degrees into degrees, minutes, seconds."""
         
         # math.modf splits a float into it's remainder and largest whole number
-        (remainder, degrees) = math.modf(abs(decimal))
-        (remainder, minutes) = math.modf(remainder * 60)
-        seconds              =           remainder * 60
+        remainder, degrees = math.modf(abs(decimal))
+        remainder, minutes = math.modf(remainder * 60)
+        seconds            =           remainder * 60
         
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
@@ -168,7 +168,7 @@ class GottenGeography:
         """Return the map view to where the user last set it."""
         
         try:
-            (lat, lon, zoom) = self.history.pop()
+            lat, lon, zoom = self.history.pop()
         except IndexError:
             if button is not None: self.status_message(
                 _("That's as far back as she goes, kiddo!")
@@ -205,7 +205,7 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
         elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
         
-        (lat, lon) = self.map_view.get_coords_at(int(x), int(y))[1:3]
+        lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
@@ -777,7 +777,7 @@ class GottenGeography:
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         
-        (pathlist, photos) = self.photo_selection.get_selected_rows()
+        pathlist, photos = self.photo_selection.get_selected_rows()
         if pathlist == []: return
         
         pathlist.reverse()
@@ -840,9 +840,9 @@ class GottenGeography:
         if photos is None:   photos   = self.loaded_photos
         if filename is None: filename = photos.get_value(iter, self.PATH)
         
-        (timestamp, lat, lon, ele, thumb) = self.load_exif_from_file(filename)
+        timestamp, lat, lon, ele, thumb = self.load_exif_from_file(filename)
         
-        (current, total) = data
+        current, total = data
         current.append(filename)
         self.redraw_interface(
             len(current) / total,
@@ -901,8 +901,8 @@ class GottenGeography:
         if not os.path.isfile(str(filename)): return
         
         try:
-            (timestamp, lat, lon, ele, thumb
-                ) = self.load_exif_from_file(filename, 300)
+            timestamp, lat, lon, ele, thumb = \
+                self.load_exif_from_file(filename, 300)
         except IOError:
             return
         
