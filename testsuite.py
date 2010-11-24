@@ -5,7 +5,7 @@ from __future__ import division
 import unittest, os, re, datetime, time, math, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
-from gi.repository import Gdk
+from gi.repository import Gdk, Clutter
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
@@ -88,9 +88,27 @@ class GottenGeographyTester(unittest.TestCase):
              53.537399000000001, -113.443061, False]
         )
         
-        # check that a photo has the correct coordinates.
-        self.assertAlmostEqual(self.gui.photo[filename].latitude,   53.529963999999993, 9)
-        self.assertAlmostEqual(self.gui.photo[filename].longitude, -113.44800866666665, 9)
+        photo = self.gui.photo[filename]
+        self.assertAlmostEqual(photo.latitude,   53.529963999999993, 9)
+        self.assertAlmostEqual(photo.longitude, -113.44800866666665, 9)
+        
+        self.assertEqual(photo.marker.get_scale(), (1, 1))
+        self.gui.marker_mouse_in(photo.marker, None)
+        self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
+        self.gui.marker_mouse_out(photo.marker, None)
+        self.assertEqual(photo.marker.get_scale(), (1, 1))
+        
+        self.gui.marker_clicked(photo.marker, Clutter.Event())
+        self.assertTrue(self.gui.photo_selection.iter_is_selected(photo.iter))
+        self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
+        self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
+        
+        self.gui.set_marker_highlight(self.gui.loaded_photos, None, photo.iter, (None, True))
+        self.assertEqual(photo.marker.get_property('opacity'), 64)
+        self.assertFalse(photo.marker.get_highlighted())
+        self.gui.set_marker_highlight(self.gui.loaded_photos, None, photo.iter, ([0,0,0,0,False], False))
+        self.assertEqual(photo.marker.get_property('opacity'), 255)
+        self.assertTrue(photo.marker.get_highlighted())
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -129,6 +147,9 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui.pretty_elevation(600.71),
             "600.7m above sea level"
         )
+        
+        self.assertEqual(self.gui.maps_link(None, None, 'foo'), 'foo')
+        self.assertRegexpMatches(self.gui.maps_link(10.0, 10.0), r'href="http://maps.google.com')
         
         self.gui.display_coords()
         self.assertRegexpMatches(self.gui.coords_label.get_label(), r'href="http://maps.google.com')
@@ -287,8 +308,10 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.assertEqual(len(self.gui.polygons), 0)
         self.gui.create_polygon()
+        self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
         self.assertEqual(len(self.gui.polygons), 1)
         self.gui.create_polygon()
+        self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
         self.assertEqual(len(self.gui.polygons), 2)
     
     def test_gconf(self):
