@@ -35,7 +35,22 @@ VERSION = "0.2"
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-class Photograph:
+class ReadableDictionary:
+    """Object that exposes it's internal namespace as a dictionary.
+    
+    This can for the most part be used just like a normal dictionary, except
+    you can access it's keys with readable.key as well as readable['key']."""
+    
+    def __len__(self):
+        return len(self.__dict__)
+    
+    def __getitem__(self, key):
+        return self.__dict__[key]
+    
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
     def set(self, attributes):
@@ -287,7 +302,7 @@ class GottenGeography:
                 self.photo_selection.select_iter(iter)
         else:
             # Normal click selects only one photo.
-            self.button['gtk-select-all'].set_active(False)
+            self.button.gtk_select_all.set_active(False)
             self.photo_selection.unselect_all()
             self.photo_selection.select_iter(iter)
     
@@ -430,10 +445,10 @@ class GottenGeography:
         exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
         
         for name in [ 'latitude', 'longitude' ]:
-            (exif['Exif.GPSInfo.GPS%s' % name.capitalize()],
+            (exif['Exif.GPSInfo.GPS%s'    % name.capitalize()],
              exif['Exif.GPSInfo.GPS%sRef' % name.capitalize()]) = \
                 self.decimal_to_dms(
-                    self.photo[filename].__dict__[name],
+                    self.photo[filename][name],
                     name == 'latitude'
                 )
         
@@ -809,7 +824,7 @@ class GottenGeography:
             del self.photo[filename]
             photos.remove(iter)
         
-        self.button['gtk-select-all'].set_active(False)
+        self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
     
     def insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
@@ -1064,7 +1079,6 @@ class GottenGeography:
         """Initialize all necessary state."""
         
         self.photo = {}
-        self.button = {}
         self.history = []
         
         # Use boolean list indices to retrieve cardinal direction strings, eg:
@@ -1072,6 +1086,7 @@ class GottenGeography:
         self.cardinal = [[ "E", "W" ], [ "N", "S" ]]
         
         self.toolbar = Gtk.Toolbar()
+        self.button  = ReadableDictionary()
         self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
             _("Load photos or GPS data (Ctrl+O)"), _("Open"))
         self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
@@ -1147,20 +1162,22 @@ class GottenGeography:
             Gtk.PolicyType.AUTOMATIC
         )
         
-        self.button['gtk-apply'] = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
-        self.button['gtk-apply'].set_tooltip_text(
+        self.button.gtk_apply = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
+        self.button.gtk_apply.set_tooltip_text(
             _("Place selected photos onto center of map (Ctrl+Return)"))
-        self.button['gtk-apply'].connect("clicked", self.apply_selected_photos)
+        self.button.gtk_apply.connect("clicked", self.apply_selected_photos)
         
-        self.button['gtk-select-all'] = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
-        self.button['gtk-select-all'].set_use_stock(True)
-        self.button['gtk-select-all'].set_tooltip_text(
+        self.button.gtk_select_all = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
+        self.button.gtk_select_all.set_use_stock(True)
+        self.button.gtk_select_all.set_tooltip_text(
             _("Toggle whether all photos are selected (Ctrl+A)"))
-        self.button['gtk-select-all'].connect("clicked", self.toggle_selected_photos)
+        self.button.gtk_select_all.connect("clicked", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
-        for button in [ 'gtk-select-all', 'gtk-apply' ]:
-            self.photo_button_bar.pack_start(self.button[button], True, True, 0)
+        for button in [ 'gtk_select_all', 'gtk_apply' ]:
+            self.photo_button_bar.pack_start(
+                self.button[button], True, True, 0
+            )
         self.photo_button_bar.set_border_width(3)
         
         self.photos_with_buttons = Gtk.VBox()
@@ -1321,7 +1338,7 @@ class GottenGeography:
         if label is not None: button.set_label(label)
         
         self.toolbar.add(button)
-        self.button[stock_id] = button
+        self.button[re.sub(r'-', '_', stock_id)] = button
     
     def prep_actor(self, actor):
         """Do some standard things to a ClutterActor."""
@@ -1335,7 +1352,7 @@ class GottenGeography:
         
         if button is None:
             # User typed Ctrl+a, so select all!
-            button = self.button['gtk-select-all']
+            button = self.button.gtk_select_all
             button.set_active(True)
         
         if button.get_active(): self.photo_selection.select_all()
@@ -1422,8 +1439,8 @@ class GottenGeography:
         sensitivity = selection.count_selected_rows() > 0
         
         # Apply and Close buttons get activated if any photo is selected
-        self.button['gtk-apply'].set_sensitive(sensitivity)
-        self.button['gtk-close'].set_sensitive(sensitivity)
+        self.button.gtk_apply.set_sensitive(sensitivity)
+        self.button.gtk_close.set_sensitive(sensitivity)
         
         modified, selected = 0, 0
         for filename in self.photo:
@@ -1431,20 +1448,20 @@ class GottenGeography:
                 if selection.iter_is_selected(self.photo[filename].iter):
                     selected += 1
                 modified += 1
-        self.button['gtk-save'].set_sensitive(modified > 0)
-        self.button['gtk-revert-to-saved'].set_sensitive(selected > 0)
+        self.button.gtk_save.set_sensitive(modified > 0)
+        self.button.gtk_revert_to_saved.set_sensitive(selected > 0)
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
         for widget in self.offset.values() + [ self.offset_label,
-        self.button['gtk-clear'] ]:
+        self.button.gtk_clear ]:
             widget.set_sensitive(gpx_sensitive)
         
         # Zoom buttons should not be able to zoom beyond their ability
         zoom_level = self.map_view.get_zoom_level()
-        self.button['gtk-zoom-in'].set_sensitive(
+        self.button.gtk_zoom_in.set_sensitive(
             self.map_view.get_max_zoom_level() is not zoom_level)
-        self.button['gtk-zoom-out'].set_sensitive(
+        self.button.gtk_zoom_out.set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
         
         # GtkListStore needs to be hidden if it is empty.
