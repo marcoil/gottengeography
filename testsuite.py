@@ -103,10 +103,10 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
         self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
         
-        self.gui.set_marker_highlight(self.gui.loaded_photos, None, photo.iter, (None, True))
+        self.gui.set_marker_highlight(photo.marker, None, True)
         self.assertEqual(photo.marker.get_property('opacity'), 64)
         self.assertFalse(photo.marker.get_highlighted())
-        self.gui.set_marker_highlight(self.gui.loaded_photos, None, photo.iter, ([0,0,0,0,False], False))
+        self.gui.set_marker_highlight(photo.marker, [0,0,0,0,False], False)
         self.assertEqual(photo.marker.get_property('opacity'), 255)
         self.assertTrue(photo.marker.get_highlighted())
     
