@@ -35,6 +35,20 @@ VERSION = "0.2"
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
+class Photograph:
+    """Represents a single photograph and it's location in space and time."""
+    
+    def set(self, attributes):
+        self.__dict__.update(attributes)
+    
+    def __init__(self, iter):
+        for key in ['timestamp', 'altitude', 'latitude', 'longitude', 'marker']:
+            self.__dict__[key] = None
+        
+        self.iter     = iter
+        self.manual   = False
+        self.modified = False
+
 class GottenGeography:
     
 ################################################################################
@@ -86,7 +100,7 @@ class GottenGeography:
     def create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
         
-        summary = "\n".join( [
+        desc = "\n".join( [
             self.pretty_time(timestamp),
             self.maps_link(lat, lon)
             if filename is None else
@@ -94,16 +108,16 @@ class GottenGeography:
             self.pretty_elevation(ele)
         ] ).strip()
         
-        if filename is None: return summary
+        if filename is None: return desc
         
         # Pango magic
-        summary = "".join( [
+        desc = "".join( [
             '<span size="larger">', os.path.basename(filename), '</span>\n',
-            '<span style="italic" size="smaller">', summary, '</span>'
+            '<span style="italic" size="smaller">', desc, '</span>'
         ] )
         
         # Embolden text if this image has unsaved data
-        return '<b>%s</b>' % summary if filename in self.modified else summary
+        return '<b>%s</b>' % desc if self.photo[filename].modified else desc
     
 ################################################################################
 # GPS math. These methods convert numbers into other numbers.
@@ -262,10 +276,8 @@ class GottenGeography:
         the GtkListStore itself in the sense that a normal click will select
         just one item, but Ctrl+clicking allows you to select multiple."""
         
-        try:
-            iter = self.loaded_photo_iters[marker.get_name()]
-        except KeyError:
-            return
+        try: iter = self.photo[marker.get_name()].iter
+        except KeyError: return
         
         if (event.get_state() == Clutter.ModifierType.CONTROL_MASK |
                                  Clutter.ModifierType.MOD2_MASK):
@@ -293,7 +305,7 @@ class GottenGeography:
     def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
-        marker = photos.get_value(iter, self.col['Marker'])
+        marker = self.photo[photos.get_value(iter, self.col['Path'])].marker
         
         try:
             if not marker.get_property('visible'): return
@@ -401,7 +413,7 @@ class GottenGeography:
         
         filename = photos.get_value(iter, self.col['Path'])
         
-        if filename not in self.modified: return
+        if not self.photo[filename].modified: return
         
         current.append(path)
         
@@ -414,16 +426,16 @@ class GottenGeography:
         
         exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
         
-        ele = photos.get_value(iter, self.col['Altitude'])
+        ele = self.photo[filename].altitude
         exif['Exif.GPSInfo.GPSAltitudeRef'] = 0 if ele >= 0 else 1
         exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
         
-        for name in [ 'Latitude', 'Longitude' ]:
-            (exif['Exif.GPSInfo.GPS%s' % name],
-             exif['Exif.GPSInfo.GPS%sRef' % name]) = \
+        for name in [ 'latitude', 'longitude' ]:
+            (exif['Exif.GPSInfo.GPS%s' % name.capitalize()],
+             exif['Exif.GPSInfo.GPS%sRef' % name.capitalize()]) = \
                 self.decimal_to_dms(
-                    photos.get_value(iter, self.col[name]),
-                    name == 'Latitude'
+                    self.photo[filename].__dict__[name],
+                    name == 'latitude'
                 )
         
         try:
@@ -431,7 +443,7 @@ class GottenGeography:
         except Exception as inst:
             self.status_message(", ".join(inst.args))
         else:
-            del self.modified[filename]
+            self.photo[filename].modified = False
             photos.set_value(
                 iter, self.col['Summary'],
                 re.sub(
@@ -445,7 +457,9 @@ class GottenGeography:
         
         self.progressbar.show()
         
-        self.loaded_photos.foreach(self.save_one_file, [[], len(self.modified)])
+        self.loaded_photos.foreach(
+            self.save_one_file, [[], self.count_modified_photos()]
+        )
         
         self.update_sensitivity()
         self.progressbar.hide()
@@ -623,8 +637,8 @@ class GottenGeography:
         
         self.status_message(
             _("%d points loaded in %.2fs.") %
-            (len(self.tracks)-start_points,
-            time.clock()-start_time)
+            (len(self.tracks) - start_points,
+             time.clock()     - start_time)
         )
         
         self.update_sensitivity()
@@ -648,11 +662,13 @@ class GottenGeography:
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
+        filename = photos.get_value(iter, self.col['Path'])
+        
         # User has manually tagged a photo, we should respect that
-        if photos.get_value(iter, self.col['Path']) in self.has_manual: return
+        if self.photo[filename].manual: return
         
         # photo is the timestamp in epoch seconds,
-        photo = photos.get_value(iter, self.col['Timestamp'])
+        photo = self.photo[filename].timestamp
         photo += self.metadata['delta']
         
         # hi and lo begin by referring to the chronological first and last
@@ -750,7 +766,7 @@ class GottenGeography:
             self.map_view.get_property('longitude')
         )
         
-        self.has_manual[photos.get_value(iter, self.col['Path'])] = True
+        self.photo[photos.get_value(iter, self.col['Path'])].manual = True
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -768,8 +784,7 @@ class GottenGeography:
         self.progressbar.show()
         
         self.photo_selection.selected_foreach(
-            self.add_or_reload_photo,
-            [[], len(self.modified)]
+            self.add_or_reload_photo, [[], self.count_modified_photos()]
         )
         
         self.progressbar.hide()
@@ -786,16 +801,13 @@ class GottenGeography:
         pathlist.reverse()
         
         for path in pathlist:
-            iter = photos.get_iter(path)[1]
+            iter     = photos.get_iter(path)[1]
             filename = photos.get_value(iter, self.col['Path'])
             
-            if filename in self.modified:   del self.modified[filename]
-            if filename in self.has_manual: del self.has_manual[filename]
-            del self.loaded_photo_iters[filename]
-            
-            try: photos.get_value(iter, self.col['Marker']).destroy()
+            try: self.photo[filename].marker.destroy()
             except: pass
             
+            del self.photo[filename]
             photos.remove(iter)
         
         self.button['gtk-select-all'].set_active(False)
@@ -805,30 +817,29 @@ class GottenGeography:
         """Create map marker and assign 3D coordinates to specified photo."""
         
         filename  = photos.get_value(iter, self.col['Path'])
-        timestamp = photos.get_value(iter, self.col['Timestamp'])
-        marker    = photos.get_value(iter, self.col['Marker'])
         
-        if modified: self.modified[filename] = True
-        
-        if ele:
-            photos.set_value(iter, self.col['Altitude'],  ele)
+        self.photo[filename].set( {
+            'modified':  modified,
+            'altitude':  ele,
+            'latitude':  lat,
+            'longitude': lon
+        } )
         
         if self.valid_coords(lat, lon):
-            photos.set_value(iter, self.col['Latitude'],  lat)
-            photos.set_value(iter, self.col['Longitude'], lon)
-            
             try:
-                marker.set_position(lat, lon)
-                marker.show()
+                self.photo[filename].marker.set_position(lat, lon)
+                self.photo[filename].marker.show()
             except AttributeError:
-                photos.set_value(iter, self.col['Marker'],
-                    self.add_marker(filename, lat, lon))
+                self.photo[filename].marker = self.add_marker(filename, lat, lon)
         else:
-            try:    marker.hide()
+            try:    self.photo[filename].marker.hide()
             except: pass
         
         photos.set_value(iter, self.col['Summary'],
-            self.create_summary(filename, timestamp, lat, lon, ele))
+            self.create_summary(
+                filename, self.photo[filename].timestamp, lat, lon, ele
+            )
+        )
     
     def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
         """Create or update a row in the ListStore.
@@ -856,25 +867,38 @@ class GottenGeography:
             _("Loading %s...") % os.path.basename(filename)
         )
         
-        # If file already loaded, grab it's iter to reload data into.
-        if filename not in self.loaded_photo_iters:
-            self.loaded_photo_iters[filename] = \
+        if filename not in self.photo:
+            self.photo[filename] = Photograph(
                 photos.append([None] * photos.get_n_columns())
-            
+            )
+        
         if iter is None:
-            iter = self.loaded_photo_iters[filename]
+            iter = self.photo[filename].iter
+        
+        self.photo[filename].set( {
+            'timestamp': timestamp,
+            'modified':  False,
+            'manual':    False
+        } )
         
         photos.set_value(iter, self.col['Path'],      filename)
         photos.set_value(iter, self.col['Thumb'],     thumb)
         photos.set_value(iter, self.col['Timestamp'], timestamp)
         
-        if filename in self.modified:   del self.modified[filename]
-        if filename in self.has_manual: del self.has_manual[filename]
-        
         self.insert_coordinates(photos, iter, lat, lon, ele, False)
         
         self.auto_timestamp_comparison(photos, None, iter)
         self.update_sensitivity()
+    
+    def count_modified_photos(self):
+        """Return a count of the modified photos."""
+        
+        modified = 0
+        for filename in self.photo:
+            if self.photo[filename].modified:
+                modified += 1
+        
+        return modified
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
@@ -921,7 +945,6 @@ class GottenGeography:
         chooser.set_default_response(Gtk.ResponseType.OK)
         chooser.set_select_multiple(True)
         
-        # preview widget
         self.preview_image = Gtk.Image()
         self.preview_label = Gtk.Label()
         self.preview_label.set_justify(Gtk.Justification.CENTER)
@@ -982,7 +1005,9 @@ class GottenGeography:
         self.remember_location_with_gconf()
         
         # If there's no unsaved data, just close without confirmation.
-        if len(self.modified) == 0:
+        modified = self.count_modified_photos()
+        
+        if modified == 0:
             Gtk.main_quit()
             return True
         
@@ -992,7 +1017,7 @@ class GottenGeography:
             title=" "
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_markup(SAVE_WARNING % len(self.modified))
+        dialog.set_markup(SAVE_WARNING % modified)
         dialog.add_button(_("Close _without Saving"), Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
@@ -1039,65 +1064,39 @@ class GottenGeography:
     def __init__(self, animate_crosshair=True):
         """Initialize all necessary state."""
         
+        self.photo = {}
+        self.button = {}
+        self.history = []
+        
+        # Use boolean list indices to retrieve cardinal direction strings, eg:
         # cardinal[True][53 <= 0] == "N", cardinal[False][-113 <= 0] == "W".
         self.cardinal = [[ "E", "W" ], [ "N", "S" ]]
         
-        # Keys are filenames that have been modified, values are True.
-        self.modified = {}
-        
-        # Keys are filenames that have been manually tagged, values are True.
-        self.has_manual = {}
-        
-        # Keys are filenames that are loaded, values are GtkTreeIters.
-        self.loaded_photo_iters = {}
-        
-        # Stores a list of locations that the user was viewing immediately
-        # prior to any point at which the view was changed programmatically.
-        # Allows the user to go "back", eg, after GPX load has changed the view.
-        self.history = []
-        
-        # Holds various buttons used throughout the interface
-        self.button = {}
-        
         self.toolbar = Gtk.Toolbar()
-        
         self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
             _("Load photos or GPS data (Ctrl+O)"), _("Open"))
-        
         self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
             _("Save all photos (Ctrl+S)"), _("Save All"))
-        
         self.toolbar.add(Gtk.SeparatorToolItem())
-        
         self.create_tool_button(Gtk.STOCK_CLEAR, self.clear_all_gpx,
             _("Unload all GPS data (Ctrl+X)"), _("Clear GPX"))
-        
         self.create_tool_button(Gtk.STOCK_CLOSE, self.close_selected_photos,
             _("Close selected photos (Ctrl+W)"), _("Close Photo"))
-        
         self.toolbar.add(Gtk.SeparatorToolItem())
-        
         self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
             self.revert_selected_photos,
             _("Reload selected photos, losing all changes (Ctrl+Z)"))
-        
         self.toolbar_spacer = Gtk.SeparatorToolItem()
         self.toolbar_spacer.set_expand(True)
         self.toolbar_spacer.set_draw(False)
         self.toolbar.add(self.toolbar_spacer)
-        
         self.create_tool_button(Gtk.STOCK_ZOOM_OUT, self.zoom_out,
             _("Zoom the map out one step."))
-        
         self.create_tool_button(Gtk.STOCK_ZOOM_IN, self.zoom_in, _("Enhance!"))
-        
         self.toolbar.add(Gtk.SeparatorToolItem())
-        
         self.create_tool_button(Gtk.STOCK_GO_BACK, self.return_to_last,
             _("Return to previous location in map view."))
-        
         self.toolbar.add(Gtk.SeparatorToolItem())
-        
         self.create_tool_button(Gtk.STOCK_ABOUT, self.about_dialog,
             _("About %s") % APPNAME)
         
@@ -1106,18 +1105,11 @@ class GottenGeography:
             GObject.TYPE_STRING,  # 1 Pango-formatted summary
             GdkPixbuf.Pixbuf,     # 2 Thumbnail
             GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
-            GObject.TYPE_DOUBLE,  # 4 Latitude
-            GObject.TYPE_DOUBLE,  # 5 Longitude
-            GObject.TYPE_DOUBLE,  # 6 Altitude
-            GObject.TYPE_OBJECT   # 7 ChamplainMarker representing photo on map
         )
         
-        # Keys are column names and values are ints referring to the columns in
-        # the above GtkListStore. Makes code more readable to reference columns
-        # by name rather than cryptic numbers.
+        # Handy names for the above GtkListStore column numbers.
         self.col = dict(zip(
-            [ 'Path', 'Summary', 'Thumb', 'Timestamp', 'Latitude', 'Longitude',
-              'Altitude', 'Marker' ],
+            [ 'Path', 'Summary', 'Thumb', 'Timestamp' ],
             range(self.loaded_photos.get_n_columns())
         ))
         
@@ -1332,7 +1324,7 @@ class GottenGeography:
         if label is not None: button.set_label(label)
         
         self.toolbar.add(button)
-        self.button[button.get_stock_id()] = button
+        self.button[stock_id] = button
     
     def prep_actor(self, actor):
         """Do some standard things to a ClutterActor."""
@@ -1376,7 +1368,7 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("a"):      self.toggle_selected_photos()
         
         # Prevent the following keybindings from executing if there are no unsaved files
-        if len(self.modified) == 0: return
+        if self.count_modified_photos() == 0: return
         
         if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
@@ -1422,13 +1414,6 @@ class GottenGeography:
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    def append_if_modified(self, photos, path, iter, pathlist):
-        """Append the given photo to the pathlist if it's been modified."""
-        
-        if photos.get_value(iter, self.col['Path']) in self.modified:
-            pathlist.append(path)
-            return True
-    
     def update_sensitivity(self, selection=None):
         """Ensure all widgets are sensitive only when they need to be.
         
@@ -1443,16 +1428,14 @@ class GottenGeography:
         self.button['gtk-apply'].set_sensitive(sensitivity)
         self.button['gtk-close'].set_sensitive(sensitivity)
         
-        # Revert button is only activated if the selection has unsaved files.
-        modified = []
-        self.photo_selection.selected_foreach(
-            self.append_if_modified,
-            modified
-        )
-        self.button['gtk-revert-to-saved'].set_sensitive(len(modified) > 0)
-        
-        # Save button is only activated if there are modified files.
-        self.button['gtk-save'].set_sensitive(len(self.modified) > 0)
+        modified, selected = 0, 0
+        for filename in self.photo:
+            if self.photo[filename].modified:
+                if selection.iter_is_selected(self.photo[filename].iter):
+                    selected += 1
+                modified += 1
+        self.button['gtk-save'].set_sensitive(modified > 0)
+        self.button['gtk-revert-to-saved'].set_sensitive(selected > 0)
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0

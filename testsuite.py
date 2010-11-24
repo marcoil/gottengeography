@@ -26,7 +26,7 @@ class GottenGeographyTester(unittest.TestCase):
             "<class 'gi.repository.GConf.Client'>"
         )
         
-        self.assertEqual(self.gui.loaded_photos.get_n_columns(), 8)
+        self.assertEqual(self.gui.loaded_photos.get_n_columns(), 4)
         self.assertEqual(self.gui.window.get_size(), (900, 700))
         
         self.assertTrue(self.gui.app_container.get_visible())
@@ -38,7 +38,6 @@ class GottenGeographyTester(unittest.TestCase):
         """Load the demo data and ensure that we're reading it in properly."""
         
         self.assertEqual(len(self.gui.tracks), 0)
-        self.assertEqual(len(self.gui.modified), 0)
         self.assertEqual(len(self.gui.polygons), 0)
         self.assertEqual(self.gui.metadata['alpha'], float('inf'))
         self.assertEqual(self.gui.metadata['omega'], float('-inf'))
@@ -64,28 +63,22 @@ class GottenGeographyTester(unittest.TestCase):
         iter = self.gui.loaded_photos.get_iter_first()
         self.assertTrue(iter[0])
         
+        filename = self.gui.loaded_photos.get_value(iter[1], self.gui.col['Path'])
         # Test that a photo has no coordinates to begin with
-        self.assertEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Latitude']),
-            0.0
-        )
-        self.assertEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Longitude']),
-            0.0
-        )
+        self.assertIsNone(self.gui.photo[filename].latitude)
+        self.assertIsNone(self.gui.photo[filename].longitude)
         
         # Load the GPX
-        filename="%s/%s" % (os.getcwd(), "20101016.gpx")
+        gpx_filename="%s/%s" % (os.getcwd(), "20101016.gpx")
         self.assertRaises(IOError,
             self.gui.add_or_reload_photo,
-            filename=filename,
+            filename=gpx_filename,
             data=[[], 1]
         )
-        self.gui.load_gpx_from_file(filename)
+        self.gui.load_gpx_from_file(gpx_filename)
         
         # Check that the GPX is loaded
         self.assertEqual(len(self.gui.tracks),   374)
-        self.assertEqual(len(self.gui.modified), 6)
         self.assertEqual(len(self.gui.polygons), 1)
         self.assertEqual(self.gui.metadata['alpha'], 1287259751)
         self.assertEqual(self.gui.metadata['omega'], 1287260756)
@@ -96,14 +89,8 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         # check that a photo has the correct coordinates.
-        self.assertAlmostEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Latitude']),
-            53.529963999999993, 9
-        )
-        self.assertAlmostEqual(
-            self.gui.loaded_photos.get_value(iter[1], self.gui.col['Longitude']),
-            -113.44800866666665, 9
-        )
+        self.assertAlmostEqual(self.gui.photo[filename].latitude,   53.529963999999993, 9)
+        self.assertAlmostEqual(self.gui.photo[filename].longitude, -113.44800866666665, 9)
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
