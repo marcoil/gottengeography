@@ -35,35 +35,6 @@ VERSION = "0.2"
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-class ReadableDictionary:
-    """Object that exposes it's internal namespace as a dictionary.
-    
-    This can for the most part be used just like a normal dictionary, except
-    you can access it's keys with readable.key as well as readable['key']."""
-    
-    def __len__(self):
-        return len(self.__dict__)
-    
-    def __getitem__(self, key):
-        return self.__dict__[key]
-    
-    def __setitem__(self, key, value):
-        self.__dict__[key] = value
-
-class Photograph(ReadableDictionary):
-    """Represents a single photograph and it's location in space and time."""
-    
-    def set(self, attributes):
-        self.__dict__.update(attributes)
-    
-    def __init__(self, iter):
-        for key in ['timestamp', 'altitude', 'latitude', 'longitude', 'marker']:
-            self.__dict__[key] = None
-        
-        self.iter     = iter
-        self.manual   = False
-        self.modified = False
-
 class GottenGeography:
     
 ################################################################################
@@ -1472,6 +1443,42 @@ class GottenGeography:
         """Go!"""
         
         Gtk.main()
+
+################################################################################
+# These data structures are used throughout GottenGeography
+################################################################################
+
+class ReadableDictionary:
+    """Object that exposes it's internal namespace as a dictionary.
+    
+    This can for the most part be used just like a normal dictionary, except
+    you can access it's keys with readable.key as well as readable['key']."""
+    
+    def set(self, attributes):
+        self.__dict__.update(attributes)
+    
+    def __len__(self):
+        return len(self.__dict__)
+    
+    def __getitem__(self, key):
+        return self.__dict__[key]
+    
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+class Photograph(ReadableDictionary):
+    """Represents a single photograph and it's location in space and time."""
+    
+    def __init__(self, iter):
+        if type(iter) is not Gtk.TreeIter:
+            raise TypeError('Must be Gtk.TreeIter')
+        
+        for key in ['timestamp', 'altitude', 'latitude', 'longitude', 'marker']:
+            self[key] = None
+        
+        self.iter     = iter
+        self.manual   = False
+        self.modified = False
 
 ################################################################################
 # Strings section. Various strings that were too obnoxiously large to fit

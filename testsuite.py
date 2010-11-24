@@ -345,6 +345,6 @@ def random_coord(maximum=180):
     return (random.random() * maximum * 2) - maximum
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(GottenGeographyTester)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
+    unittest.TextTestRunner(verbosity=2).run(
+        unittest.TestLoader().loadTestsFromTestCase(GottenGeographyTester)
+    )
