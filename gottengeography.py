@@ -81,8 +81,7 @@ class GottenGeography:
         if ele is None: return ""
         
         # Eg, 'nnn.nm above sea level'
-        return "%.1f%s" % (
-            abs(ele),
+        return "%.1f%s" % (abs(ele),
             _("m above sea level") if ele >= 0 else _("m below sea level")
         )
     
@@ -305,7 +304,7 @@ class GottenGeography:
     def set_marker_highlight(self, photos, path, iter, (area, transparent)):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         
-        marker = self.photo[photos.get_value(iter, self.col['Path'])].marker
+        marker = self.photo[photos.get_value(iter, self.PATH)].marker
         
         try:
             if not marker.get_property('visible'): return
@@ -411,7 +410,7 @@ class GottenGeography:
     def save_one_file(self, photos, path, iter, (current, total)):
         """Save the specified file, if necessary."""
         
-        filename = photos.get_value(iter, self.col['Path'])
+        filename = photos.get_value(iter, self.PATH)
         
         if not self.photo[filename].modified: return
         
@@ -445,10 +444,10 @@ class GottenGeography:
         else:
             self.photo[filename].modified = False
             photos.set_value(
-                iter, self.col['Summary'],
+                iter, self.SUMMARY,
                 re.sub(
                     r'</?b>', '',
-                    photos.get_value(iter, self.col['Summary'])
+                    photos.get_value(iter, self.SUMMARY)
                 )
             )
     
@@ -662,7 +661,7 @@ class GottenGeography:
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
         
-        filename = photos.get_value(iter, self.col['Path'])
+        filename = photos.get_value(iter, self.PATH)
         
         # User has manually tagged a photo, we should respect that
         if self.photo[filename].manual: return
@@ -766,7 +765,7 @@ class GottenGeography:
             self.map_view.get_property('longitude')
         )
         
-        self.photo[photos.get_value(iter, self.col['Path'])].manual = True
+        self.photo[photos.get_value(iter, self.PATH)].manual = True
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -802,7 +801,7 @@ class GottenGeography:
         
         for path in pathlist:
             iter     = photos.get_iter(path)[1]
-            filename = photos.get_value(iter, self.col['Path'])
+            filename = photos.get_value(iter, self.PATH)
             
             try: self.photo[filename].marker.destroy()
             except: pass
@@ -816,7 +815,7 @@ class GottenGeography:
     def insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
         
-        filename  = photos.get_value(iter, self.col['Path'])
+        filename  = photos.get_value(iter, self.PATH)
         
         self.photo[filename].set( {
             'modified':  modified,
@@ -835,7 +834,7 @@ class GottenGeography:
             try:    self.photo[filename].marker.hide()
             except: pass
         
-        photos.set_value(iter, self.col['Summary'],
+        photos.set_value(iter, self.SUMMARY,
             self.create_summary(
                 filename, self.photo[filename].timestamp, lat, lon, ele
             )
@@ -856,7 +855,7 @@ class GottenGeography:
         if iter is None and filename is None: return
         
         if photos is None:   photos   = self.loaded_photos
-        if filename is None: filename = photos.get_value(iter, self.col['Path'])
+        if filename is None: filename = photos.get_value(iter, self.PATH)
         
         (timestamp, lat, lon, ele, thumb) = self.load_exif_from_file(filename)
         
@@ -881,9 +880,9 @@ class GottenGeography:
             'manual':    False
         } )
         
-        photos.set_value(iter, self.col['Path'],      filename)
-        photos.set_value(iter, self.col['Thumb'],     thumb)
-        photos.set_value(iter, self.col['Timestamp'], timestamp)
+        photos.set_value(iter, self.PATH,      filename)
+        photos.set_value(iter, self.THUMB,     thumb)
+        photos.set_value(iter, self.TIMESTAMP, timestamp)
         
         self.insert_coordinates(photos, iter, lat, lon, ele, False)
         
@@ -1108,13 +1107,11 @@ class GottenGeography:
         )
         
         # Handy names for the above GtkListStore column numbers.
-        self.col = dict(zip(
-            [ 'Path', 'Summary', 'Thumb', 'Timestamp' ],
+        self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = \
             range(self.loaded_photos.get_n_columns())
-        ))
         
         self.loaded_photos.set_sort_column_id(
-            self.col['Timestamp'],
+            self.TIMESTAMP,
             Gtk.SortType.ASCENDING
         )
         
@@ -1126,9 +1123,9 @@ class GottenGeography:
         
         self.column = Gtk.TreeViewColumn('Photos')
         self.column.pack_start(self.cell_thumb, False)
-        self.column.add_attribute(self.cell_thumb, 'pixbuf', self.col['Thumb'])
+        self.column.add_attribute(self.cell_thumb, 'pixbuf', self.THUMB)
         self.column.pack_start(self.cell_string, False)
-        self.column.add_attribute(self.cell_string, 'markup', self.col['Summary'])
+        self.column.add_attribute(self.cell_string, 'markup', self.SUMMARY)
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         self.photos_view = Gtk.TreeView(model=self.loaded_photos)

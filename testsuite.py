@@ -63,7 +63,7 @@ class GottenGeographyTester(unittest.TestCase):
         iter = self.gui.loaded_photos.get_iter_first()
         self.assertTrue(iter[0])
         
-        filename = self.gui.loaded_photos.get_value(iter[1], self.gui.col['Path'])
+        filename = self.gui.loaded_photos.get_value(iter[1], self.gui.PATH)
         # Test that a photo has no coordinates to begin with
         self.assertIsNone(self.gui.photo[filename].latitude)
         self.assertIsNone(self.gui.photo[filename].longitude)
