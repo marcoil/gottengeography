@@ -242,14 +242,14 @@ class GottenGeography:
     def position_actors(self, stage=None, parameter=None):
         """Ensure that the crosshair is precisely in the center of the map."""
         
-        self.coords.set_position(
-            (self.stage.get_width()  - self.coords.get_width()) / 2,
-             self.stage.get_height() - 2 * self.coords.get_height()
+        self.coords_background.set_position(
+            (self.stage.get_width()  - self.coords_background.get_width()) / 2,
+             self.stage.get_height() - self.coords_background.get_height()
         )
         
-        self.coords_background.set_position(
-            self.coords.get_x() - 5,
-            self.coords.get_y() - 5
+        self.coords.set_position(
+            self.coords_background.get_x() + 5,
+            self.coords_background.get_y() + 5
         )
         
         self.crosshair.set_position(
@@ -1249,7 +1249,7 @@ class GottenGeography:
         self.stage = self.map_view.get_stage()
         
         self.coords_background = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(255, 255, 255, 160)
+            Clutter.Color.new(255, 255, 255, 200)
         )
         self.prep_actor(self.coords_background)
         
