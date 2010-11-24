@@ -185,13 +185,13 @@ class GottenGeography:
         """Zoom the map in by one level."""
         
         self.map_view.zoom_in()
-        self.update_sensitivity()
+        self.zoom_button_sensitivity()
     
     def zoom_out(self, button=None):
         """Zoom the map out by one level."""
         
         self.map_view.zoom_out()
-        self.update_sensitivity()
+        self.zoom_button_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view in discrete steps."""
@@ -1259,6 +1259,8 @@ class GottenGeography:
         self.prep_actor(self.crosshair)
         self.position_actors()
         
+        self.zoom_button_sensitivity()
+        
         if not animate_crosshair: return
         
         # This causes the crosshair to start off huge and invisible, and it
@@ -1400,8 +1402,17 @@ class GottenGeography:
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
+    def zoom_button_sensitivity(self):
+        """Ensure zoom buttons are only sensitive when they need to be."""
+        
+        zoom_level = self.map_view.get_zoom_level()
+        self.button.gtk_zoom_out.set_sensitive(
+            self.map_view.get_min_zoom_level() is not zoom_level)
+        self.button.gtk_zoom_in.set_sensitive(
+            self.map_view.get_max_zoom_level() is not zoom_level)
+    
     def update_sensitivity(self, selection=None):
-        """Ensure all widgets are sensitive only when they need to be.
+        """Ensure widgets are sensitive only when they need to be.
         
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
@@ -1428,13 +1439,6 @@ class GottenGeography:
         for widget in self.offset.values() + [ self.offset_label,
         self.button.gtk_clear ]:
             widget.set_sensitive(gpx_sensitive)
-        
-        # Zoom buttons should not be able to zoom beyond their ability
-        zoom_level = self.map_view.get_zoom_level()
-        self.button.gtk_zoom_in.set_sensitive(
-            self.map_view.get_max_zoom_level() is not zoom_level)
-        self.button.gtk_zoom_out.set_sensitive(
-            self.map_view.get_min_zoom_level() is not zoom_level)
         
         # GtkListStore needs to be hidden if it is empty.
         if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
