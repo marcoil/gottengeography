@@ -719,20 +719,21 @@ class GottenGeography:
         for spinbutton in self.offset.values():
             spinbutton.handler_block_by_func(self.time_offset_changed)
         
-        seconds = self.offset['s'].get_value()
-        minutes = self.offset['m'].get_value()
-        hours   = self.offset['h'].get_value()
+        seconds = self.offset.seconds.get_value()
+        minutes = self.offset.minutes.get_value()
+        hours   = self.offset.hours.get_value()
         
         offset = int((hours * 3600) + (minutes * 60) + seconds)
         
         if abs(seconds) == 60:
             minutes += seconds/60
-            self.offset['s'].set_value(0)
-            self.offset['m'].set_value(minutes)
+            self.offset.seconds.set_value(0)
+            self.offset.minutes.set_value(minutes)
         
         if abs(minutes) == 60:
-            self.offset['m'].set_value(0)
-            self.offset['h'].set_value(hours + (minutes/60))
+            hours += minutes/60
+            self.offset.minutes.set_value(0)
+            self.offset.hours.set_value(hours)
         
         if offset <> self.metadata['delta']:
             self.metadata['delta'] = offset
@@ -803,7 +804,7 @@ class GottenGeography:
         
         filename  = photos.get_value(iter, self.PATH)
         
-        self.photo[filename].set( {
+        self.photo[filename].update( {
             'modified':  modified,
             'altitude':  ele,
             'latitude':  lat,
@@ -860,7 +861,7 @@ class GottenGeography:
         if iter is None:
             iter = self.photo[filename].iter
         
-        self.photo[filename].set( {
+        self.photo[filename].update( {
             'timestamp': timestamp,
             'modified':  False,
             'manual':    False
@@ -1178,11 +1179,11 @@ class GottenGeography:
         self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 6)
         
-        self.offset = {
-            's': self.create_spin_button(60, _("seconds")),
-            'm': self.create_spin_button(60, _("minutes")),
-            'h': self.create_spin_button(24, _("hours"))
-        }
+        self.offset = ReadableDictionary( {
+            'seconds': self.create_spin_button(60, _("seconds")),
+            'minutes': self.create_spin_button(60, _("minutes")),
+            'hours':   self.create_spin_button(24, _("hours"))
+        } )
         
         self.statusbar.pack_end(self.offset_label, False, False, 0)
         
@@ -1454,8 +1455,14 @@ class ReadableDictionary:
     This can for the most part be used just like a normal dictionary, except
     you can access it's keys with readable.key as well as readable['key']."""
     
-    def set(self, attributes):
+    def values(self):
+        return self.__dict__.values()
+    
+    def update(self, attributes):
         self.__dict__.update(attributes)
+    
+    def __init__(self, attributes={}):
+        self.update(attributes)
     
     def __len__(self):
         return len(self.__dict__)
@@ -1465,6 +1472,9 @@ class ReadableDictionary:
     
     def __setitem__(self, key, value):
         self.__dict__[key] = value
+    
+    def __delitem__(self, key):
+        del self.__dict__[key]
 
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
