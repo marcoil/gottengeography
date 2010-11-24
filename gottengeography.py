@@ -605,10 +605,6 @@ class GottenGeography:
         
         self.remember_location()
         
-        # ISO 8601 dates look like 2010-10-16T20:09:13Z and this regex will be
-        # used to split that up into a list like 2010, 10, 16, 20, 09, 13.
-        self.delimiters = re.compile(r'[:TZ-]')
-        
         start_points = len(self.tracks)
         start_time   = time.clock()
         
@@ -1052,6 +1048,10 @@ class GottenGeography:
         
         self.photo = {}
         self.history = []
+        
+        # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
+        # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
+        self.delimiters = re.compile(r'[:TZ-]')
         
         # Use boolean list indices to retrieve cardinal direction strings, eg:
         # cardinal[True][53 <= 0] == "N", cardinal[False][-113 <= 0] == "W".
