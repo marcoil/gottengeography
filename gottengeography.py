@@ -598,8 +598,6 @@ class GottenGeography:
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         
-        self.redraw_interface(0, os.path.basename(filename))
-        
         self.remember_location()
         
         start_points = len(self.tracks)
