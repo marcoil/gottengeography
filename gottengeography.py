@@ -406,7 +406,7 @@ class GottenGeography:
             
             self.redraw_interface(
                 current / len(self.photo),
-                _("Saving %s...") % os.path.basename(filename)
+                os.path.basename(filename)
             )
             
             exif = pyexiv2.Image(filename)
@@ -598,7 +598,7 @@ class GottenGeography:
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         
-        self.redraw_interface(0, _("Parsing GPX data..."))
+        self.redraw_interface(0, os.path.basename(filename))
         
         self.remember_location()
         
@@ -935,7 +935,7 @@ class GottenGeography:
         for filename in files:
             count += 1
             self.redraw_interface(count / len(files),
-                _("Loading %s...") % os.path.basename(filename)
+                os.path.basename(filename)
             )
             
             # Assume the file is an image; if that fails, assume it's GPX;
@@ -1145,14 +1145,13 @@ class GottenGeography:
         self.photos_and_map_container.add(self.champlain)
         
         self.progressbar = Gtk.ProgressBar()
-        self.progressbar.set_size_request(550, -1)
-        self.progressbar.set_pulse_step(0.02)
+        self.progressbar.set_size_request(0, -1) # Stops it from flailing.
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
         
         self.statusbar = Gtk.Statusbar(spacing=12)
         self.statusbar.set_border_width(3)
-        self.statusbar.pack_start(self.progressbar, True, True, 6)
+        self.statusbar.pack_start(self.progressbar, True, True, 0)
         
         self.offset = ReadableDictionary( {
             'seconds': self.create_spin_button(60, _("seconds")),
