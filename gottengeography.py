@@ -396,61 +396,57 @@ class GottenGeography:
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
-    def save_one_file(self, photos, path, iter, (current, total)):
-        """Save the specified file, if necessary."""
-        
-        filename = photos.get_value(iter, self.PATH)
-        
-        if not self.photo[filename].modified: return
-        
-        current.append(path)
-        
-        self.redraw_interface(len(current) / total,
-            _("Saving %s...") % os.path.basename(filename))
-        
-        # If this was gonna fail it would have failed during loading.
-        exif = pyexiv2.Image(filename)
-        exif.readMetadata()
-        
-        exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
-        
-        ele = self.photo[filename].altitude
-        exif['Exif.GPSInfo.GPSAltitudeRef'] = 0 if ele >= 0 else 1
-        exif['Exif.GPSInfo.GPSAltitude'] = self.float_to_rational(abs(ele))
-        
-        for name in [ 'latitude', 'longitude' ]:
-            (exif['Exif.GPSInfo.GPS%s'    % name.capitalize()],
-             exif['Exif.GPSInfo.GPS%sRef' % name.capitalize()]) = \
-                self.decimal_to_dms(
-                    self.photo[filename][name],
-                    name == 'latitude'
-                )
-        
-        try:
-            exif.writeMetadata()
-        except Exception as inst:
-            self.status_message(", ".join(inst.args))
-        else:
-            self.photo[filename].modified = False
-            photos.set_value(
-                iter, self.SUMMARY,
-                re.sub(
-                    r'</?b>', '',
-                    photos.get_value(iter, self.SUMMARY)
-                )
-            )
-    
     def save_all_files(self, widget=None):
-        """Call self.save_one_file() once for each loaded file."""
+        """Ensure all loaded files are saved."""
         
         self.progressbar.show()
         
-        self.loaded_photos.foreach(
-            self.save_one_file, [[], self.count_modified_photos()]
-        )
+        current = 0
+        for filename in self.photo:
+            current += 1
+            if not self.photo[filename].modified: continue
+            
+            self.redraw_interface(
+                current / len(self.photo),
+                _("Saving %s...") % os.path.basename(filename)
+            )
+            
+            exif = pyexiv2.Image(filename)
+            exif.readMetadata()
+            
+            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
+            
+            for name in [ 'altitude', 'latitude', 'longitude' ]:
+                if self.photo[filename][name] is None: continue
+                (exif['Exif.GPSInfo.GPS%s'    % name.capitalize()],
+                 exif['Exif.GPSInfo.GPS%sRef' % name.capitalize()]) = \
+                    self.exify(name, self.photo[filename][name])
+            
+            try:
+                exif.writeMetadata()
+            except Exception as inst:
+                self.status_message(", ".join(inst.args))
+            else:
+                self.photo[filename].modified = False
+                self.loaded_photos.set_value(
+                    self.photo[filename].iter, self.SUMMARY,
+                    re.sub(r'</?b>', '',
+                        self.loaded_photos.get_value(
+                            self.photo[filename].iter, self.SUMMARY
+                        )
+                    )
+                )
         
         self.update_sensitivity()
         self.progressbar.hide()
+    
+    def exify(self, key, value):
+        """Convert values into the format expected by EXIF."""
+        
+        if key == 'altitude':
+            return self.float_to_rational(abs(value)), 0 if value >= 0 else 1
+        else:
+            return self.decimal_to_dms(value, key == 'latitude')
     
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module."""
