@@ -27,7 +27,7 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         self.assertEqual(self.gui.loaded_photos.get_n_columns(), 4)
-        self.assertEqual(self.gui.window.get_size(), (900, 700))
+        self.assertEqual(self.gui.window.get_size(), (800, 600))
         
         self.assertTrue(self.gui.app_container.get_visible())
         
