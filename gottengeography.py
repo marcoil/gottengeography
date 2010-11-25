@@ -343,15 +343,13 @@ class GottenGeography:
                 self.remember_location()
                 self.map_view.ensure_visible(*area)
     
-    def add_marker(self, label, lat, lon):
+    def add_marker(self, label):
         """Create a new ChamplainMarker and add it to the map."""
         
         marker = Champlain.Marker()
         marker.set_name(label)
         marker.set_text(os.path.basename(label))
-        marker.set_position(lat, lon)
         self.map_photo_layer.add_marker(marker)
-        marker.show()
         
         marker.set_property('reactive', True)
         marker.connect("button-press-event", self.marker_clicked)
@@ -626,7 +624,8 @@ class GottenGeography:
         if len(self.tracks) > 0:
             self.map_view.ensure_visible(*self.metadata['area'])
         
-        self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+        for filename in self.photo:
+            self.auto_timestamp_comparison(filename)
         
         # Cleanup leftover data from parser
         self.gpx_state.clear()
@@ -636,13 +635,11 @@ class GottenGeography:
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, photos, path, iter, data=None):
+    def auto_timestamp_comparison(self, filename):
         """Use GPX data to calculate photo coordinates and elevation."""
         
         # There must be at least two GPX points loaded for this to work
         if len(self.tracks) < 2: return
-        
-        filename = photos.get_value(iter, self.PATH)
         
         # User has manually tagged a photo, we should respect that
         if self.photo[filename].manual: return
@@ -703,7 +700,7 @@ class GottenGeography:
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
         
-        self.insert_coordinates(photos, iter, lat, lon, ele)
+        self.insert_coordinates(filename, lat, lon, ele)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -733,7 +730,9 @@ class GottenGeography:
         if offset <> self.metadata['delta']:
             self.metadata['delta'] = offset
             
-            self.loaded_photos.foreach(self.auto_timestamp_comparison, None)
+            for filename in self.photo:
+                self.auto_timestamp_comparison(filename)
+            
             self.update_all_marker_highlights()
         
         for spinbutton in self.offset.values():
@@ -742,12 +741,14 @@ class GottenGeography:
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
         
-        self.insert_coordinates(photos, iter,
+        filename = photos.get_value(iter, self.PATH)
+        
+        self.insert_coordinates(filename,
             self.map_view.get_property('latitude'),
             self.map_view.get_property('longitude')
         )
         
-        self.photo[photos.get_value(iter, self.PATH)].manual = True
+        self.photo[filename].manual = True
     
     # {apply,revert,close}_selected_photos are signal handlers that are called
     # in response to both keyboard shortcuts and button clicking. button will
@@ -794,10 +795,8 @@ class GottenGeography:
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
     
-    def insert_coordinates(self, photos, iter, lat=None, lon=None, ele=None, modified=True):
+    def insert_coordinates(self, filename, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
-        
-        filename  = photos.get_value(iter, self.PATH)
         
         self.photo[filename].update( {
             'modified':  modified,
@@ -807,16 +806,12 @@ class GottenGeography:
         } )
         
         if self.valid_coords(lat, lon):
-            try:
-                self.photo[filename].marker.set_position(lat, lon)
-                self.photo[filename].marker.show()
-            except AttributeError:
-                self.photo[filename].marker = self.add_marker(filename, lat, lon)
+            self.photo[filename].marker.set_position(lat, lon)
+            self.photo[filename].marker.show()
         else:
-            try:    self.photo[filename].marker.hide()
-            except: pass
+            self.photo[filename].marker.hide()
         
-        photos.set_value(iter, self.SUMMARY,
+        self.loaded_photos.set_value(self.photo[filename].iter, self.SUMMARY,
             self.create_summary(
                 filename, self.photo[filename].timestamp, lat, lon, ele
             )
@@ -852,6 +847,7 @@ class GottenGeography:
             self.photo[filename] = Photograph(
                 photos.append([None] * photos.get_n_columns())
             )
+            self.photo[filename].marker = self.add_marker(filename)
         
         if iter is None:
             iter = self.photo[filename].iter
@@ -866,9 +862,9 @@ class GottenGeography:
         photos.set_value(iter, self.THUMB,     thumb)
         photos.set_value(iter, self.TIMESTAMP, timestamp)
         
-        self.insert_coordinates(photos, iter, lat, lon, ele, False)
+        self.insert_coordinates(filename, lat, lon, ele, False)
         
-        self.auto_timestamp_comparison(photos, None, iter)
+        self.auto_timestamp_comparison(filename)
         self.update_sensitivity()
     
     def count_modified_photos(self):

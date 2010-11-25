@@ -295,7 +295,8 @@ class GottenGeographyTester(unittest.TestCase):
         lat = random_coord(90)
         lon = random_coord(180)
         
-        marker = self.gui.add_marker("foobar", lat, lon)
+        marker = self.gui.add_marker("foobar")
+        marker.set_position(lat, lon)
         
         self.assertEqual(marker.get_property('latitude'), lat)
         self.assertEqual(marker.get_property('longitude'), lon)
