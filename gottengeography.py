@@ -764,9 +764,9 @@ class GottenGeography:
         
         self.progressbar.show()
         
-        self.photo_selection.selected_foreach(
-            self.add_or_reload_photo, [[], self.count_modified_photos()]
-        )
+        for filename in self.photo:
+            if self.photo_selection.iter_is_selected(self.photo[filename].iter):
+                self.add_or_reload_photo(filename)
         
         self.progressbar.hide()
         
@@ -812,7 +812,7 @@ class GottenGeography:
             )
         )
     
-    def add_or_reload_photo(self, photos=None, path=None, iter=None, data=None, filename=None):
+    def add_or_reload_photo(self, filename):
         """Create or update a row in the ListStore.
         
         Checks if the file has already been loaded, and if not, creates a new
@@ -820,32 +820,16 @@ class GottenGeography:
         photo metadata as read from disk. Effectively, this is used both for
         loading new photos, and reverting old photos, discarding any changes.
         
-        Must be passed either an iter or filename, or both. Raises IOError if
-        filename refers to a file that is not a photograph.
+        Raises IOError if filename refers to a file that is not a photograph.
         """
-        
-        if iter is None and filename is None: return
-        
-        if photos is None:   photos   = self.loaded_photos
-        if filename is None: filename = photos.get_value(iter, self.PATH)
         
         timestamp, lat, lon, ele, thumb = self.load_exif_from_file(filename)
         
-        current, total = data
-        current.append(filename)
-        self.redraw_interface(
-            len(current) / total,
-            _("Loading %s...") % os.path.basename(filename)
-        )
-        
         if filename not in self.photo:
             self.photo[filename] = Photograph(
-                photos.append([None] * photos.get_n_columns())
+                self.loaded_photos.append([None] * 4),
+                self.add_marker(filename)
             )
-            self.photo[filename].marker = self.add_marker(filename)
-        
-        if iter is None:
-            iter = self.photo[filename].iter
         
         self.photo[filename].update( {
             'timestamp': timestamp,
@@ -853,9 +837,10 @@ class GottenGeography:
             'manual':    False
         } )
         
-        photos.set_value(iter, self.PATH,      filename)
-        photos.set_value(iter, self.THUMB,     thumb)
-        photos.set_value(iter, self.TIMESTAMP, timestamp)
+        iter = self.photo[filename].iter
+        self.loaded_photos.set_value(iter, self.PATH,      filename)
+        self.loaded_photos.set_value(iter, self.THUMB,     thumb)
+        self.loaded_photos.set_value(iter, self.TIMESTAMP, timestamp)
         
         self.insert_coordinates(filename, lat, lon, ele, False)
         
@@ -944,21 +929,20 @@ class GottenGeography:
         files = chooser.get_filenames()
         chooser.destroy()
         
-        # This is used to count loaded files
-        loaded_files = []
-        
         invalid_files = []
-        
+        count = 0
         # Iterate over files and attempt to load them.
         for filename in files:
+            count += 1
+            self.redraw_interface(count / len(files),
+                _("Loading %s...") % os.path.basename(filename)
+            )
+            
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
             try:
                 try:
-                    self.add_or_reload_photo(
-                        filename=filename,
-                        data=[loaded_files, len(files)]
-                    )
+                    self.add_or_reload_photo(filename)
                 except IOError:
                     self.load_gpx_from_file(filename)
             except expat.ExpatError:
@@ -970,6 +954,7 @@ class GottenGeography:
         
         self.progressbar.hide()
         self.update_sensitivity()
+        self.update_all_marker_highlights()
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
@@ -1473,14 +1458,12 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, iter):
-        if type(iter) is not Gtk.TreeIter:
-            raise TypeError('Must be Gtk.TreeIter')
-        
+    def __init__(self, iter, marker):
         for key in ['timestamp', 'altitude', 'latitude', 'longitude', 'marker']:
             self[key] = None
         
         self.iter     = iter
+        self.marker   = marker
         self.manual   = False
         self.modified = False
 
