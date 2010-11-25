@@ -762,8 +762,12 @@ class GottenGeography:
         
         self.progressbar.show()
         
+        count, total = 0, self.photo_selection.count_selected_rows()
+        
         for filename in self.photo:
             if self.photo_selection.iter_is_selected(self.photo[filename].iter):
+                count += 1
+                self.redraw_interface(count / total, os.path.basename(filename))
                 self.add_or_reload_photo(filename)
         
         self.progressbar.hide()
