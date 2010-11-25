@@ -1173,7 +1173,8 @@ class GottenGeography:
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title(APPNAME)
         self.window.set_default_icon_name('gtk-new')
-        self.window.set_size_request(900,700)
+        self.window.set_default_size(800,600)
+        self.window.set_size_request(620,400)
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
         
