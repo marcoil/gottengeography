@@ -776,20 +776,16 @@ class GottenGeography:
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         
-        pathlist, photos = self.photo_selection.get_selected_rows()
-        if pathlist == []: return
+        # Can't delete from a dictionary while iterating over it, so make a
+        # shallow copy, iterate over it, and modify the original.
+        photos = self.photo.copy()
         
-        pathlist.reverse()
-        
-        for path in pathlist:
-            iter     = photos.get_iter(path)[1]
-            filename = photos.get_value(iter, self.PATH)
-            
-            try: self.photo[filename].marker.destroy()
-            except: pass
-            
-            del self.photo[filename]
-            photos.remove(iter)
+        for filename in photos:
+            iter = self.photo[filename].iter
+            if self.photo_selection.iter_is_selected(iter):
+                self.photo[filename].marker.destroy()
+                self.loaded_photos.remove(iter)
+                del self.photo[filename]
         
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
