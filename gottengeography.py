@@ -658,8 +658,7 @@ class GottenGeography:
         # I think this makes sense. If it doesn't, the user isn't obligated to
         # save the result. They can always override with the 'apply' button,
         # or load in a different GPX file with correct data.
-        photo = max(photo, lo)
-        photo = min(photo, hi)
+        photo = min(max(photo, lo), hi)
         
         # Check for GPX point with exact timestamp as photo. This is more likely
         # than you might think. Three out of the six supplied demo images match
