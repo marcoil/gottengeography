@@ -19,7 +19,7 @@
 
 from __future__ import division
 
-import pyexiv2, os, re, time, calendar, math, gettext
+import os, re, time, calendar, math, gettext, pyexiv2
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
@@ -36,6 +36,12 @@ gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
 class GottenGeography:
+    """Provides a graphical interface to automagically geotag photos.
+    
+    Just load your photos, and load a GPX file, and GottenGeography will
+    automatically cross-reference the timestamps on the photos to the timestamps
+    in the GPX to determine the three-dimensional coordinates of each photo.
+    """
     
 ################################################################################
 # Pretty string methods. These methods take numbers as input and return strings
@@ -44,18 +50,12 @@ class GottenGeography:
     
     def pretty_time(self, timestamp):
         """Convert epoch seconds to a human-readable date."""
-        
         if type(timestamp) is not int: return _("No timestamp")
-        
-        # Eg, 'YYYY-MM-DD HH:MM:SS PM'
         return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
     
     def pretty_coords(self, lat, lon):
         """Add cardinal directions to decimal coordinates."""
-        
         if not self.valid_coords(lat, lon): return _("Not geotagged")
-        
-        # Eg, "N nn.nnnnn, W nnn.nnnnn"
         return '%s %.5f, %s %.5f' % (
             _("N") if lat >= 0 else _("S"), abs(lat),
             _("E") if lon >= 0 else _("W"), abs(lon)
@@ -63,28 +63,21 @@ class GottenGeography:
     
     def pretty_elevation(self, ele):
         """Convert elevation into a human readable format."""
-        
         if ele is None: return ""
-        
-        # Eg, 'nnn.nm above sea level'
         return "%.1f%s" % (abs(ele),
             _("m above sea level") if ele >= 0 else _("m below sea level")
         )
     
     def maps_link(self, lat, lon, anchor=None):
         """Create a Pango link to Google Maps."""
-        
         if anchor is None: anchor = self.pretty_coords(lat, lon)
-        
         if not self.valid_coords(lat, lon): return anchor
-        
         return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (
             lat, lon, anchor
         )
     
     def create_summary(self, filename, timestamp, lat, lon, ele):
         """Describe photo metadata with Pango formatting."""
-        
         desc = "\n".join( [
             self.pretty_time(timestamp),
             self.maps_link(lat, lon)
@@ -95,13 +88,11 @@ class GottenGeography:
         
         if filename is None: return desc
         
-        # Pango magic
         desc = "".join( [
             '<span size="larger">', os.path.basename(filename), '</span>\n',
             '<span style="italic" size="smaller">', desc, '</span>'
         ] )
         
-        # Embolden text if this image has unsaved data
         return '<b>%s</b>' % desc if self.photo[filename].modified else desc
     
 ################################################################################
@@ -110,7 +101,6 @@ class GottenGeography:
     
     def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
-        
         return ((degrees.numerator / degrees.denominator         +
                  minutes.numerator / minutes.denominator / 60    +
                  seconds.numerator / seconds.denominator / 3600) *
@@ -118,7 +108,6 @@ class GottenGeography:
     
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
-        
         # math.modf splits a float into it's remainder and largest whole number
         remainder, degrees = math.modf(abs(decimal))
         remainder, minutes = math.modf(remainder * 60)
@@ -127,21 +116,16 @@ class GottenGeography:
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
                  self.float_to_rational(seconds)
-               ], self.cardinal[is_latitude][decimal <= 0]
+               ], self.cardinal[is_latitude][decimal < 0]
     
     def float_to_rational(self, decimal):
         """Converts a float to a fractions.Fraction()."""
-        
-        # Fraction().limit_denominator() mostly just rounds out the inherent
-        # float imprecision rather than any real precision.
         return Fraction(decimal).limit_denominator(10000)
     
     def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
-        
         if type(lat) is not float: return False
         if type(lon) is not float: return False
-        
         return abs(lat) <= 90 and abs(lon) <= 180
     
 ################################################################################
@@ -150,14 +134,12 @@ class GottenGeography:
     
     def remember_location_with_gconf(self):
         """Use GConf for persistent storage of the currently viewed location."""
-        
         self.gconf_set('last_latitude',   self.map_view.get_property('latitude'))
         self.gconf_set('last_longitude',  self.map_view.get_property('longitude'))
         self.gconf_set('last_zoom_level', self.map_view.get_zoom_level())
     
     def remember_location(self):
         """Add the current location to the history stack."""
-        
         self.history.append( [
             self.map_view.get_property('latitude'),
             self.map_view.get_property('longitude'),
@@ -166,14 +148,12 @@ class GottenGeography:
     
     def return_to_last(self, button=None):
         """Return the map view to where the user last set it."""
-        
         try:
             lat, lon, zoom = self.history.pop()
         except IndexError:
             if button is not None: self.status_message(
                 _("That's as far back as she goes, kiddo!")
             )
-            
             lat  = self.gconf_get('last_latitude',   float)
             lon  = self.gconf_get('last_longitude',  float)
             zoom = self.gconf_get('last_zoom_level', int)
@@ -183,19 +163,16 @@ class GottenGeography:
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
-        
         self.map_view.zoom_in()
         self.zoom_button_sensitivity()
     
     def zoom_out(self, button=None):
         """Zoom the map out by one level."""
-        
         self.map_view.zoom_out()
         self.zoom_button_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view in discrete steps."""
-        
         x = self.map_view.get_width()  / 2
         y = self.map_view.get_height() / 2
         
@@ -206,12 +183,10 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
         
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
-        
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
     def create_polygon(self):
         """Prepare a new ChamplainPolygon for display on the map."""
-        
         polygon = Champlain.Polygon()
         polygon.set_property('closed-path', False)
         polygon.set_property('mark-points', False)
@@ -219,24 +194,20 @@ class GottenGeography:
         polygon.set_stroke(True)
         polygon.set_stroke_width(5)
         polygon.set_stroke_color(self.track_color)
-        
         self.map_view.add_polygon(polygon)
         self.polygons.append(polygon)
         polygon.show()
     
     def position_actors(self, stage=None, parameter=None):
         """Ensure that the crosshair is precisely in the center of the map."""
-        
         self.coords_background.set_position(
             (self.stage.get_width()  - self.coords_background.get_width()) / 2,
              self.stage.get_height() - self.coords_background.get_height()
         )
-        
         self.coords.set_position(
             self.coords_background.get_x() + 5,
             self.coords_background.get_y() + 5
         )
-        
         self.crosshair.set_position(
             (self.stage.get_width()  - self.crosshair.get_width())  / 2,
             (self.stage.get_height() - self.crosshair.get_height()) / 2
@@ -244,14 +215,12 @@ class GottenGeography:
     
     def display_coords(self, stage=None, parameter=None):
         """Display the map center coordinates in a label beneath the map."""
-        
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         
         self.coords_label.set_markup(
             self.maps_link(lat, lon, _("Go to Google Maps"))
         )
-        
         self.coords.set_markup(self.pretty_coords(lat, lon))
     
     def marker_clicked(self, marker, event):
@@ -259,37 +228,30 @@ class GottenGeography:
         
         The interface defined by this method is consistent with the behavior of
         the GtkListStore itself in the sense that a normal click will select
-        just one item, but Ctrl+clicking allows you to select multiple."""
-        
+        just one item, but Ctrl+clicking allows you to select multiple.
+        """
         try: iter = self.photo[marker.get_name()].iter
         except KeyError: return
         
-        if (event.get_state() == Clutter.ModifierType.CONTROL_MASK |
-                                 Clutter.ModifierType.MOD2_MASK):
-            # Ctrl+click toggles the selection of that photo.
-            if marker.get_highlighted():
-                self.photo_selection.unselect_iter(iter)
-            else:
-                self.photo_selection.select_iter(iter)
+        if (Clutter.ModifierType.CONTROL_MASK |
+            Clutter.ModifierType.MOD2_MASK      == event.get_state()):
+            if marker.get_highlighted(): self.photo_selection.unselect_iter(iter)
+            else:                        self.photo_selection.select_iter(iter)
         else:
-            # Normal click selects only one photo.
             self.button.gtk_select_all.set_active(False)
             self.photo_selection.unselect_all()
             self.photo_selection.select_iter(iter)
     
     def marker_mouse_in(self, marker, event):
         """Enlarge a hovered-over ChamplainMarker by 5%."""
-        
-        marker.set_scale(*map(lambda x:x*1.05, marker.get_scale()))
+        marker.set_scale(*map(lambda x: x * 1.05, marker.get_scale()))
     
     def marker_mouse_out(self, marker, event):
         """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-        
-        marker.set_scale(*map(lambda x:x/1.05, marker.get_scale()))
+        marker.set_scale(*map(lambda x: x / 1.05, marker.get_scale()))
     
     def marker_iter(self, photos, path, iter, (area, transparent)):
         """Call set_marker_highlight() from within a selected_foreach()."""
-        
         self.set_marker_highlight(
             self.photo[photos.get_value(iter, self.PATH)].marker,
             area, transparent
@@ -297,7 +259,6 @@ class GottenGeography:
     
     def set_marker_highlight(self, marker, area, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
-        
         try:
             if not marker.get_property('visible'): return
         except AttributeError:                     return
@@ -324,14 +285,12 @@ class GottenGeography:
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
-        
         if selection is None: selection = self.photo_selection
         selection_exists = selection.count_selected_rows() > 0
         
         for filename in self.photo:
             self.set_marker_highlight(
-                self.photo[filename].marker,
-                None, selection_exists
+                self.photo[filename].marker, None, selection_exists
             )
         
         if selection_exists:
@@ -345,40 +304,30 @@ class GottenGeography:
     
     def add_marker(self, label):
         """Create a new ChamplainMarker and add it to the map."""
-        
         marker = Champlain.Marker()
         marker.set_name(label)
         marker.set_text(os.path.basename(label))
-        self.map_photo_layer.add_marker(marker)
-        
         marker.set_property('reactive', True)
         marker.connect("button-press-event", self.marker_clicked)
         marker.connect("enter-event", self.marker_mouse_in)
         marker.connect("leave-event", self.marker_mouse_out)
         
+        self.map_photo_layer.add_marker(marker)
         return marker
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
-        
         for polygon in self.polygons:
             polygon.hide()
-            
             # Why doesn't this work? Why do these always cause segfaults?
             # Who are you? Where are my pants?
             #self.map_view.remove_polygon(polygon)
             #polygon.clear_points()
         
-        self.polygons = []
-        
-        self.tracks = {}
-        
+        self.polygons  = []
+        self.tracks    = {}
         self.gpx_state = {}
-        
-        # Sorry for nerding out on the greek names here, I was trying to find
-        # a way to say 'first' and 'last' with an equal number of letters, and
-        # then the rest just kind of happened.
-        self.metadata = {
+        self.metadata  = {
             'area':  [ float('inf'), float('inf'),
                        float('-inf'), float('-inf'),
                        False ],
@@ -396,22 +345,19 @@ class GottenGeography:
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
-        
         self.progressbar.show()
         
         current = 0
         for filename in self.photo:
             current += 1
-            if not self.photo[filename].modified: continue
-            
             self.redraw_interface(
                 current / len(self.photo),
                 os.path.basename(filename)
             )
+            if not self.photo[filename].modified: continue
             
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
-            
             exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
             
             for name in [ 'altitude', 'latitude', 'longitude' ]:
@@ -440,7 +386,6 @@ class GottenGeography:
     
     def exify(self, key, value):
         """Convert values into the format expected by EXIF."""
-        
         if key == 'altitude':
             return self.float_to_rational(abs(value)), 0 if value >= 0 else 1
         else:
@@ -448,7 +393,6 @@ class GottenGeography:
     
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module."""
-        
         # This will raise IOError on various invalid filetypes, with the
         # unfortunate exception of XML files (such as GPX or XMP).
         exif = pyexiv2.Image(filename)
@@ -472,7 +416,6 @@ class GottenGeography:
             timestamp = exif['Exif.Photo.DateTimeOriginal']
             timestamp = int(time.mktime(timestamp.timetuple()))
         except:
-            # Eh, better than nothing.
             timestamp = int(os.stat(filename).st_mtime)
         
         try:
@@ -499,12 +442,9 @@ class GottenGeography:
     def gpx_element_root(self, name, attributes):
         """Expat StartElementHandler.
         
-        This is only called on the top level element in the given XML file."""
-        
-        # Make sure the user gave us a GPX file, not something else.
+        This is only called on the top level element in the given XML file.
+        """
         if name <> 'gpx': raise expat.ExpatError
-        
-        # Otherwise, go ahead and actually parse all the sub elements.
         self.gpx_parser.StartElementHandler = self.gpx_element_start
     
     def gpx_element_start(self, name, attributes):
@@ -516,16 +456,11 @@ class GottenGeography:
         
         <trkpt lat="45.147445" lon="-81.469507">
         """
-        
-        # This is how the data handler knows what element it's in
         self.metadata['element-name'] = name
-        
-        # give us a blank string to append to from the data handler
-        self.gpx_state[name] = ""
+        self.gpx_state[name]          = ""
+        self.gpx_state.update(attributes)
         
         if name == "trkseg": self.create_polygon()
-        
-        self.gpx_state.update(attributes)
     
     def gpx_element_data(self, data):
         """Expat CharacterDataHandler.
@@ -536,7 +471,6 @@ class GottenGeography:
         <ele>671.092</ele>
         <time>2010-10-16T20:09:13Z</time>
         """
-        
         data = data.strip()
         if not data: return
         
@@ -552,8 +486,8 @@ class GottenGeography:
         keeping track of the first and last points loaded, as well as the
         entire area covered by the polygon, and occaisionally redrawing the
         screen so that the user can see what's going on while stuff is
-        loading."""
-        
+        loading.
+        """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
         if name <> "trkpt": return
@@ -577,29 +511,24 @@ class GottenGeography:
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
-        self.metadata['omega'] = max(self.metadata['omega'], timestamp)
-        self.metadata['alpha'] = min(self.metadata['alpha'], timestamp)
+        self.gpx_state.clear()
         
+        self.metadata['omega']   = max(self.metadata['omega'], timestamp)
+        self.metadata['alpha']   = min(self.metadata['alpha'], timestamp)
         self.metadata['area'][0] = min(self.metadata['area'][0], lat)
         self.metadata['area'][1] = min(self.metadata['area'][1], lon)
         self.metadata['area'][2] = max(self.metadata['area'][2], lat)
         self.metadata['area'][3] = max(self.metadata['area'][3], lon)
         
-        self.gpx_state.clear()
-        
-        if time.clock() - self.metadata['tau'] < .2: return
-        
-        # This part here is really slow, so I only do it 5 times per second.
-        self.progressbar.pulse()
-        self.map_view.ensure_visible(*self.metadata['area'])
-        self.redraw_interface()
-        self.metadata['tau'] = time.clock()
+        if time.clock() - self.metadata['tau'] > .2:
+            self.progressbar.pulse()
+            self.map_view.ensure_visible(*self.metadata['area'])
+            self.redraw_interface()
+            self.metadata['tau'] = time.clock()
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
-        
         self.remember_location()
-        
         start_points = len(self.tracks)
         start_time   = time.clock()
         
@@ -616,7 +545,6 @@ class GottenGeography:
             (len(self.tracks) - start_points,
              time.clock()     - start_time)
         )
-        
         self.update_sensitivity()
         
         if len(self.tracks) > 0:
@@ -635,40 +563,25 @@ class GottenGeography:
     
     def auto_timestamp_comparison(self, filename):
         """Use GPX data to calculate photo coordinates and elevation."""
-        
-        # There must be at least two GPX points loaded for this to work
-        if len(self.tracks) < 2: return
-        
-        # User has manually tagged a photo, we should respect that
+        if len(self.tracks) < 2:        return
         if self.photo[filename].manual: return
         
-        # photo is the timestamp in epoch seconds,
-        photo = self.photo[filename].timestamp
+        photo  = self.photo[filename].timestamp # this is in epoch seconds
         photo += self.metadata['delta']
         
-        # hi and lo begin by referring to the chronological first and last
-        # timestamp created by the GPX device. We later iterate over the list,
-        # searching for the two timestamps that are nearest to the photo
+        # Chronological first and last timestamp created by the GPX device.
         hi = self.metadata['omega']
         lo = self.metadata['alpha']
         
         # If the photo is out of range, simply peg it to the end of the range.
-        # I think this makes sense. If it doesn't, the user isn't obligated to
-        # save the result. They can always override with the 'apply' button,
-        # or load in a different GPX file with correct data.
         photo = min(max(photo, lo), hi)
         
-        # Check for GPX point with exact timestamp as photo. This is more likely
-        # than you might think. Three out of the six supplied demo images match
-        # this criteria, which I didn't notice until *after* I selected them.
+        # Try to use GPX point with exact timestamp as photo.
         try:
             lat = self.tracks[photo]['point'].lat
             lon = self.tracks[photo]['point'].lon
             ele = self.tracks[photo]['elevation']
         
-        # Failing that, however, we have to find the two track points that
-        # are nearest to the photo timestamp, and then proportionally calculate
-        # the location in between.
         except KeyError:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
@@ -676,20 +589,14 @@ class GottenGeography:
                 hi = min(point, hi) if point > photo else hi
                 lo = max(point, lo) if point < photo else lo
             
-            # delta is the number of seconds between
-            # the two points we're averaging
-            delta = hi - lo
+            delta = hi - lo    # in seconds
             
-            # low_perc and high_perc are percentages (between 0 and 1)
-            # representing the proportional amount of time from the
-            # lower point to the photo, and the higher point to the photo
+            # lo_perc and hi_perc are ratios (between 0 and 1) representing the
+            # proportional amount of time between the photo and the points.
             hi_perc = (photo - lo) / delta
             lo_perc = (hi - photo) / delta
             
-            # Multiply the coordinates of the gpx points by the proportional
-            # distance between the gpx point and the photo timestamp, and then
-            # add the two proportions. This results in finding the correct
-            # coordinates for the photo.
+            # Find intermediate values using the proportional ratios.
             lat = ((self.tracks[lo]['point'].lat * lo_perc)  +
                    (self.tracks[hi]['point'].lat * hi_perc))
             lon = ((self.tracks[lo]['point'].lon * lo_perc)  +
@@ -701,18 +608,14 @@ class GottenGeography:
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
-        
-        # The following set_value() calls cause the 'value-changed' signal to be
-        # emitted, which then invokes this method up to 5 times. This suppresses
-        # the extraneous invocations.
         for spinbutton in self.offset.values():
+            # Suppress extraneous invocations of this method.
             spinbutton.handler_block_by_func(self.time_offset_changed)
         
         seconds = self.offset.seconds.get_value()
         minutes = self.offset.minutes.get_value()
         hours   = self.offset.hours.get_value()
-        
-        offset = int((hours * 3600) + (minutes * 60) + seconds)
+        offset  = int((hours * 3600) + (minutes * 60) + seconds)
         
         if abs(seconds) == 60:
             minutes += seconds/60
@@ -737,31 +640,23 @@ class GottenGeography:
     
     def apply_single_photo(self, photos, path, iter, data=None):
         """Manually apply map center coordinates to given photo."""
-        
         filename = photos.get_value(iter, self.PATH)
+        self.photo[filename].manual = True
         
         self.insert_coordinates(filename,
             self.map_view.get_property('latitude'),
             self.map_view.get_property('longitude')
         )
-        
-        self.photo[filename].manual = True
     
-    # {apply,revert,close}_selected_photos are signal handlers that are called
-    # in response to both keyboard shortcuts and button clicking. button will
-    # be the ToolButton that invoked it, or None for a keyboard invocation.
     def apply_selected_photos(self, button=None):
         """Manually apply map center coordinates to all selected photos."""
-        
         self.photo_selection.selected_foreach(self.apply_single_photo, None)
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
-        
         self.progressbar.show()
-        
         count, total = 0, self.photo_selection.count_selected_rows()
         
         for filename in self.photo:
@@ -771,15 +666,11 @@ class GottenGeography:
                 self.add_or_reload_photo(filename)
         
         self.progressbar.hide()
-        
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
-        
-        # Can't delete from a dictionary while iterating over it, so make a
-        # shallow copy, iterate over it, and modify the original.
         photos = self.photo.copy()
         
         for filename in photos:
@@ -794,7 +685,6 @@ class GottenGeography:
     
     def insert_coordinates(self, filename, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
-        
         self.photo[filename].update( {
             'modified':  modified,
             'altitude':  ele,
@@ -824,7 +714,6 @@ class GottenGeography:
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        
         timestamp, lat, lon, ele, thumb = self.load_exif_from_file(filename)
         
         if filename not in self.photo:
@@ -851,7 +740,6 @@ class GottenGeography:
     
     def count_modified_photos(self):
         """Return a count of the modified photos."""
-        
         modified = 0
         for filename in self.photo:
             if self.photo[filename].modified:
@@ -865,15 +753,11 @@ class GottenGeography:
     
     def update_preview(self, chooser):
         """Display photo thumbnail and geotag data in file chooser."""
-        
         filename = chooser.get_preview_filename()
-        
-        self.preview_image.set_from_stock(
-            Gtk.STOCK_FILE,
+        self.preview_label.set_label(_("No preview available"))
+        self.preview_image.set_from_stock(Gtk.STOCK_FILE,
             Gtk.IconSize.LARGE_TOOLBAR
         )
-        
-        self.preview_label.set_label(_("No preview available"))
         
         if not os.path.isfile(str(filename)): return
         
@@ -884,15 +768,12 @@ class GottenGeography:
             return
         
         self.preview_image.set_from_pixbuf(thumb)
-        
         self.preview_label.set_label(
             self.create_summary(None, timestamp, lat, lon, ele)
         )
     
-    # TODO Need to be able to load files with drag & drop, not just this thing
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
-        
         chooser = Gtk.FileChooserDialog(
             title=_("Open Files"),
             buttons=(
@@ -931,28 +812,26 @@ class GottenGeography:
         files = chooser.get_filenames()
         chooser.destroy()
         
-        invalid_files = []
-        count = 0
-        # Iterate over files and attempt to load them.
+        invalid_files, count = [], 0
         for filename in files:
             count += 1
-            self.redraw_interface(count / len(files),
+            self.redraw_interface(
+                count / len(files),
                 os.path.basename(filename)
             )
             
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
             try:
-                try:
-                    self.add_or_reload_photo(filename)
-                except IOError:
-                    self.load_gpx_from_file(filename)
+                try:            self.add_or_reload_photo(filename)
+                except IOError: self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
         
         if len(invalid_files) > 0:
-            self.status_message(_("Could not open: %s") %
-                ", ".join(invalid_files))
+            self.status_message(
+                _("Could not open: %s") % ", ".join(invalid_files)
+            )
         
         self.progressbar.hide()
         self.update_sensitivity()
@@ -960,12 +839,11 @@ class GottenGeography:
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
-        
         self.remember_location_with_gconf()
         
-        # If there's no unsaved data, just close without confirmation.
         modified = self.count_modified_photos()
         
+        # If there's no unsaved data, just close without confirmation.
         if modified == 0:
             Gtk.main_quit()
             return True
@@ -993,16 +871,13 @@ class GottenGeography:
         if response == Gtk.ResponseType.ACCEPT: self.save_all_files()
         if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
         
-        # Prevents GTK from trying to call a non-existant destroy method
+        # Prevents GTK from trying to call a non-existant destroy method.
         return True
     
-    # TODO needs logo
     def about_dialog(self, widget=None, data=None):
         """Describe this application to the user."""
-        
         dialog = Gtk.AboutDialog()
         dialog.set_program_name(APPNAME)
-        dialog.set_name(APPNAME)
         dialog.set_version(VERSION)
         dialog.set_copyright("(c) Robert Park, 2010")
         dialog.set_license(LICENSE)
@@ -1021,9 +896,7 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        """Initialize all necessary state."""
-        
-        self.photo = {}
+        self.photo   = {}
         self.history = []
         
         # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
@@ -1031,7 +904,7 @@ class GottenGeography:
         self.delimiters = re.compile(r'[:TZ-]')
         
         # Use boolean list indices to retrieve cardinal direction strings, eg:
-        # cardinal[True][53 <= 0] == "N", cardinal[False][-113 <= 0] == "W".
+        # cardinal[True][53 < 0] == "N", cardinal[False][-113 < 0] == "W".
         self.cardinal = [[ "E", "W" ], [ "N", "S" ]]
         
         self.toolbar = Gtk.Toolbar()
@@ -1123,11 +996,11 @@ class GottenGeography:
         self.button.gtk_select_all.connect("clicked", self.toggle_selected_photos)
         
         self.photo_button_bar = Gtk.HBox(spacing=12)
+        self.photo_button_bar.set_border_width(3)
         for button in [ 'gtk_select_all', 'gtk_apply' ]:
             self.photo_button_bar.pack_start(
                 self.button[button], True, True, 0
             )
-        self.photo_button_bar.set_border_width(3)
         
         self.photos_with_buttons = Gtk.VBox()
         self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
@@ -1150,21 +1023,19 @@ class GottenGeography:
         self.progressbar.set_size_request(0, -1) # Stops it from flailing.
         
         self.offset_label = Gtk.Label(label=_("Clock Offset: "))
+        self.coords_label = Gtk.Label()
         
         self.statusbar = Gtk.Statusbar(spacing=12)
         self.statusbar.set_border_width(3)
         self.statusbar.pack_start(self.progressbar, True, True, 0)
+        self.statusbar.pack_start(self.coords_label, False, False, 0)
+        self.statusbar.pack_start(self.offset_label, False, False, 0)
         
         self.offset = ReadableDictionary( {
             'seconds': self.create_spin_button(60, _("seconds")),
             'minutes': self.create_spin_button(60, _("minutes")),
             'hours':   self.create_spin_button(24, _("hours"))
         } )
-        
-        self.statusbar.pack_end(self.offset_label, False, False, 0)
-        
-        self.coords_label = Gtk.Label()
-        self.statusbar.pack_end(self.coords_label, False, False, 0)
         
         self.app_container = Gtk.VBox(spacing=0)
         self.app_container.pack_start(self.toolbar, False, True, 0)
@@ -1262,7 +1133,6 @@ class GottenGeography:
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
-        
         button = Gtk.SpinButton()
         button.set_digits(0)
         button.set_value(0)
@@ -1280,7 +1150,6 @@ class GottenGeography:
     
     def create_tool_button(self, stock_id, action, tooltip, label=None):
         """Create a ToolButton for use on the toolbar."""
-        
         button = Gtk.ToolButton(stock_id=stock_id)
         button.set_is_important(label is not None)
         button.set_tooltip_text(tooltip)
@@ -1293,14 +1162,12 @@ class GottenGeography:
     
     def prep_actor(self, actor):
         """Do some standard things to a ClutterActor."""
-        
         actor.set_parent(self.stage)
         actor.raise_top()
         actor.show()
     
     def toggle_selected_photos(self, button=None):
         """Toggle the selection of photos."""
-        
         if button is None:
             # User typed Ctrl+a, so select all!
             button = self.button.gtk_select_all
@@ -1313,7 +1180,6 @@ class GottenGeography:
     # and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
         """Respond to keyboard shortcuts as typed by user."""
-        
         # It would make more sense to store Gdk.keyval_name(keyval) in a
         # variable and compare that rather than calling Gdk.keyval_from_name()
         # a million times, but that seems to just crash and this way actually
@@ -1341,14 +1207,12 @@ class GottenGeography:
     def gconf_key(self, key):
         """Determine appropriate GConf key that is unique to this application.
         
-        Returns /apps/gottengeography/key."""
-        
+        Returns /apps/gottengeography/key.
+        """
         return "/".join(['', 'apps', APPNAME.lower(), key])
     
     def gconf_set(self, key, value):
-        """Sets the given GConf key to the given value, automatically
-        determining whether it is a float or an int."""
-        
+        """Sets the given GConf key to the given value."""
         key = self.gconf_key(key)
         
         if   type(value) is float: self.gconf_client.set_float(key, value)
@@ -1356,7 +1220,6 @@ class GottenGeography:
     
     def gconf_get(self, key, type):
         """Gets the given GConf key as the requested type."""
-        
         key = self.gconf_key(key)
         
         if   type is float: return self.gconf_client.get_float(key)
@@ -1364,7 +1227,6 @@ class GottenGeography:
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
-        
         self.statusbar.push(self.statusbar.get_context_id("msg"), message)
     
     def redraw_interface(self, fraction=None, text=None):
@@ -1374,14 +1236,12 @@ class GottenGeography:
         some dialogs while things are processing in the background. Won't
         modify the progressbar if called with no arguments.
         """
-        
         if fraction is not None: self.progressbar.set_fraction(fraction)
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
     def zoom_button_sensitivity(self):
         """Ensure zoom buttons are only sensitive when they need to be."""
-        
         zoom_level = self.map_view.get_zoom_level()
         self.button.gtk_zoom_out.set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
@@ -1394,7 +1254,6 @@ class GottenGeography:
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
         """
-        
         if selection is None: selection = self.photo_selection
         sensitivity = selection.count_selected_rows() > 0
         
@@ -1423,7 +1282,6 @@ class GottenGeography:
     
     def main(self):
         """Go!"""
-        
         Gtk.main()
 
 ################################################################################
@@ -1434,8 +1292,8 @@ class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
     
     This can for the most part be used just like a normal dictionary, except
-    you can access it's keys with readable.key as well as readable['key']."""
-    
+    you can access it's keys with readable.key as well as readable['key'].
+    """
     def values(self):
         return self.__dict__.values()
     
