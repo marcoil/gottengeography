@@ -151,12 +151,12 @@ class GottenGeography:
         try:
             lat, lon, zoom = self.history.pop()
         except IndexError:
-            if button is not None: self.status_message(
-                _("That's as far back as she goes, kiddo!")
-            )
             lat  = self.gconf_get('last_latitude',   float)
             lon  = self.gconf_get('last_longitude',  float)
             zoom = self.gconf_get('last_zoom_level', int)
+            if button is not None: self.status_message(
+                _("That's as far back as she goes, kiddo!")
+            )
         
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
@@ -218,10 +218,10 @@ class GottenGeography:
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         
+        self.coords.set_markup(self.pretty_coords(lat, lon))
         self.coords_label.set_markup(
             self.maps_link(lat, lon, _("Go to Google Maps"))
         )
-        self.coords.set_markup(self.pretty_coords(lat, lon))
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -249,13 +249,6 @@ class GottenGeography:
     def marker_mouse_out(self, marker, event):
         """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
         marker.set_scale(*map(lambda x: x / 1.05, marker.get_scale()))
-    
-    def marker_iter(self, photos, path, iter, (area, transparent)):
-        """Call set_marker_highlight() from within a selected_foreach()."""
-        self.set_marker_highlight(
-            self.photo[photos.get_value(iter, self.PATH)].marker,
-            area, transparent
-        )
     
     def set_marker_highlight(self, marker, area, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
@@ -289,6 +282,12 @@ class GottenGeography:
         selection_exists = selection.count_selected_rows() > 0
         
         for filename in self.photo:
+            # This bit here maintains self.selected for easy iterating.
+            if selection.iter_is_selected(self.photo[filename].iter):
+                self.selected[filename] = True
+            elif filename in self.selected:
+                del self.selected[filename]
+            
             self.set_marker_highlight(
                 self.photo[filename].marker, None, selection_exists
             )
@@ -297,7 +296,10 @@ class GottenGeography:
             area = [ float('inf'),  float('inf'),
                      float('-inf'), float('-inf'),
                      False ]
-            selection.selected_foreach(self.marker_iter, (area, False))
+            for filename in self.selected:
+                self.set_marker_highlight(
+                    self.photo[filename].marker, area, False
+                )
             if self.valid_coords(area[0], area[1]):
                 self.remember_location()
                 self.map_view.ensure_visible(*area)
@@ -392,9 +394,11 @@ class GottenGeography:
             return self.decimal_to_dms(value, key == 'latitude')
     
     def load_exif_from_file(self, filename, thumb_size=200):
-        """Read photo metadata from disk using the pyexiv2 module."""
-        # This will raise IOError on various invalid filetypes, with the
-        # unfortunate exception of XML files (such as GPX or XMP).
+        """Read photo metadata from disk using the pyexiv2 module.
+        
+        Raises IOError if the specified file is not an image
+        format supported by both pyexiv2 and GdkPixbuf.
+        """
         exif = pyexiv2.Image(filename)
         exif.readMetadata()
         
@@ -540,12 +544,12 @@ class GottenGeography:
         with open(filename) as gpx:
             status = self.gpx_parser.ParseFile(gpx)
         
+        self.update_sensitivity()
         self.status_message(
             _("%d points loaded in %.2fs.") %
             (len(self.tracks) - start_points,
              time.clock()     - start_time)
         )
-        self.update_sensitivity()
         
         if len(self.tracks) > 0:
             self.map_view.ensure_visible(*self.metadata['area'])
@@ -586,8 +590,8 @@ class GottenGeography:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
             for point in self.tracks:
-                hi = min(point, hi) if point > photo else hi
-                lo = max(point, lo) if point < photo else lo
+                if point > photo: hi = min(point, hi)
+                if point < photo: lo = max(point, lo)
             
             delta = hi - lo    # in seconds
             
@@ -638,32 +642,27 @@ class GottenGeography:
         for spinbutton in self.offset.values():
             spinbutton.handler_unblock_by_func(self.time_offset_changed)
     
-    def apply_single_photo(self, photos, path, iter, data=None):
-        """Manually apply map center coordinates to given photo."""
-        filename = photos.get_value(iter, self.PATH)
-        self.photo[filename].manual = True
-        
-        self.insert_coordinates(filename,
-            self.map_view.get_property('latitude'),
-            self.map_view.get_property('longitude')
-        )
-    
     def apply_selected_photos(self, button=None):
         """Manually apply map center coordinates to all selected photos."""
-        self.photo_selection.selected_foreach(self.apply_single_photo, None)
+        for filename in self.selected:
+            self.photo[filename].manual = True
+            self.insert_coordinates(filename,
+                self.map_view.get_property('latitude'),
+                self.map_view.get_property('longitude')
+            )
+        
         self.update_sensitivity()
         self.update_all_marker_highlights()
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
         self.progressbar.show()
-        count, total = 0, self.photo_selection.count_selected_rows()
+        count, total = 0, len(self.selected)
         
-        for filename in self.photo:
-            if self.photo_selection.iter_is_selected(self.photo[filename].iter):
-                count += 1
-                self.redraw_interface(count / total, os.path.basename(filename))
-                self.add_or_reload_photo(filename)
+        for filename in self.selected:
+            count += 1
+            self.redraw_interface(count / total, os.path.basename(filename))
+            self.add_or_reload_photo(filename)
         
         self.progressbar.hide()
         self.update_sensitivity()
@@ -671,14 +670,10 @@ class GottenGeography:
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
-        photos = self.photo.copy()
-        
-        for filename in photos:
-            iter = self.photo[filename].iter
-            if self.photo_selection.iter_is_selected(iter):
-                self.photo[filename].marker.destroy()
-                self.loaded_photos.remove(iter)
-                del self.photo[filename]
+        for filename in self.selected:
+            self.photo[filename].marker.destroy()
+            self.loaded_photos.remove(self.photo[filename].iter)
+            del self.photo[filename]
         
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
@@ -896,8 +891,9 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        self.photo   = {}
-        self.history = []
+        self.photo    = {}
+        self.selected = {}
+        self.history  = []
         
         # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
         # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
@@ -974,8 +970,8 @@ class GottenGeography:
         
         self.photo_selection = self.photos_view.get_selection()
         self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.photo_selection.connect("changed", self.update_sensitivity)
         self.photo_selection.connect("changed", self.update_all_marker_highlights)
+        self.photo_selection.connect("changed", self.update_sensitivity)
         
         self.photo_scroller = Gtk.ScrolledWindow()
         self.photo_scroller.add(self.photos_view)
@@ -1255,20 +1251,14 @@ class GottenGeography:
         eg, when modifying a photo in any way, and when the selection changes.
         """
         if selection is None: selection = self.photo_selection
-        sensitivity = selection.count_selected_rows() > 0
+        sensitivity = len(self.selected) > 0
         
         # Apply and Close buttons get activated if any photo is selected
         self.button.gtk_apply.set_sensitive(sensitivity)
         self.button.gtk_close.set_sensitive(sensitivity)
+        self.button.gtk_revert_to_saved.set_sensitive(sensitivity)
         
-        modified, selected = 0, 0
-        for filename in self.photo:
-            if self.photo[filename].modified:
-                if selection.iter_is_selected(self.photo[filename].iter):
-                    selected += 1
-                modified += 1
-        self.button.gtk_save.set_sensitive(modified > 0)
-        self.button.gtk_revert_to_saved.set_sensitive(selected > 0)
+        self.button.gtk_save.set_sensitive(self.count_modified_photos() > 0)
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
@@ -1277,8 +1267,8 @@ class GottenGeography:
             widget.set_sensitive(gpx_sensitive)
         
         # GtkListStore needs to be hidden if it is empty.
-        if self.loaded_photos.get_iter_first()[0]: self.photos_with_buttons.show()
-        else:                                      self.photos_with_buttons.hide()
+        if len(self.photo) > 0: self.photos_with_buttons.show()
+        else:                   self.photos_with_buttons.hide()
     
     def main(self):
         """Go!"""
@@ -1319,7 +1309,7 @@ class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
     def __init__(self, iter, marker):
-        for key in ['timestamp', 'altitude', 'latitude', 'longitude', 'marker']:
+        for key in ['timestamp', 'altitude', 'latitude', 'longitude']:
             self[key] = None
         
         self.iter     = iter
