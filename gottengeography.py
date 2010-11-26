@@ -345,7 +345,7 @@ class GottenGeography:
         self.progressbar.show()
         
         current, total = 0, len(self.modified)
-        for filename in self.modified.copy():
+        for filename in self.modified.keys():
             current += 1
             self.redraw_interface(current / total, os.path.basename(filename))
             
