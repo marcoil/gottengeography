@@ -93,7 +93,7 @@ class GottenGeography:
             '<span style="italic" size="smaller">', desc, '</span>'
         ] )
         
-        return '<b>%s</b>' % desc if self.photo[filename].modified else desc
+        return '<b>%s</b>' % desc if filename in self.modified else desc
     
 ################################################################################
 # GPS math. These methods convert numbers into other numbers.
@@ -349,14 +349,10 @@ class GottenGeography:
         """Ensure all loaded files are saved."""
         self.progressbar.show()
         
-        current = 0
-        for filename in self.photo:
+        current, total = 0, len(self.modified)
+        for filename in self.modified.copy():
             current += 1
-            self.redraw_interface(
-                current / len(self.photo),
-                os.path.basename(filename)
-            )
-            if not self.photo[filename].modified: continue
+            self.redraw_interface(current / total, os.path.basename(filename))
             
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
@@ -373,7 +369,7 @@ class GottenGeography:
             except Exception as inst:
                 self.status_message(", ".join(inst.args))
             else:
-                self.photo[filename].modified = False
+                del self.modified[filename]
                 self.loaded_photos.set_value(
                     self.photo[filename].iter, self.SUMMARY,
                     re.sub(r'</?b>', '',
@@ -681,11 +677,15 @@ class GottenGeography:
     def insert_coordinates(self, filename, lat=None, lon=None, ele=None, modified=True):
         """Create map marker and assign 3D coordinates to specified photo."""
         self.photo[filename].update( {
-            'modified':  modified,
             'altitude':  ele,
             'latitude':  lat,
             'longitude': lon
         } )
+        
+        if modified:
+            self.modified[filename] = True
+        elif filename in self.modified:
+            del self.modified[filename]
         
         if self.valid_coords(lat, lon):
             self.photo[filename].marker.set_position(lat, lon)
@@ -719,7 +719,6 @@ class GottenGeography:
         
         self.photo[filename].update( {
             'timestamp': timestamp,
-            'modified':  False,
             'manual':    False
         } )
         
@@ -732,15 +731,6 @@ class GottenGeography:
         
         self.auto_timestamp_comparison(filename)
         self.update_sensitivity()
-    
-    def count_modified_photos(self):
-        """Return a count of the modified photos."""
-        modified = 0
-        for filename in self.photo:
-            if self.photo[filename].modified:
-                modified += 1
-        
-        return modified
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
@@ -836,10 +826,8 @@ class GottenGeography:
         """Teardown method, inform user of unsaved files, if any."""
         self.remember_location_with_gconf()
         
-        modified = self.count_modified_photos()
-        
         # If there's no unsaved data, just close without confirmation.
-        if modified == 0:
+        if len(self.modified) == 0:
             Gtk.main_quit()
             return True
         
@@ -849,7 +837,7 @@ class GottenGeography:
             title=" "
         )
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_markup(SAVE_WARNING % modified)
+        dialog.set_markup(SAVE_WARNING % len(self.modified))
         dialog.add_button(_("Close _without Saving"), Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
@@ -893,7 +881,9 @@ class GottenGeography:
     def __init__(self, animate_crosshair=True):
         self.photo    = {}
         self.selected = {}
+        self.modified = {}
         self.history  = []
+        self.polygons = []
         
         # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
         # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
@@ -1072,7 +1062,6 @@ class GottenGeography:
         self.window.show_all()
         self.progressbar.hide()
         
-        self.polygons = []
         self.clear_all_gpx()
         self.redraw_interface()
         
@@ -1195,7 +1184,7 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("a"):      self.toggle_selected_photos()
         
         # Prevent the following keybindings from executing if there are no unsaved files
-        if self.count_modified_photos() == 0: return
+        if len(self.modified) == 0: return
         
         if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
         elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
@@ -1258,7 +1247,7 @@ class GottenGeography:
         self.button.gtk_close.set_sensitive(sensitivity)
         self.button.gtk_revert_to_saved.set_sensitive(sensitivity)
         
-        self.button.gtk_save.set_sensitive(self.count_modified_photos() > 0)
+        self.button.gtk_save.set_sensitive(len(self.modified) > 0)
         
         # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
@@ -1315,7 +1304,6 @@ class Photograph(ReadableDictionary):
         self.iter     = iter
         self.marker   = marker
         self.manual   = False
-        self.modified = False
 
 ################################################################################
 # Strings section. Various strings that were too obnoxiously large to fit
