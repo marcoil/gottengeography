@@ -108,19 +108,14 @@ class GottenGeography:
     
     def decimal_to_dms(self, decimal, is_latitude):
         """Convert decimal degrees into degrees, minutes, seconds."""
-        # math.modf splits a float into it's remainder and largest whole number
         remainder, degrees = math.modf(abs(decimal))
         remainder, minutes = math.modf(remainder * 60)
         seconds            =           remainder * 60
         
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
-                 self.float_to_rational(seconds)
+                 Fraction(seconds).limit_denominator(10000)
                ], self.cardinal[is_latitude][decimal < 0]
-    
-    def float_to_rational(self, decimal):
-        """Converts a float to a fractions.Fraction()."""
-        return Fraction(decimal).limit_denominator(10000)
     
     def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
@@ -385,7 +380,8 @@ class GottenGeography:
     def exify(self, key, value):
         """Convert values into the format expected by EXIF."""
         if key == 'altitude':
-            return self.float_to_rational(abs(value)), 0 if value >= 0 else 1
+            return Fraction(abs(value)).limit_denominator(10000),    \
+                   0 if value >= 0 else 1
         else:
             return self.decimal_to_dms(value, key == 'latitude')
     
