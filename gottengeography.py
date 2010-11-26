@@ -344,10 +344,12 @@ class GottenGeography:
         """Ensure all loaded files are saved."""
         self.progressbar.show()
         
-        current, total = 0, len(self.modified)
+        total = len(self.modified)
         for filename in self.modified.keys():
-            current += 1
-            self.redraw_interface(current / total, os.path.basename(filename))
+            self.redraw_interface(
+                (total - len(self.modified)) / (total - 1),
+                os.path.basename(filename)
+            )
             
             exif = pyexiv2.Image(filename)
             exif.readMetadata()
@@ -649,8 +651,8 @@ class GottenGeography:
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
         self.progressbar.show()
-        count, total = 0, len(self.selected)
         
+        count, total = 0, len(self.selected)
         for filename in self.selected:
             count += 1
             self.redraw_interface(count / total, os.path.basename(filename))
