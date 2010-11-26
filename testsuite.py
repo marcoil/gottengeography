@@ -6,6 +6,7 @@ import unittest, os, re, datetime, time, math, random
 from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
+from fractions import Fraction
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
@@ -166,7 +167,7 @@ class GottenGeographyTester(unittest.TestCase):
         for i in range(100):
             # Oh, and test altitudes too
             altitude = round(abs(random_coord(100)), 6)
-            fraction = self.gui.float_to_rational(altitude)
+            fraction = Fraction(altitude).limit_denominator(10000)
             self.assertAlmostEqual(
                 altitude,
                 fraction.numerator / fraction.denominator,

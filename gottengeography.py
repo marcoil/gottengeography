@@ -279,9 +279,9 @@ class GottenGeography:
         for filename in self.photo:
             # This bit here maintains self.selected for easy iterating.
             if selection.iter_is_selected(self.photo[filename].iter):
-                self.selected[filename] = True
-            elif filename in self.selected:
-                del self.selected[filename]
+                self.selected.add(filename)
+            else:
+                self.selected.discard(filename)
             
             self.set_marker_highlight(
                 self.photo[filename].marker, None, selection_exists
@@ -345,7 +345,7 @@ class GottenGeography:
         self.progressbar.show()
         
         total = len(self.modified)
-        for filename in self.modified.keys():
+        for filename in self.modified.copy():
             self.redraw_interface(
                 (total - len(self.modified)) / (total - 1),
                 os.path.basename(filename)
@@ -366,7 +366,7 @@ class GottenGeography:
             except Exception as inst:
                 self.status_message(", ".join(inst.args))
             else:
-                del self.modified[filename]
+                self.modified.discard(filename)
                 self.loaded_photos.set_value(
                     self.photo[filename].iter, self.SUMMARY,
                     re.sub(r'</?b>', '',
@@ -652,8 +652,10 @@ class GottenGeography:
         """Discard any modifications to all selected photos."""
         self.progressbar.show()
         
-        count, total = 0, len(self.selected)
-        for filename in self.selected:
+        mod_in_sel = self.modified.intersection(self.selected)
+        
+        count, total = 0, len(mod_in_sel)
+        for filename in mod_in_sel:
             count += 1
             self.redraw_interface(count / total, os.path.basename(filename))
             self.add_or_reload_photo(filename)
@@ -680,10 +682,8 @@ class GottenGeography:
             'longitude': lon
         } )
         
-        if modified:
-            self.modified[filename] = True
-        elif filename in self.modified:
-            del self.modified[filename]
+        if modified: self.modified.add(filename)
+        else:        self.modified.discard(filename)
         
         if self.valid_coords(lat, lon):
             self.photo[filename].marker.set_position(lat, lon)
@@ -878,8 +878,8 @@ class GottenGeography:
     
     def __init__(self, animate_crosshair=True):
         self.photo    = {}
-        self.selected = {}
-        self.modified = {}
+        self.selected = set()
+        self.modified = set()
         self.history  = []
         self.polygons = []
         
@@ -1243,7 +1243,10 @@ class GottenGeography:
         # Apply and Close buttons get activated if any photo is selected
         self.button.gtk_apply.set_sensitive(sensitivity)
         self.button.gtk_close.set_sensitive(sensitivity)
-        self.button.gtk_revert_to_saved.set_sensitive(sensitivity)
+        
+        self.button.gtk_revert_to_saved.set_sensitive(
+            len(self.modified.intersection(self.selected)) > 0
+        )
         
         self.button.gtk_save.set_sensitive(len(self.modified) > 0)
         
