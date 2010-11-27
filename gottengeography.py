@@ -155,6 +155,7 @@ class GottenGeography:
         
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
+        self.zoom_button_sensitivity()
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
