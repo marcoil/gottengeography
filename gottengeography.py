@@ -347,7 +347,7 @@ class GottenGeography:
         total = len(self.modified)
         for filename in self.modified.copy():
             self.redraw_interface(
-                (total - len(self.modified)) / (total - 1),
+                (1 + total - len(self.modified)) / total,
                 os.path.basename(filename)
             )
             
@@ -666,9 +666,11 @@ class GottenGeography:
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
-        for filename in self.selected:
+        for filename in self.selected.copy():
             self.photo[filename].marker.destroy()
             self.loaded_photos.remove(self.photo[filename].iter)
+            self.selected.discard(filename)
+            self.modified.discard(filename)
             del self.photo[filename]
         
         self.button.gtk_select_all.set_active(False)
@@ -1237,12 +1239,8 @@ class GottenGeography:
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
         """
-        if selection is None: selection = self.photo_selection
-        sensitivity = len(self.selected) > 0
-        
-        # Apply and Close buttons get activated if any photo is selected
-        self.button.gtk_apply.set_sensitive(sensitivity)
-        self.button.gtk_close.set_sensitive(sensitivity)
+        self.button.gtk_apply.set_sensitive(len(self.selected) > 0)
+        self.button.gtk_close.set_sensitive(len(self.selected) > 0)
         
         self.button.gtk_revert_to_saved.set_sensitive(
             len(self.modified.intersection(self.selected)) > 0
@@ -1250,10 +1248,9 @@ class GottenGeography:
         
         self.button.gtk_save.set_sensitive(len(self.modified) > 0)
         
-        # Clear button and time fudge are only sensitive if there's any GPX.
         gpx_sensitive = len(self.tracks) > 0
-        for widget in self.offset.values() + [ self.offset_label,
-        self.button.gtk_clear ]:
+        for widget in self.offset.values() + [
+            self.offset_label, self.button.gtk_clear ]:
             widget.set_sensitive(gpx_sensitive)
         
         # GtkListStore needs to be hidden if it is empty.
