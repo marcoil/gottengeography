@@ -61,10 +61,16 @@ class GottenGeographyTester(unittest.TestCase):
         iter = self.gui.loaded_photos.get_iter_first()
         self.assertTrue(iter[0])
         
-        filename = self.gui.loaded_photos.get_value(iter[1], self.gui.PATH)
-        # Test that a photo has no coordinates to begin with
-        self.assertIsNone(self.gui.photo[filename].latitude)
-        self.assertIsNone(self.gui.photo[filename].longitude)
+        for filename in self.gui.photo:
+            self.assertIsNone(self.gui.photo[filename].altitude)
+            self.assertIsNone(self.gui.photo[filename].latitude)
+            self.assertIsNone(self.gui.photo[filename].longitude)
+            self.assertEqual(filename, self.gui.photo[filename].marker.get_name())
+            self.assertEqual(self.gui.photo[filename].timestamp,
+                self.gui.loaded_photos.get_value(
+                    self.gui.photo[filename].iter, self.gui.TIMESTAMP
+                )
+            )
         
         # Load the GPX
         gpx_filename="%s/%s" % (os.getcwd(), "20101016.gpx")
@@ -82,27 +88,37 @@ class GottenGeographyTester(unittest.TestCase):
              53.537399000000001, -113.443061, False]
         )
         
-        photo = self.gui.photo[filename]
-        self.assertAlmostEqual(photo.latitude,   53.529963999999993, 9)
-        self.assertAlmostEqual(photo.longitude, -113.44800866666665, 9)
+        for filename in self.gui.photo:
+            photo = self.gui.photo[filename]
+            self.assertIsNotNone(photo.latitude)
+            self.assertIsNotNone(photo.longitude)
+            
+            self.assertEqual(photo.marker.get_scale(), (1, 1))
+            self.gui.marker_mouse_in(photo.marker, None)
+            self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
+            self.gui.marker_mouse_out(photo.marker, None)
+            self.assertEqual(photo.marker.get_scale(), (1, 1))
+            
+            self.gui.marker_clicked(photo.marker, Clutter.Event())
+            self.assertTrue(self.gui.photo_selection.iter_is_selected(photo.iter))
+            self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
+            self.assertTrue(filename in self.gui.selected)
+            self.assertEqual(len(self.gui.selected), 1)
+            self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
+            self.assertTrue(photo.marker.get_highlighted())
+            
+            self.gui.set_marker_highlight(photo.marker, None, True)
+            self.assertEqual(photo.marker.get_property('opacity'), 64)
+            self.assertFalse(photo.marker.get_highlighted())
+            self.gui.set_marker_highlight(photo.marker, [0,0,0,0,False], False)
+            self.assertEqual(photo.marker.get_property('opacity'), 255)
+            self.assertTrue(photo.marker.get_highlighted())
         
-        self.assertEqual(photo.marker.get_scale(), (1, 1))
-        self.gui.marker_mouse_in(photo.marker, None)
-        self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
-        self.gui.marker_mouse_out(photo.marker, None)
-        self.assertEqual(photo.marker.get_scale(), (1, 1))
-        
-        self.gui.marker_clicked(photo.marker, Clutter.Event())
-        self.assertTrue(self.gui.photo_selection.iter_is_selected(photo.iter))
-        self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
-        self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
-        
-        self.gui.set_marker_highlight(photo.marker, None, True)
-        self.assertEqual(photo.marker.get_property('opacity'), 64)
-        self.assertFalse(photo.marker.get_highlighted())
-        self.gui.set_marker_highlight(photo.marker, [0,0,0,0,False], False)
-        self.assertEqual(photo.marker.get_property('opacity'), 255)
-        self.assertTrue(photo.marker.get_highlighted())
+        # Clear GPX
+        self.gui.clear_all_gpx()
+        self.assertEqual(len(self.gui.polygons), 0)
+        self.assertEqual(len(self.gui.tracks), 0)
+        self.assertEqual(len(self.gui.gpx_state), 0)
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -197,13 +213,13 @@ class GottenGeographyTester(unittest.TestCase):
             )
             
             self.assertAlmostEqual(
-                decimal_lat, 
-                self.gui.dms_to_decimal(*dms_lat), 
+                decimal_lat,
+                self.gui.dms_to_decimal(*dms_lat),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
-                decimal_lon, 
-                self.gui.dms_to_decimal(*dms_lon), 
+                decimal_lon,
+                self.gui.dms_to_decimal(*dms_lon),
                 10 # equal to 10 places
             )
     
