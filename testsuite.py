@@ -62,6 +62,9 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertTrue(iter[0])
         
         for filename in self.gui.photo:
+            self.assertFalse(filename in self.gui.modified)
+            self.assertFalse(filename in self.gui.selected)
+            
             self.assertIsNone(self.gui.photo[filename].altitude)
             self.assertIsNone(self.gui.photo[filename].latitude)
             self.assertIsNone(self.gui.photo[filename].longitude)
@@ -89,6 +92,8 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         for filename in self.gui.photo:
+            self.assertTrue(filename in self.gui.modified)
+            
             photo = self.gui.photo[filename]
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
@@ -106,6 +111,14 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(len(self.gui.selected), 1)
             self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
             self.assertTrue(photo.marker.get_highlighted())
+            
+            for othername in self.gui.photo:
+                if othername == filename: continue
+                other = self.gui.photo[othername]
+                self.assertFalse(self.gui.photo_selection.iter_is_selected(other.iter))
+                self.assertFalse(othername in self.gui.selected)
+                self.assertEqual(other.marker.get_scale(), (1, 1))
+                self.assertFalse(other.marker.get_highlighted())
             
             self.gui.set_marker_highlight(photo.marker, None, True)
             self.assertEqual(photo.marker.get_property('opacity'), 64)
