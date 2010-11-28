@@ -7,19 +7,16 @@ from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
-from subprocess import Popen
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
         # Make the tests work for people outside my time zone.
         os.environ["TZ"] = "America/Edmonton"
-        
         self.gui = GottenGeography(animate_crosshair=False)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
-        
         self.assertEqual(
             str(type(self.gui.gconf_client)), 
             "<class 'gi.repository.GConf.Client'>"
@@ -27,16 +24,12 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.assertEqual(self.gui.loaded_photos.get_n_columns(), 4)
         self.assertEqual(self.gui.window.get_size(), (800, 600))
-        
         self.assertTrue(self.gui.app_container.get_visible())
-        
         self.assertEqual(len(self.gui.button), 11)
         self.assertEqual(len(self.gui.offset), 3)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
-        Popen(args='git checkout demo/', shell=True)
-        
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.polygons), 0)
         self.assertEqual(self.gui.metadata['alpha'], float('inf'))
