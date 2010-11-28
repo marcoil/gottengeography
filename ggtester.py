@@ -119,7 +119,6 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(photo.marker.get_property('opacity'), 255)
             self.assertTrue(photo.marker.get_highlighted())
         
-        # Clear GPX
         self.gui.clear_all_gpx()
         self.assertEqual(len(self.gui.polygons), 0)
         self.assertEqual(len(self.gui.tracks), 0)
@@ -127,6 +126,20 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
+        
+        self.gui.photo_selection.select_all()
+        self.assertEqual(len(self.gui.selected), 6)
+        files = self.gui.selected.copy()
+        self.gui.close_selected_photos()
+        self.assertEqual(len(self.gui.photo), 0)
+        self.assertEqual(len(self.gui.modified), 0)
+        self.assertEqual(len(self.gui.selected), 0)
+        
+        for filename in files:
+            timestamp, lat, lon, ele, thumb = \
+                self.gui.load_exif_from_file(filename)
+            self.assertTrue(self.gui.valid_coords(lat, lon))
+            self.assertGreater(ele, 600)
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -167,10 +180,16 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         self.assertEqual(self.gui.maps_link(None, None, 'foo'), 'foo')
-        self.assertRegexpMatches(self.gui.maps_link(10.0, 10.0), r'href="http://maps.google.com')
+        self.assertRegexpMatches(
+            self.gui.maps_link(10.0, 10.0),
+            r'href="http://maps.google.com'
+        )
         
         self.gui.display_coords()
-        self.assertRegexpMatches(self.gui.coords_label.get_label(), r'href="http://maps.google.com')
+        self.assertRegexpMatches(
+            self.gui.coords_label.get_label(),
+            r'href="http://maps.google.com'
+        )
     
     def test_gps_math(self):
         """Test coordinate conversion functions."""
@@ -190,10 +209,11 @@ class GottenGeographyTester(unittest.TestCase):
         # to sexagesimal and then back, and ensure that they are always equal.
         for i in range(100):
             # Oh, and test altitudes too
-            altitude = round(abs(random_coord(100)), 6)
-            fraction = Fraction(altitude).limit_denominator(10000)
+            altitude = round(random_coord(1000), 6)
+            fraction, ref = self.gui.exify('altitude', altitude)
+            self.assertEqual(ref, 0 if altitude >= 0 else 1)
             self.assertAlmostEqual(
-                altitude,
+                abs(altitude),
                 fraction.numerator / fraction.denominator,
                 3
             )
@@ -203,8 +223,11 @@ class GottenGeographyTester(unittest.TestCase):
             
             self.assertTrue(self.gui.valid_coords(decimal_lat, decimal_lon))
             
-            dms_lat = self.gui.decimal_to_dms(decimal_lat, True)
-            dms_lon = self.gui.decimal_to_dms(decimal_lon, False)
+            dms_lat = self.gui.exify('latitude', decimal_lat)
+            dms_lon = self.gui.exify('longitude', decimal_lon)
+            
+            self.assertEqual(dms_lat[1], "N" if decimal_lat >= 0 else "S")
+            self.assertEqual(dms_lon[1], "E" if decimal_lon >= 0 else "W")
             
             self.assertEqual(len(dms_lat),    2)
             self.assertEqual(len(dms_lat[0]), 3)
@@ -375,6 +398,27 @@ class GottenGeographyTester(unittest.TestCase):
         self.gui.gconf_set('last_latitude', orig_lat)
         self.gui.gconf_set('last_longitude', orig_lon)
         self.gui.gconf_set('last_zoom_level', orig_zoom)
+    
+    def test_time_offset(self):
+        """Fiddle with the time offset setting."""
+        self.assertEqual(self.gui.metadata['delta'], 0)
+        self.gui.offset.minutes.set_value(1)
+        self.assertEqual(self.gui.metadata['delta'], 60)
+        self.gui.offset.hours.set_value(1)
+        self.assertEqual(self.gui.metadata['delta'], 3660)
+        self.gui.offset.seconds.set_value(1)
+        self.assertEqual(self.gui.metadata['delta'], 3661)
+        
+        self.gui.offset.seconds.set_value(59)
+        self.assertEqual(self.gui.metadata['delta'], 3719)
+        self.gui.offset.minutes.set_value(59)
+        self.assertEqual(self.gui.metadata['delta'], 7199)
+        
+        self.gui.offset.seconds.set_value(60)
+        self.assertEqual(self.gui.offset.seconds.get_value(), 0)
+        self.assertEqual(self.gui.offset.minutes.get_value(), 0)
+        self.assertEqual(self.gui.offset.hours.get_value(), 2)
+        self.assertEqual(self.gui.metadata['delta'], 7200)
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
