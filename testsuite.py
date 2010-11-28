@@ -7,17 +7,15 @@ from gottengeography import GottenGeography
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
+from subprocess import Popen
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
-        
         # Make the tests work for people outside my time zone.
         os.environ["TZ"] = "America/Edmonton"
         
         self.gui = GottenGeography(animate_crosshair=False)
-        # TODO add code to do a git checkout of the demo data so that
-        # it's always pristine.
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -37,6 +35,7 @@ class GottenGeographyTester(unittest.TestCase):
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
+        Popen(args='git checkout demo/', shell=True)
         
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.polygons), 0)
@@ -132,6 +131,9 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.polygons), 0)
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.gpx_state), 0)
+        
+        self.gui.save_all_files()
+        self.assertEqual(len(self.gui.modified), 0)
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -381,14 +383,8 @@ class GottenGeographyTester(unittest.TestCase):
         self.gui.gconf_set('last_longitude', orig_lon)
         self.gui.gconf_set('last_zoom_level', orig_zoom)
 
-        
-#    def test_writing_files(self):
-#        pass
-#        # TODO
-
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
-    
     return (random.random() * maximum * 2) - maximum
 
 if __name__ == '__main__':
