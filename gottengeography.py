@@ -653,7 +653,7 @@ class GottenGeography:
         """Discard any modifications to all selected photos."""
         self.progressbar.show()
         
-        mod_in_sel = self.modified.intersection(self.selected)
+        mod_in_sel = self.modified & self.selected
         
         count, total = 0, len(mod_in_sel)
         for filename in mod_in_sel:
@@ -1244,7 +1244,7 @@ class GottenGeography:
         self.button.gtk_close.set_sensitive(len(self.selected) > 0)
         
         self.button.gtk_revert_to_saved.set_sensitive(
-            len(self.modified.intersection(self.selected)) > 0
+            len(self.modified & self.selected) > 0
         )
         
         self.button.gtk_save.set_sensitive(len(self.modified) > 0)
