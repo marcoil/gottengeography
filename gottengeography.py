@@ -101,9 +101,9 @@ class GottenGeography:
     
     def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
-        return ((degrees.numerator / degrees.denominator         +
-                 minutes.numerator / minutes.denominator / 60    +
-                 seconds.numerator / seconds.denominator / 3600) *
+        return ((degrees.to_float()         +
+                 minutes.to_float() / 60    +
+                 seconds.to_float() / 3600) *
                  (-1 if re.match("[SWsw]", sign) else 1))
     
     def decimal_to_dms(self, decimal, is_latitude):
@@ -114,8 +114,13 @@ class GottenGeography:
         
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
-                 Fraction(seconds).limit_denominator(10000)
+                 self.float_to_rational(seconds)
                ], self.cardinal[is_latitude][decimal < 0]
+    
+    def float_to_rational(self, value):
+        """Puke all over a fractions.Fraction with a pyexiv2.Rational."""
+        frac = Fraction(abs(value)).limit_denominator(99999)
+        return pyexiv2.Rational(frac.numerator, frac.denominator)
     
     def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
@@ -352,8 +357,8 @@ class GottenGeography:
                 os.path.basename(filename)
             )
             
-            exif = pyexiv2.Image(filename)
-            exif.readMetadata()
+            exif = pyexiv2.ImageMetadata(filename)
+            exif.read()
             exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
             
             for name in [ 'altitude', 'latitude', 'longitude' ]:
@@ -363,7 +368,7 @@ class GottenGeography:
                     self.exify(name, self.photo[filename][name])
             
             try:
-                exif.writeMetadata()
+                exif.write()
             except Exception as inst:
                 self.status_message(", ".join(inst.args))
             else:
@@ -383,8 +388,7 @@ class GottenGeography:
     def exify(self, key, value):
         """Convert values into the format expected by EXIF."""
         if key == 'altitude':
-            return Fraction(abs(value)).limit_denominator(10000),    \
-                   0 if value >= 0 else 1
+            return self.float_to_rational(value), '0' if value >= 0 else '1'
         else:
             return self.decimal_to_dms(value, key == 'latitude')
     
@@ -394,8 +398,8 @@ class GottenGeography:
         Raises IOError if the specified file is not an image
         format supported by both pyexiv2 and GdkPixbuf.
         """
-        exif = pyexiv2.Image(filename)
-        exif.readMetadata()
+        exif = pyexiv2.ImageMetadata(filename)
+        exif.read()
         
         try:
             # I have tested this successfully on JPG, PNG, DNG, and NEF.
@@ -412,27 +416,26 @@ class GottenGeography:
         
         try:
             # This assumes that the camera and computer have the same timezone.
-            timestamp = exif['Exif.Photo.DateTimeOriginal']
+            timestamp = exif['Exif.Photo.DateTimeOriginal'].value
             timestamp = int(time.mktime(timestamp.timetuple()))
         except:
             timestamp = int(os.stat(filename).st_mtime)
         
         try:
             lat = self.dms_to_decimal(
-                exif['Exif.GPSInfo.GPSLatitude'],
-                exif['Exif.GPSInfo.GPSLatitudeRef']
+                exif['Exif.GPSInfo.GPSLatitude'].value,
+                exif['Exif.GPSInfo.GPSLatitudeRef'].value
             )
             lon = self.dms_to_decimal(
-                exif['Exif.GPSInfo.GPSLongitude'],
-                exif['Exif.GPSInfo.GPSLongitudeRef']
+                exif['Exif.GPSInfo.GPSLongitude'].value,
+                exif['Exif.GPSInfo.GPSLongitudeRef'].value
             )
         except KeyError:
             lat = lon = None
         
         try:
-            ele = exif['Exif.GPSInfo.GPSAltitude']
-            ele = ele.numerator / ele.denominator
-            if int(exif['Exif.GPSInfo.GPSAltitudeRef']) > 0: ele *= -1
+            ele = exif['Exif.GPSInfo.GPSAltitude'].value.to_float()
+            if int(exif['Exif.GPSInfo.GPSAltitudeRef'].value) > 0: ele *= -1
         except:
             ele = None
         

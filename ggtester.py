@@ -211,7 +211,7 @@ class GottenGeographyTester(unittest.TestCase):
             # Oh, and test altitudes too
             altitude = round(random_coord(1000), 6)
             fraction, ref = self.gui.exify('altitude', altitude)
-            self.assertEqual(ref, 0 if altitude >= 0 else 1)
+            self.assertEqual(ref, '0' if altitude >= 0 else '1')
             self.assertAlmostEqual(
                 abs(altitude),
                 fraction.numerator / fraction.denominator,
