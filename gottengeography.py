@@ -658,10 +658,13 @@ class GottenGeography:
         
         mod_in_sel = self.modified & self.selected
         
-        count, total = 0, len(mod_in_sel)
-        for filename in mod_in_sel:
-            count += 1
-            self.redraw_interface(count / total, os.path.basename(filename))
+        total = len(mod_in_sel)
+        while len(mod_in_sel) > 0:
+            filename = mod_in_sel.pop()
+            self.redraw_interface(
+                (1 + total - len(mod_in_sel)) / total,
+                os.path.basename(filename)
+            )
             self.add_or_reload_photo(filename)
         
         self.progressbar.hide()
