@@ -101,7 +101,7 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
             self.assertTrue(filename in self.gui.selected)
             self.assertEqual(len(self.gui.selected), 1)
-            self.assertEqual(photo.marker.get_scale(), (1.2, 1.2))
+            self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
             self.assertTrue(photo.marker.get_highlighted())
             
             for othername in self.gui.photo:

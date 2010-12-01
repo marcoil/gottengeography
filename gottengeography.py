@@ -257,21 +257,16 @@ class GottenGeography:
             if not marker.get_property('visible'): return
         except AttributeError:                     return
         
+        highlight = area is not None
         marker.set_property('opacity', 64 if transparent else 255)
+        marker.set_scale(*[1.1 if highlight else 1] * 2)
+        marker.set_highlighted(highlight)
         
-        if area is None:
-            marker.set_highlighted(False)
-            marker.set_scale(1, 1)
-            return
+        if not highlight: return
         
-        marker.set_highlighted(True)
-        marker.set_scale(1.2, 1.2)
         marker.raise_top()
-        
         lat = marker.get_latitude()
         lon = marker.get_longitude()
-        
-        # Keep track of (min, max) of (lat, lon) for use with ensure_visible()
         area[0] = min(area[0], lat)
         area[1] = min(area[1], lon)
         area[2] = max(area[2], lat)
