@@ -67,6 +67,12 @@ class GottenGeographyTester(unittest.TestCase):
                 )
             )
         
+        self.assertEqual(len(self.gui.selected), 0)
+        self.gui.button.gtk_select_all.set_active(True)
+        self.assertEqual(len(self.gui.selected), 6)
+        self.gui.button.gtk_select_all.set_active(False)
+        self.assertEqual(len(self.gui.selected), 0)
+        
         # Load the GPX
         gpx_filename="%s/%s" % (os.getcwd(), "20101016.gpx")
         self.assertRaises(IOError, self.gui.add_or_reload_photo, gpx_filename)
