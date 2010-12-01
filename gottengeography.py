@@ -186,19 +186,6 @@ class GottenGeography:
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
-    def create_polygon(self):
-        """Prepare a new ChamplainPolygon for display on the map."""
-        polygon = Champlain.Polygon()
-        polygon.set_property('closed-path', False)
-        polygon.set_property('mark-points', False)
-        polygon.set_fill(False)
-        polygon.set_stroke(True)
-        polygon.set_stroke_width(5)
-        polygon.set_stroke_color(self.track_color)
-        self.map_view.add_polygon(polygon)
-        self.polygons.append(polygon)
-        polygon.show()
-    
     def position_actors(self, stage=None, parameter=None):
         """Ensure that the crosshair is precisely in the center of the map."""
         self.coords_background.set_position(
@@ -457,7 +444,12 @@ class GottenGeography:
         self.gpx_state[name]          = ""
         self.gpx_state.update(attributes)
         
-        if name == "trkseg": self.create_polygon()
+        if name == "trkseg":
+            self.polygons.append(Champlain.Polygon())
+            self.polygons[-1].set_stroke_width(5)
+            self.polygons[-1].set_stroke_color(self.track_color)
+            self.polygons[-1].show()
+            self.map_view.add_polygon(self.polygons[-1])
     
     def gpx_element_data(self, data):
         """Expat CharacterDataHandler.

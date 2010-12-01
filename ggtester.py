@@ -349,10 +349,10 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertFalse(marker.get_parent())
         
         self.assertEqual(len(self.gui.polygons), 0)
-        self.gui.create_polygon()
+        self.gui.gpx_element_start('trkseg', {})
         self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
         self.assertEqual(len(self.gui.polygons), 1)
-        self.gui.create_polygon()
+        self.gui.gpx_element_start('trkseg', {})
         self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
         self.assertEqual(len(self.gui.polygons), 2)
     
