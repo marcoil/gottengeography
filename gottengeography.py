@@ -380,17 +380,17 @@ class GottenGeography:
         Raises IOError if the specified file is not an image
         format supported by both pyexiv2 and GdkPixbuf.
         """
-        exif = pyexiv2.ImageMetadata(filename)
-        exif.read()
-        
         try:
+            exif = pyexiv2.ImageMetadata(filename)
+            exif.read()
+            
             # I have tested this successfully on JPG, PNG, DNG, and NEF.
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 filename,
                 thumb_size,
                 thumb_size
             )
-        except RuntimeError:
+        except:
             # If GdkPixbuf can't open it, it's most likely not a photo. However,
             # if there exists an image format that is supported by pyexiv2 but
             # not GdkPixbuf, then this is a bug.
