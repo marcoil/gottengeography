@@ -738,8 +738,6 @@ class GottenGeography:
             Gtk.IconSize.LARGE_TOOLBAR
         )
         
-        if not os.path.isfile(str(filename)): return
-        
         try:
             timestamp, lat, lon, ele, thumb = \
                 self.load_exif_from_file(filename, 300)
