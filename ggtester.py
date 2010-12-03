@@ -191,7 +191,7 @@ class GottenGeographyTester(unittest.TestCase):
             r'href="http://maps.google.com'
         )
         
-        self.gui.display_coords()
+        self.gui.display_actors()
         self.assertRegexpMatches(
             self.gui.coords_label.get_label(),
             r'href="http://maps.google.com'

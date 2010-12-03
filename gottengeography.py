@@ -186,29 +186,33 @@ class GottenGeography:
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
-    def position_actors(self, stage=None, parameter=None):
-        """Ensure that the crosshair is precisely in the center of the map."""
+    def display_actors(self, stage=None, parameter=None):
+        """Position and update all my custom ClutterActors."""
+        self.crosshair.set_position(
+            (self.stage.get_width()  - self.crosshair.get_width())  / 2,
+            (self.stage.get_height() - self.crosshair.get_height()) / 2
+        )
+        
+        if stage is None: return
+        
+        lat = self.map_view.get_property('latitude')
+        lon = self.map_view.get_property('longitude')
+        self.coords.set_markup(self.pretty_coords(lat, lon))
+        self.coords_label.set_markup(
+            self.maps_link(lat, lon, _("Go to Google Maps"))
+        )
+        
+        self.coords_background.set_size(
+            self.coords.get_width() + 20,
+            self.coords.get_height() + 10
+        )
         self.coords_background.set_position(
             (self.stage.get_width()  - self.coords_background.get_width()) / 2,
              self.stage.get_height() - self.coords_background.get_height()
         )
         self.coords.set_position(
-            self.coords_background.get_x() + 5,
+            self.coords_background.get_x() + 10,
             self.coords_background.get_y() + 5
-        )
-        self.crosshair.set_position(
-            (self.stage.get_width()  - self.crosshair.get_width())  / 2,
-            (self.stage.get_height() - self.crosshair.get_height()) / 2
-        )
-    
-    def display_coords(self, stage=None, parameter=None):
-        """Display the map center coordinates in a label beneath the map."""
-        lat = self.map_view.get_property('latitude')
-        lon = self.map_view.get_property('longitude')
-        
-        self.coords.set_markup(self.pretty_coords(lat, lon))
-        self.coords_label.set_markup(
-            self.maps_link(lat, lon, _("Go to Google Maps"))
         )
     
     def marker_clicked(self, marker, event):
@@ -1067,13 +1071,6 @@ class GottenGeography:
         self.coords.set_single_line_mode(True)
         self.prep_actor(self.coords)
         
-        self.display_coords()
-        
-        self.coords_background.set_size(
-            self.coords.get_width()  + 10,
-            self.coords.get_height() + 10
-        )
-        
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32)
         )
@@ -1081,9 +1078,9 @@ class GottenGeography:
         self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.crosshair.set_border_width(1)
         self.prep_actor(self.crosshair)
-        self.position_actors()
         
         self.zoom_button_sensitivity()
+        self.display_actors(self.stage)
         
         if not animate_crosshair: return
         
@@ -1097,15 +1094,12 @@ class GottenGeography:
             self.crosshair.set_z_rotation_from_gravity(53-i,
                 Clutter.Gravity.CENTER)
             self.crosshair.set_property('opacity', int(260-(0.51*i)))
-            self.position_actors()
+            self.display_actors()
             self.redraw_interface()
             time.sleep(0.002)
         
-        self.stage.connect('notify::height', self.position_actors)
-        self.stage.connect('notify::width',  self.position_actors)
-        
-        self.map_view.connect('notify::latitude',  self.display_coords)
-        self.map_view.connect('notify::longitude', self.display_coords)
+        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+            self.map_view.connect('notify::%s' % signal, self.display_actors)
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
