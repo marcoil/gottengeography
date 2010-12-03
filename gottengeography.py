@@ -1226,19 +1226,16 @@ class GottenGeography:
         """
         self.button.gtk_apply.set_sensitive(len(self.selected) > 0)
         self.button.gtk_close.set_sensitive(len(self.selected) > 0)
-        
+        self.button.gtk_save.set_sensitive( len(self.modified) > 0)
         self.button.gtk_revert_to_saved.set_sensitive(
             len(self.modified & self.selected) > 0
         )
-        
-        self.button.gtk_save.set_sensitive(len(self.modified) > 0)
         
         gpx_sensitive = len(self.tracks) > 0
         for widget in self.offset.values() + [
             self.offset_label, self.button.gtk_clear ]:
             widget.set_sensitive(gpx_sensitive)
         
-        # GtkListStore needs to be hidden if it is empty.
         if len(self.photo) > 0: self.photos_with_buttons.show()
         else:                   self.photos_with_buttons.hide()
     
