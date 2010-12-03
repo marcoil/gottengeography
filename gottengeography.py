@@ -118,7 +118,7 @@ class GottenGeography:
                ]
     
     def float_to_rational(self, value):
-        """Puke all over a fractions.Fraction with a pyexiv2.Rational."""
+        """Create a pyexiv2.Rational with help from fractions.Fraction."""
         frac = Fraction(abs(value)).limit_denominator(99999)
         return pyexiv2.Rational(frac.numerator, frac.denominator)
     
@@ -344,12 +344,11 @@ class GottenGeography:
             )
             
             key = 'Exif.GPSInfo.GPS%s'
+            img = self.photo[filename]
             
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
-            exif[key % 'MapDatum'] = 'WGS-84'
             
-            img = self.photo[filename]
             if img.altitude is not None:
                 exif[key % 'Altitude']    = self.float_to_rational(img.altitude)
                 exif[key % 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
@@ -358,6 +357,7 @@ class GottenGeography:
             exif[key % 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
             exif[key % 'Longitude']    = self.decimal_to_dms(img.longitude)
             exif[key % 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
+            exif[key % 'MapDatum']     = 'WGS-84'
             
             try:
                 exif.write()
@@ -568,12 +568,10 @@ class GottenGeography:
         # If the photo is out of range, simply peg it to the end of the range.
         photo = min(max(photo, lo), hi)
         
-        # Try to use GPX point with exact timestamp as photo.
         try:
             lat = self.tracks[photo]['point'].lat
             lon = self.tracks[photo]['point'].lon
             ele = self.tracks[photo]['elevation']
-        
         except KeyError:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
@@ -652,7 +650,7 @@ class GottenGeography:
         while len(mod_in_sel) > 0:
             filename = mod_in_sel.pop()
             self.redraw_interface(
-                (1 + total - len(mod_in_sel)) / total,
+                (total - len(mod_in_sel)) / total,
                 os.path.basename(filename)
             )
             self.add_or_reload_photo(filename)
