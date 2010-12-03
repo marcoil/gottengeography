@@ -355,9 +355,9 @@ class GottenGeography:
                 exif[key % 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
             
             exif[key % 'Latitude']     = self.decimal_to_dms(img.latitude)
-            exif[key % 'LatitudeRef']  = self.cardinal[True][img.latitude < 0]
+            exif[key % 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
             exif[key % 'Longitude']    = self.decimal_to_dms(img.longitude)
-            exif[key % 'LongitudeRef'] = self.cardinal[False][img.longitude < 0]
+            exif[key % 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
             
             try:
                 exif.write()
@@ -883,10 +883,6 @@ class GottenGeography:
         # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
         # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
         self.delimiters = re.compile(r'[:TZ-]')
-        
-        # Use boolean list indices to retrieve cardinal direction strings, eg:
-        # cardinal[True][53 < 0] == "N", cardinal[False][-113 < 0] == "W".
-        self.cardinal = [[ "E", "W" ], [ "N", "S" ]]
         
         self.toolbar = Gtk.Toolbar()
         self.button  = ReadableDictionary()
