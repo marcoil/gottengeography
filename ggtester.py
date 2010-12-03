@@ -216,8 +216,7 @@ class GottenGeographyTester(unittest.TestCase):
         for i in range(100):
             # Oh, and test altitudes too
             altitude = round(random_coord(1000), 6)
-            fraction, ref = self.gui.exify('altitude', altitude)
-            self.assertEqual(ref, '0' if altitude >= 0 else '1')
+            fraction = self.gui.float_to_rational(altitude)
             self.assertAlmostEqual(
                 abs(altitude),
                 fraction.numerator / fraction.denominator,
@@ -229,34 +228,29 @@ class GottenGeographyTester(unittest.TestCase):
             
             self.assertTrue(self.gui.valid_coords(decimal_lat, decimal_lon))
             
-            dms_lat = self.gui.exify('latitude', decimal_lat)
-            dms_lon = self.gui.exify('longitude', decimal_lon)
+            dms_lat = self.gui.decimal_to_dms(decimal_lat)
+            dms_lon = self.gui.decimal_to_dms(decimal_lon)
             
-            self.assertEqual(dms_lat[1], "N" if decimal_lat >= 0 else "S")
-            self.assertEqual(dms_lon[1], "E" if decimal_lon >= 0 else "W")
-            
-            self.assertEqual(len(dms_lat),    2)
-            self.assertEqual(len(dms_lat[0]), 3)
+            self.assertEqual(len(dms_lat), 3)
             self.assertEqual(
-                dms_lat[0][0].numerator,
+                dms_lat[0].numerator,
                 math.floor(abs(decimal_lat))
             )
             
-            self.assertEqual(len(dms_lon),    2)
-            self.assertEqual(len(dms_lon[0]), 3)
+            self.assertEqual(len(dms_lon), 3)
             self.assertEqual(
-                dms_lon[0][0].numerator,
+                dms_lon[0].numerator,
                 math.floor(abs(decimal_lon))
             )
             
             self.assertAlmostEqual(
                 decimal_lat,
-                self.gui.dms_to_decimal(*dms_lat),
+                self.gui.dms_to_decimal(dms_lat, "N" if decimal_lat >= 0 else "S"),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
                 decimal_lon,
-                self.gui.dms_to_decimal(*dms_lon),
+                self.gui.dms_to_decimal(dms_lon, "E" if decimal_lon >= 0 else "W"),
                 10 # equal to 10 places
             )
     

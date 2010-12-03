@@ -106,7 +106,7 @@ class GottenGeography:
                  seconds.to_float() / 3600) *
                  (-1 if re.match("[SWsw]", sign) else 1))
     
-    def decimal_to_dms(self, decimal, is_latitude):
+    def decimal_to_dms(self, decimal):
         """Convert decimal degrees into degrees, minutes, seconds."""
         remainder, degrees = math.modf(abs(decimal))
         remainder, minutes = math.modf(remainder * 60)
@@ -115,7 +115,7 @@ class GottenGeography:
         return [ pyexiv2.Rational(degrees, 1),
                  pyexiv2.Rational(minutes, 1),
                  self.float_to_rational(seconds)
-               ], self.cardinal[is_latitude][decimal < 0]
+               ]
     
     def float_to_rational(self, value):
         """Puke all over a fractions.Fraction with a pyexiv2.Rational."""
@@ -339,15 +339,21 @@ class GottenGeography:
                 os.path.basename(filename)
             )
             
+            key = 'Exif.GPSInfo.GPS%s'
+            
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
-            exif['Exif.GPSInfo.GPSMapDatum'] = 'WGS-84'
+            exif[key % 'MapDatum'] = 'WGS-84'
             
-            for name in [ 'altitude', 'latitude', 'longitude' ]:
-                if self.photo[filename][name] is None: continue
-                (exif['Exif.GPSInfo.GPS%s'    % name.capitalize()],
-                 exif['Exif.GPSInfo.GPS%sRef' % name.capitalize()]) = \
-                    self.exify(name, self.photo[filename][name])
+            img = self.photo[filename]
+            if img.altitude is not None:
+                exif[key % 'Altitude']    = self.float_to_rational(img.altitude)
+                exif[key % 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
+            
+            exif[key % 'Latitude']     = self.decimal_to_dms(img.latitude)
+            exif[key % 'LatitudeRef']  = self.cardinal[True][img.latitude < 0]
+            exif[key % 'Longitude']    = self.decimal_to_dms(img.longitude)
+            exif[key % 'LongitudeRef'] = self.cardinal[False][img.longitude < 0]
             
             try:
                 exif.write()
@@ -366,13 +372,6 @@ class GottenGeography:
         
         self.update_sensitivity()
         self.progressbar.hide()
-    
-    def exify(self, key, value):
-        """Convert values into the format expected by EXIF."""
-        if key == 'altitude':
-            return self.float_to_rational(value), '0' if value >= 0 else '1'
-        else:
-            return self.decimal_to_dms(value, key == 'latitude')
     
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module.
