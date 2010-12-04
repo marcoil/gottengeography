@@ -61,19 +61,22 @@ class GottenGeography:
             _("E") if lon >= 0 else _("W"), abs(lon)
         )
     
-    def pretty_elevation(self, ele):
+    def pretty_elevation(self, elevation):
         """Convert elevation into a human readable format."""
-        if ele is None: return ""
-        return "%.1f%s" % (abs(ele),
-            _("m above sea level") if ele >= 0 else _("m below sea level")
+        if elevation is None: return ""
+        return "%.1f%s" % (
+            abs(elevation),
+            _("m above sea level")
+            if elevation >= 0 else
+            _("m below sea level")
         )
     
     def maps_link(self, lat, lon, anchor=None):
         """Create a Pango link to Google Maps."""
         if anchor is None: anchor = self.pretty_coords(lat, lon)
         if not self.valid_coords(lat, lon): return anchor
-        return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (
-            lat, lon, anchor
+        return '<a href="%s?q=%s,%s">%s</a>' % (
+            "http://maps.google.com/maps", lat, lon, anchor
         )
     
     def create_summary(self, filename, timestamp, lat, lon, ele):
@@ -101,10 +104,11 @@ class GottenGeography:
     
     def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
-        return ((degrees.to_float()         +
-                 minutes.to_float() / 60    +
-                 seconds.to_float() / 3600) *
-                 (-1 if re.match("[SWsw]", sign) else 1))
+        return (-1 if re.match(r'[SWsw]', sign) else 1) * (
+            degrees.to_float()        +
+            minutes.to_float() / 60   +
+            seconds.to_float() / 3600
+        )
     
     def decimal_to_dms(self, decimal):
         """Convert decimal degrees into degrees, minutes, seconds."""
@@ -112,10 +116,11 @@ class GottenGeography:
         remainder, minutes = math.modf(remainder * 60)
         seconds            =           remainder * 60
         
-        return [ pyexiv2.Rational(degrees, 1),
-                 pyexiv2.Rational(minutes, 1),
-                 self.float_to_rational(seconds)
-               ]
+        return [
+            pyexiv2.Rational(degrees, 1),
+            pyexiv2.Rational(minutes, 1),
+            self.float_to_rational(seconds)
+        ]
     
     def float_to_rational(self, value):
         """Create a pyexiv2.Rational with help from fractions.Fraction."""
@@ -201,7 +206,6 @@ class GottenGeography:
         self.coords_label.set_markup(
             self.maps_link(lat, lon, _("Go to Google Maps"))
         )
-        
         self.coords_background.set_size(
             self.coords.get_width() + 20,
             self.coords.get_height() + 10
