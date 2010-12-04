@@ -193,9 +193,12 @@ class GottenGeography:
     
     def display_actors(self, stage=None, parameter=None):
         """Position and update all my custom ClutterActors."""
+        stage_width  = self.stage.get_width()
+        stage_height = self.stage.get_height()
+        
         self.crosshair.set_position(
-            (self.stage.get_width()  - self.crosshair.get_width())  / 2,
-            (self.stage.get_height() - self.crosshair.get_height()) / 2
+            (stage_width  - self.crosshair.get_width())  / 2,
+            (stage_height - self.crosshair.get_height()) / 2
         )
         
         if stage is None: return
@@ -203,14 +206,13 @@ class GottenGeography:
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         self.coords.set_markup(self.pretty_coords(lat, lon))
-        self.coords_label.set_markup(
-            self.maps_link(lat, lon, _("Go to Google Maps"))
-        )
+        self.coords_label.set_markup(self.maps_link(
+            lat, lon, _("Go to Google Maps")))
         
         width  = self.coords.get_width()  + 20
         height = self.coords.get_height() + 10
-        x      = (self.stage.get_width() - width) / 2
-        y      = self.stage.get_height() - height
+        x      = (stage_width - width) / 2
+        y      = stage_height - height
         self.coords_background.set_size(width, height)
         self.coords_background.set_position(x, y)
         self.coords.set_position(x + 10, y + 5)
