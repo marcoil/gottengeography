@@ -236,11 +236,11 @@ class GottenGeography:
     
     def marker_mouse_in(self, marker, event):
         """Enlarge a hovered-over ChamplainMarker by 5%."""
-        marker.set_scale(*map(lambda x: x * 1.05, marker.get_scale()))
+        marker.set_scale(*[marker.get_scale()[0] * 1.05] * 2)
     
     def marker_mouse_out(self, marker, event):
         """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-        marker.set_scale(*map(lambda x: x / 1.05, marker.get_scale()))
+        marker.set_scale(*[marker.get_scale()[0] / 1.05] * 2)
     
     def set_marker_highlight(self, marker, area, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
