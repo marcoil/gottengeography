@@ -206,18 +206,14 @@ class GottenGeography:
         self.coords_label.set_markup(
             self.maps_link(lat, lon, _("Go to Google Maps"))
         )
-        self.coords_background.set_size(
-            self.coords.get_width() + 20,
-            self.coords.get_height() + 10
-        )
-        self.coords_background.set_position(
-            (self.stage.get_width()  - self.coords_background.get_width()) / 2,
-             self.stage.get_height() - self.coords_background.get_height()
-        )
-        self.coords.set_position(
-            self.coords_background.get_x() + 10,
-            self.coords_background.get_y() + 5
-        )
+        
+        width  = self.coords.get_width()  + 20
+        height = self.coords.get_height() + 10
+        x      = (self.stage.get_width() - width) / 2
+        y      = self.stage.get_height() - height
+        self.coords_background.set_size(width, height)
+        self.coords_background.set_position(x, y)
+        self.coords.set_position(x + 10, y + 5)
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
