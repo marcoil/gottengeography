@@ -282,16 +282,14 @@ class GottenGeography:
             )
         
         if selection_exists:
-            area = [ float('inf'),  float('inf'),
-                     float('-inf'), float('-inf'),
-                     False ]
+            area = [ float('inf') * (-1 if i > 1 else 1) for i in range(4) ]
             for filename in self.selected:
                 self.set_marker_highlight(
                     self.photo[filename].marker, area, False
                 )
             if self.valid_coords(area[0], area[1]):
                 self.remember_location()
-                self.map_view.ensure_visible(*area)
+                self.map_view.ensure_visible(*area + [False])
     
     def add_marker(self, label):
         """Create a new ChamplainMarker and add it to the map."""
@@ -319,13 +317,11 @@ class GottenGeography:
         self.tracks    = {}
         self.gpx_state = {}
         self.metadata  = {
-            'area':  [ float('inf'), float('inf'),
-                       float('-inf'), float('-inf'),
-                       False ],
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf'),       # Initial GPX track point
-            'tau':   time.clock()        # Most recent time screen was updated
+            'tau':   time.clock(),       # Most recent time screen was updated
+            'area':  [ float('inf') * (-1 if i > 1 else 1) for i in range(4) ]
         }
         
         self.update_sensitivity()
@@ -516,7 +512,7 @@ class GottenGeography:
         
         if time.clock() - self.metadata['tau'] > .2:
             self.progressbar.pulse()
-            self.map_view.ensure_visible(*self.metadata['area'])
+            self.map_view.ensure_visible(*self.metadata['area'] + [False])
             self.redraw_interface()
             self.metadata['tau'] = time.clock()
     
@@ -542,7 +538,7 @@ class GottenGeography:
         )
         
         if len(self.tracks) > 0:
-            self.map_view.ensure_visible(*self.metadata['area'])
+            self.map_view.ensure_visible(*self.metadata['area'] + [False])
         
         for filename in self.photo:
             self.auto_timestamp_comparison(filename)

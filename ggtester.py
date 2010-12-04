@@ -36,7 +36,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.metadata['omega'], float('-inf'))
         self.assertEqual(
             self.gui.metadata['area'],
-            [float('inf'), float('inf'), float('-inf'), float('-inf'), False]
+            [float('inf'), float('inf'), float('-inf'), float('-inf')]
         )
         
         # Load only the photos first
@@ -86,7 +86,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(
             self.gui.metadata['area'],
             [53.522495999999997, -113.453148,
-             53.537399000000001, -113.443061, False]
+             53.537399000000001, -113.443061]
         )
         
         for filename in self.gui.photo:
