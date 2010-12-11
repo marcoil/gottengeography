@@ -61,6 +61,18 @@ class GottenGeography:
             _("E") if lon >= 0 else _("W"), abs(lon)
         )
     
+    def pretty_geoname(self, filename):
+        """Display city, state, and country, if present."""
+        try:    img = self.photo[filename]
+        except: return ""
+        
+        names, length = [], 0
+        for value in [ img.city, img.state, img.country ]:
+            if value is not None and len(value) > 0:
+                names.append(value)
+                length += len(value)
+        return (",\n" if length > 35 else ", ").join(names)
+    
     def pretty_elevation(self, elevation):
         """Convert elevation into a human readable format."""
         if elevation is None: return ""
@@ -86,6 +98,7 @@ class GottenGeography:
             self.maps_link(lat, lon)
             if filename is None else
             self.pretty_coords(lat, lon),
+            self.pretty_geoname(filename),
             self.pretty_elevation(ele)
         ] ).strip()
         
@@ -703,14 +716,18 @@ class GottenGeography:
                 self.photo[filename].country      = geoname['countryName']
                 self.photo[filename].state        = geoname['adminName1']
                 self.photo[filename].city         = geoname['name']
-            except: pass
+            except:
+                self.photo[filename].country_code = None
+                self.photo[filename].country      = None
+                self.photo[filename].state        = None
+                self.photo[filename].city         = None
         else:
             self.photo[filename].marker.hide()
         
         self.loaded_photos.set_value(self.photo[filename].iter, self.SUMMARY,
             self.create_summary(
                 filename, self.photo[filename].timestamp, lat, lon, ele
-            )
+            ).encode('utf-8')
         )
     
     def add_or_reload_photo(self, filename):
