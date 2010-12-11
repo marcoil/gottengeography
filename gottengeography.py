@@ -19,7 +19,7 @@
 
 from __future__ import division
 
-import os, re, time, calendar, math, gettext, pyexiv2
+import os, re, time, calendar, math, gettext, json, urllib2, pyexiv2
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
@@ -357,6 +357,16 @@ class GottenGeography:
             exif[key % 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
             exif[key % 'MapDatum']     = 'WGS-84'
             
+            key = 'Iptc.Application2.%s'
+            if img.city is not None:
+                exif[key % 'City'] = [img.city]
+            if img.state is not None:
+                exif[key % 'ProvinceState'] = [img.state]
+            if img.country is not None:
+                exif[key % 'CountryName'] = [img.country]
+            if img.country_code is not None:
+                exif[key % 'CountryCode'] = [img.country_code]
+            
             try:
                 exif.write()
             except Exception as inst:
@@ -683,6 +693,17 @@ class GottenGeography:
         if self.valid_coords(lat, lon):
             self.photo[filename].marker.set_position(lat, lon)
             self.photo[filename].marker.show()
+            self.redraw_interface()
+            try: # some reverse geocoding magic
+                geoname = json.load(urllib2.urlopen(
+                    'http://ws.geonames.org/%s?lat=%s&lng=%s'
+                    % ('findNearbyPlaceNameJSON', lat, lon))
+                )['geonames'][0]
+                self.photo[filename].country_code = geoname['countryCode']
+                self.photo[filename].country      = geoname['countryName']
+                self.photo[filename].state        = geoname['adminName1']
+                self.photo[filename].city         = geoname['name']
+            except: pass
         else:
             self.photo[filename].marker.hide()
         
@@ -1270,7 +1291,8 @@ class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
     def __init__(self, iter, marker):
-        for key in ['timestamp', 'altitude', 'latitude', 'longitude']:
+        for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
+        'country', 'country_code', 'state', 'city' ]:
             self[key] = None
         
         self.iter     = iter
