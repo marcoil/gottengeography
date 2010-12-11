@@ -707,10 +707,12 @@ class GottenGeography:
                     'http://ws.geonames.org/%s?lat=%s&lng=%s'
                     % ('findNearbyPlaceNameJSON', lat, lon))
                 )['geonames'][0]
-                self.photo[filename].countrycode   = geoname['countryCode']
-                self.photo[filename].countryname   = geoname['countryName']
-                self.photo[filename].provincestate = geoname['adminName1']
-                self.photo[filename].city          = geoname['name']
+                self.photo[filename].update( {
+                    'countrycode':   geoname['countryCode'],
+                    'countryname':   geoname['countryName'],
+                    'provincestate': geoname['adminName1'],
+                    'city':          geoname['name']
+                } )
             except:
                 for key in [ 'countrycode', 'countryname', 'provincestate',
                 'city' ]:
