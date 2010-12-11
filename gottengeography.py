@@ -67,7 +67,7 @@ class GottenGeography:
         except: return ""
         
         names, length = [], 0
-        for value in [ img.city, img.state, img.country ]:
+        for value in [ img.city, img.provincestate, img.countryname ]:
             if value is not None and len(value) > 0:
                 names.append(value)
                 length += len(value)
@@ -371,14 +371,9 @@ class GottenGeography:
             exif[key % 'MapDatum']     = 'WGS-84'
             
             key = 'Iptc.Application2.%s'
-            if img.city is not None:
-                exif[key % 'City'] = [img.city]
-            if img.state is not None:
-                exif[key % 'ProvinceState'] = [img.state]
-            if img.country is not None:
-                exif[key % 'CountryName'] = [img.country]
-            if img.country_code is not None:
-                exif[key % 'CountryCode'] = [img.country_code]
+            for name in ['City', 'ProvinceState', 'CountryName', 'CountryCode']:
+                if img[name.lower()] is not None:
+                    exif[key % name] = [img[name.lower()]]
             
             try:
                 exif.write()
@@ -712,15 +707,14 @@ class GottenGeography:
                     'http://ws.geonames.org/%s?lat=%s&lng=%s'
                     % ('findNearbyPlaceNameJSON', lat, lon))
                 )['geonames'][0]
-                self.photo[filename].country_code = geoname['countryCode']
-                self.photo[filename].country      = geoname['countryName']
-                self.photo[filename].state        = geoname['adminName1']
-                self.photo[filename].city         = geoname['name']
+                self.photo[filename].countrycode   = geoname['countryCode']
+                self.photo[filename].countryname   = geoname['countryName']
+                self.photo[filename].provincestate = geoname['adminName1']
+                self.photo[filename].city          = geoname['name']
             except:
-                self.photo[filename].country_code = None
-                self.photo[filename].country      = None
-                self.photo[filename].state        = None
-                self.photo[filename].city         = None
+                for key in [ 'countrycode', 'countryname', 'provincestate',
+                'city' ]:
+                    self.photo[filename][key] = None
         else:
             self.photo[filename].marker.hide()
         
@@ -1309,7 +1303,7 @@ class Photograph(ReadableDictionary):
     
     def __init__(self, iter, marker):
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'country', 'country_code', 'state', 'city' ]:
+        'countryname', 'countrycode', 'provincestate', 'city' ]:
             self[key] = None
         
         self.iter     = iter
