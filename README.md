@@ -15,6 +15,8 @@ It is currently able to:
 
 * Automatically geotag images using timestamp comparison between photos and GPX data, proportionally calculating photo coordinates that fall in-between gpx track points. No clicking necessary! Simply load a GPX file along with your images, and they will automatically be placed along the track based on their timestamp.
 
+* Reverse geocode using [GeoNames.org webservice](http://www.geonames.org/export/web-services.html). Stores city, state, country names in IPTC data automatically.
+
 * Remember the last viewed location in [GConf](http://projects.gnome.org/gconf/), and return to it the next time you run the program.
 
 * Save coordinates and altitude into your photos' EXIF data using pyexiv2.
