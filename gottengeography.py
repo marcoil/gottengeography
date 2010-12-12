@@ -47,7 +47,7 @@ class GottenGeography:
 # GPS math. These methods convert numbers into other numbers.
 ################################################################################
     
-    def dms_to_decimal(self, (degrees, minutes, seconds), sign=""):
+    def dms_to_decimal(self, degrees, minutes, seconds, sign=""):
         """Convert degrees, minutes, seconds into decimal degrees."""
         return (-1 if re.match(r'[SWsw]', sign) else 1) * (
             degrees.to_float()        +
@@ -60,7 +60,6 @@ class GottenGeography:
         remainder, degrees = math.modf(abs(decimal))
         remainder, minutes = math.modf(remainder * 60)
         seconds            =           remainder * 60
-        
         return [
             pyexiv2.Rational(degrees, 1),
             pyexiv2.Rational(minutes, 1),
@@ -98,16 +97,13 @@ class GottenGeography:
     
     def return_to_last(self, button=None):
         """Return the map view to where the user last set it."""
-        try:
-            lat, lon, zoom = self.history.pop()
+        try: lat, lon, zoom = self.history.pop()
         except IndexError:
             lat  = self.gconf_get('last_latitude',   float)
             lon  = self.gconf_get('last_longitude',  float)
             zoom = self.gconf_get('last_zoom_level', int)
-            if button is not None: self.status_message(
-                _("That's as far back as she goes, kiddo!")
-            )
-        
+            if button is not None:
+                self.status_message(_("That's as far back as she goes, kiddo!"))
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
         self.zoom_button_sensitivity()
@@ -138,22 +134,19 @@ class GottenGeography:
     
     def maps_link(self, lat, lon):
         """Create a Pango link to Google Maps."""
-        return '<a href="%s?q=%s,%s">%s</a>' % (
-            "http://maps.google.com/maps", lat, lon, _("View in Google Maps")
-        )
+        return '<a href="%s?q=%s,%s">%s</a>' % ("http://maps.google.com/maps",
+            lat, lon, _("View in Google Maps"))
     
     def display_actors(self, stage=None, parameter=None):
         """Position and update all my custom ClutterActors."""
         stage_width  = self.stage.get_width()
         stage_height = self.stage.get_height()
-        
         self.crosshair.set_position(
             (stage_width  - self.crosshair.get_width())  / 2,
             (stage_height - self.crosshair.get_height()) / 2
         )
         
         if stage is None: return
-        
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
         self.coords.set_markup("%.5f, %.5f" % (lat, lon))
@@ -205,15 +198,14 @@ class GottenGeography:
         marker.set_scale(*[1.1 if highlight else 1] * 2)
         marker.set_highlighted(highlight)
         
-        if not highlight: return
-        
-        marker.raise_top()
-        lat = marker.get_latitude()
-        lon = marker.get_longitude()
-        area[0] = min(area[0], lat)
-        area[1] = min(area[1], lon)
-        area[2] = max(area[2], lat)
-        area[3] = max(area[3], lon)
+        if highlight:
+            marker.raise_top()
+            lat = marker.get_latitude()
+            lon = marker.get_longitude()
+            area[0] = min(area[0], lat)
+            area[1] = min(area[1], lon)
+            area[2] = max(area[2], lat)
+            area[3] = max(area[3], lon)
     
     def update_all_marker_highlights(self, selection=None):
         """Ensure only the selected markers are highlighted."""
@@ -360,28 +352,27 @@ class GottenGeography:
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
         
+        gps  = 'Exif.GPSInfo.GPS'
         try:
             photo.latitude = self.dms_to_decimal(
-                exif['Exif.GPSInfo.GPSLatitude'].value,
-                exif['Exif.GPSInfo.GPSLatitudeRef'].value
+                *exif[gps + 'Latitude'].value +
+                [exif[gps + 'LatitudeRef'].value]
             )
             photo.longitude = self.dms_to_decimal(
-                exif['Exif.GPSInfo.GPSLongitude'].value,
-                exif['Exif.GPSInfo.GPSLongitudeRef'].value
+                *exif[gps + 'Longitude'].value +
+                [exif[gps + 'LongitudeRef'].value]
             )
         except KeyError: pass
         
         try:
-            photo.city          = exif['Iptc.Application2.City'].values[0]
-            photo.provincestate = exif['Iptc.Application2.ProvinceState'].values[0]
-            photo.countryname   = exif['Iptc.Application2.CountryName'].values[0]
-        except KeyError: pass
-        
-        try:
-            photo.altitude = exif['Exif.GPSInfo.GPSAltitude'].value.to_float()
-            if int(exif['Exif.GPSInfo.GPSAltitudeRef'].value) > 0:
+            photo.altitude = exif[gps + 'Altitude'].value.to_float()
+            if int(exif[gps + 'AltitudeRef'].value) > 0:
                 photo.altitude *= -1
         except: pass
+        
+        for key in ['City', 'ProvinceState', 'CountryName', 'CountryCode']:
+            try: photo[key.lower()] = exif['Iptc.Application2.' + key].values[0]
+            except KeyError: pass
         
         return photo
     

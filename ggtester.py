@@ -243,12 +243,12 @@ S 10.00000, W 10.00000
             
             self.assertAlmostEqual(
                 decimal_lat,
-                self.gui.dms_to_decimal(dms_lat, "N" if decimal_lat >= 0 else "S"),
+                self.gui.dms_to_decimal(*dms_lat + ["N" if decimal_lat >= 0 else "S"]),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
                 decimal_lon,
-                self.gui.dms_to_decimal(dms_lon, "E" if decimal_lon >= 0 else "W"),
+                self.gui.dms_to_decimal(*dms_lon + ["E" if decimal_lon >= 0 else "W"]),
                 10 # equal to 10 places
             )
     
