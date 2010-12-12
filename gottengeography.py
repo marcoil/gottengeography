@@ -207,9 +207,8 @@ class GottenGeography:
             area[2] = max(area[2], lat)
             area[3] = max(area[3], lon)
     
-    def update_all_marker_highlights(self, selection=None):
+    def update_all_marker_highlights(self, selection):
         """Ensure only the selected markers are highlighted."""
-        if selection is None: selection = self.photo_selection
         selection_exists = selection.count_selected_rows() > 0
         
         for filename in self.photo:
@@ -570,8 +569,6 @@ class GottenGeography:
             
             for filename in self.photo:
                 self.auto_timestamp_comparison(filename, False)
-            
-            self.update_all_marker_highlights()
         
         for spinbutton in self.offset.values():
             spinbutton.handler_unblock_by_func(self.time_offset_changed)
@@ -586,7 +583,7 @@ class GottenGeography:
             )
         
         self.update_sensitivity()
-        self.update_all_marker_highlights()
+        self.photo[filename].marker.raise_top()
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -602,10 +599,10 @@ class GottenGeography:
                 os.path.basename(filename)
             )
             self.add_or_reload_photo(filename)
+            self.photo[filename].marker.raise_top()
         
         self.progressbar.hide()
         self.update_sensitivity()
-        self.update_all_marker_highlights()
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
@@ -749,7 +746,7 @@ class GottenGeography:
         
         self.progressbar.hide()
         self.update_sensitivity()
-        self.update_all_marker_highlights()
+        self.update_all_marker_highlights(self.photo_selection)
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
