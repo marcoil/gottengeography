@@ -44,74 +44,6 @@ class GottenGeography:
     """
     
 ################################################################################
-# Pretty string methods. These methods take numbers as input and return strings
-# that are suitable for displaying to the user.
-################################################################################
-    
-    def pretty_time(self, timestamp):
-        """Convert epoch seconds to a human-readable date."""
-        if type(timestamp) is not int: return _("No timestamp")
-        return time.strftime("%Y-%m-%d %X", time.localtime(timestamp))
-    
-    def pretty_coords(self, lat, lon):
-        """Add cardinal directions to decimal coordinates."""
-        if not self.valid_coords(lat, lon): return _("Not geotagged")
-        return '%s %.5f, %s %.5f' % (
-            _("N") if lat >= 0 else _("S"), abs(lat),
-            _("E") if lon >= 0 else _("W"), abs(lon)
-        )
-    
-    def pretty_geoname(self, filename):
-        """Display city, state, and country, if present."""
-        try:    img = self.photo[filename]
-        except: return ""
-        
-        names, length = [], 0
-        for value in [ img.city, img.provincestate, img.countryname ]:
-            if value is not None and len(value) > 0:
-                names.append(value)
-                length += len(value)
-        return (",\n" if length > 35 else ", ").join(names)
-    
-    def pretty_elevation(self, elevation):
-        """Convert elevation into a human readable format."""
-        if elevation is None: return ""
-        return "%.1f%s" % (
-            abs(elevation),
-            _("m above sea level")
-            if elevation >= 0 else
-            _("m below sea level")
-        )
-    
-    def maps_link(self, lat, lon, anchor=None):
-        """Create a Pango link to Google Maps."""
-        if anchor is None: anchor = self.pretty_coords(lat, lon)
-        if not self.valid_coords(lat, lon): return anchor
-        return '<a href="%s?q=%s,%s">%s</a>' % (
-            "http://maps.google.com/maps", lat, lon, anchor
-        )
-    
-    def create_summary(self, filename, timestamp, lat, lon, ele):
-        """Describe photo metadata with Pango formatting."""
-        desc = "\n".join( [
-            self.pretty_time(timestamp),
-            self.maps_link(lat, lon)
-            if filename is None else
-            self.pretty_coords(lat, lon),
-            self.pretty_geoname(filename),
-            self.pretty_elevation(ele)
-        ] ).strip()
-        
-        if filename is None: return desc
-        
-        desc = "".join( [
-            '<span size="larger">', os.path.basename(filename), '</span>\n',
-            '<span style="italic" size="smaller">', desc, '</span>'
-        ] )
-        
-        return '<b>%s</b>' % desc if filename in self.modified else desc
-    
-################################################################################
 # GPS math. These methods convert numbers into other numbers.
 ################################################################################
     
@@ -142,8 +74,8 @@ class GottenGeography:
     
     def valid_coords(self, lat, lon):
         """Determine the validity of coordinates."""
-        if type(lat) is not float: return False
-        if type(lon) is not float: return False
+        if type(lat) not in (float, int): return False
+        if type(lon) not in (float, int): return False
         return abs(lat) <= 90 and abs(lon) <= 180
     
 ################################################################################
@@ -204,6 +136,12 @@ class GottenGeography:
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
+    def maps_link(self, lat, lon):
+        """Create a Pango link to Google Maps."""
+        return '<a href="%s?q=%s,%s">%s</a>' % (
+            "http://maps.google.com/maps", lat, lon, _("View in Google Maps")
+        )
+    
     def display_actors(self, stage=None, parameter=None):
         """Position and update all my custom ClutterActors."""
         stage_width  = self.stage.get_width()
@@ -218,9 +156,8 @@ class GottenGeography:
         
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
-        self.coords.set_markup(self.pretty_coords(lat, lon))
-        self.coords_label.set_markup(self.maps_link(
-            lat, lon, _("Go to Google Maps")))
+        self.coords.set_markup("%.5f, %.5f" % (lat, lon))
+        self.coords_label.set_markup(self.maps_link(lat, lon))
         
         width  = self.coords.get_width()  + 20
         height = self.coords.get_height() + 10
@@ -404,7 +341,8 @@ class GottenGeography:
             exif.read()
             
             # I have tested this successfully on JPG, PNG, DNG, and NEF.
-            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+            photo = Photograph()
+            photo.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 filename,
                 thumb_size,
                 thumb_size
@@ -418,29 +356,34 @@ class GottenGeography:
         try:
             # This assumes that the camera and computer have the same timezone.
             timestamp = exif['Exif.Photo.DateTimeOriginal'].value
-            timestamp = int(time.mktime(timestamp.timetuple()))
+            photo.timestamp = int(time.mktime(timestamp.timetuple()))
         except:
-            timestamp = int(os.stat(filename).st_mtime)
+            photo.timestamp = int(os.stat(filename).st_mtime)
         
         try:
-            lat = self.dms_to_decimal(
+            photo.latitude = self.dms_to_decimal(
                 exif['Exif.GPSInfo.GPSLatitude'].value,
                 exif['Exif.GPSInfo.GPSLatitudeRef'].value
             )
-            lon = self.dms_to_decimal(
+            photo.longitude = self.dms_to_decimal(
                 exif['Exif.GPSInfo.GPSLongitude'].value,
                 exif['Exif.GPSInfo.GPSLongitudeRef'].value
             )
-        except KeyError:
-            lat = lon = None
+        except KeyError: pass
         
         try:
-            ele = exif['Exif.GPSInfo.GPSAltitude'].value.to_float()
-            if int(exif['Exif.GPSInfo.GPSAltitudeRef'].value) > 0: ele *= -1
-        except:
-            ele = None
+            photo.city          = exif['Iptc.Application2.City'].values[0]
+            photo.provincestate = exif['Iptc.Application2.ProvinceState'].values[0]
+            photo.countryname   = exif['Iptc.Application2.CountryName'].values[0]
+        except KeyError: pass
         
-        return timestamp, lat, lon, ele, thumb
+        try:
+            photo.altitude = exif['Exif.GPSInfo.GPSAltitude'].value.to_float()
+            if int(exif['Exif.GPSInfo.GPSAltitudeRef'].value) > 0:
+                photo.altitude *= -1
+        except: pass
+        
+        return photo
     
     def gpx_element_root(self, name, attributes):
         """Expat StartElementHandler.
@@ -512,8 +455,6 @@ class GottenGeography:
             # Better to just give up on this track point and go to the next.
             return
         
-        if not self.valid_coords(lat, lon): return
-        
         self.tracks[timestamp] = {
             'elevation': float(self.gpx_state.get('ele', 0.0)),
             'point':     self.polygons[-1].append_point(lat, lon)
@@ -569,7 +510,7 @@ class GottenGeography:
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, filename):
+    def auto_timestamp_comparison(self, filename, lookup_geoname=True):
         """Use GPX data to calculate photo coordinates and elevation."""
         if len(self.tracks) < 2:        return
         if self.photo[filename].manual: return
@@ -610,7 +551,7 @@ class GottenGeography:
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
         
-        self.insert_coordinates(filename, lat, lon, ele)
+        self.modify_coordinates(filename, lat, lon, ele, lookup_geoname)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -637,7 +578,7 @@ class GottenGeography:
             self.metadata['delta'] = offset
             
             for filename in self.photo:
-                self.auto_timestamp_comparison(filename)
+                self.auto_timestamp_comparison(filename, False)
             
             self.update_all_marker_highlights()
         
@@ -648,7 +589,7 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for filename in self.selected:
             self.photo[filename].manual = True
-            self.insert_coordinates(filename,
+            self.modify_coordinates(filename,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude')
             )
@@ -687,44 +628,19 @@ class GottenGeography:
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
     
-    def insert_coordinates(self, filename, lat=None, lon=None, ele=None, modified=True):
-        """Create map marker and assign 3D coordinates to specified photo."""
+    def modify_coordinates(self, filename, lat, lon, ele=None, lookup_geoname=True):
+        """Alter the coordinates of a loaded photo."""
         self.photo[filename].update( {
             'altitude':  ele,
             'latitude':  lat,
             'longitude': lon
         } )
-        
-        if modified: self.modified.add(filename)
-        else:        self.modified.discard(filename)
-        
-        if self.valid_coords(lat, lon):
-            self.photo[filename].marker.set_position(lat, lon)
-            self.photo[filename].marker.show()
-            self.redraw_interface()
-            try: # some reverse geocoding magic
-                geoname = json.load(urllib2.urlopen(
-                    'http://ws.geonames.org/%s?lat=%s&lng=%s'
-                    % ('findNearbyPlaceNameJSON', lat, lon))
-                )['geonames'][0]
-                self.photo[filename].update( {
-                    'countrycode':   geoname['countryCode'],
-                    'countryname':   geoname['countryName'],
-                    'provincestate': geoname['adminName1'],
-                    'city':          geoname['name']
-                } )
-            except:
-                for key in [ 'countrycode', 'countryname', 'provincestate',
-                'city' ]:
-                    self.photo[filename][key] = None
-        else:
-            self.photo[filename].marker.hide()
-        
+        self.modified.add(filename)
+        self.photo[filename].position_marker()
+        self.redraw_interface()
+        if lookup_geoname: self.photo[filename].lookup_geonames()
         self.loaded_photos.set_value(self.photo[filename].iter, self.SUMMARY,
-            self.create_summary(
-                filename, self.photo[filename].timestamp, lat, lon, ele
-            ).encode('utf-8')
-        )
+            ('<b>%s</b>' % self.photo[filename].long_summary()).encode('utf-8'))
     
     def add_or_reload_photo(self, filename):
         """Create or update a row in the ListStore.
@@ -736,25 +652,25 @@ class GottenGeography:
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        timestamp, lat, lon, ele, thumb = self.load_exif_from_file(filename)
+        photo = self.load_exif_from_file(filename)
         
-        if filename not in self.photo:
-            self.photo[filename] = Photograph(
-                self.loaded_photos.append([None] * 4),
-                self.add_marker(filename)
-            )
-        
-        self.photo[filename].update( {
-            'timestamp': timestamp,
-            'manual':    False
+        photo.update( {
+            'iter':   self.loaded_photos.append([None] * 4),
+            'marker': self.add_marker(filename)
+        } if filename not in self.photo else {
+            'iter':   self.photo[filename].iter,
+            'marker': self.photo[filename].marker
         } )
         
-        iter = self.photo[filename].iter
-        self.loaded_photos.set_value(iter, self.PATH,      filename)
-        self.loaded_photos.set_value(iter, self.THUMB,     thumb)
-        self.loaded_photos.set_value(iter, self.TIMESTAMP, timestamp)
+        photo.position_marker()
+        self.modified.discard(filename)
+        self.photo[filename] = photo
         
-        self.insert_coordinates(filename, lat, lon, ele, False)
+        self.loaded_photos.set_value(photo.iter, self.PATH,      filename)
+        self.loaded_photos.set_value(photo.iter, self.THUMB,     photo.thumb)
+        self.loaded_photos.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
+        self.loaded_photos.set_value(photo.iter, self.SUMMARY,
+            photo.long_summary().encode('utf-8'))
         
         self.auto_timestamp_comparison(filename)
         self.update_sensitivity()
@@ -771,16 +687,13 @@ class GottenGeography:
             Gtk.IconSize.LARGE_TOOLBAR
         )
         
-        try:
-            timestamp, lat, lon, ele, thumb = \
-                self.load_exif_from_file(filename, 300)
-        except IOError:
-            return
+        try: photo = self.load_exif_from_file(filename, 300)
+        except IOError: return
         
-        self.preview_image.set_from_pixbuf(thumb)
-        self.preview_label.set_label(
-            self.create_summary(None, timestamp, lat, lon, ele)
-        )
+        lat, lon = photo.latitude, photo.longitude
+        self.preview_image.set_from_pixbuf(photo.thumb)
+        self.preview_label.set_label("%s\n%s" % (photo.short_summary(),
+            self.maps_link(lat, lon) if self.valid_coords(lat, lon) else ""))
     
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
@@ -1303,14 +1216,97 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, iter, marker):
+    def __init__(self):
+        """Initialize new Photograph object's attributes with None values."""
+        self.manual = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'countryname', 'countrycode', 'provincestate', 'city' ]:
+        'countryname', 'countrycode', 'provincestate', 'city',
+        'thumb', 'marker', 'iter' ]:
             self[key] = None
-        
-        self.iter     = iter
-        self.marker   = marker
-        self.manual   = False
+    
+    def position_marker(self):
+        """Maintain correct position and visibility of ChamplainMarker."""
+        if self.valid_coords():
+            self.marker.set_position(self.latitude, self.longitude)
+            self.marker.show()
+        else:
+            self.marker.hide()
+    
+    def lookup_geonames(self):
+        """Use the GeoNames.org webservice to name coordinates."""
+        if not self.valid_coords(): return
+        try:
+            geoname = json.load(urllib2.urlopen(
+                'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
+                % (self.latitude, self.longitude), None, 1 # one second timeout
+            ))['geonames'][0]
+            self.update( {
+                'countrycode':   geoname['countryCode'],
+                'countryname':   geoname['countryName'],
+                'provincestate': geoname['adminName1'],
+                'city':          geoname['name']
+            } )
+        except:
+            for key in ['countrycode', 'countryname', 'provincestate', 'city']:
+                self[key] = None
+    
+    def valid_coords(self):
+        """Check if this photograph contains valid coordinates."""
+        if type(self.latitude)  not in (float, int): return False
+        if type(self.longitude) not in (float, int): return False
+        return abs(self.latitude) <= 90 and abs(self.longitude) <= 180
+    
+################################################################################
+# Pretty string methods display internal data in a human-readable way.
+################################################################################
+    
+    def pretty_time(self):
+        """Convert epoch seconds to a human-readable date."""
+        return _("No timestamp") if type(self.timestamp) is not int else \
+            time.strftime("%Y-%m-%d %X", time.localtime(self.timestamp))
+    
+    def pretty_coords(self):
+        """Add cardinal directions to decimal coordinates."""
+        return _("Not geotagged") if not self.valid_coords() \
+            else '%s %.5f, %s %.5f' % (
+                _("N") if self.latitude  >= 0 else _("S"), abs(self.latitude),
+                _("E") if self.longitude >= 0 else _("W"), abs(self.longitude)
+            )
+    
+    def pretty_geoname(self):
+        """Display city, state, and country, if present."""
+        names, length = [], 0
+        for value in [ self.city, self.provincestate, self.countryname ]:
+            if type(value) is str and len(value) > 0:
+                names.append(value)
+                length += len(value)
+        return (",\n" if length > 35 else ", ").join(names)
+    
+    def pretty_elevation(self):
+        """Convert elevation into a human readable format."""
+        return "" if type(self.altitude) not in (float, int) else "%.1f%s" % (
+            abs(self.altitude),
+            _("m above sea level")
+            if self.altitude >= 0 else
+            _("m below sea level")
+        )
+    
+    def short_summary(self):
+        """Plaintext summary of photo metadata."""
+        strings = []
+        for value in [self.pretty_time(), self.pretty_coords(),
+        self.pretty_geoname(), self.pretty_elevation()]:
+            if type(value) is str and len(value) > 0:
+                strings.append(value)
+        return "\n".join(strings)
+    
+    def long_summary(self):
+        """Longer summary with Pango markup."""
+        return "".join( [
+            '<span size="larger">', self.marker.get_text(), '</span>\n',
+            '<span style="italic" size="smaller">',
+            self.short_summary(), '</span>'
+        ] )
 
 ################################################################################
 # Strings section. Various strings that were too obnoxiously large to fit

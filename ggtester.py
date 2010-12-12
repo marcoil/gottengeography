@@ -3,7 +3,7 @@
 
 from __future__ import division
 import unittest, os, re, datetime, time, math, random
-from gottengeography import GottenGeography
+from gottengeography import GottenGeography, ReadableDictionary, Photograph
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
@@ -142,50 +142,48 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.selected), 0)
         
         for filename in files:
-            timestamp, lat, lon, ele, thumb = \
-                self.gui.load_exif_from_file(filename)
-            self.assertTrue(self.gui.valid_coords(lat, lon))
-            self.assertGreater(ele, 600)
+            photo = self.gui.load_exif_from_file(filename)
+            self.assertTrue(photo.valid_coords())
+            self.assertGreater(photo.altitude, 600)
+            self.assertEqual(photo.provincestate, "Alberta")
+            self.assertEqual(photo.countryname, "Canada")
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
         
-        self.assertEqual(
-            self.gui.pretty_coords(None, None),
-            "Not geotagged"
-        )
-        self.assertEqual(
-            self.gui.pretty_coords(10.0, 10.0),
-            "N 10.00000, E 10.00000"
-        )
-        self.assertEqual(
-            self.gui.pretty_coords(-10.0, -10.0),
-            "S 10.00000, W 10.00000"
-        )
+        marker = ReadableDictionary()
+        marker.get_text = lambda: 'filename.jpg'
+        photo = Photograph()
+        photo.marker = marker
         
-        self.assertEqual(
-            self.gui.pretty_time(999999999),
-            "2001-09-08 07:46:39 PM"
-        )
-        self.assertEqual(
-            self.gui.pretty_time(None),
-            "No timestamp"
-        )
+        self.assertEqual(photo.pretty_coords(), "Not geotagged")
+        photo.latitude  = 10.0
+        photo.longitude = 10.0
+        self.assertEqual(photo.pretty_coords(), "N 10.00000, E 10.00000")
+        photo.latitude  = -10.0
+        photo.longitude = -10.0
+        self.assertEqual(photo.pretty_coords(), "S 10.00000, W 10.00000")
         
-        self.assertEqual(
-            self.gui.pretty_elevation(None),
-            ""
-        )
-        self.assertEqual(
-            self.gui.pretty_elevation(-10.20005),
-            "10.2m below sea level"
-        )
-        self.assertEqual(
-            self.gui.pretty_elevation(600.71),
-            "600.7m above sea level"
-        )
+        self.assertEqual(photo.pretty_time(), "No timestamp")
+        photo.timestamp = 999999999
+        self.assertEqual(photo.pretty_time(), "2001-09-08 07:46:39 PM")
         
-        self.assertEqual(self.gui.maps_link(None, None, 'foo'), 'foo')
+        self.assertEqual(photo.pretty_elevation(), "")
+        photo.altitude = -10.20005
+        self.assertEqual(photo.pretty_elevation(), "10.2m below sea level")
+        photo.altitude = 600.71
+        self.assertEqual(photo.pretty_elevation(), "600.7m above sea level")
+        
+        self.assertEqual(photo.short_summary(),
+"""2001-09-08 07:46:39 PM
+S 10.00000, W 10.00000
+600.7m above sea level""")
+        self.assertEqual(photo.long_summary(),
+"""<span size="larger">filename.jpg</span>
+<span style="italic" size="smaller">2001-09-08 07:46:39 PM
+S 10.00000, W 10.00000
+600.7m above sea level</span>""")
+        
         self.assertRegexpMatches(
             self.gui.maps_link(10.0, 10.0),
             r'href="http://maps.google.com'
