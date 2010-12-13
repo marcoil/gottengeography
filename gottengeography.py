@@ -500,7 +500,7 @@ class GottenGeography:
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, filename, lookup_geoname=True):
+    def auto_timestamp_comparison(self, filename):
         """Use GPX data to calculate photo coordinates and elevation."""
         if len(self.tracks) < 2:        return
         if self.photo[filename].manual: return
@@ -541,7 +541,7 @@ class GottenGeography:
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
         
-        self.modify_coordinates(filename, lat, lon, ele, lookup_geoname)
+        self.modify_coordinates(filename, lat, lon, ele)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -568,7 +568,7 @@ class GottenGeography:
             self.metadata['delta'] = offset
             
             for filename in self.photo:
-                self.auto_timestamp_comparison(filename, False)
+                self.auto_timestamp_comparison(filename)
         
         for spinbutton in self.offset.values():
             spinbutton.handler_unblock_by_func(self.time_offset_changed)
@@ -579,11 +579,9 @@ class GottenGeography:
             self.photo[filename].manual = True
             self.modify_coordinates(filename,
                 self.map_view.get_property('latitude'),
-                self.map_view.get_property('longitude')
-            )
-        
+                self.map_view.get_property('longitude'))
+            self.photo[filename].marker.raise_top()
         self.update_sensitivity()
-        self.photo[filename].marker.raise_top()
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -616,7 +614,7 @@ class GottenGeography:
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
     
-    def modify_coordinates(self, filename, lat, lon, ele=None, lookup_geoname=True):
+    def modify_coordinates(self, filename, lat, lon, ele=None):
         """Alter the coordinates of a loaded photo."""
         self.photo[filename].update( {
             'altitude':  ele,
@@ -626,7 +624,7 @@ class GottenGeography:
         self.modified.add(filename)
         self.photo[filename].position_marker()
         self.redraw_interface()
-        if lookup_geoname: self.photo[filename].lookup_geonames()
+        self.photo[filename].lookup_geonames()
         self.loaded_photos.set_value(self.photo[filename].iter, self.SUMMARY,
             ('<b>%s</b>' % self.photo[filename].long_summary()).encode('utf-8'))
     
