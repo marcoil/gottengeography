@@ -298,10 +298,9 @@ class GottenGeography:
             exif[key % 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
             exif[key % 'MapDatum']     = 'WGS-84'
             
-            key = 'Iptc.Application2.%s'
-            for name in ['City', 'ProvinceState', 'CountryName', 'CountryCode']:
+            for name in self.geonames_of_interest.values():
                 if img[name.lower()] is not None:
-                    exif[key % name] = [img[name.lower()]]
+                    exif['Iptc.Application2.%s' % name] = [img[name.lower()]]
             
             try:
                 exif.write()
@@ -618,13 +617,13 @@ class GottenGeography:
             'latitude':  lat,
             'longitude': lon
         } )
-        self.modified.add(filename)
         self.photo[filename].position_marker()
         self.photo[filename].request_geoname(self)
         self.modify_summary(filename)
     
     def modify_summary(self, filename):
         """Insert the current photo summary into the liststore."""
+        self.modified.add(filename)
         self.loaded_photos.set_value(
             self.photo[filename].iter, self.SUMMARY, ('<b>%s</b>' %
             self.photo[filename].long_summary()).encode('utf-8'))
@@ -813,6 +812,15 @@ class GottenGeography:
         # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
         # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
         self.delimiters = re.compile(r'[:TZ-]')
+        
+        # Maps geonames.org jargon into IPTC jargon. Expanding this will result
+        # in more data being extracted from the geonames.org data
+        self.geonames_of_interest = {
+            'countryCode': 'CountryCode',
+            'countryName': 'CountryName',
+            'adminName1':  'ProvinceState',
+            'name':        'City'
+        }
         
         self.toolbar = Gtk.Toolbar()
         self.button  = ReadableDictionary()
@@ -1204,7 +1212,7 @@ class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
     def __init__(self, filename, thumb):
-        """Initialize new Photograph object's attributes with None values."""
+        """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
         self.thumb    = thumb
         self.manual   = False
@@ -1224,31 +1232,22 @@ class Photograph(ReadableDictionary):
     
     def request_geoname(self, gui):
         """Use the GeoNames.org webservice to name coordinates."""
-        if not self.valid_coords():        return
-        if time.time() - self.lookup < 10: return
-        else: self.lookup = time.time()
-        gfile = Gio.file_new_for_uri(
-            'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
-            % (self.latitude, self.longitude))
-        gfile.load_contents_async(None, self.receive_geoname, gui)
+        if self.valid_coords() and (time.time() - self.lookup > 10):
+            gfile = Gio.file_new_for_uri(
+                'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
+                % (self.latitude, self.longitude))
+            gfile.load_contents_async(None, self.receive_geoname, gui)
+            self.lookup = time.time()
     
     def receive_geoname(self, gfile, result, gui):
         """This callback method is executed when geoname download completes."""
-        try:
-            geoname = json.loads(
-                gfile.load_contents_finish(result)[1]
-            )['geonames'][0]
-            self.update( {
-                'countrycode':   geoname['countryCode'],
-                'countryname':   geoname['countryName'],
-                'provincestate': geoname['adminName1'],
-                'city':          geoname['name']
-            } )
-        except:
-            for key in ['countrycode', 'countryname', 'provincestate', 'city']:
-                self[key] = None
-        finally:
-            gui.modify_summary(self.filename)
+        try: obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
+        except: return
+        geoname = {}
+        for geonames in obj: geoname.update(geonames)
+        for key, attribute in gui.geonames_of_interest.items():
+            self[attribute.lower()] = geoname.get(key)
+        gui.modify_summary(self.filename)
     
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
