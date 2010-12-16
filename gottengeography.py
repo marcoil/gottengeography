@@ -19,9 +19,9 @@
 
 from __future__ import division
 
-import os, re, time, calendar, math, gettext, json, urllib2, pyexiv2
+import os, re, time, calendar, math, gettext, json, pyexiv2
 from gi.repository import Clutter, GtkChamplain, Champlain
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
+from gi.repository import Gio, Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
 from xml.parsers import expat
 from fractions import Fraction
@@ -332,12 +332,9 @@ class GottenGeography:
             exif.read()
             
             # I have tested this successfully on JPG, PNG, DNG, and NEF.
-            photo = Photograph()
-            photo.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                filename,
-                thumb_size,
-                thumb_size
-            )
+            photo = Photograph(
+                filename, GdkPixbuf.Pixbuf.new_from_file_at_size(
+                filename, thumb_size, thumb_size))
         except:
             # If GdkPixbuf can't open it, it's most likely not a photo. However,
             # if there exists an image format that is supported by pyexiv2 but
@@ -623,10 +620,14 @@ class GottenGeography:
         } )
         self.modified.add(filename)
         self.photo[filename].position_marker()
-        self.redraw_interface()
-        self.photo[filename].lookup_geonames()
-        self.loaded_photos.set_value(self.photo[filename].iter, self.SUMMARY,
-            ('<b>%s</b>' % self.photo[filename].long_summary()).encode('utf-8'))
+        self.photo[filename].request_geoname(self)
+        self.modify_summary(filename)
+    
+    def modify_summary(self, filename):
+        """Insert the current photo summary into the liststore."""
+        self.loaded_photos.set_value(
+            self.photo[filename].iter, self.SUMMARY, ('<b>%s</b>' %
+            self.photo[filename].long_summary()).encode('utf-8'))
     
     def add_or_reload_photo(self, filename):
         """Create or update a row in the ListStore.
@@ -1202,12 +1203,15 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self):
+    def __init__(self, filename, thumb):
         """Initialize new Photograph object's attributes with None values."""
-        self.manual = False
+        self.filename = filename
+        self.thumb    = thumb
+        self.manual   = False
+        self.lookup   = 0
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
         'countryname', 'countrycode', 'provincestate', 'city',
-        'thumb', 'marker', 'iter' ]:
+        'marker', 'iter' ]:
             self[key] = None
     
     def position_marker(self):
@@ -1218,14 +1222,22 @@ class Photograph(ReadableDictionary):
         else:
             self.marker.hide()
     
-    def lookup_geonames(self):
+    def request_geoname(self, gui):
         """Use the GeoNames.org webservice to name coordinates."""
-        if not self.valid_coords(): return
+        if not self.valid_coords():        return
+        if time.time() - self.lookup < 10: return
+        else: self.lookup = time.time()
+        gfile = Gio.file_new_for_uri(
+            'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
+            % (self.latitude, self.longitude))
+        gfile.load_contents_async(None, self.receive_geoname, gui)
+    
+    def receive_geoname(self, gfile, result, gui):
+        """This callback method is executed when geoname download completes."""
         try:
-            geoname = json.load(urllib2.urlopen(
-                'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
-                % (self.latitude, self.longitude), None, 1 # one second timeout
-            ))['geonames'][0]
+            geoname = json.loads(
+                gfile.load_contents_finish(result)[1]
+            )['geonames'][0]
             self.update( {
                 'countrycode':   geoname['countryCode'],
                 'countryname':   geoname['countryName'],
@@ -1235,6 +1247,8 @@ class Photograph(ReadableDictionary):
         except:
             for key in ['countrycode', 'countryname', 'provincestate', 'city']:
                 self[key] = None
+        finally:
+            gui.modify_summary(self.filename)
     
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
@@ -1288,16 +1302,18 @@ class Photograph(ReadableDictionary):
     
     def long_summary(self):
         """Longer summary with Pango markup."""
-        return "".join( [
-            '<span size="larger">', self.marker.get_text(), '</span>\n',
-            '<span style="italic" size="smaller">',
-            self.short_summary(), '</span>'
-        ] )
+        return LONG_SUMMARY % (
+            os.path.basename(self.filename),
+            self.short_summary()
+        )
 
 ################################################################################
 # Strings section. Various strings that were too obnoxiously large to fit
 # nicely into the actual code above, so they've been extracted here.
 ################################################################################
+
+LONG_SUMMARY = """<span size="larger">%s</span>
+<span style="italic" size="smaller">%s</span>"""
 
 SAVE_WARNING = """<span weight="bold" size="larger">""" + _("""Save changes to \
 your photos before closing?""") + """</span>

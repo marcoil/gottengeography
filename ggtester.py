@@ -130,6 +130,14 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.gpx_state), 0)
         
+        # Wait for geonames to finish downloading before saving
+        mod = self.gui.modified.copy()
+        while len(mod) > 0:
+            filename = mod.pop()
+            while self.gui.photo[filename].city is None:
+                time.sleep(.1)
+                self.gui.redraw_interface()
+        
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
         
@@ -153,7 +161,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         marker = ReadableDictionary()
         marker.get_text = lambda: 'filename.jpg'
-        photo = Photograph()
+        photo = Photograph(marker.get_text(), None)
         photo.marker = marker
         
         self.assertEqual(photo.pretty_coords(), "Not geotagged")
