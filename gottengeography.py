@@ -1230,8 +1230,9 @@ class Photograph(ReadableDictionary):
         """Use the GeoNames.org webservice to name coordinates."""
         if self.valid_coords() and (time.time() - self.lookup > 60):
             gfile = Gio.file_new_for_uri(
-                'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
-                % (self.latitude, self.longitude))
+                'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
+                % (self.latitude, self.longitude) +
+                '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
             gfile.load_contents_async(None, self.receive_geoname, gui)
             self.lookup = time.time()
     
