@@ -310,12 +310,7 @@ class GottenGeography:
                 self.modified.discard(filename)
                 self.loaded_photos.set_value(
                     self.photo[filename].iter, self.SUMMARY,
-                    re.sub(r'</?b>', '',
-                        self.loaded_photos.get_value(
-                            self.photo[filename].iter, self.SUMMARY
-                        )
-                    )
-                )
+                    self.photo[filename].long_summary())
         
         self.update_sensitivity()
         self.progressbar.hide()
@@ -627,7 +622,7 @@ class GottenGeography:
         self.modified.add(filename)
         self.loaded_photos.set_value(
             self.photo[filename].iter, self.SUMMARY, ('<b>%s</b>' %
-            self.photo[filename].long_summary()).encode('utf-8'))
+            self.photo[filename].long_summary()))
     
     def add_or_reload_photo(self, filename):
         """Create or update a row in the ListStore.
@@ -657,7 +652,7 @@ class GottenGeography:
         self.loaded_photos.set_value(photo.iter, self.THUMB,     photo.thumb)
         self.loaded_photos.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
         self.loaded_photos.set_value(photo.iter, self.SUMMARY,
-            photo.long_summary().encode('utf-8'))
+            photo.long_summary())
         
         self.auto_timestamp_comparison(filename)
         self.update_sensitivity()
@@ -1277,7 +1272,7 @@ class Photograph(ReadableDictionary):
         """Display city, state, and country, if present."""
         names, length = [], 0
         for value in [ self.city, self.provincestate, self.countryname ]:
-            if type(value) is str and len(value) > 0:
+            if type(value) in (str, unicode) and len(value) > 0:
                 names.append(value)
                 length += len(value)
         return (",\n" if length > 35 else ", ").join(names)
@@ -1296,16 +1291,16 @@ class Photograph(ReadableDictionary):
         strings = []
         for value in [self.pretty_time(), self.pretty_coords(),
         self.pretty_geoname(), self.pretty_elevation()]:
-            if type(value) is str and len(value) > 0:
+            if type(value) in (str, unicode) and len(value) > 0:
                 strings.append(value)
         return "\n".join(strings)
     
     def long_summary(self):
         """Longer summary with Pango markup."""
-        return LONG_SUMMARY % (
+        return (LONG_SUMMARY % (
             os.path.basename(self.filename),
             self.short_summary()
-        )
+        )).encode('utf-8')
 
 ################################################################################
 # Strings section. Various strings that were too obnoxiously large to fit
