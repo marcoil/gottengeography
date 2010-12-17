@@ -573,6 +573,7 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for filename in self.selected:
             self.photo[filename].manual = True
+            self.photo[filename].lookup = 0
             self.modify_coordinates(filename,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
@@ -1232,7 +1233,7 @@ class Photograph(ReadableDictionary):
     
     def request_geoname(self, gui):
         """Use the GeoNames.org webservice to name coordinates."""
-        if self.valid_coords() and (time.time() - self.lookup > 10):
+        if self.valid_coords() and (time.time() - self.lookup > 60):
             gfile = Gio.file_new_for_uri(
                 'http://ws.geonames.org/findNearbyPlaceNameJSON?lat=%s&lng=%s'
                 % (self.latitude, self.longitude))
