@@ -282,25 +282,25 @@ class GottenGeography:
                 os.path.basename(filename)
             )
             
-            key = 'Exif.GPSInfo.GPS%s'
+            key = 'Exif.GPSInfo.GPS'
             img = self.photo[filename]
             
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
             
             if img.altitude is not None:
-                exif[key % 'Altitude']    = self.float_to_rational(img.altitude)
-                exif[key % 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
+                exif[key + 'Altitude']    = self.float_to_rational(img.altitude)
+                exif[key + 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
             
-            exif[key % 'Latitude']     = self.decimal_to_dms(img.latitude)
-            exif[key % 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
-            exif[key % 'Longitude']    = self.decimal_to_dms(img.longitude)
-            exif[key % 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
-            exif[key % 'MapDatum']     = 'WGS-84'
+            exif[key + 'Latitude']     = self.decimal_to_dms(img.latitude)
+            exif[key + 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
+            exif[key + 'Longitude']    = self.decimal_to_dms(img.longitude)
+            exif[key + 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
+            exif[key + 'MapDatum']     = 'WGS-84'
             
             for name in self.geonames_of_interest.values():
                 if img[name.lower()] is not None:
-                    exif['Iptc.Application2.%s' % name] = [img[name.lower()]]
+                    exif['Iptc.Application2.' + name] = [img[name.lower()]]
             
             try:
                 exif.write()
