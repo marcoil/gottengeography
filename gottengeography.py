@@ -223,7 +223,7 @@ class GottenGeography:
             )
         
         if selection_exists:
-            area = [ float('inf') * (-1 if i > 1 else 1) for i in range(4) ]
+            area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
             for filename in self.selected:
                 self.set_marker_highlight(
                     self.photo[filename].marker, area, False
@@ -262,7 +262,7 @@ class GottenGeography:
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf'),       # Initial GPX track point
             'tau':   time.clock(),       # Most recent time screen was updated
-            'area':  [ float('inf') * (-1 if i > 1 else 1) for i in range(4) ]
+            'area':  [ float('inf') ] * 2 + [ float('-inf') ] * 2
         }
         
         self.update_sensitivity()
