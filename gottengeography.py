@@ -122,13 +122,11 @@ class GottenGeography:
         """Move the map view in discrete steps."""
         x = self.map_view.get_width()  / 2
         y = self.map_view.get_height() / 2
-        
-        # moves by 1/5 (40% of half) screen length in the given direction
+        # moves by 1/5 screen length in the given direction
         if   keyval == Gdk.keyval_from_name("Left"):  x *= 0.6
         elif keyval == Gdk.keyval_from_name("Up"):    y *= 0.6
         elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
         elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
-        
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
     
@@ -138,7 +136,7 @@ class GottenGeography:
             lat, lon, _("View in Google Maps"))
     
     def display_actors(self, stage=None, parameter=None):
-        """Position and update all my custom ClutterActors."""
+        """Position and update the crosshair, and the coordinates label."""
         stage_width  = self.stage.get_width()
         stage_height = self.stage.get_height()
         self.crosshair.set_position(
@@ -149,10 +147,9 @@ class GottenGeography:
         if stage is None: return
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
-        self.coords.set_markup("%.5f, %.5f" % (lat, lon))
+        self.coords.set_markup("%.4f, %.4f" % (lat, lon))
         self.coords_label.set_markup(self.maps_link(lat, lon))
-        
-        self.coords_background.set_size(stage_width, self.coords.get_height() + 10)
+        self.coords_bg.set_size(stage_width, self.coords.get_height() + 10)
         self.coords.set_position((stage_width - self.coords.get_width()) / 2, 5)
     
     def marker_clicked(self, marker, event):
@@ -184,10 +181,7 @@ class GottenGeography:
     
     def set_marker_highlight(self, marker, area, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
-        try:
-            if not marker.get_property('visible'): return
-        except AttributeError:                     return
-        
+        if not marker.get_property('visible'): return
         highlight = area is not None
         marker.set_property('opacity', 64 if transparent else 255)
         marker.set_scale(*[1.1 if highlight else 1] * 2)
@@ -230,7 +224,6 @@ class GottenGeography:
         marker.connect("button-press-event", self.marker_clicked)
         marker.connect("enter-event", self.marker_mouse_in)
         marker.connect("leave-event", self.marker_mouse_out)
-        
         self.map_photo_layer.add_marker(marker)
         return marker
     
@@ -976,11 +969,11 @@ class GottenGeography:
         
         self.stage = self.map_view.get_stage()
         
-        self.coords_background = Clutter.Rectangle.new_with_color(
+        self.coords_bg = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(255, 255, 255, 164)
         )
-        self.prep_actor(self.coords_background)
-        self.coords_background.set_position(0, 0)
+        self.prep_actor(self.coords_bg)
+        self.coords_bg.set_position(0, 0)
         
         self.coords = Clutter.Text()
         self.coords.set_single_line_mode(True)
