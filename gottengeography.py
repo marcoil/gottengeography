@@ -205,22 +205,18 @@ class GottenGeography:
     def update_all_marker_highlights(self, selection):
         """Ensure only the selected markers are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
-        for filename in self.photo:
+        for photo in self.photo.values():
             # Maintain self.selected for easy iterating.
-            if selection.iter_is_selected(self.photo[filename].iter):
-                self.selected.add(filename)
+            if selection.iter_is_selected(photo.iter):
+                self.selected.add(photo)
             else:
-                self.selected.discard(filename)
-            self.set_marker_highlight(
-                self.photo[filename].marker, None, selection_exists
-            )
+                self.selected.discard(photo)
+            self.set_marker_highlight(photo.marker, None, selection_exists)
         
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
-            for filename in self.selected:
-                self.set_marker_highlight(
-                    self.photo[filename].marker, area, False
-                )
+            for photo in self.selected:
+                self.set_marker_highlight(photo.marker, area, False)
             if self.valid_coords(area[0], area[1]):
                 self.remember_location()
                 self.map_view.ensure_visible(*area + [False])
@@ -268,40 +264,38 @@ class GottenGeography:
         """Ensure all loaded files are saved."""
         self.progressbar.show()
         total = len(self.modified)
-        for filename in self.modified.copy():
+        for photo in self.modified.copy():
             self.redraw_interface(
                 (1 + total - len(self.modified)) / total,
-                os.path.basename(filename)
+                os.path.basename(photo.filename)
             )
             
             key = 'Exif.GPSInfo.GPS'
-            img = self.photo[filename]
             
-            exif = pyexiv2.ImageMetadata(filename)
+            exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
             
-            if img.altitude is not None:
-                exif[key + 'Altitude']    = self.float_to_rational(img.altitude)
-                exif[key + 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
-            exif[key + 'Latitude']     = self.decimal_to_dms(img.latitude)
-            exif[key + 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
-            exif[key + 'Longitude']    = self.decimal_to_dms(img.longitude)
-            exif[key + 'LongitudeRef'] = "E" if img.longitude >= 0 else "W"
+            if photo.altitude is not None:
+                exif[key + 'Altitude']    = self.float_to_rational(photo.altitude)
+                exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
+            exif[key + 'Latitude']     = self.decimal_to_dms(photo.latitude)
+            exif[key + 'LatitudeRef']  = "N" if photo.latitude >= 0 else "S"
+            exif[key + 'Longitude']    = self.decimal_to_dms(photo.longitude)
+            exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
             exif[key + 'MapDatum']     = 'WGS-84'
             
-            for name in self.geonames_of_interest.values():
-                if img[name.lower()] is not None:
-                    exif['Iptc.Application2.' + name] = [img[name.lower()]]
+            for iptc in self.geonames_of_interest.values():
+                if photo[iptc.lower()] is not None:
+                    exif['Iptc.Application2.' + iptc] = [photo[iptc.lower()]]
             
             try:
                 exif.write()
             except Exception as inst:
                 self.status_message(", ".join(inst.args))
             else:
-                self.modified.discard(filename)
-                self.loaded_photos.set_value(
-                    self.photo[filename].iter, self.SUMMARY,
-                    self.photo[filename].long_summary())
+                self.modified.discard(photo)
+                self.loaded_photos.set_value(photo.iter, self.SUMMARY,
+                    photo.long_summary())
         
         self.update_sensitivity()
         self.progressbar.hide()
@@ -557,12 +551,12 @@ class GottenGeography:
     
     def apply_selected_photos(self, button=None):
         """Manually apply map center coordinates to all selected photos."""
-        for filename in self.selected:
-            self.photo[filename].manual = True
-            self.modify_coordinates(filename,
+        for photo in self.selected:
+            photo.manual = True
+            self.modify_coordinates(photo.filename,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
-            self.photo[filename].marker.raise_top()
+            photo.marker.raise_top()
         self.update_sensitivity()
     
     def revert_selected_photos(self, button=None):
@@ -573,25 +567,25 @@ class GottenGeography:
         
         total = len(mod_in_sel)
         while len(mod_in_sel) > 0:
-            filename = mod_in_sel.pop()
+            photo = mod_in_sel.pop()
             self.redraw_interface(
                 (total - len(mod_in_sel)) / total,
-                os.path.basename(filename)
+                os.path.basename(photo.filename)
             )
-            self.add_or_reload_photo(filename)
-            self.photo[filename].marker.raise_top()
+            self.add_or_reload_photo(photo.filename)
+            photo.marker.raise_top()
         
         self.progressbar.hide()
         self.update_sensitivity()
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
-        for filename in self.selected.copy():
-            self.photo[filename].marker.destroy()
-            self.loaded_photos.remove(self.photo[filename].iter)
-            self.selected.discard(filename)
-            self.modified.discard(filename)
-            del self.photo[filename]
+        for photo in self.selected.copy():
+            photo.marker.destroy()
+            self.loaded_photos.remove(photo.iter)
+            self.selected.discard(photo)
+            self.modified.discard(photo)
+            del self.photo[photo.filename]
         
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
@@ -609,10 +603,10 @@ class GottenGeography:
     
     def modify_summary(self, filename):
         """Insert the current photo summary into the liststore."""
-        self.modified.add(filename)
-        self.loaded_photos.set_value(
-            self.photo[filename].iter, self.SUMMARY, ('<b>%s</b>' %
-            self.photo[filename].long_summary()))
+        photo = self.photo[filename]
+        self.modified.add(photo)
+        self.loaded_photos.set_value(photo.iter, self.SUMMARY,
+            ('<b>%s</b>' % photo.long_summary()))
     
     def add_or_reload_photo(self, filename):
         """Create or update a row in the ListStore.
@@ -635,14 +629,13 @@ class GottenGeography:
         } )
         
         photo.position_marker()
-        self.modified.discard(filename)
+        self.modified.discard(photo)
         self.photo[filename] = photo
         
         self.loaded_photos.set_value(photo.iter, self.PATH,      filename)
         self.loaded_photos.set_value(photo.iter, self.THUMB,     photo.thumb)
         self.loaded_photos.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
-        self.loaded_photos.set_value(photo.iter, self.SUMMARY,
-            photo.long_summary())
+        self.loaded_photos.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
         
         self.auto_timestamp_comparison(filename)
         self.update_sensitivity()

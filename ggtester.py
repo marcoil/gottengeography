@@ -89,10 +89,9 @@ class GottenGeographyTester(unittest.TestCase):
              53.537399000000001, -113.443061]
         )
         
-        for filename in self.gui.photo:
-            self.assertTrue(filename in self.gui.modified)
+        for photo in self.gui.photo.values():
+            self.assertTrue(photo in self.gui.modified)
             
-            photo = self.gui.photo[filename]
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
             
@@ -105,16 +104,15 @@ class GottenGeographyTester(unittest.TestCase):
             self.gui.marker_clicked(photo.marker, Clutter.Event())
             self.assertTrue(self.gui.photo_selection.iter_is_selected(photo.iter))
             self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
-            self.assertTrue(filename in self.gui.selected)
+            self.assertTrue(photo in self.gui.selected)
             self.assertEqual(len(self.gui.selected), 1)
             self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
             self.assertTrue(photo.marker.get_highlighted())
             
-            for othername in self.gui.photo:
-                if othername == filename: continue
-                other = self.gui.photo[othername]
+            for other in self.gui.photo.values():
+                if other.filename == photo.filename: continue
                 self.assertFalse(self.gui.photo_selection.iter_is_selected(other.iter))
-                self.assertFalse(othername in self.gui.selected)
+                self.assertFalse(other in self.gui.selected)
                 self.assertEqual(other.marker.get_scale(), (1, 1))
                 self.assertFalse(other.marker.get_highlighted())
             
@@ -133,8 +131,8 @@ class GottenGeographyTester(unittest.TestCase):
         # Wait for geonames to finish downloading before saving
         mod = self.gui.modified.copy()
         while len(mod) > 0:
-            filename = mod.pop()
-            while self.gui.photo[filename].city is None:
+            photo = mod.pop()
+            while photo.city is None:
                 time.sleep(.1)
                 self.gui.redraw_interface()
         
@@ -143,7 +141,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         self.gui.photo_selection.select_all()
         self.assertEqual(len(self.gui.selected), 6)
-        files = self.gui.selected.copy()
+        files = map(lambda x:x.filename, self.gui.selected)
         self.gui.close_selected_photos()
         self.assertEqual(len(self.gui.photo), 0)
         self.assertEqual(len(self.gui.modified), 0)
