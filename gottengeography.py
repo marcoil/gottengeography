@@ -30,7 +30,7 @@ from fractions import Fraction
 #                                    --- Isaac Newton
 
 APPNAME = "GottenGeography"
-VERSION = "0.3"
+VERSION = "0.4"
 
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
