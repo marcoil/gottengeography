@@ -136,7 +136,12 @@ class GottenGeography:
             lat, lon, _("View in Google Maps"))
     
     def display_actors(self, stage=None, parameter=None):
-        """Position and update the crosshair, and the coordinates label."""
+        """Position and update my custom ClutterActors.
+        
+        self.coords_bg is a white bar at the top of the map view, spanning
+        its full width. self.coords shows the map center coordinates.
+        self.coords_label displays a link to Google Maps in the status bar.
+        self.crosshair is a black diamond, kept at map center."""
         stage_width  = self.stage.get_width()
         stage_height = self.stage.get_height()
         self.crosshair.set_position(
@@ -161,7 +166,6 @@ class GottenGeography:
         """
         try: iter = self.photo[marker.get_name()].iter
         except KeyError: return
-        
         if (Clutter.ModifierType.CONTROL_MASK |
             Clutter.ModifierType.MOD2_MASK      == event.get_state()):
             if marker.get_highlighted(): self.photo_selection.unselect_iter(iter)
@@ -186,7 +190,6 @@ class GottenGeography:
         marker.set_property('opacity', 64 if transparent else 255)
         marker.set_scale(*[1.1 if highlight else 1] * 2)
         marker.set_highlighted(highlight)
-        
         if highlight:
             marker.raise_top()
             lat = marker.get_latitude()
@@ -206,7 +209,7 @@ class GottenGeography:
             else:
                 self.selected.discard(photo)
             self.set_marker_highlight(photo.marker, None, selection_exists)
-        
+        # Highlight and center the map view over the selected photos.
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
             for photo in self.selected:
