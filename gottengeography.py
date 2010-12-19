@@ -1266,6 +1266,7 @@ class Photograph(ReadableDictionary):
         """Insert geonames into the photo and update the GtkListStore."""
         for geocode, iptc in gui.geonames_of_interest.items():
             self[iptc.lower()] = geoname.get(geocode)
+        self.timezone = geoname['timezone']['timeZoneId']
         gui.modify_summary(self.filename)
     
     def valid_coords(self):
