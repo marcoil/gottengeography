@@ -1210,15 +1210,11 @@ class Photograph(ReadableDictionary):
         else:
             self.marker.hide()
     
-    def cache_key(self):
-        """Returns a string representing coarsely the area the photo is in."""
-        return "%.2f,%.2f" % (self.latitude, self.longitude)
-    
     def request_geoname(self, gui):
         """Use the GeoNames.org webservice to name coordinates."""
         if not self.valid_coords():
             return
-        key = self.cache_key()
+        key = "%.2f,%.2f" % (self.latitude, self.longitude)
         if key in gui.geonames_cache:
             if gui.geonames_cache[key] is None:
                 gui.geonames_queue[key].append(self)
@@ -1231,11 +1227,11 @@ class Photograph(ReadableDictionary):
                 'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
                 % (self.latitude, self.longitude) +
                 '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
-            gfile.load_contents_async(None, self.receive_geoname, gui)
+            gfile.load_contents_async(None, self.receive_geoname, [gui, key])
     
-    def receive_geoname(self, gfile, result, gui):
+    def receive_geoname(self, gfile, result, data):
         """This callback method is executed when geoname download completes."""
-        key = self.cache_key()
+        gui, key = data
         try:
             obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
         except:
@@ -1254,7 +1250,8 @@ class Photograph(ReadableDictionary):
         """Insert geonames into the photo and update the GtkListStore."""
         for geocode, iptc in gui.geonames_of_interest.items():
             self[iptc] = geoname.get(geocode)
-        self.timezone = geoname['timezone']['timeZoneId']
+        try:    self.timezone = geoname['timezone']['timeZoneId']
+        except: self.timezone = None
         gui.modify_summary(self.filename)
     
     def valid_coords(self):
@@ -1274,8 +1271,8 @@ class Photograph(ReadableDictionary):
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
-        return _("Not geotagged") if not self.valid_coords() \
-            else '%s %.5f, %s %.5f' % (
+        return _("Not geotagged") if not self.valid_coords() else \
+            '%s %.5f, %s %.5f' % (
                 _("N") if self.latitude  >= 0 else _("S"), abs(self.latitude),
                 _("E") if self.longitude >= 0 else _("W"), abs(self.longitude)
             )
@@ -1283,7 +1280,7 @@ class Photograph(ReadableDictionary):
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
         names, length = [], 0
-        for value in [ self.City, self.ProvinceState, self.CountryName ]:
+        for value in [self.City, self.ProvinceState, self.CountryName]:
             if type(value) in (str, unicode) and len(value) > 0:
                 names.append(value)
                 length += len(value)
