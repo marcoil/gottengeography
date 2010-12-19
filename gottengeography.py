@@ -568,7 +568,6 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for filename in self.selected:
             self.photo[filename].manual = True
-            self.photo[filename].lookup = 0
             self.modify_coordinates(filename,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
@@ -812,6 +811,7 @@ class GottenGeography:
         # Maps geonames.org jargon into IPTC jargon. Expanding this will result
         # in more data being extracted from the geonames.org data
         self.geonames_cache = {}
+        self.geonames_queue = {}
         self.geonames_of_interest = {
             'countryCode': 'CountryCode',
             'countryName': 'CountryName',
@@ -1213,7 +1213,6 @@ class Photograph(ReadableDictionary):
         self.filename = filename
         self.thumb    = thumb
         self.manual   = False
-        self.lookup   = 0
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
         'countryname', 'countrycode', 'provincestate', 'city',
         'marker', 'iter' ]:
@@ -1229,34 +1228,48 @@ class Photograph(ReadableDictionary):
     
     def cache_key(self):
         """Returns a string representing coarsely the area the photo is in."""
-        return "%.1f,%.1f" % (self.latitude, self.longitude)
+        return "%.2f,%.2f" % (self.latitude, self.longitude)
     
     def request_geoname(self, gui):
         """Use the GeoNames.org webservice to name coordinates."""
-        if not self.valid_coords(): return
-        try: self.process_geoname(gui.geonames_cache[self.cache_key()], gui)
-        except KeyError:
-            if time.time() - self.lookup > 60:
-                gfile = Gio.file_new_for_uri(
-                    'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
-                    % (self.latitude, self.longitude) +
-                    '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
-                gfile.load_contents_async(None, self.receive_geoname, gui)
-                self.lookup = time.time()
+        if not self.valid_coords():
+            return
+        key = self.cache_key()
+        if key in gui.geonames_cache:
+            if gui.geonames_cache[key] is None:
+                gui.geonames_queue[key].append(self)
+            else:
+                self.process_geoname(gui.geonames_cache[key], gui)
+        else:
+            gui.geonames_queue[key] = [self]
+            gui.geonames_cache[key] = None
+            gfile = Gio.file_new_for_uri(
+                'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
+                % (self.latitude, self.longitude) +
+                '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
+            gfile.load_contents_async(None, self.receive_geoname, gui)
     
     def receive_geoname(self, gfile, result, gui):
         """This callback method is executed when geoname download completes."""
-        try: obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
-        except: return
+        key = self.cache_key()
+        try:
+            obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
+        except:
+            if key in gui.geonames_queue: del gui.geonames_queue[key]
+            if key in gui.geonames_cache: del gui.geonames_cache[key]
+            return
         geoname = {}
-        for geonames in obj: geoname.update(geonames)
-        gui.geonames_cache[self.cache_key()] = geoname
-        self.process_geoname(geoname, gui)
+        for data in obj:
+            geoname.update(data)
+        gui.geonames_cache[key] = geoname
+        while len(gui.geonames_queue[key]) > 0:
+            photo = gui.geonames_queue[key].pop()
+            photo.process_geoname(geoname, gui)
     
     def process_geoname(self, geoname, gui):
         """Insert geonames into the photo and update the GtkListStore."""
-        for key, attribute in gui.geonames_of_interest.items():
-            self[attribute.lower()] = geoname.get(key)
+        for geocode, iptc in gui.geonames_of_interest.items():
+            self[iptc.lower()] = geoname.get(geocode)
         gui.modify_summary(self.filename)
     
     def valid_coords(self):
