@@ -238,7 +238,6 @@ class GottenGeography:
             # Who are you? Where are my pants?
             #self.map_view.remove_polygon(polygon)
             #polygon.clear_points()
-        
         self.polygons  = []
         self.tracks    = {}
         self.gpx_state = {}
@@ -261,14 +260,10 @@ class GottenGeography:
         self.progressbar.show()
         total = len(self.modified)
         for photo in self.modified.copy():
-            self.redraw_interface(
-                (1 + total - len(self.modified)) / total,
-                os.path.basename(photo.filename)
-            )
-            
+            self.redraw_interface((1 + total - len(self.modified)) / total,
+                os.path.basename(photo.filename))
             exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
-            
             key = 'Exif.GPSInfo.GPS'
             if photo.altitude is not None:
                 exif[key + 'Altitude']    = self.float_to_rational(photo.altitude)
@@ -278,11 +273,9 @@ class GottenGeography:
             exif[key + 'Longitude']    = self.decimal_to_dms(photo.longitude)
             exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
             exif[key + 'MapDatum']     = 'WGS-84'
-            
             for iptc in self.geonames_of_interest.values():
                 if photo[iptc] is not None:
                     exif['Iptc.Application2.' + iptc] = [photo[iptc]]
-            
             try:
                 exif.write()
             except Exception as inst:
@@ -291,7 +284,6 @@ class GottenGeography:
                 self.modified.discard(photo)
                 self.loaded_photos.set_value(photo.iter, self.SUMMARY,
                     photo.long_summary())
-        
         self.update_sensitivity()
         self.progressbar.hide()
     
@@ -304,7 +296,6 @@ class GottenGeography:
         try:
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
-            
             # I have tested this successfully on JPG, PNG, DNG, and NEF.
             photo = Photograph(
                 filename, GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -314,14 +305,12 @@ class GottenGeography:
             # if there exists an image format that is supported by pyexiv2 but
             # not GdkPixbuf, then this is a bug.
             raise IOError
-        
         try:
             # This assumes that the camera and computer have the same timezone.
             timestamp = exif['Exif.Photo.DateTimeOriginal'].value
             photo.timestamp = int(time.mktime(timestamp.timetuple()))
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
-        
         gps  = 'Exif.GPSInfo.GPS'
         try:
             photo.latitude = self.dms_to_decimal(
@@ -333,17 +322,14 @@ class GottenGeography:
                 [exif[gps + 'LongitudeRef'].value]
             )
         except KeyError: pass
-        
         try:
             photo.altitude = exif[gps + 'Altitude'].value.to_float()
             if int(exif[gps + 'AltitudeRef'].value) > 0:
                 photo.altitude *= -1
         except: pass
-        
         for iptc in self.geonames_of_interest.values():
             try: photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
             except KeyError: pass
-        
         return photo
     
     def gpx_element_root(self, name, attributes):
@@ -366,7 +352,6 @@ class GottenGeography:
         self.metadata['element-name'] = name
         self.gpx_state[name]          = ""
         self.gpx_state.update(attributes)
-        
         if name == "trkseg":
             self.polygons.append(Champlain.Polygon())
             self.polygons[-1].set_stroke_width(5)
@@ -385,7 +370,6 @@ class GottenGeography:
         """
         data = data.strip()
         if not data: return
-        
         # Sometimes expat calls this handler multiple times each with just
         # a chunk of the whole data, so += is necessary to collect all of it.
         self.gpx_state[self.metadata['element-name']] += data
@@ -403,7 +387,6 @@ class GottenGeography:
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
         if name <> "trkpt": return
-        
         try:
             timestamp = calendar.timegm(
                 # Sadly, time.strptime() was too slow and had to be replaced.
@@ -415,21 +398,18 @@ class GottenGeography:
             # If any of lat, lon, or time is missing, we cannot continue.
             # Better to just give up on this track point and go to the next.
             return
-        
         self.tracks[timestamp] = {
             'elevation': float(self.gpx_state.get('ele', 0.0)),
             'point':     self.polygons[-1].append_point(lat, lon)
         }
         
         self.gpx_state.clear()
-        
         self.metadata['omega']   = max(self.metadata['omega'], timestamp)
         self.metadata['alpha']   = min(self.metadata['alpha'], timestamp)
         self.metadata['area'][0] = min(self.metadata['area'][0], lat)
         self.metadata['area'][1] = min(self.metadata['area'][1], lon)
         self.metadata['area'][2] = max(self.metadata['area'][2], lat)
         self.metadata['area'][3] = max(self.metadata['area'][3], lon)
-        
         if time.clock() - self.metadata['tau'] > .2:
             self.progressbar.pulse()
             self.map_view.ensure_visible(*self.metadata['area'] + [False])
@@ -441,15 +421,12 @@ class GottenGeography:
         self.remember_location()
         start_points = len(self.tracks)
         start_time   = time.clock()
-        
         self.gpx_parser = expat.ParserCreate()
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
         self.gpx_parser.CharacterDataHandler = self.gpx_element_data
         self.gpx_parser.EndElementHandler    = self.gpx_element_end
-        
         with open(filename) as gpx:
             status = self.gpx_parser.ParseFile(gpx)
-        
         self.update_sensitivity()
         self.status_message(
             _("%d points loaded in %.2fs.") %
@@ -459,11 +436,8 @@ class GottenGeography:
         
         if len(self.tracks) > 0:
             self.map_view.ensure_visible(*self.metadata['area'] + [False])
-        
         for filename in self.photo:
             self.auto_timestamp_comparison(filename)
-        
-        # Cleanup leftover data from parser
         self.gpx_state.clear()
         if 'element-name' in self.metadata: del self.metadata['element-name']
     
