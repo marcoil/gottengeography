@@ -132,7 +132,7 @@ class GottenGeographyTester(unittest.TestCase):
         mod = self.gui.modified.copy()
         while len(mod) > 0:
             photo = mod.pop()
-            while photo.city is None:
+            while photo.City is None:
                 time.sleep(.1)
                 self.gui.redraw_interface()
         
@@ -151,8 +151,8 @@ class GottenGeographyTester(unittest.TestCase):
             photo = self.gui.load_exif_from_file(filename)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
-            self.assertEqual(photo.provincestate, "Alberta")
-            self.assertEqual(photo.countryname, "Canada")
+            self.assertEqual(photo.ProvinceState, "Alberta")
+            self.assertEqual(photo.CountryName, "Canada")
     
     def test_string_functions(self):
         """Ensure that strings print properly."""

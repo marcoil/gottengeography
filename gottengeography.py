@@ -270,11 +270,10 @@ class GottenGeography:
                 os.path.basename(photo.filename)
             )
             
-            key = 'Exif.GPSInfo.GPS'
-            
             exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
             
+            key = 'Exif.GPSInfo.GPS'
             if photo.altitude is not None:
                 exif[key + 'Altitude']    = self.float_to_rational(photo.altitude)
                 exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
@@ -285,8 +284,8 @@ class GottenGeography:
             exif[key + 'MapDatum']     = 'WGS-84'
             
             for iptc in self.geonames_of_interest.values():
-                if photo[iptc.lower()] is not None:
-                    exif['Iptc.Application2.' + iptc] = [photo[iptc.lower()]]
+                if photo[iptc] is not None:
+                    exif['Iptc.Application2.' + iptc] = [photo[iptc]]
             
             try:
                 exif.write()
@@ -345,8 +344,8 @@ class GottenGeography:
                 photo.altitude *= -1
         except: pass
         
-        for key in self.geonames_of_interest.values():
-            try: photo[key.lower()] = exif['Iptc.Application2.' + key].values[0]
+        for iptc in self.geonames_of_interest.values():
+            try: photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
             except KeyError: pass
         
         return photo
@@ -1199,7 +1198,7 @@ class Photograph(ReadableDictionary):
         self.thumb    = thumb
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'countryname', 'countrycode', 'provincestate', 'city',
+        'CountryName', 'CountryCode', 'ProvinceState', 'City',
         'marker', 'iter' ]:
             self[key] = None
     
@@ -1254,7 +1253,7 @@ class Photograph(ReadableDictionary):
     def process_geoname(self, geoname, gui):
         """Insert geonames into the photo and update the GtkListStore."""
         for geocode, iptc in gui.geonames_of_interest.items():
-            self[iptc.lower()] = geoname.get(geocode)
+            self[iptc] = geoname.get(geocode)
         self.timezone = geoname['timezone']['timeZoneId']
         gui.modify_summary(self.filename)
     
@@ -1284,7 +1283,7 @@ class Photograph(ReadableDictionary):
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
         names, length = [], 0
-        for value in [ self.city, self.provincestate, self.countryname ]:
+        for value in [ self.City, self.ProvinceState, self.CountryName ]:
             if type(value) in (str, unicode) and len(value) > 0:
                 names.append(value)
                 length += len(value)
