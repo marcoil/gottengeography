@@ -134,7 +134,7 @@ class GottenGeography:
     
     def maps_link(self, lat, lon):
         """Create a Pango link to Google Maps."""
-        return '<a href="%s?q=%s,%s">%s</a>' % ("http://maps.google.com/maps",
+        return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (
             lat, lon, _("View in Google Maps"))
     
     def display_actors(self, stage=None, parameter=None):
@@ -153,7 +153,6 @@ class GottenGeography:
         self.coords_label.set_markup(self.maps_link(lat, lon))
         
         self.coords_background.set_size(stage_width, self.coords.get_height() + 10)
-        self.coords_background.set_position(0, 0)
         self.coords.set_position((stage_width - self.coords.get_width()) / 2, 5)
     
     def marker_clicked(self, marker, event):
@@ -206,14 +205,12 @@ class GottenGeography:
     def update_all_marker_highlights(self, selection):
         """Ensure only the selected markers are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
-        
         for filename in self.photo:
-            # This bit here maintains self.selected for easy iterating.
+            # Maintain self.selected for easy iterating.
             if selection.iter_is_selected(self.photo[filename].iter):
                 self.selected.add(filename)
             else:
                 self.selected.discard(filename)
-            
             self.set_marker_highlight(
                 self.photo[filename].marker, None, selection_exists
             )
@@ -270,7 +267,6 @@ class GottenGeography:
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        
         total = len(self.modified)
         for filename in self.modified.copy():
             self.redraw_interface(
@@ -287,7 +283,6 @@ class GottenGeography:
             if img.altitude is not None:
                 exif[key + 'Altitude']    = self.float_to_rational(img.altitude)
                 exif[key + 'AltitudeRef'] = '0' if img.altitude >= 0 else '1'
-            
             exif[key + 'Latitude']     = self.decimal_to_dms(img.latitude)
             exif[key + 'LatitudeRef']  = "N" if img.latitude >= 0 else "S"
             exif[key + 'Longitude']    = self.decimal_to_dms(img.longitude)
@@ -356,7 +351,7 @@ class GottenGeography:
                 photo.altitude *= -1
         except: pass
         
-        for key in ['City', 'ProvinceState', 'CountryName', 'CountryCode']:
+        for key in self.geonames_of_interest.values():
             try: photo[key.lower()] = exif['Iptc.Application2.' + key].values[0]
             except KeyError: pass
         
@@ -993,6 +988,7 @@ class GottenGeography:
             Clutter.Color.new(255, 255, 255, 164)
         )
         self.prep_actor(self.coords_background)
+        self.coords_background.set_position(0, 0)
         
         self.coords = Clutter.Text()
         self.coords.set_single_line_mode(True)
