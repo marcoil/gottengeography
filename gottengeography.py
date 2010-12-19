@@ -119,10 +119,9 @@ class GottenGeography:
         self.zoom_button_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
-        """Move the map view in discrete steps."""
+        """Move the map view by 1/5 of its length in the given direction."""
         x = self.map_view.get_width()  / 2
         y = self.map_view.get_height() / 2
-        # moves by 1/5 screen length in the given direction
         if   keyval == Gdk.keyval_from_name("Left"):  x *= 0.6
         elif keyval == Gdk.keyval_from_name("Up"):    y *= 0.6
         elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
@@ -203,12 +202,12 @@ class GottenGeography:
         """Ensure only the selected markers are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
         for photo in self.photo.values():
+            self.set_marker_highlight(photo.marker, None, selection_exists)
             # Maintain self.selected for easy iterating.
             if selection.iter_is_selected(photo.iter):
                 self.selected.add(photo)
             else:
                 self.selected.discard(photo)
-            self.set_marker_highlight(photo.marker, None, selection_exists)
         # Highlight and center the map view over the selected photos.
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
@@ -258,13 +257,12 @@ class GottenGeography:
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        total = len(self.modified)
+        total, key = len(self.modified), 'Exif.GPSInfo.GPS'
         for photo in self.modified.copy():
             self.redraw_interface((1 + total - len(self.modified)) / total,
                 os.path.basename(photo.filename))
             exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
-            key = 'Exif.GPSInfo.GPS'
             if photo.altitude is not None:
                 exif[key + 'Altitude']    = self.float_to_rational(photo.altitude)
                 exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
