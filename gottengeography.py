@@ -152,13 +152,9 @@ class GottenGeography:
         self.coords.set_markup("%.5f, %.5f" % (lat, lon))
         self.coords_label.set_markup(self.maps_link(lat, lon))
         
-        width  = self.coords.get_width()  + 20
-        height = self.coords.get_height() + 10
-        x      = (stage_width - width) / 2
-        y      = stage_height - height
-        self.coords_background.set_size(width, height)
-        self.coords_background.set_position(x, y)
-        self.coords.set_position(x + 10, y + 5)
+        self.coords_background.set_size(stage_width, self.coords.get_height() + 10)
+        self.coords_background.set_position(0, 0)
+        self.coords.set_position((stage_width - self.coords.get_width()) / 2, 5)
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -994,7 +990,7 @@ class GottenGeography:
         self.stage = self.map_view.get_stage()
         
         self.coords_background = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(255, 255, 255, 200)
+            Clutter.Color.new(255, 255, 255, 164)
         )
         self.prep_actor(self.coords_background)
         
