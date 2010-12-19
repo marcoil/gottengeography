@@ -1199,7 +1199,7 @@ class Photograph(ReadableDictionary):
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
         'CountryName', 'CountryCode', 'ProvinceState', 'City',
-        'marker', 'iter' ]:
+        'marker', 'iter', 'timezone' ]:
             self[key] = None
     
     def position_marker(self):
