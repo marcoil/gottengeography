@@ -148,13 +148,14 @@ class GottenGeography:
             (stage_height - self.crosshair.get_height()) / 2
         )
         
-        if stage is None: return
-        lat = self.map_view.get_property('latitude')
-        lon = self.map_view.get_property('longitude')
-        self.coords.set_markup("%.4f, %.4f" % (lat, lon))
-        self.coords_label.set_markup(self.maps_link(lat, lon))
-        self.coords_bg.set_size(stage_width, self.coords.get_height() + 10)
-        self.coords.set_position((stage_width - self.coords.get_width()) / 2, 5)
+        if stage is not None:
+            lat = self.map_view.get_property('latitude')
+            lon = self.map_view.get_property('longitude')
+            self.coords.set_markup("%.4f, %.4f" % (lat, lon))
+            self.coords_label.set_markup(self.maps_link(lat, lon))
+            self.coords_bg.set_size(stage_width, self.coords.get_height() + 10)
+            self.coords.set_position(
+                (stage_width - self.coords.get_width()) / 2, 5)
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -163,16 +164,15 @@ class GottenGeography:
         the GtkListStore itself in the sense that a normal click will select
         just one item, but Ctrl+clicking allows you to select multiple.
         """
-        try: iter = self.photo[marker.get_name()].iter
-        except KeyError: return
+        photo = self.photo[marker.get_name()]
         if (Clutter.ModifierType.CONTROL_MASK |
             Clutter.ModifierType.MOD2_MASK      == event.get_state()):
-            if marker.get_highlighted(): self.photo_selection.unselect_iter(iter)
-            else:                        self.photo_selection.select_iter(iter)
+            if marker.get_highlighted(): self.listsel.unselect_iter(photo.iter)
+            else:                        self.listsel.select_iter(photo.iter)
         else:
             self.button.gtk_select_all.set_active(False)
-            self.photo_selection.unselect_all()
-            self.photo_selection.select_iter(iter)
+            self.listsel.unselect_all()
+            self.listsel.select_iter(photo.iter)
     
     def marker_mouse_in(self, marker, event):
         """Enlarge a hovered-over ChamplainMarker by 5%."""
@@ -184,30 +184,28 @@ class GottenGeography:
     
     def set_marker_highlight(self, marker, area, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
-        if not marker.get_property('visible'): return
-        highlight = area is not None
-        marker.set_property('opacity', 64 if transparent else 255)
-        marker.set_scale(*[1.1 if highlight else 1] * 2)
-        marker.set_highlighted(highlight)
-        if highlight:
-            marker.raise_top()
-            lat = marker.get_latitude()
-            lon = marker.get_longitude()
-            area[0] = min(area[0], lat)
-            area[1] = min(area[1], lon)
-            area[2] = max(area[2], lat)
-            area[3] = max(area[3], lon)
+        if marker.get_property('visible'):
+            highlight = area is not None
+            marker.set_property('opacity', 64 if transparent else 255)
+            marker.set_scale(*[1.1 if highlight else 1] * 2)
+            marker.set_highlighted(highlight)
+            if highlight:
+                marker.raise_top()
+                lat = marker.get_latitude()
+                lon = marker.get_longitude()
+                area[0] = min(area[0], lat)
+                area[1] = min(area[1], lon)
+                area[2] = max(area[2], lat)
+                area[3] = max(area[3], lon)
     
-    def update_all_marker_highlights(self, selection):
+    def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
-        selection_exists = selection.count_selected_rows() > 0
+        selection_exists = sel.count_selected_rows() > 0
         for photo in self.photo.values():
             self.set_marker_highlight(photo.marker, None, selection_exists)
             # Maintain self.selected for easy iterating.
-            if selection.iter_is_selected(photo.iter):
-                self.selected.add(photo)
-            else:
-                self.selected.discard(photo)
+            if sel.iter_is_selected(photo.iter): self.selected.add(photo)
+            else:                                self.selected.discard(photo)
         # Highlight and center the map view over the selected photos.
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
@@ -245,9 +243,7 @@ class GottenGeography:
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf'),       # Initial GPX track point
             'tau':   time.clock(),       # Most recent time screen was updated
-            'area':  [ float('inf') ] * 2 + [ float('-inf') ] * 2
-        }
-        
+            'area':  [ float('inf') ] * 2 + [ float('-inf') ] * 2 }
         self.update_sensitivity()
     
 ################################################################################
@@ -288,28 +284,24 @@ class GottenGeography:
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module.
         
-        Raises IOError if the specified file is not an image
-        format supported by both pyexiv2 and GdkPixbuf.
+        Raises IOError if the specified file is not an image format supported by
+        both pyexiv2 and GdkPixbuf. Known to work with JPG, PNG, DNG, and NEF.
         """
         try:
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
-            # I have tested this successfully on JPG, PNG, DNG, and NEF.
             photo = Photograph(
                 filename, GdkPixbuf.Pixbuf.new_from_file_at_size(
                 filename, thumb_size, thumb_size))
         except:
-            # If GdkPixbuf can't open it, it's most likely not a photo. However,
-            # if there exists an image format that is supported by pyexiv2 but
-            # not GdkPixbuf, then this is a bug.
             raise IOError
         try:
             # This assumes that the camera and computer have the same timezone.
-            timestamp = exif['Exif.Photo.DateTimeOriginal'].value
-            photo.timestamp = int(time.mktime(timestamp.timetuple()))
+            photo.timestamp = exif['Exif.Photo.DateTimeOriginal'].value
+            photo.timestamp = int(time.mktime(photo.timestamp.timetuple()))
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
-        gps  = 'Exif.GPSInfo.GPS'
+        gps = 'Exif.GPSInfo.GPS'
         try:
             photo.latitude = self.dms_to_decimal(
                 *exif[gps + 'Latitude'].value +
@@ -319,12 +311,14 @@ class GottenGeography:
                 *exif[gps + 'Longitude'].value +
                 [exif[gps + 'LongitudeRef'].value]
             )
-        except KeyError: pass
+        except KeyError:
+            pass
         try:
             photo.altitude = exif[gps + 'Altitude'].value.to_float()
             if int(exif[gps + 'AltitudeRef'].value) > 0:
                 photo.altitude *= -1
-        except: pass
+        except:
+            pass
         for iptc in self.geonames_of_interest.values():
             try: photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
             except KeyError: pass
@@ -690,7 +684,7 @@ class GottenGeography:
         
         self.progressbar.hide()
         self.update_sensitivity()
-        self.update_all_marker_highlights(self.photo_selection)
+        self.update_all_marker_highlights(self.listsel)
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
@@ -835,10 +829,10 @@ class GottenGeography:
         self.photos_view.set_rubber_banding(True)
         self.photos_view.append_column(self.column)
         
-        self.photo_selection = self.photos_view.get_selection()
-        self.photo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.photo_selection.connect("changed", self.update_all_marker_highlights)
-        self.photo_selection.connect("changed", self.update_sensitivity)
+        self.listsel = self.photos_view.get_selection()
+        self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.listsel.connect("changed", self.update_all_marker_highlights)
+        self.listsel.connect("changed", self.update_sensitivity)
         
         self.photo_scroller = Gtk.ScrolledWindow()
         self.photo_scroller.add(self.photos_view)
@@ -1026,8 +1020,8 @@ class GottenGeography:
             button = self.button.gtk_select_all
             button.set_active(True)
         
-        if button.get_active(): self.photo_selection.select_all()
-        else:                   self.photo_selection.unselect_all()
+        if button.get_active(): self.listsel.select_all()
+        else:                   self.listsel.unselect_all()
     
     # TODO make sure these key choices actually make sense
     # and are consistent with other apps

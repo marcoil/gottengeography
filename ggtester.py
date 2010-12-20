@@ -102,8 +102,8 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(photo.marker.get_scale(), (1, 1))
             
             self.gui.marker_clicked(photo.marker, Clutter.Event())
-            self.assertTrue(self.gui.photo_selection.iter_is_selected(photo.iter))
-            self.assertEqual(self.gui.photo_selection.count_selected_rows(), 1)
+            self.assertTrue(self.gui.listsel.iter_is_selected(photo.iter))
+            self.assertEqual(self.gui.listsel.count_selected_rows(), 1)
             self.assertTrue(photo in self.gui.selected)
             self.assertEqual(len(self.gui.selected), 1)
             self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
@@ -111,7 +111,7 @@ class GottenGeographyTester(unittest.TestCase):
             
             for other in self.gui.photo.values():
                 if other.filename == photo.filename: continue
-                self.assertFalse(self.gui.photo_selection.iter_is_selected(other.iter))
+                self.assertFalse(self.gui.listsel.iter_is_selected(other.iter))
                 self.assertFalse(other in self.gui.selected)
                 self.assertEqual(other.marker.get_scale(), (1, 1))
                 self.assertFalse(other.marker.get_highlighted())
@@ -139,7 +139,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
         
-        self.gui.photo_selection.select_all()
+        self.gui.listsel.select_all()
         self.assertEqual(len(self.gui.selected), 6)
         files = map(lambda x:x.filename, self.gui.selected)
         self.gui.close_selected_photos()
