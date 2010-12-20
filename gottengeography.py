@@ -347,7 +347,8 @@ class GottenGeography:
         if name == "trkseg":
             self.polygons.append(Champlain.Polygon())
             self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(self.track_color)
+            self.polygons[-1].set_stroke_color(self.track_color_a
+                if len(self.polygons) % 2 else self.track_color_b)
             self.polygons[-1].show()
             self.map_view.add_polygon(self.polygons[-1])
     
@@ -907,7 +908,8 @@ class GottenGeography:
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
         
-        self.track_color = Clutter.Color.new(255, 0, 0, 128)
+        self.track_color_a = Clutter.Color.new(128, 0,  192, 128)
+        self.track_color_b = Clutter.Color.new(192, 64, 192, 128)
         
         self.gconf_client = GConf.Client.get_default()
         self.return_to_last()
