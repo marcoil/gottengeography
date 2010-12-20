@@ -931,7 +931,6 @@ class GottenGeography:
         button.set_snap_to_ticks(True)
         button.set_tooltip_text(
             _("Add or subtract %s from your camera's clock.") % label)
-        
         button.connect("value-changed", self.time_offset_changed)
         self.statusbar.pack_end(button, False, False, 0)
         return button
@@ -942,9 +941,8 @@ class GottenGeography:
         button.set_is_important(label is not None)
         button.set_tooltip_text(tooltip)
         button.connect("clicked", action)
-        
-        if label is not None: button.set_label(label)
-        
+        if label is not None:
+            button.set_label(label)
         self.toolbar.add(button)
         self.button[re.sub(r'-', '_', stock_id)] = button
     
@@ -960,7 +958,6 @@ class GottenGeography:
             # User typed Ctrl+a, so select all!
             button = self.button.gtk_select_all
             button.set_active(True)
-        
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
     
@@ -985,12 +982,9 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("/"):      self.about_dialog()
         elif keyval == Gdk.keyval_from_name("?"):      self.about_dialog()
         elif keyval == Gdk.keyval_from_name("a"):      self.toggle_selected_photos()
-        
-        # Prevent the following keybindings from executing if there are no unsaved files
-        if len(self.modified) == 0: return
-        
-        if   keyval == Gdk.keyval_from_name("s"):      self.save_all_files()
-        elif keyval == Gdk.keyval_from_name("z"):      self.revert_selected_photos()
+        if len(self.modified) > 0:
+            if   keyval == Gdk.keyval_from_name("s"):  self.save_all_files()
+            elif keyval == Gdk.keyval_from_name("z"):  self.revert_selected_photos()
     
     def gconf_key(self, key):
         """Determine appropriate GConf key that is unique to this application.
@@ -1002,14 +996,12 @@ class GottenGeography:
     def gconf_set(self, key, value):
         """Sets the given GConf key to the given value."""
         key = self.gconf_key(key)
-        
         if   type(value) is float: self.gconf_client.set_float(key, value)
         elif type(value) is int:   self.gconf_client.set_int(key, value)
     
     def gconf_get(self, key, type):
         """Gets the given GConf key as the requested type."""
         key = self.gconf_key(key)
-        
         if   type is float: return self.gconf_client.get_float(key)
         elif type is int:   return self.gconf_client.get_int(key)
     
@@ -1046,14 +1038,11 @@ class GottenGeography:
         self.button.gtk_close.set_sensitive(len(self.selected) > 0)
         self.button.gtk_save.set_sensitive( len(self.modified) > 0)
         self.button.gtk_revert_to_saved.set_sensitive(
-            len(self.modified & self.selected) > 0
-        )
-        
+            len(self.modified & self.selected) > 0)
         gpx_sensitive = len(self.tracks) > 0
         for widget in self.offset.values() + [
             self.offset_label, self.button.gtk_clear ]:
             widget.set_sensitive(gpx_sensitive)
-        
         if len(self.photo) > 0: self.photos_with_buttons.show()
         else:                   self.photos_with_buttons.hide()
     
@@ -1132,9 +1121,9 @@ class Photograph(ReadableDictionary):
                 '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
             gfile.load_contents_async(None, self.receive_geoname, [gui, key])
     
-    def receive_geoname(self, gfile, result, data):
+    def receive_geoname(self, gfile, result, gui_key):
         """This callback method is executed when geoname download completes."""
-        gui, key = data
+        gui, key = gui_key
         try:
             obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
         except:
