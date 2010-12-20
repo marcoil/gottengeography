@@ -381,10 +381,8 @@ class GottenGeography:
         # there is a new, fully-loaded GPX point to play with.
         if name <> "trkpt": return
         try:
-            timestamp = calendar.timegm(
-                # Sadly, time.strptime() was too slow and had to be replaced.
-                map(int, self.delimiters.split(self.gpx_state['time'])[0:6])
-            )
+            timestamp = calendar.timegm(map(int,
+                self.delimiters.split(self.gpx_state['time'])[0:6]))
             lat = float(self.gpx_state['lat'])
             lon = float(self.gpx_state['lon'])
         except:
@@ -418,59 +416,47 @@ class GottenGeography:
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
         self.gpx_parser.CharacterDataHandler = self.gpx_element_data
         self.gpx_parser.EndElementHandler    = self.gpx_element_end
-        with open(filename) as gpx:
-            status = self.gpx_parser.ParseFile(gpx)
+        with open(filename) as gpx: self.gpx_parser.ParseFile(gpx)
         self.update_sensitivity()
-        self.status_message(
-            _("%d points loaded in %.2fs.") %
-            (len(self.tracks) - start_points,
-             time.clock()     - start_time)
-        )
-        
+        self.status_message(_("%d points loaded in %.2fs.") %
+            (len(self.tracks) - start_points, time.clock() - start_time))
         if len(self.tracks) > 0:
             self.map_view.ensure_visible(*self.metadata['area'] + [False])
-        for filename in self.photo:
-            self.auto_timestamp_comparison(filename)
+        for photo in self.photo.values():
+            self.auto_timestamp_comparison(photo)
         self.gpx_state.clear()
-        if 'element-name' in self.metadata: del self.metadata['element-name']
+        if 'element-name' in self.metadata:
+            del self.metadata['element-name']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, filename):
+    def auto_timestamp_comparison(self, photo):
         """Use GPX data to calculate photo coordinates and elevation."""
-        if len(self.tracks) < 2:        return
-        if self.photo[filename].manual: return
-        
-        photo  = self.photo[filename].timestamp # this is in epoch seconds
-        photo += self.metadata['delta']
-        
+        if photo.manual or len(self.tracks) < 2:
+            return
+        timestamp = photo.timestamp + self.metadata['delta']
         # Chronological first and last timestamp created by the GPX device.
         hi = self.metadata['omega']
         lo = self.metadata['alpha']
-        
         # If the photo is out of range, simply peg it to the end of the range.
-        photo = min(max(photo, lo), hi)
-        
+        timestamp = min(max(timestamp, lo), hi)
         try:
-            lat = self.tracks[photo]['point'].lat
-            lon = self.tracks[photo]['point'].lon
-            ele = self.tracks[photo]['elevation']
+            lat = self.tracks[timestamp]['point'].lat
+            lon = self.tracks[timestamp]['point'].lon
+            ele = self.tracks[timestamp]['elevation']
         except KeyError:
             # Iterate over the available gpx points, find the two that are
             # nearest (in time) to the photo timestamp.
             for point in self.tracks:
-                if point > photo: hi = min(point, hi)
-                if point < photo: lo = max(point, lo)
-            
+                if point > timestamp: hi = min(point, hi)
+                if point < timestamp: lo = max(point, lo)
             delta = hi - lo    # in seconds
-            
             # lo_perc and hi_perc are ratios (between 0 and 1) representing the
             # proportional amount of time between the photo and the points.
-            hi_perc = (photo - lo) / delta
-            lo_perc = (hi - photo) / delta
-            
+            hi_perc = (timestamp - lo) / delta
+            lo_perc = (hi - timestamp) / delta
             # Find intermediate values using the proportional ratios.
             lat = ((self.tracks[lo]['point'].lat * lo_perc)  +
                    (self.tracks[hi]['point'].lat * hi_perc))
@@ -478,36 +464,30 @@ class GottenGeography:
                    (self.tracks[hi]['point'].lon * hi_perc))
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
-        
-        self.modify_coordinates(filename, lat, lon, ele)
+        self.modify_coordinates(photo, lat, lon, ele)
+        if photo.marker.get_highlighted(): photo.marker.raise_top()
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         for spinbutton in self.offset.values():
             # Suppress extraneous invocations of this method.
             spinbutton.handler_block_by_func(self.time_offset_changed)
-        
         seconds = self.offset.seconds.get_value()
         minutes = self.offset.minutes.get_value()
         hours   = self.offset.hours.get_value()
         offset  = int((hours * 3600) + (minutes * 60) + seconds)
-        
         if abs(seconds) == 60:
             minutes += seconds/60
             self.offset.seconds.set_value(0)
             self.offset.minutes.set_value(minutes)
-        
         if abs(minutes) == 60:
             hours += minutes/60
             self.offset.minutes.set_value(0)
             self.offset.hours.set_value(hours)
-        
         if offset <> self.metadata['delta']:
             self.metadata['delta'] = offset
-            
-            for filename in self.photo:
-                self.auto_timestamp_comparison(filename)
-        
+            for photo in self.photo.values():
+                self.auto_timestamp_comparison(photo)
         for spinbutton in self.offset.values():
             spinbutton.handler_unblock_by_func(self.time_offset_changed)
     
@@ -515,7 +495,7 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for photo in self.selected:
             photo.manual = True
-            self.modify_coordinates(photo.filename,
+            self.modify_coordinates(photo,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
             photo.marker.raise_top()
@@ -524,19 +504,14 @@ class GottenGeography:
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
         self.progressbar.show()
-        
         mod_in_sel = self.modified & self.selected
-        
         total = len(mod_in_sel)
         while len(mod_in_sel) > 0:
             photo = mod_in_sel.pop()
-            self.redraw_interface(
-                (total - len(mod_in_sel)) / total,
-                os.path.basename(photo.filename)
-            )
+            self.redraw_interface((total - len(mod_in_sel)) / total,
+                os.path.basename(photo.filename))
             self.add_or_reload_photo(photo.filename)
             photo.marker.raise_top()
-        
         self.progressbar.hide()
         self.update_sensitivity()
     
@@ -548,24 +523,20 @@ class GottenGeography:
             self.selected.discard(photo)
             self.modified.discard(photo)
             del self.photo[photo.filename]
-        
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
     
-    def modify_coordinates(self, filename, lat, lon, ele=None):
+    def modify_coordinates(self, photo, lat, lon, ele=None):
         """Alter the coordinates of a loaded photo."""
-        self.photo[filename].update( {
-            'altitude':  ele,
-            'latitude':  lat,
-            'longitude': lon
-        } )
-        self.photo[filename].position_marker()
-        self.photo[filename].request_geoname(self)
-        self.modify_summary(filename)
+        photo.update( { 'altitude':  ele,
+                        'latitude':  lat,
+                        'longitude': lon  } )
+        photo.position_marker()
+        photo.request_geoname(self)
+        self.modify_summary(photo)
     
-    def modify_summary(self, filename):
+    def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
-        photo = self.photo[filename]
         self.modified.add(photo)
         self.loaded_photos.set_value(photo.iter, self.SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
@@ -581,7 +552,6 @@ class GottenGeography:
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = self.load_exif_from_file(filename)
-        
         photo.update( {
             'iter':   self.loaded_photos.append([None] * 4),
             'marker': self.add_marker(filename)
@@ -593,13 +563,11 @@ class GottenGeography:
         photo.position_marker()
         self.modified.discard(photo)
         self.photo[filename] = photo
-        
-        self.loaded_photos.set_value(photo.iter, self.PATH,      filename)
+        self.loaded_photos.set_value(photo.iter, self.PATH,      photo.filename)
         self.loaded_photos.set_value(photo.iter, self.THUMB,     photo.thumb)
         self.loaded_photos.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
         self.loaded_photos.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
-        
-        self.auto_timestamp_comparison(filename)
+        self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
     
 ################################################################################
@@ -611,12 +579,9 @@ class GottenGeography:
         filename = chooser.get_preview_filename()
         self.preview_label.set_label(_("No preview available"))
         self.preview_image.set_from_stock(Gtk.STOCK_FILE,
-            Gtk.IconSize.LARGE_TOOLBAR
-        )
-        
+            Gtk.IconSize.LARGE_TOOLBAR)
         try: photo = self.load_exif_from_file(filename, 300)
         except IOError: return
-        
         lat, lon = photo.latitude, photo.longitude
         self.preview_image.set_from_pixbuf(photo.thumb)
         self.preview_label.set_label("%s\n%s" % (photo.short_summary(),
@@ -624,17 +589,6 @@ class GottenGeography:
     
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
-        chooser = Gtk.FileChooserDialog(
-            title=_("Open Files"),
-            buttons=(
-                Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_OPEN,    Gtk.ResponseType.OK
-            )
-        )
-        chooser.set_action(Gtk.FileChooserAction.OPEN)
-        chooser.set_default_response(Gtk.ResponseType.OK)
-        chooser.set_select_multiple(True)
-        
         self.preview_image = Gtk.Image()
         self.preview_label = Gtk.Label()
         self.preview_label.set_justify(Gtk.Justification.CENTER)
@@ -645,31 +599,29 @@ class GottenGeography:
         self.preview_widget.pack_start(self.preview_image, False, False, 0)
         self.preview_widget.pack_start(self.preview_label, False, False, 0)
         self.preview_widget.show_all()
-        
+        chooser = Gtk.FileChooserDialog(title=_("Open Files"),
+            buttons=(Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
+                     Gtk.STOCK_OPEN,    Gtk.ResponseType.OK))
+        chooser.set_action(Gtk.FileChooserAction.OPEN)
+        chooser.set_default_response(Gtk.ResponseType.OK)
+        chooser.set_select_multiple(True)
         chooser.set_preview_widget(self.preview_widget)
         chooser.set_preview_widget_active(True)
         chooser.connect("selection-changed", self.update_preview)
-        
         # Exit if the user clicked anything other than "OK"
         if chooser.run() <> Gtk.ResponseType.OK:
             chooser.destroy()
             return
-        
         self.progressbar.show()
-        
         # Make the chooser disappear immediately after clicking a button,
         # anything else feels unresponsive
         files = chooser.get_filenames()
         chooser.destroy()
-        
-        invalid_files, count = [], 0
-        for filename in files:
-            count += 1
-            self.redraw_interface(
-                count / len(files),
-                os.path.basename(filename)
-            )
-            
+        invalid_files, total = [], len(files)
+        while len(files) > 0:
+            filename = files.pop()
+            self.redraw_interface((total - len(files)) / total,
+                os.path.basename(filename))
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
             try:
@@ -677,12 +629,9 @@ class GottenGeography:
                 except IOError: self.load_gpx_from_file(filename)
             except expat.ExpatError:
                 invalid_files.append(os.path.basename(filename))
-        
         if len(invalid_files) > 0:
-            self.status_message(
-                _("Could not open: %s") % ", ".join(invalid_files)
-            )
-        
+            self.status_message(_("Could not open: %s") %
+                ", ".join(invalid_files))
         self.progressbar.hide()
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
@@ -690,36 +639,26 @@ class GottenGeography:
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
         self.remember_location_with_gconf()
-        
         # If there's no unsaved data, just close without confirmation.
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
-        
-        dialog = Gtk.MessageDialog(
-            parent=self.window,
-            flags=Gtk.DialogFlags.MODAL,
-            title=" "
-        )
+        dialog = Gtk.MessageDialog(parent=self.window,
+            flags=Gtk.DialogFlags.MODAL, title=" ")
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
         dialog.set_markup(SAVE_WARNING % len(self.modified))
         dialog.add_button(_("Close _without Saving"), Gtk.ResponseType.CLOSE)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
         dialog.set_default_response(Gtk.ResponseType.ACCEPT)
-        
         # If we don't dialog.destroy() here, and the user chooses to save files,
         # the dialog stays open during the save, which looks very unresponsive
         # and makes the application feel sluggish.
         response = dialog.run()
         dialog.destroy()
         self.redraw_interface()
-        
-        # Save and/or quit as necessary
         if response == Gtk.ResponseType.ACCEPT: self.save_all_files()
         if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
-        
-        # Prevents GTK from trying to call a non-existant destroy method.
         return True
     
     def about_dialog(self, widget=None, data=None):
@@ -1216,7 +1155,7 @@ class Photograph(ReadableDictionary):
             self[iptc] = geoname.get(geocode)
         try:    self.timezone = geoname['timezone']['timeZoneId']
         except: self.timezone = None
-        gui.modify_summary(self.filename)
+        gui.modify_summary(self)
     
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
