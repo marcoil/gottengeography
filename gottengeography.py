@@ -255,7 +255,7 @@ class GottenGeography:
         self.progressbar.show()
         total, key = len(self.modified), 'Exif.GPSInfo.GPS'
         for photo in self.modified.copy():
-            self.redraw_interface((1 + total - len(self.modified)) / total,
+            self.redraw_interface(1 - len(self.modified) / total,
                 os.path.basename(photo.filename))
             exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
@@ -508,7 +508,7 @@ class GottenGeography:
         total = len(mod_in_sel)
         while len(mod_in_sel) > 0:
             photo = mod_in_sel.pop()
-            self.redraw_interface((total - len(mod_in_sel)) / total,
+            self.redraw_interface(1 - len(mod_in_sel) / total,
                 os.path.basename(photo.filename))
             self.add_or_reload_photo(photo.filename)
             photo.marker.raise_top()
@@ -620,7 +620,7 @@ class GottenGeography:
         invalid_files, total = [], len(files)
         while len(files) > 0:
             filename = files.pop()
-            self.redraw_interface((total - len(files)) / total,
+            self.redraw_interface(1 - len(files) / total,
                 os.path.basename(filename))
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
