@@ -127,7 +127,8 @@ class GottenGeography:
         elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
         elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
-        if self.valid_coords(lat, lon): self.map_view.center_on(lat, lon)
+        if self.valid_coords(lat, lon):
+            self.map_view.center_on(lat, lon)
     
     def maps_link(self, lat, lon):
         """Create a Pango link to Google Maps."""
@@ -297,8 +298,8 @@ class GottenGeography:
             raise IOError
         try:
             # This assumes that the camera and computer have the same timezone.
-            photo.timestamp = exif['Exif.Photo.DateTimeOriginal'].value
-            photo.timestamp = int(time.mktime(photo.timestamp.timetuple()))
+            photo.timestamp = int(time.mktime(
+                exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
         gps = 'Exif.GPSInfo.GPS'
@@ -320,8 +321,10 @@ class GottenGeography:
         except:
             pass
         for iptc in self.geonames_of_interest.values():
-            try: photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
-            except KeyError: pass
+            try:
+                photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
+            except KeyError:
+                pass
         return photo
     
     def gpx_element_root(self, name, attributes):
@@ -329,7 +332,8 @@ class GottenGeography:
         
         This is only called on the top level element in the given XML file.
         """
-        if name <> 'gpx': raise expat.ExpatError
+        if name <> 'gpx':
+            raise expat.ExpatError
         self.gpx_parser.StartElementHandler = self.gpx_element_start
     
     def gpx_element_start(self, name, attributes):
@@ -362,7 +366,8 @@ class GottenGeography:
         <time>2010-10-16T20:09:13Z</time>
         """
         data = data.strip()
-        if not data: return
+        if not data:
+            return
         # Sometimes expat calls this handler multiple times each with just
         # a chunk of the whole data, so += is necessary to collect all of it.
         self.gpx_state[self.metadata['element-name']] += data
@@ -379,7 +384,8 @@ class GottenGeography:
         """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
-        if name <> "trkpt": return
+        if name <> "trkpt":
+            return
         try:
             timestamp = calendar.timegm(map(int,
                 self.delimiters.split(self.gpx_state['time'])[0:6]))
@@ -416,7 +422,8 @@ class GottenGeography:
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
         self.gpx_parser.CharacterDataHandler = self.gpx_element_data
         self.gpx_parser.EndElementHandler    = self.gpx_element_end
-        with open(filename) as gpx: self.gpx_parser.ParseFile(gpx)
+        with open(filename) as gpx:
+            self.gpx_parser.ParseFile(gpx)
         self.update_sensitivity()
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(self.tracks) - start_points, time.clock() - start_time))
@@ -465,7 +472,8 @@ class GottenGeography:
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
         self.modify_coordinates(photo, lat, lon, ele)
-        if photo.marker.get_highlighted(): photo.marker.raise_top()
+        if photo.marker.get_highlighted():
+            photo.marker.raise_top()
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -520,7 +528,6 @@ class GottenGeography:
         for photo in self.selected.copy():
             photo.marker.destroy()
             self.loaded_photos.remove(photo.iter)
-            self.selected.discard(photo)
             self.modified.discard(photo)
             del self.photo[photo.filename]
         self.button.gtk_select_all.set_active(False)
@@ -580,8 +587,10 @@ class GottenGeography:
         self.preview_label.set_label(_("No preview available"))
         self.preview_image.set_from_stock(Gtk.STOCK_FILE,
             Gtk.IconSize.LARGE_TOOLBAR)
-        try: photo = self.load_exif_from_file(filename, 300)
-        except IOError: return
+        try:
+            photo = self.load_exif_from_file(filename, 300)
+        except IOError:
+            return
         lat, lon = photo.latitude, photo.longitude
         self.preview_image.set_from_pixbuf(photo.thumb)
         self.preview_label.set_label("%s\n%s" % (photo.short_summary(),
@@ -733,21 +742,13 @@ class GottenGeography:
         self.create_tool_button(Gtk.STOCK_ABOUT, self.about_dialog,
             _("About %s") % APPNAME)
         
-        self.loaded_photos = Gtk.ListStore(
-            GObject.TYPE_STRING,  # 0 Path to image file
-            GObject.TYPE_STRING,  # 1 Pango-formatted summary
-            GdkPixbuf.Pixbuf,     # 2 Thumbnail
-            GObject.TYPE_INT,     # 3 Timestamp in Epoch seconds
-        )
+        # Handy names for the following GtkListStore column numbers.
+        self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
         
-        # Handy names for the above GtkListStore column numbers.
-        self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = \
-            range(self.loaded_photos.get_n_columns())
-        
-        self.loaded_photos.set_sort_column_id(
-            self.TIMESTAMP,
-            Gtk.SortType.ASCENDING
-        )
+        self.loaded_photos = Gtk.ListStore(GObject.TYPE_STRING,
+            GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
+        self.loaded_photos.set_sort_column_id(self.TIMESTAMP,
+            Gtk.SortType.ASCENDING)
         
         self.cell_string = Gtk.CellRendererText()
         self.cell_thumb  = Gtk.CellRendererPixbuf()
@@ -776,10 +777,8 @@ class GottenGeography:
         
         self.photo_scroller = Gtk.ScrolledWindow()
         self.photo_scroller.add(self.photos_view)
-        self.photo_scroller.set_policy(
-            Gtk.PolicyType.NEVER,
-            Gtk.PolicyType.AUTOMATIC
-        )
+        self.photo_scroller.set_policy(Gtk.PolicyType.NEVER,
+                                       Gtk.PolicyType.AUTOMATIC)
         
         self.button.gtk_apply = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
         self.button.gtk_apply.set_tooltip_text(
@@ -792,16 +791,14 @@ class GottenGeography:
             _("Toggle whether all photos are selected (Ctrl+A)"))
         self.button.gtk_select_all.connect("clicked", self.toggle_selected_photos)
         
-        self.photo_button_bar = Gtk.HBox(spacing=12)
-        self.photo_button_bar.set_border_width(3)
-        for button in [ 'gtk_select_all', 'gtk_apply' ]:
-            self.photo_button_bar.pack_start(
-                self.button[button], True, True, 0
-            )
+        self.photo_btn_bar = Gtk.HBox(spacing=12)
+        self.photo_btn_bar.set_border_width(3)
+        for btn in [ 'gtk_select_all', 'gtk_apply' ]:
+            self.photo_btn_bar.pack_start(self.button[btn], True, True, 0)
         
         self.photos_with_buttons = Gtk.VBox()
         self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
-        self.photos_with_buttons.pack_start(self.photo_button_bar, False, False, 0)
+        self.photos_with_buttons.pack_start(self.photo_btn_bar, False, False, 0)
         
         # Initialize all the clutter/champlain stuff
         Clutter.init([])
@@ -858,30 +855,22 @@ class GottenGeography:
         self.window.add_accel_group(self.accel)
         for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'a', 'Return', 'slash',
         'question', 'equal', 'minus', 'Left' ]:
-            self.accel.connect(
-                Gdk.keyval_from_name(key),
-                Gdk.ModifierType.CONTROL_MASK,
-                0, self.key_accel
-            )
+            self.accel.connect(Gdk.keyval_from_name(key),
+                Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            self.accel.connect(
-                Gdk.keyval_from_name(key),
-                Gdk.ModifierType.MOD1_MASK,
-                0, self.move_map_view_by_arrow_keys
-            )
+            self.accel.connect(Gdk.keyval_from_name(key),
+                Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
         
         self.window.show_all()
         self.progressbar.hide()
-        
         self.clear_all_gpx()
         self.redraw_interface()
         
         self.stage = self.map_view.get_stage()
         
         self.coords_bg = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(255, 255, 255, 164)
-        )
+            Clutter.Color.new(255, 255, 255, 164))
         self.prep_actor(self.coords_bg)
         self.coords_bg.set_position(0, 0)
         
@@ -890,8 +879,7 @@ class GottenGeography:
         self.prep_actor(self.coords)
         
         self.crosshair = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 32)
-        )
+            Clutter.Color.new(0, 0, 0, 32))
         self.crosshair.set_property('has-border', True)
         self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.crosshair.set_border_width(1)
@@ -900,7 +888,8 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
-        if not animate_crosshair: return
+        if not animate_crosshair:
+            return
         
         # This causes the crosshair to start off huge and invisible, and it
         # quickly shrinks, spins, and fades into existence. The last value for
