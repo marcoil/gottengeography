@@ -59,11 +59,10 @@ class GottenGeography:
         """Convert decimal degrees into degrees, minutes, seconds."""
         remainder, degrees = math.modf(abs(decimal))
         remainder, minutes = math.modf(remainder * 60)
-        seconds            =           remainder * 60
         return [
             pyexiv2.Rational(degrees, 1),
             pyexiv2.Rational(minutes, 1),
-            self.float_to_rational(seconds)
+            self.float_to_rational(remainder * 60)
         ]
     
     def float_to_rational(self, value):
@@ -277,7 +276,7 @@ class GottenGeography:
                 self.status_message(", ".join(inst.args))
             else:
                 self.modified.discard(photo)
-                self.loaded_photos.set_value(photo.iter, self.SUMMARY,
+                self.liststore.set_value(photo.iter, self.SUMMARY,
                     photo.long_summary())
         self.update_sensitivity()
         self.progressbar.hide()
@@ -288,6 +287,7 @@ class GottenGeography:
         Raises IOError if the specified file is not an image format supported by
         both pyexiv2 and GdkPixbuf. Known to work with JPG, PNG, DNG, and NEF.
         """
+        gps = 'Exif.GPSInfo.GPS'
         try:
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
@@ -302,7 +302,6 @@ class GottenGeography:
                 exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
-        gps = 'Exif.GPSInfo.GPS'
         try:
             photo.latitude = self.dms_to_decimal(
                 *exif[gps + 'Latitude'].value +
@@ -416,9 +415,9 @@ class GottenGeography:
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         self.remember_location()
-        start_points = len(self.tracks)
-        start_time   = time.clock()
-        self.gpx_parser = expat.ParserCreate()
+        start_points                         = len(self.tracks)
+        start_time                           = time.clock()
+        self.gpx_parser                      = expat.ParserCreate()
         self.gpx_parser.StartElementHandler  = self.gpx_element_root
         self.gpx_parser.CharacterDataHandler = self.gpx_element_data
         self.gpx_parser.EndElementHandler    = self.gpx_element_end
@@ -527,7 +526,7 @@ class GottenGeography:
         """Discard all selected photos."""
         for photo in self.selected.copy():
             photo.marker.destroy()
-            self.loaded_photos.remove(photo.iter)
+            self.liststore.remove(photo.iter)
             self.modified.discard(photo)
             del self.photo[photo.filename]
         self.button.gtk_select_all.set_active(False)
@@ -545,7 +544,7 @@ class GottenGeography:
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
         self.modified.add(photo)
-        self.loaded_photos.set_value(photo.iter, self.SUMMARY,
+        self.liststore.set_value(photo.iter, self.SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
     
     def add_or_reload_photo(self, filename):
@@ -560,7 +559,7 @@ class GottenGeography:
         """
         photo = self.load_exif_from_file(filename)
         photo.update( {
-            'iter':   self.loaded_photos.append([None] * 4),
+            'iter':   self.liststore.append([None] * 4),
             'marker': self.add_marker(filename)
         } if filename not in self.photo else {
             'iter':   self.photo[filename].iter,
@@ -570,10 +569,10 @@ class GottenGeography:
         photo.position_marker()
         self.modified.discard(photo)
         self.photo[filename] = photo
-        self.loaded_photos.set_value(photo.iter, self.PATH,      photo.filename)
-        self.loaded_photos.set_value(photo.iter, self.THUMB,     photo.thumb)
-        self.loaded_photos.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
-        self.loaded_photos.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
+        self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
+        self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
+        self.liststore.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
+        self.liststore.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
         self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
     
@@ -745,9 +744,9 @@ class GottenGeography:
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
         
-        self.loaded_photos = Gtk.ListStore(GObject.TYPE_STRING,
+        self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
-        self.loaded_photos.set_sort_column_id(self.TIMESTAMP,
+        self.liststore.set_sort_column_id(self.TIMESTAMP,
             Gtk.SortType.ASCENDING)
         
         self.cell_string = Gtk.CellRendererText()
@@ -763,7 +762,7 @@ class GottenGeography:
         self.column.add_attribute(self.cell_string, 'markup', self.SUMMARY)
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        self.photos_view = Gtk.TreeView(model=self.loaded_photos)
+        self.photos_view = Gtk.TreeView(model=self.liststore)
         self.photos_view.set_enable_search(False)
         self.photos_view.set_reorderable(False)
         self.photos_view.set_headers_visible(False)
