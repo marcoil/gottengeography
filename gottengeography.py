@@ -712,6 +712,14 @@ class GottenGeography:
             'name':        'City'
         }
         
+        Clutter.init([])
+        self.champlain = GtkChamplain.Embed()
+        self.map_view = self.champlain.get_view()
+        self.map_view.set_property('show-scale', True)
+        self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
+        self.map_photo_layer = Champlain.Layer()
+        self.map_view.add_layer(self.map_photo_layer)
+        
         self.toolbar = Gtk.Toolbar()
         self.button  = ReadableDictionary()
         self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
@@ -798,15 +806,6 @@ class GottenGeography:
         self.photos_with_buttons = Gtk.VBox()
         self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
         self.photos_with_buttons.pack_start(self.photo_btn_bar, False, False, 0)
-        
-        # Initialize all the clutter/champlain stuff
-        Clutter.init([])
-        self.champlain = GtkChamplain.Embed()
-        self.map_view = self.champlain.get_view()
-        self.map_view.set_property('show-scale', True)
-        self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
-        self.map_photo_layer = Champlain.Layer()
-        self.map_view.add_layer(self.map_photo_layer)
         
         self.photos_and_map_container = Gtk.HPaned()
         self.photos_and_map_container.add(self.photos_with_buttons)
