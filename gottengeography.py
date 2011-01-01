@@ -850,10 +850,24 @@ class GottenGeography:
         self.return_to_last()
         
         # Key bindings
+        self.key_actions = {
+            "equal":    self.zoom_in,
+            "minus":    self.zoom_out,
+            "Left":     self.return_to_last,
+            "Return":   self.apply_selected_photos,
+            "w":        self.close_selected_photos,
+            "a":        self.toggle_selected_photos,
+            "z":        self.revert_selected_photos,
+            "s":        self.save_all_files,
+            "x":        self.clear_all_gpx,
+            "o":        self.add_files_dialog,
+            "q":        self.confirm_quit_dialog,
+            "slash":    self.about_dialog,
+            "question": self.about_dialog
+        }
         self.accel = Gtk.AccelGroup()
         self.window.add_accel_group(self.accel)
-        for key in [ 'q', 'w', 'x', 'o', 's', 'z', 'a', 'Return', 'slash',
-        'question', 'equal', 'minus', 'Left' ]:
+        for key in self.key_actions.keys():
             self.accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
@@ -951,21 +965,7 @@ class GottenGeography:
     
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
         """Respond to keyboard shortcuts as typed by user."""
-        key = Gdk.keyval_name(keyval)
-        if   key == "Return": self.apply_selected_photos()
-        elif key == "w":      self.close_selected_photos()
-        elif key == "equal":  self.zoom_in()
-        elif key == "minus":  self.zoom_out()
-        elif key == "Left":   self.return_to_last(True)
-        elif key == "x":      self.clear_all_gpx()
-        elif key == "o":      self.add_files_dialog()
-        elif key == "q":      self.confirm_quit_dialog()
-        elif key == "/":      self.about_dialog()
-        elif key == "?":      self.about_dialog()
-        elif key == "a":      self.toggle_selected_photos()
-        if len(self.modified) > 0:
-            if   key == "s":  self.save_all_files()
-            elif key == "z":  self.revert_selected_photos()
+        self.key_actions[Gdk.keyval_name(keyval)]()
     
     def gconf_key(self, key):
         """Determine appropriate GConf key that is unique to this application.
