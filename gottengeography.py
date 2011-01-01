@@ -121,10 +121,11 @@ class GottenGeography:
         """Move the map view by 1/5 of its length in the given direction."""
         x = self.map_view.get_width()  / 2
         y = self.map_view.get_height() / 2
-        if   keyval == Gdk.keyval_from_name("Left"):  x *= 0.6
-        elif keyval == Gdk.keyval_from_name("Up"):    y *= 0.6
-        elif keyval == Gdk.keyval_from_name("Right"): x *= 1.4
-        elif keyval == Gdk.keyval_from_name("Down"):  y *= 1.4
+        key = Gdk.keyval_name(keyval)
+        if   key == "Left":  x *= 0.6
+        elif key == "Up":    y *= 0.6
+        elif key == "Right": x *= 1.4
+        elif key == "Down":  y *= 1.4
         lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
         if self.valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
@@ -948,30 +949,23 @@ class GottenGeography:
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
     
-    # TODO make sure these key choices actually make sense
-    # and are consistent with other apps
     def key_accel(self, accel_group, acceleratable, keyval, modifier):
         """Respond to keyboard shortcuts as typed by user."""
-        # It would make more sense to store Gdk.keyval_name(keyval) in a
-        # variable and compare that rather than calling Gdk.keyval_from_name()
-        # a million times, but that seems to just crash and this way actually
-        # works, so it looks like this is what we're going with.
-        # Update 2010-10-29: J5 says he's just fixed this in Gtk3. Maybe one day
-        # I'll get to use it!
-        if   keyval == Gdk.keyval_from_name("Return"): self.apply_selected_photos()
-        elif keyval == Gdk.keyval_from_name("w"):      self.close_selected_photos()
-        elif keyval == Gdk.keyval_from_name("equal"):  self.zoom_in()
-        elif keyval == Gdk.keyval_from_name("minus"):  self.zoom_out()
-        elif keyval == Gdk.keyval_from_name("Left"):   self.return_to_last(True)
-        elif keyval == Gdk.keyval_from_name("x"):      self.clear_all_gpx()
-        elif keyval == Gdk.keyval_from_name("o"):      self.add_files_dialog()
-        elif keyval == Gdk.keyval_from_name("q"):      self.confirm_quit_dialog()
-        elif keyval == Gdk.keyval_from_name("/"):      self.about_dialog()
-        elif keyval == Gdk.keyval_from_name("?"):      self.about_dialog()
-        elif keyval == Gdk.keyval_from_name("a"):      self.toggle_selected_photos()
+        key = Gdk.keyval_name(keyval)
+        if   key == "Return": self.apply_selected_photos()
+        elif key == "w":      self.close_selected_photos()
+        elif key == "equal":  self.zoom_in()
+        elif key == "minus":  self.zoom_out()
+        elif key == "Left":   self.return_to_last(True)
+        elif key == "x":      self.clear_all_gpx()
+        elif key == "o":      self.add_files_dialog()
+        elif key == "q":      self.confirm_quit_dialog()
+        elif key == "/":      self.about_dialog()
+        elif key == "?":      self.about_dialog()
+        elif key == "a":      self.toggle_selected_photos()
         if len(self.modified) > 0:
-            if   keyval == Gdk.keyval_from_name("s"):  self.save_all_files()
-            elif keyval == Gdk.keyval_from_name("z"):  self.revert_selected_photos()
+            if   key == "s":  self.save_all_files()
+            elif key == "z":  self.revert_selected_photos()
     
     def gconf_key(self, key):
         """Determine appropriate GConf key that is unique to this application.
