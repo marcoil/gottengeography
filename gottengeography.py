@@ -126,7 +126,7 @@ class GottenGeography:
         elif key == "Up":    y *= 0.6
         elif key == "Right": x *= 1.4
         elif key == "Down":  y *= 1.4
-        lat, lon = self.map_view.get_coords_at(int(x), int(y))[1:3]
+        status, lat, lon = self.map_view.get_coords_at(int(x), int(y))
         if self.valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
@@ -809,8 +809,8 @@ class GottenGeography:
         self.photos_with_buttons.pack_start(self.photo_btn_bar, False, False, 0)
         
         self.photos_and_map_container = Gtk.HPaned()
-        self.photos_and_map_container.add(self.photos_with_buttons)
-        self.photos_and_map_container.add(self.champlain)
+        self.photos_and_map_container.add1(self.photos_with_buttons)
+        self.photos_and_map_container.add2(self.champlain)
         
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(0, -1) # Stops it from flailing.

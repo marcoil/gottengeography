@@ -258,10 +258,8 @@ S 10.00000, W 10.00000
                 10 # equal to 10 places
             )
     
-    def dont_test_map_navigation(self):
-        """Ensure that it's possible to navigate the map.
-        
-        This test disabled until I can figure out how to fix get_coords_at."""
+    def test_map_navigation(self):
+        """Ensure that it's possible to navigate the map."""
         
         history_length = len(self.gui.history)
         
