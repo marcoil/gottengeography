@@ -118,14 +118,14 @@ class GottenGeography:
         self.zoom_button_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
-        """Move the map view by 1/5 of its length in the given direction."""
+        """Move the map view by 5% of its length in the given direction."""
         x = self.map_view.get_width()  / 2
         y = self.map_view.get_height() / 2
         key = Gdk.keyval_name(keyval)
-        if   key == "Left":  x *= 0.6
-        elif key == "Up":    y *= 0.6
-        elif key == "Right": x *= 1.4
-        elif key == "Down":  y *= 1.4
+        if   key == "Left":  x *= 0.9
+        elif key == "Up":    y *= 0.9
+        elif key == "Right": x *= 1.1
+        elif key == "Down":  y *= 1.1
         status, lat, lon = self.map_view.get_coords_at(int(x), int(y))
         if self.valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
