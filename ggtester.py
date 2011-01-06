@@ -129,12 +129,12 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.gpx_state), 0)
         
         # Wait for geonames to finish downloading before saving
-        #mod = self.gui.modified.copy()
-        #while len(mod) > 0:
-        #    photo = mod.pop()
-        #    while photo.City is None:
-        #        time.sleep(.1)
-        #        self.gui.redraw_interface()
+        mod = self.gui.modified.copy()
+        while len(mod) > 0:
+            photo = mod.pop()
+            while photo.City is None:
+                time.sleep(.1)
+                self.gui.redraw_interface()
         
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
@@ -151,8 +151,8 @@ class GottenGeographyTester(unittest.TestCase):
             photo = self.gui.load_exif_from_file(filename)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
-            #self.assertEqual(photo.ProvinceState, "Alberta")
-            #self.assertEqual(photo.CountryName, "Canada")
+            self.assertEqual(photo.ProvinceState, "Alberta")
+            self.assertEqual(photo.CountryName, "Canada")
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
