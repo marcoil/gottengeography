@@ -151,6 +151,7 @@ class GottenGeographyTester(unittest.TestCase):
             photo = self.gui.load_exif_from_file(filename)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
+            self.assertEqual(photo.City, "Edmonton")
             self.assertEqual(photo.ProvinceState, "Alberta")
             self.assertEqual(photo.CountryName, "Canada")
     
