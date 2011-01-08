@@ -101,7 +101,7 @@ class GottenGeography:
             lat  = self.gconf_get('last_latitude',   float)
             lon  = self.gconf_get('last_longitude',  float)
             zoom = self.gconf_get('last_zoom_level', int)
-            if button is not None:
+            if button is not False:
                 self.status_message(_("That's as far back as she goes, kiddo!"))
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
@@ -847,7 +847,7 @@ class GottenGeography:
         self.track_color_b = Clutter.Color.new(192, 64, 192, 128)
         
         self.gconf_client = GConf.Client.get_default()
-        self.return_to_last()
+        self.return_to_last(False)
         
         # Key bindings
         self.key_actions = {
