@@ -138,10 +138,16 @@ class GottenGeography:
     def display_actors(self, stage=None, parameter=None):
         """Position and update my custom ClutterActors.
         
-        self.coords_bg is a white bar at the top of the map view, spanning
-        its full width. self.coords shows the map center coordinates.
-        self.coords_label displays a link to Google Maps in the status bar.
-        self.crosshair is a black diamond, kept at map center."""
+        self.coords:       Map center coordinates at top of map view.
+        self.coords_bg:    Translucent white bar at top of map view.
+        self.coords_label: Link to Google Maps in the status bar.
+        self.crosshair:    Black diamond at map center.
+        
+        This method is called whenever the size of the map view changes, and
+        whenever the map center coordinates change, so that everything is
+        always positioned and sized correctly, and displaying the correct
+        coordinates.
+        """
         stage_width  = self.stage.get_width()
         stage_height = self.stage.get_height()
         self.crosshair.set_position(
