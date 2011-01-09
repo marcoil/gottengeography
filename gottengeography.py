@@ -662,9 +662,10 @@ class GottenGeography:
             flags=Gtk.DialogFlags.MODAL, title=" ")
         dialog.set_property('message-type', Gtk.MessageType.WARNING)
         dialog.set_markup(SAVE_WARNING % len(self.modified))
-        dialog.add_button(_("Close _without Saving"), Gtk.ResponseType.CLOSE)
-        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-        dialog.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT)
+        dialog.add_buttons(
+            _("Close _without Saving"), Gtk.ResponseType.CLOSE,
+            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
         dialog.set_default_response(Gtk.ResponseType.ACCEPT)
         # If we don't dialog.destroy() here, and the user chooses to save files,
         # the dialog stays open during the save, which looks very unresponsive
