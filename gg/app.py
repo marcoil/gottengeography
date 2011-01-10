@@ -30,8 +30,8 @@ import pyexiv2
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from objects import ReadableDictionary, Photograph
-from strings import SAVE_WARNING, COMMENTS, LICENSE
+from datatypes import ReadableDictionary, Photograph
+from longstrings import SAVE_WARNING, COMMENTS, LICENSE
 
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf

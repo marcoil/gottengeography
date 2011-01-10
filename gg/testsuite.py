@@ -17,7 +17,7 @@
 from __future__ import division
 import unittest, os, re, datetime, time, math, random
 from app import GottenGeography
-from objects import ReadableDictionary, Photograph
+from datatypes import ReadableDictionary, Photograph
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
