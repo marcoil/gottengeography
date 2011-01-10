@@ -3,7 +3,8 @@
 
 from __future__ import division
 import unittest, os, re, datetime, time, math, random
-from gottengeography import GottenGeography, ReadableDictionary, Photograph
+from gottengeography import GottenGeography
+from gg.objects import ReadableDictionary, Photograph
 from xml.parsers.expat import ExpatError
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
