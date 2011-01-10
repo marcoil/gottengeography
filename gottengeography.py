@@ -1205,9 +1205,10 @@ your photos before closing?""") + """</span>
 """ + _("""The changes you've made to %d of your photos will be permanently \
 lost if you do not save.""")
 
-COMMENTS = _("""GottenGeography is written in the Python programming language, \
-and allows you to geotag your photos. The name is an anagram of "Python \
-Geotagger".""")
+COMMENTS = """GottenGeography: Go open thy tagger!
+
+""" + _("""This program is written in the Python programming language, and \
+adds geotags to your photos. The name is an anagram of "Python Geotagger.\"""")
 
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
