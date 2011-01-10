@@ -34,6 +34,6 @@ I feel I have tested most aspects of this application fairly thoroughly. However
 
 GottenGeography depends upon your system timezone being set the same as your camera's timezone, so if you want to try out the included demo data and you're not in Mountain Standard Time (UTC-7), you'll have to invoke GottenGeography like this:
 
-    TZ=MST ./gottengeography.py
+    TZ=MST ./gottengeography
 
 Happy Tagging! --[Robert](mailto:rbpark@exolucere.ca)
