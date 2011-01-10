@@ -16,7 +16,23 @@
 
 from __future__ import division
 
-import os, re, time, calendar, math, gettext, pyexiv2
+APPNAME = "GottenGeography"
+VERSION = "0.5a"
+
+import os
+import re
+import math
+import time
+import calendar
+import gettext
+import pyexiv2
+
+gettext.bindtextdomain(APPNAME.lower())
+gettext.textdomain(APPNAME.lower())
+
+from objects import ReadableDictionary, Photograph
+from strings import SAVE_WARNING, COMMENTS, LICENSE
+
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
@@ -25,15 +41,6 @@ from fractions import Fraction
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
-
-APPNAME = "GottenGeography"
-VERSION = "0.5a"
-
-gettext.bindtextdomain(APPNAME.lower())
-gettext.textdomain(APPNAME.lower())
-
-from objects import ReadableDictionary, Photograph
-from strings import SAVE_WARNING, COMMENTS, LICENSE
 
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
