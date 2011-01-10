@@ -2,6 +2,6 @@
 
 git checkout demo/
 
-python ggtester.py
+python2.7 gg/testsuite.py
 
 git checkout demo/

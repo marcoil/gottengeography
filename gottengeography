@@ -1,0 +1,5 @@
+#!/usr/bin/python2.7
+
+from gg.app import GottenGeography
+
+GottenGeography().main()

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-
 # GottenGeography - Automagically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
@@ -35,8 +32,8 @@ VERSION = "0.5a"
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from gg.objects import ReadableDictionary, Photograph
-from gg.strings import SAVE_WARNING, COMMENTS, LICENSE
+from objects import ReadableDictionary, Photograph
+from strings import SAVE_WARNING, COMMENTS, LICENSE
 
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
@@ -1041,5 +1038,3 @@ class GottenGeography:
         """Go!"""
         Gtk.main()
 
-if __name__ == "__main__":
-    GottenGeography().main()
