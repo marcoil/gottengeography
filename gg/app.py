@@ -23,24 +23,23 @@ import os
 import re
 import math
 import time
-import calendar
 import gettext
 import pyexiv2
 
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from datatypes import ReadableDictionary, Photograph
-from longstrings import SAVE_WARNING, COMMENTS, LICENSE
-
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
-from xml.parsers import expat
 from fractions import Fraction
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
+
+from datatypes import ReadableDictionary, Photograph
+from longstrings import SAVE_WARNING, COMMENTS, LICENSE
+from gpx import GPXLoader
 
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
@@ -243,21 +242,20 @@ class GottenGeography:
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
-        for polygon in self.polygons:
-            polygon.hide()
-            # Why doesn't this work? Why do these always cause segfaults?
-            # Who are you? Where are my pants?
-            #self.map_view.remove_polygon(polygon)
-            #polygon.clear_points()
-        self.polygons  = []
+        for gpx in self.gpx:
+            for polygon in gpx.polygons:
+                polygon.hide()
+                # Maybe some day...
+                #polygon.clear_points()
+                #self.map_view.remove_polygon(polygon)
+        
+        self.gpx       = []
         self.tracks    = {}
         self.gpx_state = {}
         self.metadata  = {
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
-            'alpha': float('inf'),       # Initial GPX track point
-            'tau':   time.clock(),       # Most recent time screen was updated
-            'area':  [ float('inf') ] * 2 + [ float('-inf') ] * 2 }
+            'alpha': float('inf') }      # Initial GPX track point
         self.update_sensitivity()
     
 ################################################################################
@@ -340,113 +338,26 @@ class GottenGeography:
                 pass
         return photo
     
-    def gpx_element_root(self, name, attributes):
-        """Expat StartElementHandler.
-        
-        This is only called on the top level element in the given XML file.
-        """
-        if name <> 'gpx':
-            raise expat.ExpatError
-        self.gpx_parser.StartElementHandler = self.gpx_element_start
-    
-    def gpx_element_start(self, name, attributes):
-        """Expat StartElementHandler.
-        
-        This method creates new ChamplainPolygons when necessary and initializes
-        variables for the CharacterDataHandler. It also extracts latitude and
-        longitude from GPX element attributes. For example:
-        
-        <trkpt lat="45.147445" lon="-81.469507">
-        """
-        self.metadata['element-name'] = name
-        self.gpx_state[name]          = ""
-        self.gpx_state.update(attributes)
-        if name == "trkseg":
-            self.polygons.append(Champlain.Polygon())
-            self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(self.track_color_a
-                if len(self.polygons) % 2 else self.track_color_b)
-            self.polygons[-1].show()
-            self.map_view.add_polygon(self.polygons[-1])
-    
-    def gpx_element_data(self, data):
-        """Expat CharacterDataHandler.
-        
-        This method extracts elevation and time data from GPX elements.
-        For example:
-        
-        <ele>671.092</ele>
-        <time>2010-10-16T20:09:13Z</time>
-        """
-        data = data.strip()
-        if not data:
-            return
-        # Sometimes expat calls this handler multiple times each with just
-        # a chunk of the whole data, so += is necessary to collect all of it.
-        self.gpx_state[self.metadata['element-name']] += data
-    
-    def gpx_element_end(self, name):
-        """Expat EndElementHandler.
-        
-        This method does most of the heavy lifting, including parsing time
-        strings into UTC epoch seconds, appending to the ChamplainPolygons,
-        keeping track of the first and last points loaded, as well as the
-        entire area covered by the polygon, and occaisionally redrawing the
-        screen so that the user can see what's going on while stuff is
-        loading.
-        """
-        # We only care about the trkpt element closing, because that means
-        # there is a new, fully-loaded GPX point to play with.
-        if name <> "trkpt":
-            return
-        try:
-            timestamp = calendar.timegm(map(int,
-                self.delimiters.split(self.gpx_state['time'])[0:6]))
-            lat = float(self.gpx_state['lat'])
-            lon = float(self.gpx_state['lon'])
-        except:
-            # If any of lat, lon, or time is missing, we cannot continue.
-            # Better to just give up on this track point and go to the next.
-            return
-        self.tracks[timestamp] = {
-            'elevation': float(self.gpx_state.get('ele', 0.0)),
-            'point':     self.polygons[-1].append_point(lat, lon)
-        }
-        
-        self.gpx_state.clear()
-        self.metadata['omega']   = max(self.metadata['omega'], timestamp)
-        self.metadata['alpha']   = min(self.metadata['alpha'], timestamp)
-        self.metadata['area'][0] = min(self.metadata['area'][0], lat)
-        self.metadata['area'][1] = min(self.metadata['area'][1], lon)
-        self.metadata['area'][2] = max(self.metadata['area'][2], lat)
-        self.metadata['area'][3] = max(self.metadata['area'][3], lon)
-        if time.clock() - self.metadata['tau'] > .2:
-            self.progressbar.pulse()
-            self.map_view.ensure_visible(*self.metadata['area'] + [False])
-            self.redraw_interface()
-            self.metadata['tau'] = time.clock()
-    
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         self.remember_location()
-        start_points                         = len(self.tracks)
-        start_time                           = time.clock()
-        self.gpx_parser                      = expat.ParserCreate()
-        self.gpx_parser.StartElementHandler  = self.gpx_element_root
-        self.gpx_parser.CharacterDataHandler = self.gpx_element_data
-        self.gpx_parser.EndElementHandler    = self.gpx_element_end
-        with open(filename) as gpx:
-            self.gpx_parser.ParseFile(gpx)
+        start_points = len(self.tracks)
+        start_time   = time.clock()
+        
+        gpx = GPXLoader(self, filename)
+        self.tracks.update(gpx.tracks)
+        self.gpx.append(gpx)
+        
+        self.metadata['alpha'] = min(self.metadata['alpha'], gpx.alpha)
+        self.metadata['omega'] = max(self.metadata['omega'], gpx.omega)
+        
         self.update_sensitivity()
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(self.tracks) - start_points, time.clock() - start_time))
-        if len(self.tracks) > 0:
-            self.map_view.ensure_visible(*self.metadata['area'] + [False])
+        if len(gpx.tracks) > 0:
+            self.map_view.ensure_visible(*gpx.area + [False])
         for photo in self.photo.values():
             self.auto_timestamp_comparison(photo)
-        self.gpx_state.clear()
-        if 'element-name' in self.metadata:
-            del self.metadata['element-name']
     
 ################################################################################
 # GtkListStore. These methods modify the liststore data in some way.
@@ -649,7 +560,7 @@ class GottenGeography:
             try:
                 try:            self.add_or_reload_photo(filename)
                 except IOError: self.load_gpx_from_file(filename)
-            except expat.ExpatError:
+            except IOError:
                 invalid_files.append(os.path.basename(filename))
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: %s") %
@@ -706,15 +617,11 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        self.photo    = {}
         self.selected = set()
         self.modified = set()
         self.history  = []
-        self.polygons = []
-        
-        # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
-        # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-        self.delimiters = re.compile(r'[:TZ-]')
+        self.photo    = {}
+        self.gpx      = []
         
         # Maps geonames.org jargon into IPTC jargon. Expanding this will result
         # in more data being extracted from the geonames.org data
@@ -856,9 +763,6 @@ class GottenGeography:
         self.window.set_size_request(620,400)
         self.window.connect("delete_event", self.confirm_quit_dialog)
         self.window.add(self.app_container)
-        
-        self.track_color_a = Clutter.Color.new(128, 0,  192, 128)
-        self.track_color_b = Clutter.Color.new(192, 64, 192, 128)
         
         self.gconf_client = GConf.Client.get_default()
         self.return_to_last(False)

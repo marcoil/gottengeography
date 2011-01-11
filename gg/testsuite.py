@@ -18,7 +18,7 @@ from __future__ import division
 import unittest, os, re, datetime, time, math, random
 from app import GottenGeography
 from datatypes import ReadableDictionary, Photograph
-from xml.parsers.expat import ExpatError
+from gpx import GPXLoader
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
 
@@ -45,20 +45,16 @@ class GottenGeographyTester(unittest.TestCase):
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
         self.assertEqual(len(self.gui.tracks), 0)
-        self.assertEqual(len(self.gui.polygons), 0)
+        self.assertEqual(len(self.gui.gpx), 0)
         self.assertEqual(self.gui.metadata['alpha'], float('inf'))
         self.assertEqual(self.gui.metadata['omega'], float('-inf'))
-        self.assertEqual(
-            self.gui.metadata['area'],
-            [float('inf'), float('inf'), float('-inf'), float('-inf')]
-        )
         
         # Load only the photos first
         os.chdir('./demo/')
         for demo in os.listdir('.'):
             filename = "%s/%s" % (os.getcwd(), demo)
             if not re.search(r'gpx$', demo):
-                self.assertRaises(ExpatError,
+                self.assertRaises(IOError,
                     self.gui.load_gpx_from_file,
                     filename
                 )
@@ -94,11 +90,12 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Check that the GPX is loaded
         self.assertEqual(len(self.gui.tracks),   374)
-        self.assertEqual(len(self.gui.polygons), 1)
+        self.assertEqual(len(self.gui.gpx), 1)
+        self.assertEqual(len(self.gui.gpx[-1].polygons), 1)
         self.assertEqual(self.gui.metadata['alpha'], 1287259751)
         self.assertEqual(self.gui.metadata['omega'], 1287260756)
         self.assertEqual(
-            self.gui.metadata['area'],
+            self.gui.gpx[-1].area,
             [53.522495999999997, -113.453148,
              53.537399000000001, -113.443061]
         )
@@ -138,7 +135,7 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertTrue(photo.marker.get_highlighted())
         
         self.gui.clear_all_gpx()
-        self.assertEqual(len(self.gui.polygons), 0)
+        self.assertEqual(len(self.gui.gpx), 0)
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.gpx_state), 0)
         
@@ -350,7 +347,7 @@ S 10.00000, W 10.00000
         self.assertGreater(lat, self.gui.map_view.get_property('latitude'))
     
     def test_map_objects(self):
-        """Test ChamplainMarkers and ChamplainPolygons."""
+        """Test ChamplainMarkers."""
         
         lat = random_coord(90)
         lon = random_coord(180)
@@ -366,17 +363,6 @@ S 10.00000, W 10.00000
         marker.destroy()
         
         self.assertFalse(marker.get_parent())
-        
-        self.assertEqual(len(self.gui.polygons), 0)
-        self.gui.gpx_element_start('trkseg', {})
-        self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
-        self.assertEqual(len(self.gui.polygons), 1)
-        self.gui.gpx_element_start('trkseg', {})
-        self.assertEqual(self.gui.polygons[-1].get_stroke_width(), 5)
-        self.assertEqual(len(self.gui.polygons), 2)
-        
-        self.gui.clear_all_gpx()
-        self.assertEqual(len(self.gui.polygons), 0)
     
     def test_gconf(self):
         self.assertEqual(
