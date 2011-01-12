@@ -735,14 +735,14 @@ class GottenGeography:
             "slash":    self.about_dialog,
             "question": self.about_dialog
         }
-        self.accel = Gtk.AccelGroup()
-        self.window.add_accel_group(self.accel)
+        accel = Gtk.AccelGroup()
+        self.window.add_accel_group(accel)
         for key in self.key_actions.keys():
-            self.accel.connect(Gdk.keyval_from_name(key),
+            accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            self.accel.connect(Gdk.keyval_from_name(key),
+            accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
         
         self.window.show_all()
