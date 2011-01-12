@@ -77,7 +77,7 @@ class Photograph(ReadableDictionary):
             if gui.geonames_cache[key] is None:
                 gui.geonames_queue[key].append(self)
             else:
-                self.process_geoname(gui.geonames_cache[key], gui)
+                self.process_geoname(gui.geonames_cache[key], gui.modify_summary)
         else:
             gui.geonames_queue[key] = [self]
             gui.geonames_cache[key] = None
@@ -102,13 +102,13 @@ class Photograph(ReadableDictionary):
         gui.geonames_cache[key] = geoname
         while len(gui.geonames_queue[key]) > 0:
             photo = gui.geonames_queue[key].pop()
-            photo.process_geoname(geoname, gui)
+            photo.process_geoname(geoname, gui.modify_summary)
     
-    def process_geoname(self, geoname, gui):
+    def process_geoname(self, geoname, callback):
         """Insert geonames into the photo and update the GtkListStore."""
-        for geocode, iptc in gui.geonames_of_interest.items():
+        for geocode, iptc in geonames_of_interest.items():
             self[iptc] = geoname.get(geocode)
-        gui.modify_summary(self)
+        callback(self)
     
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
@@ -161,3 +161,10 @@ class Photograph(ReadableDictionary):
             self.short_summary()
         )).encode('utf-8')
 
+# This dictionary maps geonames.org jargon (keys) into IPTC jargon (values).
+geonames_of_interest = {
+    'countryCode': 'CountryCode',
+    'countryName': 'CountryName',
+    'adminName1':  'ProvinceState',
+    'name':        'City'
+}

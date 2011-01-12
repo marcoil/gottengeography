@@ -239,7 +239,7 @@ class GottenGeography:
             exif[key + 'Longitude']    = decimal_to_dms(photo.longitude)
             exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
             exif[key + 'MapDatum']     = 'WGS-84'
-            for iptc in self.geonames_of_interest.values():
+            for iptc in geonames_of_interest.values():
                 if photo[iptc] is not None:
                     exif['Iptc.Application2.' + iptc] = [photo[iptc]]
             try:
@@ -291,7 +291,7 @@ class GottenGeography:
                 photo.altitude *= -1
         except:
             pass
-        for iptc in self.geonames_of_interest.values():
+        for iptc in geonames_of_interest.values():
             try:
                 photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
             except KeyError:
@@ -583,16 +583,8 @@ class GottenGeography:
         self.photo    = {}
         self.gpx      = []
         
-        # Maps geonames.org jargon into IPTC jargon. Expanding this will result
-        # in more data being extracted from the geonames.org data
         self.geonames_cache = {}
         self.geonames_queue = {}
-        self.geonames_of_interest = {
-            'countryCode': 'CountryCode',
-            'countryName': 'CountryName',
-            'adminName1':  'ProvinceState',
-            'name':        'City'
-        }
         
         Clutter.init([])
         self.champlain = GtkChamplain.Embed()
