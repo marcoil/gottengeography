@@ -21,7 +21,6 @@ VERSION = "0.5a"
 
 import os
 import re
-import math
 import time
 import gettext
 import pyexiv2
@@ -32,14 +31,13 @@ gettext.textdomain(APPNAME.lower())
 from gi.repository import Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
-from fractions import Fraction
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from datatypes import ReadableDictionary, Photograph
-from longstrings import SAVE_WARNING, COMMENTS, LICENSE
-from gpx import GPXLoader
+from datatypes import *
+from longstrings import *
+from gps import *
 
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
@@ -48,39 +46,6 @@ class GottenGeography:
     automatically cross-reference the timestamps on the photos to the timestamps
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
-    
-################################################################################
-# GPS math. These methods convert numbers into other numbers.
-################################################################################
-    
-    def dms_to_decimal(self, degrees, minutes, seconds, sign=""):
-        """Convert degrees, minutes, seconds into decimal degrees."""
-        return (-1 if re.match(r'[SWsw]', sign) else 1) * (
-            degrees.to_float()        +
-            minutes.to_float() / 60   +
-            seconds.to_float() / 3600
-        )
-    
-    def decimal_to_dms(self, decimal):
-        """Convert decimal degrees into degrees, minutes, seconds."""
-        remainder, degrees = math.modf(abs(decimal))
-        remainder, minutes = math.modf(remainder * 60)
-        return [
-            pyexiv2.Rational(degrees, 1),
-            pyexiv2.Rational(minutes, 1),
-            self.float_to_rational(remainder * 60)
-        ]
-    
-    def float_to_rational(self, value):
-        """Create a pyexiv2.Rational with help from fractions.Fraction."""
-        frac = Fraction(abs(value)).limit_denominator(99999)
-        return pyexiv2.Rational(frac.numerator, frac.denominator)
-    
-    def valid_coords(self, lat, lon):
-        """Determine the validity of coordinates."""
-        if type(lat) not in (float, int): return False
-        if type(lon) not in (float, int): return False
-        return abs(lat) <= 90 and abs(lon) <= 180
     
 ################################################################################
 # Champlain. This section contains methods that manipulate the map.
@@ -133,13 +98,8 @@ class GottenGeography:
         elif key == "Right": x *= 1.1
         elif key == "Down":  y *= 1.1
         status, lat, lon = self.map_view.get_coords_at(int(x), int(y))
-        if self.valid_coords(lat, lon):
+        if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
-    
-    def maps_link(self, lat, lon):
-        """Create a Pango link to Google Maps."""
-        return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (
-            lat, lon, _("View in Google Maps"))
     
     def display_actors(self, stage=None, parameter=None):
         """Position and update my custom ClutterActors.
@@ -165,7 +125,7 @@ class GottenGeography:
             lat = self.map_view.get_property('latitude')
             lon = self.map_view.get_property('longitude')
             self.coords.set_markup("%.4f, %.4f" % (lat, lon))
-            self.coords_label.set_markup(self.maps_link(lat, lon))
+            self.coords_label.set_markup(maps_link(lat, lon))
             self.coords_bg.set_size(stage_width, self.coords.get_height() + 10)
             self.coords.set_position(
                 (stage_width - self.coords.get_width()) / 2, 5)
@@ -224,7 +184,7 @@ class GottenGeography:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
             for photo in self.selected:
                 self.set_marker_highlight(photo.marker, area, False)
-            if self.valid_coords(area[0], area[1]):
+            if valid_coords(area[0], area[1]):
                 self.remember_location()
                 self.map_view.ensure_visible(*area + [False])
     
@@ -272,11 +232,11 @@ class GottenGeography:
             exif = pyexiv2.ImageMetadata(photo.filename)
             exif.read()
             if photo.altitude is not None:
-                exif[key + 'Altitude']    = self.float_to_rational(photo.altitude)
+                exif[key + 'Altitude']    = float_to_rational(photo.altitude)
                 exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
-            exif[key + 'Latitude']     = self.decimal_to_dms(photo.latitude)
+            exif[key + 'Latitude']     = decimal_to_dms(photo.latitude)
             exif[key + 'LatitudeRef']  = "N" if photo.latitude >= 0 else "S"
-            exif[key + 'Longitude']    = self.decimal_to_dms(photo.longitude)
+            exif[key + 'Longitude']    = decimal_to_dms(photo.longitude)
             exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
             exif[key + 'MapDatum']     = 'WGS-84'
             for iptc in self.geonames_of_interest.values():
@@ -315,11 +275,11 @@ class GottenGeography:
         except:
             photo.timestamp = int(os.stat(filename).st_mtime)
         try:
-            photo.latitude = self.dms_to_decimal(
+            photo.latitude = dms_to_decimal(
                 *exif[gps + 'Latitude'].value +
                 [exif[gps + 'LatitudeRef'].value]
             )
-            photo.longitude = self.dms_to_decimal(
+            photo.longitude = dms_to_decimal(
                 *exif[gps + 'Longitude'].value +
                 [exif[gps + 'LongitudeRef'].value]
             )
@@ -518,7 +478,7 @@ class GottenGeography:
         lat, lon = photo.latitude, photo.longitude
         self.preview_image.set_from_pixbuf(photo.thumb)
         self.preview_label.set_label("%s\n%s" % (photo.short_summary(),
-            self.maps_link(lat, lon) if self.valid_coords(lat, lon) else ""))
+            maps_link(lat, lon) if valid_coords(lat, lon) else ""))
     
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
@@ -885,22 +845,15 @@ class GottenGeography:
         """Respond to keyboard shortcuts as typed by user."""
         self.key_actions[Gdk.keyval_name(keyval)]()
     
-    def gconf_key(self, key):
-        """Determine appropriate GConf key that is unique to this application.
-        
-        Returns /apps/gottengeography/key.
-        """
-        return "/".join(['', 'apps', APPNAME.lower(), key])
-    
     def gconf_set(self, key, value):
         """Sets the given GConf key to the given value."""
-        key = self.gconf_key(key)
+        key = gconf_key(key)
         if   type(value) is float: self.gconf_client.set_float(key, value)
         elif type(value) is int:   self.gconf_client.set_int(key, value)
     
     def gconf_get(self, key, type):
         """Gets the given GConf key as the requested type."""
-        key = self.gconf_key(key)
+        key = gconf_key(key)
         if   type is float: return self.gconf_client.get_float(key)
         elif type is int:   return self.gconf_client.get_int(key)
     
@@ -948,4 +901,8 @@ class GottenGeography:
     def main(self):
         """Go!"""
         Gtk.main()
+
+def gconf_key(key):
+    """Determine appropriate GConf key that is unique to this application."""
+    return "/".join(['', 'apps', APPNAME.lower(), key])
 

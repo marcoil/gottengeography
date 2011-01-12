@@ -15,12 +15,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import unittest, os, re, datetime, time, math, random
-from app import GottenGeography
-from datatypes import ReadableDictionary, Photograph
-from gpx import GPXLoader
+
+import os
+import re
+import time
+import math
+import random
+import unittest
+import datetime
+
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
+
+from app import *
+from datatypes import *
+from gps import *
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
@@ -203,7 +212,7 @@ S 10.00000, W 10.00000
 600.7m above sea level</span>""")
         
         self.assertRegexpMatches(
-            self.gui.maps_link(10.0, 10.0),
+            maps_link(10.0, 10.0),
             r'href="http://maps.google.com'
         )
         
@@ -217,22 +226,22 @@ S 10.00000, W 10.00000
         """Test coordinate conversion functions."""
         
         # Really important that this method is bulletproof
-        self.assertFalse(self.gui.valid_coords(None, None))
-        self.assertFalse(self.gui.valid_coords("", ""))
-        self.assertFalse(self.gui.valid_coords(True, True))
-        self.assertFalse(self.gui.valid_coords(False, False))
-        self.assertFalse(self.gui.valid_coords(45, 270))
-        self.assertFalse(self.gui.valid_coords(100, 50))
-        self.assertFalse(self.gui.valid_coords([], 50))
-        self.assertFalse(self.gui.valid_coords(45, {'grunt':42}))
-        self.assertFalse(self.gui.valid_coords("ya", "dun goofed"))
+        self.assertFalse(valid_coords(None, None))
+        self.assertFalse(valid_coords("", ""))
+        self.assertFalse(valid_coords(True, True))
+        self.assertFalse(valid_coords(False, False))
+        self.assertFalse(valid_coords(45, 270))
+        self.assertFalse(valid_coords(100, 50))
+        self.assertFalse(valid_coords([], 50))
+        self.assertFalse(valid_coords(45, {'grunt':42}))
+        self.assertFalse(valid_coords("ya", "dun goofed"))
         
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
         for i in range(100):
             # Oh, and test altitudes too
             altitude = round(random_coord(1000), 6)
-            fraction = self.gui.float_to_rational(altitude)
+            fraction = float_to_rational(altitude)
             self.assertAlmostEqual(
                 abs(altitude),
                 fraction.numerator / fraction.denominator,
@@ -242,10 +251,10 @@ S 10.00000, W 10.00000
             decimal_lat = round(random_coord(90),  6)
             decimal_lon = round(random_coord(180), 6)
             
-            self.assertTrue(self.gui.valid_coords(decimal_lat, decimal_lon))
+            self.assertTrue(valid_coords(decimal_lat, decimal_lon))
             
-            dms_lat = self.gui.decimal_to_dms(decimal_lat)
-            dms_lon = self.gui.decimal_to_dms(decimal_lon)
+            dms_lat = decimal_to_dms(decimal_lat)
+            dms_lon = decimal_to_dms(decimal_lon)
             
             self.assertEqual(len(dms_lat), 3)
             self.assertEqual(
@@ -261,12 +270,12 @@ S 10.00000, W 10.00000
             
             self.assertAlmostEqual(
                 decimal_lat,
-                self.gui.dms_to_decimal(*dms_lat + ["N" if decimal_lat >= 0 else "S"]),
+                dms_to_decimal(*dms_lat + ["N" if decimal_lat >= 0 else "S"]),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
                 decimal_lon,
-                self.gui.dms_to_decimal(*dms_lon + ["E" if decimal_lon >= 0 else "W"]),
+                dms_to_decimal(*dms_lon + ["E" if decimal_lon >= 0 else "W"]),
                 10 # equal to 10 places
             )
     
@@ -366,7 +375,7 @@ S 10.00000, W 10.00000
     
     def test_gconf(self):
         self.assertEqual(
-            self.gui.gconf_key('foobar'),
+            gconf_key('foobar'),
             '/apps/gottengeography/foobar'
         )
         

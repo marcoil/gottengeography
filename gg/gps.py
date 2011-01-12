@@ -1,4 +1,4 @@
-# GottenGeography - Parse GPX files with expat
+# GottenGeography - GPS-related functions including GPX parsing
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,12 +14,52 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 import re
 import time
+import math
+import pyexiv2
 import calendar
 
-from xml.parsers import expat
 from gi.repository import Champlain, Clutter
+from gettext import gettext as _
+from fractions import Fraction
+from xml.parsers import expat
+
+def dms_to_decimal(degrees, minutes, seconds, sign=""):
+    """Convert degrees, minutes, seconds into decimal degrees."""
+    return (-1 if re.match(r'[SWsw]', sign) else 1) * (
+        degrees.to_float()        +
+        minutes.to_float() / 60   +
+        seconds.to_float() / 3600
+    )
+
+def decimal_to_dms(decimal):
+    """Convert decimal degrees into degrees, minutes, seconds."""
+    remainder, degrees = math.modf(abs(decimal))
+    remainder, minutes = math.modf(remainder * 60)
+    return [
+        pyexiv2.Rational(degrees, 1),
+        pyexiv2.Rational(minutes, 1),
+        float_to_rational(remainder * 60)
+    ]
+
+def float_to_rational(value):
+    """Create a pyexiv2.Rational with help from fractions.Fraction."""
+    frac = Fraction(abs(value)).limit_denominator(99999)
+    return pyexiv2.Rational(frac.numerator, frac.denominator)
+
+def valid_coords(lat, lon):
+    """Determine the validity of coordinates."""
+    if type(lat) not in (float, int): return False
+    if type(lon) not in (float, int): return False
+    return abs(lat) <= 90 and abs(lon) <= 180
+
+def maps_link(lat, lon, anchor=_("View in Google Maps")):
+    """Create a Pango link to Google Maps."""
+    return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (lat, lon, anchor)
+
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
