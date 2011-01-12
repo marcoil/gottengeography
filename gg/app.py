@@ -771,6 +771,9 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
+        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+            self.map_view.connect('notify::%s' % signal, self.display_actors)
+        
         if not animate_crosshair:
             return
         
@@ -787,9 +790,6 @@ class GottenGeography:
             self.display_actors()
             self.redraw_interface()
             time.sleep(0.002)
-        
-        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::%s' % signal, self.display_actors)
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
