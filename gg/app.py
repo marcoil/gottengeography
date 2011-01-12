@@ -754,19 +754,21 @@ class GottenGeography:
         
         self.coords_bg = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(255, 255, 255, 164))
-        self.prep_actor(self.coords_bg)
         self.coords_bg.set_position(0, 0)
         
         self.coords = Clutter.Text()
         self.coords.set_single_line_mode(True)
-        self.prep_actor(self.coords)
         
         self.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32))
         self.crosshair.set_property('has-border', True)
         self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.crosshair.set_border_width(1)
-        self.prep_actor(self.crosshair)
+        
+        for actor in [self.crosshair, self.coords, self.coords_bg]:
+            actor.set_parent(self.stage)
+            actor.raise_top()
+            actor.show()
         
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
@@ -817,12 +819,6 @@ class GottenGeography:
             button.set_label(label)
         self.toolbar.add(button)
         self.button[re.sub(r'-', '_', stock_id)] = button
-    
-    def prep_actor(self, actor):
-        """Do some standard things to a ClutterActor."""
-        actor.set_parent(self.stage)
-        actor.raise_top()
-        actor.show()
     
     def toggle_selected_photos(self, button=None):
         """Toggle the selection of photos."""
