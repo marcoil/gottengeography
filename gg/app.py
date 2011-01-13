@@ -155,27 +155,11 @@ class GottenGeography:
         """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
         marker.set_scale(*[marker.get_scale()[0] / 1.05] * 2)
     
-    def set_marker_highlight(self, marker, area, transparent):
-        """Set the highlightedness of the given photo's ChamplainMarker."""
-        if marker.get_property('visible'):
-            highlight = area is not None
-            marker.set_property('opacity', 64 if transparent else 255)
-            marker.set_scale(*[1.1 if highlight else 1] * 2)
-            marker.set_highlighted(highlight)
-            if highlight:
-                marker.raise_top()
-                lat = marker.get_latitude()
-                lon = marker.get_longitude()
-                area[0] = min(area[0], lat)
-                area[1] = min(area[1], lon)
-                area[2] = max(area[2], lat)
-                area[3] = max(area[3], lon)
-    
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
         selection_exists = sel.count_selected_rows() > 0
         for photo in self.photo.values():
-            self.set_marker_highlight(photo.marker, None, selection_exists)
+            photo.set_marker_highlight(None, selection_exists)
             # Maintain self.selected for easy iterating.
             if sel.iter_is_selected(photo.iter): self.selected.add(photo)
             else:                                self.selected.discard(photo)
@@ -183,7 +167,7 @@ class GottenGeography:
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
             for photo in self.selected:
-                self.set_marker_highlight(photo.marker, area, False)
+                photo.set_marker_highlight(area, False)
             if valid_coords(area[0], area[1]):
                 self.remember_location()
                 self.map_view.ensure_visible(*area + [False])
@@ -211,7 +195,6 @@ class GottenGeography:
         
         self.gpx       = []
         self.tracks    = {}
-        self.gpx_state = {}
         self.metadata  = {
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
@@ -304,7 +287,7 @@ class GottenGeography:
         start_points = len(self.tracks)
         start_time   = time.clock()
         
-        gpx = GPXLoader(self, filename)
+        gpx = GPXLoader(self.map_view, self.progressbar, filename)
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
         
@@ -355,9 +338,7 @@ class GottenGeography:
                    (self.tracks[hi]['point'].lon * hi_perc))
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
-        self.modify_coordinates(photo, lat, lon, ele)
-        if photo.marker.get_highlighted():
-            photo.marker.raise_top()
+        photo.set_location(self.cache, lat, lon, ele)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -387,7 +368,7 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for photo in self.selected:
             photo.manual = True
-            self.modify_coordinates(photo,
+            photo.set_location(self.cache,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
             photo.marker.raise_top()
@@ -416,15 +397,6 @@ class GottenGeography:
             del self.photo[photo.filename]
         self.button.gtk_select_all.set_active(False)
         self.update_sensitivity()
-    
-    def modify_coordinates(self, photo, lat, lon, ele=None):
-        """Alter the coordinates of a loaded photo."""
-        photo.update( { 'altitude':  ele,
-                        'latitude':  lat,
-                        'longitude': lon  } )
-        photo.position_marker()
-        photo.request_geoname(self)
-        self.modify_summary(photo)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -577,14 +549,12 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
+        self.cache    = GeoCache(self.modify_summary)
         self.selected = set()
         self.modified = set()
         self.history  = []
         self.photo    = {}
         self.gpx      = []
-        
-        self.geonames_cache = {}
-        self.geonames_queue = {}
         
         GtkClutter.init([])
         self.champlain = GtkChamplain.Embed()

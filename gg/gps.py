@@ -22,7 +22,7 @@ import math
 import pyexiv2
 import calendar
 
-from gi.repository import Champlain, Clutter
+from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
 from fractions import Fraction
 from xml.parsers import expat
@@ -64,9 +64,8 @@ def maps_link(lat, lon, anchor=_("View in Google Maps")):
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, gui, filename):
+    def __init__(self, map_view, progressbar, filename):
         """Create the parser and begin parsing."""
-        self.gui      = gui
         self.polygons = []
         self.state    = {}
         self.tracks   = {}
@@ -74,6 +73,8 @@ class GPXLoader:
         self.alpha    = float('inf')
         self.omega    = float('-inf')
         self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
+        self.map_view = map_view
+        self.progress = progressbar
         
         # TODO this should be user-configurable.
         self.track_a = Clutter.Color.new(128, 0,  192, 128)
@@ -123,7 +124,7 @@ class GPXLoader:
             self.polygons[-1].set_stroke_color(self.track_a
                 if len(self.polygons) % 2 else self.track_b)
             self.polygons[-1].show()
-            self.gui.map_view.add_polygon(self.polygons[-1])
+            self.map_view.add_polygon(self.polygons[-1])
     
     def element_data(self, data):
         """Expat CharacterDataHandler.
@@ -177,8 +178,9 @@ class GPXLoader:
         self.area[2] = max(self.area[2], lat)
         self.area[3] = max(self.area[3], lon)
         if time.clock() - self.clock > .2:
-            self.gui.map_view.ensure_visible(*self.area + [False])
-            self.gui.progressbar.pulse()
-            self.gui.redraw_interface()
+            self.map_view.ensure_visible(*self.area + [False])
+            self.progress.pulse()
+            while Gtk.events_pending():
+                Gtk.main_iteration()
             self.clock = time.clock()
 

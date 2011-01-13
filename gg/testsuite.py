@@ -136,17 +136,16 @@ class GottenGeographyTester(unittest.TestCase):
                 self.assertEqual(other.marker.get_scale(), (1, 1))
                 self.assertFalse(other.marker.get_highlighted())
             
-            self.gui.set_marker_highlight(photo.marker, None, True)
+            photo.set_marker_highlight(None, True)
             self.assertEqual(photo.marker.get_property('opacity'), 64)
             self.assertFalse(photo.marker.get_highlighted())
-            self.gui.set_marker_highlight(photo.marker, [0,0,0,0,False], False)
+            photo.set_marker_highlight([0,0,0,0,False], False)
             self.assertEqual(photo.marker.get_property('opacity'), 255)
             self.assertTrue(photo.marker.get_highlighted())
         
         self.gui.clear_all_gpx()
         self.assertEqual(len(self.gui.gpx), 0)
         self.assertEqual(len(self.gui.tracks), 0)
-        self.assertEqual(len(self.gui.gpx_state), 0)
         
         # Wait for geonames to finish downloading before saving
         mod = self.gui.modified.copy()
