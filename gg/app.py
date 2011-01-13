@@ -28,7 +28,7 @@ import pyexiv2
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from gi.repository import Clutter, GtkChamplain, Champlain
+from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
 from gettext import gettext as _
 
@@ -586,7 +586,7 @@ class GottenGeography:
         self.geonames_cache = {}
         self.geonames_queue = {}
         
-        Clutter.init([])
+        GtkClutter.init([])
         self.champlain = GtkChamplain.Embed()
         self.map_view = self.champlain.get_view()
         self.map_view.set_property('show-scale', True)
