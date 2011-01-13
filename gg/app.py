@@ -371,7 +371,6 @@ class GottenGeography:
             photo.set_location(self.cache,
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
-            photo.marker.raise_top()
         self.update_sensitivity()
     
     def revert_selected_photos(self, button=None):
@@ -384,7 +383,6 @@ class GottenGeography:
             self.redraw_interface(1 - len(mod_in_sel) / total,
                 os.path.basename(photo.filename))
             self.add_or_reload_photo(photo.filename)
-            photo.marker.raise_top()
         self.progressbar.hide()
         self.update_sensitivity()
     
