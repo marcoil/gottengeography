@@ -62,7 +62,8 @@ class Photograph(ReadableDictionary):
     
     def set_location(self, cache, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
-        self.altitude  = ele
+        if ele is not None:
+            self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
         self.position_marker()
