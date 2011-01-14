@@ -205,6 +205,28 @@ class GottenGeography:
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
+    def open_files(self, files):
+        """Attempt to load all of the specified files."""
+        self.progressbar.show()
+        invalid_files, total = [], len(files)
+        while len(files) > 0:
+            filename = files.pop()
+            self.redraw_interface(1 - len(files) / total,
+                os.path.basename(filename))
+            # Assume the file is an image; if that fails, assume it's GPX;
+            # if that fails, show an error
+            try:
+                try:            self.add_or_reload_photo(filename)
+                except IOError: self.load_gpx_from_file(filename)
+            except IOError:
+                invalid_files.append(os.path.basename(filename))
+        if len(invalid_files) > 0:
+            self.status_message(_("Could not open: %s") %
+                ", ".join(invalid_files))
+        self.progressbar.hide()
+        self.update_sensitivity()
+        self.update_all_marker_highlights(self.listsel)
+    
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
@@ -472,32 +494,12 @@ class GottenGeography:
         chooser.set_preview_widget_active(True)
         chooser.connect("selection-changed", self.update_preview)
         # Exit if the user clicked anything other than "OK"
-        if chooser.run() <> Gtk.ResponseType.OK:
+        if chooser.run() == Gtk.ResponseType.OK:
+            files = chooser.get_filenames()
             chooser.destroy()
-            return
-        self.progressbar.show()
-        # Make the chooser disappear immediately after clicking a button,
-        # anything else feels unresponsive
-        files = chooser.get_filenames()
-        chooser.destroy()
-        invalid_files, total = [], len(files)
-        while len(files) > 0:
-            filename = files.pop()
-            self.redraw_interface(1 - len(files) / total,
-                os.path.basename(filename))
-            # Assume the file is an image; if that fails, assume it's GPX;
-            # if that fails, show an error
-            try:
-                try:            self.add_or_reload_photo(filename)
-                except IOError: self.load_gpx_from_file(filename)
-            except IOError:
-                invalid_files.append(os.path.basename(filename))
-        if len(invalid_files) > 0:
-            self.status_message(_("Could not open: %s") %
-                ", ".join(invalid_files))
-        self.progressbar.hide()
-        self.update_sensitivity()
-        self.update_all_marker_highlights(self.listsel)
+            self.open_files(files)
+        else:
+            chooser.destroy()
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
