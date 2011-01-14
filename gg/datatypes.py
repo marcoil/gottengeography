@@ -186,9 +186,10 @@ class GeoCache:
         """This callback method is executed when geoname download completes."""
         try:
             obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
-        except:
+        except Exception as inst:
             if key in self.queue: del self.queue[key]
             if key in self.stash: del self.stash[key]
+            print inst.args
             return
         geoname = {}
         for data in obj:

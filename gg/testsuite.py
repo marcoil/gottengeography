@@ -116,11 +116,14 @@ class GottenGeographyTester(unittest.TestCase):
         # Check that the GPX is loaded
         self.assertEqual(len(self.gui.tracks),   374)
         self.assertEqual(len(self.gui.gpx), 1)
-        self.assertEqual(len(self.gui.gpx[-1].polygons), 1)
+        self.assertEqual(len(self.gui.gpx[0].polygons), 1)
+        self.assertEqual(len(self.gui.gpx[0].tracks), 374)
+        self.assertEqual(self.gui.gpx[0].alpha, 1287259751)
+        self.assertEqual(self.gui.gpx[0].omega, 1287260756)
         self.assertEqual(self.gui.metadata['alpha'], 1287259751)
         self.assertEqual(self.gui.metadata['omega'], 1287260756)
         self.assertEqual(
-            self.gui.gpx[-1].area,
+            self.gui.gpx[0].area,
             [53.522495999999997, -113.453148,
              53.537399000000001, -113.443061]
         )
@@ -171,6 +174,8 @@ class GottenGeographyTester(unittest.TestCase):
                 time.sleep(.1)
                 self.gui.redraw_interface()
         
+        self.assertEqual(len(self.gui.cache.stash), 4)
+        
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
         
@@ -195,7 +200,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         marker = ReadableDictionary()
         marker.get_text = lambda: 'filename.jpg'
-        photo = Photograph(marker.get_text(), None, None, None)
+        photo = Photograph(marker.get_text(), None, None, None, None)
         photo.marker = marker
         
         self.assertEqual(photo.pretty_coords(), "Not geotagged")
