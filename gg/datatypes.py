@@ -50,10 +50,11 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, filename, thumb, cache, callback):
+    def __init__(self, filename, thumb, exif, cache, callback):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
         self.thumb    = thumb
+        self.exif     = exif
         self.cache    = cache
         self.callback = callback
         self.manual   = False

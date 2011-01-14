@@ -234,8 +234,7 @@ class GottenGeography:
         for photo in self.modified.copy():
             self.redraw_interface(1 - len(self.modified) / total,
                 os.path.basename(photo.filename))
-            exif = pyexiv2.ImageMetadata(photo.filename)
-            exif.read()
+            exif = photo.exif
             if photo.altitude is not None:
                 exif[key + 'Altitude']    = float_to_rational(photo.altitude)
                 exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
@@ -269,8 +268,9 @@ class GottenGeography:
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
             thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    filename, thumb_size, thumb_size)
-            photo = Photograph(filename, thumb, self.cache, self.modify_summary)
+                filename, thumb_size, thumb_size)
+            photo = Photograph(filename, thumb, exif,
+                self.cache, self.modify_summary)
         except:
             raise IOError
         try:
