@@ -50,6 +50,22 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertTrue(self.gui.app_container.get_visible())
         self.assertEqual(len(self.gui.button), 11)
         self.assertEqual(len(self.gui.offset), 3)
+        
+        # Button sensitivity
+        self.assertFalse(self.gui.button.gtk_apply.get_sensitive())
+        self.assertFalse(self.gui.button.gtk_close.get_sensitive())
+        self.assertFalse(self.gui.button.gtk_save.get_sensitive())
+        self.assertFalse(self.gui.button.gtk_revert_to_saved.get_sensitive())
+        self.assertFalse(self.gui.button.gtk_clear.get_sensitive())
+        self.gui.selected.add(True)
+        self.gui.modified.add(True)
+        self.gui.tracks["herp"] = "derp"
+        self.gui.update_sensitivity()
+        self.assertTrue(self.gui.button.gtk_apply.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_close.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_save.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_revert_to_saved.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_clear.get_sensitive())
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -312,13 +328,28 @@ S 10.00000, W 10.00000
         
         self.gui.map_view.center_on(lat, lon)
         
-        self.gui.map_view.set_zoom_level(1)
+        self.gui.map_view.set_zoom_level(0)
+        self.gui.zoom_button_sensitivity()
+        self.assertFalse(self.gui.button.gtk_zoom_out.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.gui.zoom_in()
+        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertEqual(1, self.gui.map_view.get_zoom_level())
         self.gui.zoom_in()
         self.assertEqual(2, self.gui.map_view.get_zoom_level())
         self.gui.zoom_in()
         self.assertEqual(3, self.gui.map_view.get_zoom_level())
         self.gui.zoom_out()
         self.assertEqual(2, self.gui.map_view.get_zoom_level())
+        self.gui.map_view.set_zoom_level(self.gui.map_view.get_max_zoom_level()-1)
+        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
+        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.gui.zoom_in()
+        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
+        self.assertFalse(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertEqual(self.gui.map_view.get_max_zoom_level(),
+            self.gui.map_view.get_zoom_level())
         
         self.gui.return_to_last()
         self.assertEqual(history_length + 1, len(self.gui.history))
