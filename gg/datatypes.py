@@ -50,25 +50,33 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, filename, thumb):
+    def __init__(self, filename, thumb, cache, callback):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
         self.thumb    = thumb
+        self.cache    = cache
+        self.callback = callback
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
         'CountryName', 'CountryCode', 'ProvinceState', 'City',
         'marker', 'iter', 'timezone' ]:
             self[key] = None
     
-    def set_location(self, cache, lat, lon, ele=None):
+    def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
         if ele is not None:
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
         self.position_marker()
-        self.request_geoname(cache)
-        cache.callback(self)
+        self.cache.request_geoname(self)
+        self.callback(self)
+    
+    def set_geoname(self, geoname):
+        """Insert geonames into the photo."""
+        for geocode, iptc in geonames_of_interest.items():
+            self[iptc] = geoname.get(geocode)
+        self.callback(self)
     
     def position_marker(self):
         """Maintain correct position and visibility of ChamplainMarker."""
@@ -95,48 +103,6 @@ class Photograph(ReadableDictionary):
                 area[1] = min(area[1], lon)
                 area[2] = max(area[2], lat)
                 area[3] = max(area[3], lon)
-    
-    def request_geoname(self, cache):
-        """Use the GeoNames.org webservice to name coordinates."""
-        if not self.valid_coords():
-            return
-        key = "%.2f,%.2f" % (self.latitude, self.longitude)
-        if key in cache.stash:
-            if cache.stash[key] is None:
-                cache.queue[key].append(self)
-            else:
-                self.process_geoname(cache.stash[key], cache.callback)
-        else:
-            cache.queue[key] = [self]
-            cache.stash[key] = None
-            gfile = Gio.file_new_for_uri(
-                'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
-                % (self.latitude, self.longitude) +
-                '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
-            gfile.load_contents_async(None, self.receive_geoname, [cache, key])
-    
-    def receive_geoname(self, gfile, result, cache_key):
-        """This callback method is executed when geoname download completes."""
-        cache, key = cache_key
-        try:
-            obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
-        except:
-            if key in cache.queue: del cache.queue[key]
-            if key in cache.stash: del cache.stash[key]
-            return
-        geoname = {}
-        for data in obj:
-            geoname.update(data)
-        cache.stash[key] = geoname
-        while len(cache.queue[key]) > 0:
-            photo = cache.queue[key].pop()
-            photo.process_geoname(geoname, cache.callback)
-    
-    def process_geoname(self, geoname, callback):
-        """Insert geonames into the photo and update the GtkListStore."""
-        for geocode, iptc in geonames_of_interest.items():
-            self[iptc] = geoname.get(geocode)
-        callback(self)
     
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
@@ -192,10 +158,44 @@ class Photograph(ReadableDictionary):
 class GeoCache:
     """This class serves as a data store for caching geonames.org data."""
     
-    def __init__(self, callback):
+    def __init__(self):
         self.stash = {}
         self.queue = {}
-        self.callback = callback
+    
+    def request_geoname(self, photo):
+        """Use the GeoNames.org webservice to name coordinates."""
+        if not photo.valid_coords():
+            return
+        key = "%.2f,%.2f" % (photo.latitude, photo.longitude)
+        if key in self.stash:
+            if self.stash[key] is None:
+                self.queue[key].append(photo)
+            else:
+                photo.set_geoname(self.stash[key])
+        else:
+            self.queue[key] = [photo]
+            self.stash[key] = None
+            gfile = Gio.file_new_for_uri(
+                'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
+                % (photo.latitude, photo.longitude) +
+                '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
+            gfile.load_contents_async(None, self.receive_geoname, key)
+    
+    def receive_geoname(self, gfile, result, key):
+        """This callback method is executed when geoname download completes."""
+        try:
+            obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
+        except:
+            if key in self.queue: del self.queue[key]
+            if key in self.stash: del self.stash[key]
+            return
+        geoname = {}
+        for data in obj:
+            geoname.update(data)
+        self.stash[key] = geoname
+        while len(self.queue[key]) > 0:
+            photo = self.queue[key].pop()
+            photo.set_geoname(geoname)
 
 # This dictionary maps geonames.org jargon (keys) into IPTC jargon (values).
 geonames_of_interest = {

@@ -179,7 +179,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         marker = ReadableDictionary()
         marker.get_text = lambda: 'filename.jpg'
-        photo = Photograph(marker.get_text(), None)
+        photo = Photograph(marker.get_text(), None, None, None)
         photo.marker = marker
         
         self.assertEqual(photo.pretty_coords(), "Not geotagged")

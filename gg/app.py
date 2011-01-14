@@ -246,9 +246,9 @@ class GottenGeography:
         try:
             exif = pyexiv2.ImageMetadata(filename)
             exif.read()
-            photo = Photograph(
-                filename, GdkPixbuf.Pixbuf.new_from_file_at_size(
-                filename, thumb_size, thumb_size))
+            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    filename, thumb_size, thumb_size)
+            photo = Photograph(filename, thumb, self.cache, self.modify_summary)
         except:
             raise IOError
         try:
@@ -338,7 +338,7 @@ class GottenGeography:
                    (self.tracks[hi]['point'].lon * hi_perc))
             ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
                    (self.tracks[hi]['elevation'] * hi_perc))
-        photo.set_location(self.cache, lat, lon, ele)
+        photo.set_location(lat, lon, ele)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -368,7 +368,7 @@ class GottenGeography:
         """Manually apply map center coordinates to all selected photos."""
         for photo in self.selected:
             photo.manual = True
-            photo.set_location(self.cache,
+            photo.set_location(
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
         self.update_sensitivity()
@@ -547,7 +547,7 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        self.cache    = GeoCache(self.modify_summary)
+        self.cache    = GeoCache()
         self.selected = set()
         self.modified = set()
         self.history  = []
