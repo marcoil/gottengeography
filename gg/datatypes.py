@@ -189,7 +189,7 @@ class GeoCache:
         except Exception as inst:
             if key in self.queue: del self.queue[key]
             if key in self.stash: del self.stash[key]
-            print inst.args
+            print inst
             return
         geoname = {}
         for data in obj:
