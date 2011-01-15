@@ -516,15 +516,9 @@ class GottenGeography:
             Gtk.main_quit()
             return True
         dialog = self.builder.get_object("quitdialog")
-        dialog.format_secondary_markup(
-            dialog.get_property('secondary-text') % len(self.modified))
-        dialog.add_buttons(
-            _("Close _without Saving"), Gtk.ResponseType.CLOSE,
-            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
-        dialog.set_default_response(Gtk.ResponseType.ACCEPT)
+        dialog.format_secondary_markup(self.strings.quit % len(self.modified))
         response = dialog.run()
-        dialog.destroy()
+        dialog.hide()
         self.redraw_interface()
         if response == Gtk.ResponseType.ACCEPT: self.save_all_files()
         if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
@@ -534,13 +528,14 @@ class GottenGeography:
         """Describe this application to the user."""
         dialog = self.builder.get_object("aboutdialog")
         dialog.run()
-        dialog.destroy()
+        dialog.hide()
     
 ################################################################################
 # Initialization and Gtk boilerplate/housekeeping type stuff and such.
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
+        self.strings  = ReadableDictionary()
         self.cache    = GeoCache()
         self.selected = set()
         self.modified = set()
@@ -559,6 +554,7 @@ class GottenGeography:
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
         self.builder.add_from_file("%s/%s" % (PACKAGE_DIR, "ui.glade"))
+        self.augment_gtk_builder()
         
         self.toolbar = Gtk.Toolbar()
         self.button  = ReadableDictionary()
@@ -758,6 +754,19 @@ class GottenGeography:
             self.display_actors()
             self.redraw_interface()
             time.sleep(0.002)
+    
+    def augment_gtk_builder(self):
+        """Do some initializy stuff to objects constructed by GtkBuilder.
+        
+        I suspect that this method only exists because I'm using GtkBuilder
+        poorly, but we'll see how it goes. YAY learning!"""
+        quit = self.builder.get_object("quitdialog")
+        quit.add_buttons(
+            _("Close _without Saving"), Gtk.ResponseType.CLOSE,
+            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
+        quit.set_default_response(Gtk.ResponseType.ACCEPT)
+        self.strings.quit = quit.get_property('secondary-text')
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""
