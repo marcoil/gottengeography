@@ -145,8 +145,8 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
     <child>
       <object class="GtkImage" id="preview_image">
         <property name="visible">True</property>
-        <property name="xpad">10</property>
-        <property name="ypad">10</property>
+        <property name="xpad">5</property>
+        <property name="ypad">5</property>
         <property name="stock">gtk-file</property>
         <property name="icon-size">6</property>
       </object>
