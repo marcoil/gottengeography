@@ -189,7 +189,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.selected), 0)
         
         for filename in files:
-            photo = self.gui.load_exif_from_file(filename)
+            photo = Photograph(filename, self.gui.cache, self.gui.modify_summary)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
             """ Geonames test disabled due to overloaded servers
@@ -202,10 +202,15 @@ class GottenGeographyTester(unittest.TestCase):
         """Ensure that strings print properly."""
         
         marker = ReadableDictionary()
-        marker.get_text = lambda: 'filename.jpg'
-        photo = Photograph(marker.get_text(), None, None, None, None)
+        marker.get_text = lambda: PACKAGE_DIR + '/../demo/IMG_2411.JPG'
+        photo = Photograph(marker.get_text(), self.gui.cache, self.gui.modify_summary)
         photo.marker = marker
         
+        for iptc in geonames_of_interest.values():
+            photo[iptc] = None
+        
+        photo.latitude  = None
+        photo.longitude = None
         self.assertEqual(photo.pretty_coords(), "Not geotagged")
         photo.latitude  = 10.0
         photo.longitude = 10.0
@@ -214,10 +219,12 @@ class GottenGeographyTester(unittest.TestCase):
         photo.longitude = -10.0
         self.assertEqual(photo.pretty_coords(), "S 10.00000, W 10.00000")
         
+        photo.timestamp = None
         self.assertEqual(photo.pretty_time(), "No timestamp")
         photo.timestamp = 999999999
         self.assertEqual(photo.pretty_time(), "2001-09-08 07:46:39 PM")
         
+        photo.altitude = None
         self.assertEqual(photo.pretty_elevation(), "")
         photo.altitude = -10.20005
         self.assertEqual(photo.pretty_elevation(), "10.2m below sea level")
@@ -229,7 +236,7 @@ class GottenGeographyTester(unittest.TestCase):
 S 10.00000, W 10.00000
 600.7m above sea level""")
         self.assertEqual(photo.long_summary(),
-"""<span size="larger">filename.jpg</span>
+"""<span size="larger">IMG_2411.JPG</span>
 <span style="italic" size="smaller">2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000
 600.7m above sea level</span>""")

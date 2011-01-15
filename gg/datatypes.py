@@ -14,11 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, time, json
-from gettext import gettext as _
-from gi.repository import Gio
+import os
+import time
+import json
+import pyexiv2
 
-from gps import valid_coords, maps_link
+from gettext import gettext as _
+from gi.repository import Gio, GdkPixbuf
+
+from gps import *
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -50,18 +54,51 @@ class ReadableDictionary:
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, filename, thumb, exif, cache, callback):
+    def __init__(self, filename, cache, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
+        gps = 'Exif.GPSInfo.GPS'
         self.filename = filename
-        self.thumb    = thumb
-        self.exif     = exif
         self.cache    = cache
         self.callback = callback
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'CountryName', 'CountryCode', 'ProvinceState', 'City',
-        'marker', 'iter', 'timezone' ]:
+        'marker', 'iter', 'timezone' ] + geonames_of_interest.values():
             self[key] = None
+        try:
+            self.exif = pyexiv2.ImageMetadata(filename)
+            self.exif.read()
+            self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                filename, thumb_size, thumb_size)
+        except:
+            raise IOError
+        try:
+            # This assumes that the camera and computer have the same timezone.
+            self.timestamp = int(time.mktime(
+                self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
+        except:
+            self.timestamp = int(os.stat(filename).st_mtime)
+        try:
+            self.latitude = dms_to_decimal(
+                *self.exif[gps + 'Latitude'].value +
+                [self.exif[gps + 'LatitudeRef'].value]
+            )
+            self.longitude = dms_to_decimal(
+                *self.exif[gps + 'Longitude'].value +
+                [self.exif[gps + 'LongitudeRef'].value]
+            )
+        except KeyError:
+            pass
+        try:
+            self.altitude = self.exif[gps + 'Altitude'].value.to_float()
+            if int(self.exif[gps + 'AltitudeRef'].value) > 0:
+                self.altitude *= -1
+        except:
+            pass
+        for iptc in geonames_of_interest.values():
+            try:
+                self[iptc] = self.exif['Iptc.Application2.' + iptc].values[0]
+            except KeyError:
+                pass
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""

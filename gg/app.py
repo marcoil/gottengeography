@@ -23,7 +23,6 @@ import os
 import re
 import time
 import gettext
-import pyexiv2
 
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
@@ -243,7 +242,7 @@ class GottenGeography:
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = self.load_exif_from_file(filename)
+        photo = Photograph(filename, self.cache, self.modify_summary)
         photo.update( {
             'iter':   self.liststore.append([None] * 4),
             'marker': self.add_marker(filename)
@@ -261,52 +260,6 @@ class GottenGeography:
         self.liststore.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
         self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
-    
-    def load_exif_from_file(self, filename, thumb_size=200):
-        """Read photo metadata from disk using the pyexiv2 module.
-        
-        Raises IOError if the specified file is not an image format supported by
-        both pyexiv2 and GdkPixbuf. Known to work with JPG, PNG, DNG, and NEF.
-        """
-        gps = 'Exif.GPSInfo.GPS'
-        try:
-            exif = pyexiv2.ImageMetadata(filename)
-            exif.read()
-            thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                filename, thumb_size, thumb_size)
-            photo = Photograph(filename, thumb, exif,
-                self.cache, self.modify_summary)
-        except:
-            raise IOError
-        try:
-            # This assumes that the camera and computer have the same timezone.
-            photo.timestamp = int(time.mktime(
-                exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
-        except:
-            photo.timestamp = int(os.stat(filename).st_mtime)
-        try:
-            photo.latitude = dms_to_decimal(
-                *exif[gps + 'Latitude'].value +
-                [exif[gps + 'LatitudeRef'].value]
-            )
-            photo.longitude = dms_to_decimal(
-                *exif[gps + 'Longitude'].value +
-                [exif[gps + 'LongitudeRef'].value]
-            )
-        except KeyError:
-            pass
-        try:
-            photo.altitude = exif[gps + 'Altitude'].value.to_float()
-            if int(exif[gps + 'AltitudeRef'].value) > 0:
-                photo.altitude *= -1
-        except:
-            pass
-        for iptc in geonames_of_interest.values():
-            try:
-                photo[iptc] = exif['Iptc.Application2.' + iptc].values[0]
-            except KeyError:
-                pass
-        return photo
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -471,7 +424,7 @@ class GottenGeography:
         image = self.builder.get_object("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = self.load_exif_from_file(chooser.get_preview_filename(), 300)
+            photo = Photograph(chooser.get_preview_filename(), self.cache, self.modify_summary, 300)
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
@@ -809,6 +762,7 @@ class GottenGeography:
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.statusbar.push(self.statusbar.get_context_id("msg"), message)
+        print message
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
