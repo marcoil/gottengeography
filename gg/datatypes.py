@@ -196,8 +196,7 @@ class GeoCache:
             geoname.update(data)
         self.stash[key] = geoname
         while len(self.queue[key]) > 0:
-            photo = self.queue[key].pop()
-            photo.set_geoname(geoname)
+            self.queue[key].pop().set_geoname(geoname)
 
 # This dictionary maps geonames.org jargon (keys) into IPTC jargon (values).
 geonames_of_interest = {
