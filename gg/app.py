@@ -36,7 +36,6 @@ from gettext import gettext as _
 #                                    --- Isaac Newton
 
 from datatypes import *
-from longstrings import *
 from gps import *
 
 PACKAGE_DIR = os.path.dirname(__file__)
@@ -516,18 +515,14 @@ class GottenGeography:
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
-        dialog = Gtk.MessageDialog(parent=self.window,
-            flags=Gtk.DialogFlags.MODAL, title=" ")
-        dialog.set_property('message-type', Gtk.MessageType.WARNING)
-        dialog.set_markup(SAVE_WARNING % len(self.modified))
+        dialog = self.builder.get_object("quitdialog")
+        dialog.format_secondary_markup(
+            dialog.get_property('secondary-text') % len(self.modified))
         dialog.add_buttons(
             _("Close _without Saving"), Gtk.ResponseType.CLOSE,
             Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
             Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
         dialog.set_default_response(Gtk.ResponseType.ACCEPT)
-        # If we don't dialog.destroy() here, and the user chooses to save files,
-        # the dialog stays open during the save, which looks very unresponsive
-        # and makes the application feel sluggish.
         response = dialog.run()
         dialog.destroy()
         self.redraw_interface()
@@ -562,6 +557,7 @@ class GottenGeography:
         self.map_view.add_layer(self.map_photo_layer)
         
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain(APPNAME.lower())
         self.builder.add_from_file("%s/%s" % (PACKAGE_DIR, "ui.glade"))
         
         self.toolbar = Gtk.Toolbar()
