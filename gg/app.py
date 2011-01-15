@@ -48,7 +48,7 @@ class GottenGeography:
     """
     
 ################################################################################
-# Champlain. This section contains methods that manipulate the map.
+# Map navigation section. These methods move and zoom the map around.
 ################################################################################
     
     def remember_location_with_gconf(self):
@@ -100,6 +100,10 @@ class GottenGeography:
         status, lat, lon = self.map_view.get_coords_at(int(x), int(y))
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
+    
+################################################################################
+# Map features section. These methods control map objects.
+################################################################################
     
     def display_actors(self, stage=None, parameter=None):
         """Position and update my custom ClutterActors.
@@ -228,35 +232,34 @@ class GottenGeography:
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
     
-    def save_all_files(self, widget=None):
-        """Ensure all loaded files are saved."""
-        self.progressbar.show()
-        total, key = len(self.modified), 'Exif.GPSInfo.GPS'
-        for photo in self.modified.copy():
-            self.redraw_interface(1 - len(self.modified) / total,
-                os.path.basename(photo.filename))
-            exif = photo.exif
-            if photo.altitude is not None:
-                exif[key + 'Altitude']    = float_to_rational(photo.altitude)
-                exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
-            exif[key + 'Latitude']     = decimal_to_dms(photo.latitude)
-            exif[key + 'LatitudeRef']  = "N" if photo.latitude >= 0 else "S"
-            exif[key + 'Longitude']    = decimal_to_dms(photo.longitude)
-            exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
-            exif[key + 'MapDatum']     = 'WGS-84'
-            for iptc in geonames_of_interest.values():
-                if photo[iptc] is not None:
-                    exif['Iptc.Application2.' + iptc] = [photo[iptc]]
-            try:
-                exif.write()
-            except Exception as inst:
-                self.status_message(", ".join(inst.args))
-            else:
-                self.modified.discard(photo)
-                self.liststore.set_value(photo.iter, self.SUMMARY,
-                    photo.long_summary())
+    def add_or_reload_photo(self, filename):
+        """Create or update a row in the ListStore.
+        
+        Checks if the file has already been loaded, and if not, creates a new
+        row in the ListStore. Either way, it then populates that row with
+        photo metadata as read from disk. Effectively, this is used both for
+        loading new photos, and reverting old photos, discarding any changes.
+        
+        Raises IOError if filename refers to a file that is not a photograph.
+        """
+        photo = self.load_exif_from_file(filename)
+        photo.update( {
+            'iter':   self.liststore.append([None] * 4),
+            'marker': self.add_marker(filename)
+        } if filename not in self.photo else {
+            'iter':   self.photo[filename].iter,
+            'marker': self.photo[filename].marker
+        } )
+        
+        photo.position_marker()
+        self.modified.discard(photo)
+        self.photo[filename] = photo
+        self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
+        self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
+        self.liststore.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
+        self.liststore.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
+        self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
-        self.progressbar.hide()
     
     def load_exif_from_file(self, filename, thumb_size=200):
         """Read photo metadata from disk using the pyexiv2 module.
@@ -325,8 +328,38 @@ class GottenGeography:
         for photo in self.photo.values():
             self.auto_timestamp_comparison(photo)
     
+    def save_all_files(self, widget=None):
+        """Ensure all loaded files are saved."""
+        self.progressbar.show()
+        total, key = len(self.modified), 'Exif.GPSInfo.GPS'
+        for photo in self.modified.copy():
+            self.redraw_interface(1 - len(self.modified) / total,
+                os.path.basename(photo.filename))
+            exif = photo.exif
+            if photo.altitude is not None:
+                exif[key + 'Altitude']    = float_to_rational(photo.altitude)
+                exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
+            exif[key + 'Latitude']     = decimal_to_dms(photo.latitude)
+            exif[key + 'LatitudeRef']  = "N" if photo.latitude >= 0 else "S"
+            exif[key + 'Longitude']    = decimal_to_dms(photo.longitude)
+            exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
+            exif[key + 'MapDatum']     = 'WGS-84'
+            for iptc in geonames_of_interest.values():
+                if photo[iptc] is not None:
+                    exif['Iptc.Application2.' + iptc] = [photo[iptc]]
+            try:
+                exif.write()
+            except Exception as inst:
+                self.status_message(", ".join(inst.args))
+            else:
+                self.modified.discard(photo)
+                self.liststore.set_value(photo.iter, self.SUMMARY,
+                    photo.long_summary())
+        self.update_sensitivity()
+        self.progressbar.hide()
+    
 ################################################################################
-# GtkListStore. These methods modify the liststore data in some way.
+# Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
     
     def auto_timestamp_comparison(self, photo):
@@ -425,35 +458,6 @@ class GottenGeography:
         self.modified.add(photo)
         self.liststore.set_value(photo.iter, self.SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
-    
-    def add_or_reload_photo(self, filename):
-        """Create or update a row in the ListStore.
-        
-        Checks if the file has already been loaded, and if not, creates a new
-        row in the ListStore. Either way, it then populates that row with
-        photo metadata as read from disk. Effectively, this is used both for
-        loading new photos, and reverting old photos, discarding any changes.
-        
-        Raises IOError if filename refers to a file that is not a photograph.
-        """
-        photo = self.load_exif_from_file(filename)
-        photo.update( {
-            'iter':   self.liststore.append([None] * 4),
-            'marker': self.add_marker(filename)
-        } if filename not in self.photo else {
-            'iter':   self.photo[filename].iter,
-            'marker': self.photo[filename].marker
-        } )
-        
-        photo.position_marker()
-        self.modified.discard(photo)
-        self.photo[filename] = photo
-        self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
-        self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
-        self.liststore.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
-        self.liststore.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
-        self.auto_timestamp_comparison(photo)
-        self.update_sensitivity()
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
