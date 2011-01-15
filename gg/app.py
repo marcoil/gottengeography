@@ -466,47 +466,27 @@ class GottenGeography:
     
     def update_preview(self, chooser):
         """Display photo thumbnail and geotag data in file chooser."""
-        filename = chooser.get_preview_filename()
-        self.preview_label.set_label(_("No preview available"))
-        self.preview_image.set_from_stock(Gtk.STOCK_FILE,
-            Gtk.IconSize.LARGE_TOOLBAR)
+        label = self.builder.get_object("preview_label")
+        label.set_label(self.strings.preview)
+        image = self.builder.get_object("preview_image")
+        image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = self.load_exif_from_file(filename, 300)
+            photo = self.load_exif_from_file(chooser.get_preview_filename(), 300)
         except IOError:
             return
-        lat, lon = photo.latitude, photo.longitude
-        self.preview_image.set_from_pixbuf(photo.thumb)
-        self.preview_label.set_label("%s\n%s" % (photo.short_summary(),
-            maps_link(lat, lon) if valid_coords(lat, lon) else ""))
+        image.set_from_pixbuf(photo.thumb)
+        label.set_label("%s\n%s" % (photo.short_summary(), photo.maps_link()))
     
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
-        self.preview_image = Gtk.Image()
-        self.preview_label = Gtk.Label()
-        self.preview_label.set_justify(Gtk.Justification.CENTER)
-        self.preview_label.set_selectable(True)
-        self.preview_label.set_use_markup(True)
-        self.preview_widget = Gtk.VBox(spacing=6)
-        self.preview_widget.set_size_request(310, -1)
-        self.preview_widget.pack_start(self.preview_image, False, False, 0)
-        self.preview_widget.pack_start(self.preview_label, False, False, 0)
-        self.preview_widget.show_all()
-        chooser = Gtk.FileChooserDialog(title=_("Open Files"),
-            buttons=(Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
-                     Gtk.STOCK_OPEN,    Gtk.ResponseType.OK))
-        chooser.set_action(Gtk.FileChooserAction.OPEN)
-        chooser.set_default_response(Gtk.ResponseType.OK)
-        chooser.set_select_multiple(True)
-        chooser.set_preview_widget(self.preview_widget)
-        chooser.set_preview_widget_active(True)
-        chooser.connect("selection-changed", self.update_preview)
+        chooser = self.builder.get_object("opendialog")
         # Exit if the user clicked anything other than "OK"
         if chooser.run() == Gtk.ResponseType.OK:
             files = chooser.get_filenames()
-            chooser.destroy()
+            chooser.hide()
             self.open_files(files)
         else:
-            chooser.destroy()
+            chooser.hide()
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
@@ -766,7 +746,16 @@ class GottenGeography:
             Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
             Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
         quit.set_default_response(Gtk.ResponseType.ACCEPT)
-        self.strings.quit = quit.get_property('secondary-text')
+        
+        opendialog = self.builder.get_object("opendialog")
+        opendialog.connect("selection-changed", self.update_preview)
+        opendialog.add_buttons(
+            Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,    Gtk.ResponseType.OK)
+        opendialog.set_default_response(Gtk.ResponseType.OK)
+        
+        self.strings.quit    = quit.get_property('secondary-text')
+        self.strings.preview = self.builder.get_object("preview_label").get_text()
     
     def create_spin_button(self, value, label):
         """Create a SpinButton for use as a clock offset setting."""

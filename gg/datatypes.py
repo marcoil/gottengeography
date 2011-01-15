@@ -18,7 +18,7 @@ import os, time, json
 from gettext import gettext as _
 from gi.repository import Gio
 
-from gps import valid_coords
+from gps import valid_coords, maps_link
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -108,6 +108,10 @@ class Photograph(ReadableDictionary):
     def valid_coords(self):
         """Check if this photograph contains valid coordinates."""
         return valid_coords(self.latitude, self.longitude)
+    
+    def maps_link(self):
+        """Return a link to Google Maps if this photo has valid coordinates."""
+        return maps_link(self.latitude, self.longitude) if self.valid_coords() else ""
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""

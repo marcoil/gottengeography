@@ -103,4 +103,72 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
       </object>
     </child>
   </object>
+  <object class="GtkFileChooserDialog" id="opendialog">
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Open Files</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="icon_name">gtk-open</property>
+    <property name="type_hint">dialog</property>
+    <property name="preview_widget">preview</property>
+    <property name="select_multiple">True</property>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox3">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area3">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkVBox" id="preview">
+    <property name="width_request">310</property>
+    <property name="visible">True</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">6</property>
+    <child>
+      <object class="GtkImage" id="preview_image">
+        <property name="visible">True</property>
+        <property name="xpad">10</property>
+        <property name="ypad">10</property>
+        <property name="stock">gtk-file</property>
+        <property name="icon-size">6</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="preview_label">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">No preview available</property>
+        <property name="use_markup">True</property>
+        <property name="justify">center</property>
+        <property name="selectable">True</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
 </interface>
