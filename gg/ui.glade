@@ -2,7 +2,7 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAboutDialog" id="aboutdialog">
+  <object class="GtkAboutDialog" id="about">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">About GottenGeography</property>
     <property name="resizable">False</property>
@@ -41,9 +41,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
-        <child>
-          <placeholder/>
-        </child>
         <child internal-child="action_area">
           <object class="GtkHButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
@@ -58,7 +55,7 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
       </object>
     </child>
   </object>
-  <object class="GtkMessageDialog" id="quitdialog">
+  <object class="GtkMessageDialog" id="quit">
     <property name="border_width">5</property>
     <property name="title" translatable="yes"> </property>
     <property name="resizable">False</property>
@@ -103,7 +100,7 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
       </object>
     </child>
   </object>
-  <object class="GtkFileChooserDialog" id="opendialog">
+  <object class="GtkFileChooserDialog" id="open">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Open Files</property>
     <property name="window_position">center-on-parent</property>

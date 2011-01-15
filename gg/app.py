@@ -479,7 +479,7 @@ class GottenGeography:
     
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
-        chooser = self.builder.get_object("opendialog")
+        chooser = self.builder.get_object("open")
         # Exit if the user clicked anything other than "OK"
         if chooser.run() == Gtk.ResponseType.OK:
             files = chooser.get_filenames()
@@ -495,7 +495,7 @@ class GottenGeography:
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
-        dialog = self.builder.get_object("quitdialog")
+        dialog = self.builder.get_object("quit")
         dialog.format_secondary_markup(self.strings.quit % len(self.modified))
         response = dialog.run()
         dialog.hide()
@@ -506,7 +506,7 @@ class GottenGeography:
     
     def about_dialog(self, widget=None, data=None):
         """Describe this application to the user."""
-        dialog = self.builder.get_object("aboutdialog")
+        dialog = self.builder.get_object("about")
         dialog.run()
         dialog.hide()
     
@@ -740,14 +740,14 @@ class GottenGeography:
         
         I suspect that this method only exists because I'm using GtkBuilder
         poorly, but we'll see how it goes. YAY learning!"""
-        quit = self.builder.get_object("quitdialog")
+        quit = self.builder.get_object("quit")
         quit.add_buttons(
             _("Close _without Saving"), Gtk.ResponseType.CLOSE,
             Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
             Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
         quit.set_default_response(Gtk.ResponseType.ACCEPT)
         
-        opendialog = self.builder.get_object("opendialog")
+        opendialog = self.builder.get_object("open")
         opendialog.connect("selection-changed", self.update_preview)
         opendialog.add_buttons(
             Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
