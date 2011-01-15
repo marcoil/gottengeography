@@ -39,6 +39,8 @@ from datatypes import *
 from longstrings import *
 from gps import *
 
+PACKAGE_DIR = os.path.dirname(__file__)
+
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -535,18 +537,7 @@ class GottenGeography:
     
     def about_dialog(self, widget=None, data=None):
         """Describe this application to the user."""
-        dialog = Gtk.AboutDialog()
-        dialog.set_program_name(APPNAME)
-        dialog.set_version(VERSION)
-        dialog.set_copyright("(c) Robert Park, 2010")
-        dialog.set_license(LICENSE)
-        dialog.set_comments(COMMENTS)
-        dialog.set_website("http://github.com/robru/GottenGeography/wiki")
-        dialog.set_website_label("%s Wiki" % APPNAME)
-        dialog.set_authors(["Robert Park <rbpark@exolucere.ca>"])
-        dialog.set_documenters(["Robert Park <rbpark@exolucere.ca>"])
-        #dialog.set_artists(["Robert Park <rbpark@exolucere.ca>"])
-        #dialog.set_translator_credits("Nobody!")
+        dialog = self.builder.get_object("aboutdialog")
         dialog.run()
         dialog.destroy()
     
@@ -569,6 +560,9 @@ class GottenGeography:
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         self.map_photo_layer = Champlain.Layer()
         self.map_view.add_layer(self.map_photo_layer)
+        
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file("%s/%s" % (PACKAGE_DIR, "ui.glade"))
         
         self.toolbar = Gtk.Toolbar()
         self.button  = ReadableDictionary()
