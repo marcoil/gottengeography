@@ -158,11 +158,12 @@ class GottenGeography:
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
         selection_exists = sel.count_selected_rows() > 0
+        self.selected = set()
         for photo in self.photo.values():
             photo.set_marker_highlight(None, selection_exists)
             # Maintain self.selected for easy iterating.
-            if sel.iter_is_selected(photo.iter): self.selected.add(photo)
-            else:                                self.selected.discard(photo)
+            if sel.iter_is_selected(photo.iter):
+                self.selected.add(photo)
         # Highlight and center the map view over the selected photos.
         if selection_exists:
             area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
@@ -407,6 +408,7 @@ class GottenGeography:
             self.add_or_reload_photo(photo.filename)
         self.progressbar.hide()
         self.update_sensitivity()
+        self.update_all_marker_highlights(self.listsel)
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
