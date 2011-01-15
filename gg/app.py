@@ -480,13 +480,10 @@ class GottenGeography:
     def add_files_dialog(self, widget=None, data=None):
         """Display a file chooser, and attempt to load chosen files."""
         chooser = self.builder.get_object("open")
-        # Exit if the user clicked anything other than "OK"
-        if chooser.run() == Gtk.ResponseType.OK:
-            files = chooser.get_filenames()
-            chooser.hide()
-            self.open_files(files)
-        else:
-            chooser.hide()
+        response = chooser.run()
+        chooser.hide()
+        if response == Gtk.ResponseType.OK:
+            self.open_files(chooser.get_filenames())
     
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
