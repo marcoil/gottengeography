@@ -585,24 +585,6 @@ class GottenGeography:
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
-        self.key_actions = {
-            "equal":    self.zoom_in,
-            "minus":    self.zoom_out,
-            "Left":     self.return_to_last,
-            "Return":   self.apply_selected_photos,
-            "w":        self.close_selected_photos,
-            "a":        self.toggle_selected_photos,
-            "z":        self.revert_selected_photos,
-            "s":        self.save_all_files,
-            "x":        self.clear_all_gpx,
-            "o":        self.add_files_dialog,
-            "q":        self.confirm_quit_dialog,
-            "slash":    self.about_dialog,
-            "question": self.about_dialog
-        }
-        for key in self.key_actions.keys():
-            accel.connect(Gdk.keyval_from_name(key),
-                Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
@@ -637,10 +619,6 @@ class GottenGeography:
             button.set_active(True)
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
-    
-    def key_accel(self, accel_group, acceleratable, keyval, modifier):
-        """Respond to keyboard shortcuts as typed by user."""
-        self.key_actions[Gdk.keyval_name(keyval)]()
     
     def gconf_set(self, key, value):
         """Sets the given GConf key to the given value."""
