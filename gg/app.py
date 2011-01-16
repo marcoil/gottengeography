@@ -108,10 +108,9 @@ class GottenGeography:
     def display_actors(self, stage=None, parameter=None):
         """Position and update my custom ClutterActors.
         
-        self.coords:       Map center coordinates at top of map view.
-        self.coords_bg:    Translucent white bar at top of map view.
-        self.coords_label: Link to Google Maps in the status bar.
-        self.crosshair:    Black diamond at map center.
+        self.actors.coords:       Map center coordinates at top of map view.
+        self.actors.coords_bg:    Translucent white bar at top of map view.
+        self.actors.crosshair:    Black diamond at map center.
         
         This method is called whenever the size of the map view changes, and
         whenever the map center coordinates change, so that everything is
@@ -120,19 +119,20 @@ class GottenGeography:
         """
         stage_width  = self.stage.get_width()
         stage_height = self.stage.get_height()
-        self.crosshair.set_position(
-            (stage_width  - self.crosshair.get_width())  / 2,
-            (stage_height - self.crosshair.get_height()) / 2
+        self.actors.crosshair.set_position(
+            (stage_width  - self.actors.crosshair.get_width())  / 2,
+            (stage_height - self.actors.crosshair.get_height()) / 2
         )
         
         if stage is not None:
-            lat = self.map_view.get_property('latitude')
-            lon = self.map_view.get_property('longitude')
-            self.coords.set_markup("%.4f, %.4f" % (lat, lon))
-            self.coords_label.set_markup(maps_link(lat, lon))
-            self.coords_bg.set_size(stage_width, self.coords.get_height() + 10)
-            self.coords.set_position(
-                (stage_width - self.coords.get_width()) / 2, 5)
+            lat   = self.map_view.get_property('latitude')
+            lon   = self.map_view.get_property('longitude')
+            label = self.actors.coords
+            white = self.actors.coords_bg
+            label.set_markup("%.4f, %.4f" % (lat, lon))
+            white.set_size(stage_width, label.get_height() + 10)
+            label.set_position((stage_width - label.get_width()) / 2, 5)
+            self.builder.get_object("maps_link").set_markup(maps_link(lat, lon))
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -147,7 +147,7 @@ class GottenGeography:
             if marker.get_highlighted(): self.listsel.unselect_iter(photo.iter)
             else:                        self.listsel.select_iter(photo.iter)
         else:
-            self.button.gtk_select_all.set_active(False)
+            self.builder.get_object("select_all_button").set_active(False)
             self.listsel.unselect_all()
             self.listsel.select_iter(photo.iter)
     
@@ -404,7 +404,7 @@ class GottenGeography:
             self.liststore.remove(photo.iter)
             self.modified.discard(photo)
             del self.photo[photo.filename]
-        self.button.gtk_select_all.set_active(False)
+        self.builder.get_object("select_all_button").set_active(False)
         self.update_sensitivity()
     
     def modify_summary(self, photo):
@@ -465,7 +465,7 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        self.strings  = ReadableDictionary()
+        self.actors   = ReadableDictionary()
         self.cache    = GeoCache()
         self.selected = set()
         self.modified = set()
@@ -474,50 +474,66 @@ class GottenGeography:
         self.gpx      = []
         
         GtkClutter.init([])
-        self.champlain = GtkChamplain.Embed()
-        self.map_view = self.champlain.get_view()
+        self.champlain       = GtkChamplain.Embed()
+        self.map_photo_layer = Champlain.Layer()
+        self.map_view        = self.champlain.get_view()
+        self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
-        self.map_photo_layer = Champlain.Layer()
-        self.map_view.add_layer(self.map_photo_layer)
+        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+            self.map_view.connect('notify::%s' % signal, self.display_actors)
+        
+        self.stage = self.map_view.get_stage()
+        self.actors.coords_bg = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(255, 255, 255, 164))
+        self.actors.coords_bg.set_position(0, 0)
+        self.actors.coords = Clutter.Text()
+        self.actors.coords.set_single_line_mode(True)
+        self.actors.crosshair = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 32))
+        self.actors.crosshair.set_property('has-border', True)
+        self.actors.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
+        self.actors.crosshair.set_border_width(1)
+        for actor in self.actors.values():
+            actor.set_parent(self.stage)
+            actor.raise_top()
+            actor.show()
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
         self.builder.add_from_file("%s/%s" % (PACKAGE_DIR, "ui.glade"))
-        self.augment_gtk_builder()
         
-        self.toolbar = Gtk.Toolbar()
-        self.button  = ReadableDictionary()
-        self.create_tool_button(Gtk.STOCK_OPEN, self.add_files_dialog,
-            _("Load photos or GPS data (Ctrl+O)"), _("Open"))
-        self.create_tool_button(Gtk.STOCK_SAVE, self.save_all_files,
-            _("Save all photos (Ctrl+S)"), _("Save All"))
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        self.create_tool_button(Gtk.STOCK_CLEAR, self.clear_all_gpx,
-            _("Unload all GPS data (Ctrl+X)"), _("Clear GPX"))
-        self.create_tool_button(Gtk.STOCK_CLOSE, self.close_selected_photos,
-            _("Close selected photos (Ctrl+W)"), _("Close Photo"))
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        self.create_tool_button(Gtk.STOCK_REVERT_TO_SAVED,
-            self.revert_selected_photos,
-            _("Reload selected photos, losing all changes (Ctrl+Z)"))
-        self.toolbar_spacer = Gtk.SeparatorToolItem()
-        self.toolbar_spacer.set_expand(True)
-        self.toolbar_spacer.set_draw(False)
-        self.toolbar.add(self.toolbar_spacer)
-        self.create_tool_button(Gtk.STOCK_ZOOM_OUT, self.zoom_out,
-            _("Zoom the map out one step."))
-        self.create_tool_button(Gtk.STOCK_ZOOM_IN, self.zoom_in, _("Enhance!"))
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        self.create_tool_button(Gtk.STOCK_GO_BACK, self.return_to_last,
-            _("Return to previous location in map view."))
-        self.toolbar.add(Gtk.SeparatorToolItem())
-        self.create_tool_button(Gtk.STOCK_ABOUT, self.about_dialog,
-            _("About %s") % APPNAME)
+        self.progressbar = self.builder.get_object("progressbar")
+        
+        quitdialog = self.builder.get_object("quit")
+        quitdialog.add_buttons(
+            _("Close _without Saving"), Gtk.ResponseType.CLOSE,
+            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
+        quitdialog.set_default_response(Gtk.ResponseType.ACCEPT)
+        
+        opendialog = self.builder.get_object("open")
+        opendialog.connect("selection-changed", self.update_preview)
+        opendialog.add_buttons(
+            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,             Gtk.ResponseType.OK)
+        opendialog.set_default_response(Gtk.ResponseType.OK)
+        
+        self.strings = ReadableDictionary({
+            "quit":    quitdialog.get_property('secondary-text'),
+            "preview": self.builder.get_object("preview_label").get_text()
+        })
+        
+        self.offset = ReadableDictionary({
+            "hours":   self.builder.get_object("hours"),
+            "minutes": self.builder.get_object("minutes"),
+            "seconds": self.builder.get_object("seconds")
+        })
+        for spinbutton in self.offset.values():
+            spinbutton.connect("value-changed", self.time_offset_changed)
         
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
-        
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(self.TIMESTAMP,
@@ -548,70 +564,33 @@ class GottenGeography:
         self.listsel.connect("changed", self.update_all_marker_highlights)
         self.listsel.connect("changed", self.update_sensitivity)
         
-        self.photo_scroller = Gtk.ScrolledWindow()
-        self.photo_scroller.add(self.photos_view)
-        self.photo_scroller.set_policy(Gtk.PolicyType.NEVER,
-                                       Gtk.PolicyType.AUTOMATIC)
-        
-        self.button.gtk_apply = Gtk.Button.new_from_stock(Gtk.STOCK_APPLY)
-        self.button.gtk_apply.set_tooltip_text(
-            _("Place selected photos onto center of map (Ctrl+Return)"))
-        self.button.gtk_apply.connect("clicked", self.apply_selected_photos)
-        
-        self.button.gtk_select_all = Gtk.ToggleButton(label=Gtk.STOCK_SELECT_ALL)
-        self.button.gtk_select_all.set_use_stock(True)
-        self.button.gtk_select_all.set_tooltip_text(
-            _("Toggle whether all photos are selected (Ctrl+A)"))
-        self.button.gtk_select_all.connect("clicked", self.toggle_selected_photos)
-        
-        self.photo_btn_bar = Gtk.HBox(spacing=12)
-        self.photo_btn_bar.set_border_width(3)
-        for btn in [ 'gtk_select_all', 'gtk_apply' ]:
-            self.photo_btn_bar.pack_start(self.button[btn], True, True, 0)
-        
-        self.photos_with_buttons = Gtk.VBox()
-        self.photos_with_buttons.pack_start(self.photo_scroller, True, True, 0)
-        self.photos_with_buttons.pack_start(self.photo_btn_bar, False, False, 0)
-        
-        self.photos_and_map_container = Gtk.HPaned()
-        self.photos_and_map_container.add1(self.photos_with_buttons)
-        self.photos_and_map_container.add2(self.champlain)
-        
-        self.progressbar = Gtk.ProgressBar()
-        self.progressbar.set_size_request(0, -1) # Stops it from flailing.
-        
-        self.offset_label = Gtk.Label(label=_("Clock Offset: "))
-        self.coords_label = Gtk.Label()
-        
-        self.statusbar = Gtk.Statusbar(spacing=12)
-        self.statusbar.set_border_width(3)
-        self.statusbar.pack_start(self.progressbar, True, True, 0)
-        self.statusbar.pack_start(self.coords_label, False, False, 0)
-        self.statusbar.pack_start(self.offset_label, False, False, 0)
-        
-        self.offset = ReadableDictionary( {
-            'seconds': self.create_spin_button(60, _("seconds")),
-            'minutes': self.create_spin_button(60, _("minutes")),
-            'hours':   self.create_spin_button(24, _("hours"))
-        } )
-        
-        self.app_container = Gtk.VBox(spacing=0)
-        self.app_container.pack_start(self.toolbar, False, True, 0)
-        self.app_container.pack_start(self.photos_and_map_container, True, True, 0)
-        self.app_container.pack_end(self.statusbar, False, True, 0)
-        
-        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title(APPNAME)
-        self.window.set_default_icon_name('gtk-new')
-        self.window.set_default_size(800,600)
-        self.window.set_size_request(620,400)
-        self.window.connect("delete_event", self.confirm_quit_dialog)
-        self.window.add(self.app_container)
+        self.builder.get_object("photoscroller").add(self.photos_view)
+        self.builder.get_object("photos_and_map").pack_start(self.champlain, True, True, 0)
         
         self.gconf_client = GConf.Client.get_default()
         self.return_to_last(False)
         
-        # Key bindings
+        click_handlers = {
+            "open_button":       self.add_files_dialog,
+            "save_button":       self.save_all_files,
+            "clear_button":      self.clear_all_gpx,
+            "close_button":      self.close_selected_photos,
+            "revert_button":     self.revert_selected_photos,
+            "zoom_out_button":   self.zoom_out,
+            "zoom_in_button":    self.zoom_in,
+            "back_button":       self.return_to_last,
+            "about_button":      self.about_dialog,
+            "apply_button":      self.apply_selected_photos,
+            "select_all_button": self.toggle_selected_photos 
+        }
+        for button, handler in click_handlers.items():
+            self.builder.get_object(button).connect("clicked", handler)
+        
+        accel  = Gtk.AccelGroup()
+        window = self.builder.get_object("main")
+        window.connect("delete_event", self.confirm_quit_dialog)
+        window.add_accel_group(accel)
+        window.show_all()
         self.key_actions = {
             "equal":    self.zoom_in,
             "minus":    self.zoom_out,
@@ -627,46 +606,17 @@ class GottenGeography:
             "slash":    self.about_dialog,
             "question": self.about_dialog
         }
-        accel = Gtk.AccelGroup()
-        self.window.add_accel_group(accel)
         for key in self.key_actions.keys():
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.CONTROL_MASK, 0, self.key_accel)
-        
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
         
-        self.window.show_all()
-        self.progressbar.hide()
         self.clear_all_gpx()
         self.redraw_interface()
-        
-        self.stage = self.map_view.get_stage()
-        
-        self.coords_bg = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(255, 255, 255, 164))
-        self.coords_bg.set_position(0, 0)
-        
-        self.coords = Clutter.Text()
-        self.coords.set_single_line_mode(True)
-        
-        self.crosshair = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 32))
-        self.crosshair.set_property('has-border', True)
-        self.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
-        self.crosshair.set_border_width(1)
-        
-        for actor in [self.crosshair, self.coords, self.coords_bg]:
-            actor.set_parent(self.stage)
-            actor.raise_top()
-            actor.show()
-        
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
-        
-        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::%s' % signal, self.display_actors)
         
         if not animate_crosshair:
             return
@@ -676,69 +626,20 @@ class GottenGeography:
         # i before it stops will be 8, so: 53-i ends at 45 degrees, and
         # 260-(0.51*i) ends at 255 or full opacity. The numbers come from
         # simplifying the formula ((508-i)/500) * 255.
+        xhair = self.actors.crosshair
         for i in range(500, 7, -1):
-            self.crosshair.set_size(i, i)
-            self.crosshair.set_z_rotation_from_gravity(53-i,
-                Clutter.Gravity.CENTER)
-            self.crosshair.set_property('opacity', int(260-(0.51*i)))
+            xhair.set_size(i, i)
+            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
+            xhair.set_property('opacity', int(260-(0.51*i)))
             self.display_actors()
             self.redraw_interface()
             time.sleep(0.002)
-    
-    def augment_gtk_builder(self):
-        """Do some initializy stuff to objects constructed by GtkBuilder.
-        
-        I suspect that this method only exists because I'm using GtkBuilder
-        poorly, but we'll see how it goes. YAY learning!"""
-        quit = self.builder.get_object("quit")
-        quit.add_buttons(
-            _("Close _without Saving"), Gtk.ResponseType.CLOSE,
-            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_SAVE,             Gtk.ResponseType.ACCEPT)
-        quit.set_default_response(Gtk.ResponseType.ACCEPT)
-        
-        opendialog = self.builder.get_object("open")
-        opendialog.connect("selection-changed", self.update_preview)
-        opendialog.add_buttons(
-            Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN,    Gtk.ResponseType.OK)
-        opendialog.set_default_response(Gtk.ResponseType.OK)
-        
-        self.strings.quit    = quit.get_property('secondary-text')
-        self.strings.preview = self.builder.get_object("preview_label").get_text()
-    
-    def create_spin_button(self, value, label):
-        """Create a SpinButton for use as a clock offset setting."""
-        button = Gtk.SpinButton()
-        button.set_digits(0)
-        button.set_value(0)
-        button.set_increments(1, 4)
-        button.set_range(-1*value, value)
-        button.set_update_policy(Gtk.SpinButtonUpdatePolicy.IF_VALID)
-        button.set_numeric(True)
-        button.set_snap_to_ticks(True)
-        button.set_tooltip_text(
-            _("Add or subtract %s from your camera's clock.") % label)
-        button.connect("value-changed", self.time_offset_changed)
-        self.statusbar.pack_end(button, False, False, 0)
-        return button
-    
-    def create_tool_button(self, stock_id, action, tooltip, label=None):
-        """Create a ToolButton for use on the toolbar."""
-        button = Gtk.ToolButton(stock_id=stock_id)
-        button.set_is_important(label is not None)
-        button.set_tooltip_text(tooltip)
-        button.connect("clicked", action)
-        if label is not None:
-            button.set_label(label)
-        self.toolbar.add(button)
-        self.button[re.sub(r'-', '_', stock_id)] = button
     
     def toggle_selected_photos(self, button=None):
         """Toggle the selection of photos."""
         if button is None:
             # User typed Ctrl+a, so select all!
-            button = self.button.gtk_select_all
+            button = self.builder.get_object("select_all_button")
             button.set_active(True)
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
@@ -761,7 +662,8 @@ class GottenGeography:
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
-        self.statusbar.push(self.statusbar.get_context_id("msg"), message)
+        status = self.builder.get_object("status")
+        status.push(status.get_context_id("msg"), message)
         print message
     
     def redraw_interface(self, fraction=None, text=None):
@@ -778,9 +680,9 @@ class GottenGeography:
     def zoom_button_sensitivity(self):
         """Ensure zoom buttons are only sensitive when they need to be."""
         zoom_level = self.map_view.get_zoom_level()
-        self.button.gtk_zoom_out.set_sensitive(
+        self.builder.get_object("zoom_out_button").set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
-        self.button.gtk_zoom_in.set_sensitive(
+        self.builder.get_object("zoom_in_button").set_sensitive(
             self.map_view.get_max_zoom_level() is not zoom_level)
     
     def update_sensitivity(self, selection=None):
@@ -789,17 +691,19 @@ class GottenGeography:
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
         """
-        self.button.gtk_apply.set_sensitive(len(self.selected) > 0)
-        self.button.gtk_close.set_sensitive(len(self.selected) > 0)
-        self.button.gtk_save.set_sensitive( len(self.modified) > 0)
-        self.button.gtk_revert_to_saved.set_sensitive(
+        self.builder.get_object("apply_button").set_sensitive(len(self.selected) > 0)
+        self.builder.get_object("close_button").set_sensitive(len(self.selected) > 0)
+        self.builder.get_object("save_button").set_sensitive( len(self.modified) > 0)
+        self.builder.get_object("revert_button").set_sensitive(
             len(self.modified & self.selected) > 0)
         gpx_sensitive = len(self.tracks) > 0
         for widget in self.offset.values() + [
-            self.offset_label, self.button.gtk_clear ]:
+        self.builder.get_object("offset_label"),
+        self.builder.get_object("clear_button") ]:
             widget.set_sensitive(gpx_sensitive)
-        if len(self.photo) > 0: self.photos_with_buttons.show()
-        else:                   self.photos_with_buttons.hide()
+        left = self.builder.get_object("photos_with_buttons")
+        if len(self.photo) > 0: left.show()
+        else:                   left.hide()
     
     def main(self):
         """Go!"""

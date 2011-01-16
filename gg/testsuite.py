@@ -46,26 +46,25 @@ class GottenGeographyTester(unittest.TestCase):
         )
         
         self.assertEqual(self.gui.liststore.get_n_columns(), 4)
-        self.assertEqual(self.gui.window.get_size(), (800, 600))
-        self.assertTrue(self.gui.app_container.get_visible())
-        self.assertEqual(len(self.gui.button), 11)
+        self.assertEqual(self.gui.builder.get_object("main").get_size(), (800, 600))
+        self.assertTrue(self.gui.champlain.get_visible())
         self.assertEqual(len(self.gui.offset), 3)
         
         # Button sensitivity
-        self.assertFalse(self.gui.button.gtk_apply.get_sensitive())
-        self.assertFalse(self.gui.button.gtk_close.get_sensitive())
-        self.assertFalse(self.gui.button.gtk_save.get_sensitive())
-        self.assertFalse(self.gui.button.gtk_revert_to_saved.get_sensitive())
-        self.assertFalse(self.gui.button.gtk_clear.get_sensitive())
+        self.assertFalse(self.gui.builder.get_object("apply_button").get_sensitive())
+        self.assertFalse(self.gui.builder.get_object("close_button").get_sensitive())
+        self.assertFalse(self.gui.builder.get_object("save_button").get_sensitive())
+        self.assertFalse(self.gui.builder.get_object("revert_button").get_sensitive())
+        self.assertFalse(self.gui.builder.get_object("clear_button").get_sensitive())
         self.gui.selected.add(True)
         self.gui.modified.add(True)
         self.gui.tracks["herp"] = "derp"
         self.gui.update_sensitivity()
-        self.assertTrue(self.gui.button.gtk_apply.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_close.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_save.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_revert_to_saved.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_clear.get_sensitive())
+        self.assertTrue(self.gui.builder.get_object("apply_button").get_sensitive())
+        self.assertTrue(self.gui.builder.get_object("close_button").get_sensitive())
+        self.assertTrue(self.gui.builder.get_object("save_button").get_sensitive())
+        self.assertTrue(self.gui.builder.get_object("revert_button").get_sensitive())
+        self.assertTrue(self.gui.builder.get_object("clear_button").get_sensitive())
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -102,10 +101,11 @@ class GottenGeographyTester(unittest.TestCase):
                 )
             )
         
+        select_all = self.gui.builder.get_object("select_all_button")
         self.assertEqual(len(self.gui.selected), 0)
-        self.gui.button.gtk_select_all.set_active(True)
+        select_all.set_active(True)
         self.assertEqual(len(self.gui.selected), 6)
-        self.gui.button.gtk_select_all.set_active(False)
+        select_all.set_active(False)
         self.assertEqual(len(self.gui.selected), 0)
         
         # Load the GPX
@@ -248,7 +248,7 @@ S 10.00000, W 10.00000
         
         self.gui.display_actors()
         self.assertRegexpMatches(
-            self.gui.coords_label.get_label(),
+            self.gui.builder.get_object("maps_link").get_label(),
             r'href="http://maps.google.com'
         )
     
@@ -278,7 +278,7 @@ S 10.00000, W 10.00000
                 3
             )
             
-            decimal_lat = round(random_coord(90),  6)
+            decimal_lat = round(random_coord(80),  6)
             decimal_lon = round(random_coord(180), 6)
             
             self.assertTrue(valid_coords(decimal_lat, decimal_lon))
@@ -343,13 +343,15 @@ S 10.00000, W 10.00000
         
         self.gui.map_view.center_on(lat, lon)
         
+        zoom_in  = self.gui.builder.get_object("zoom_in_button")
+        zoom_out = self.gui.builder.get_object("zoom_out_button")
         self.gui.map_view.set_zoom_level(0)
         self.gui.zoom_button_sensitivity()
-        self.assertFalse(self.gui.button.gtk_zoom_out.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertFalse(zoom_out.get_sensitive())
+        self.assertTrue(zoom_in.get_sensitive())
         self.gui.zoom_in()
-        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertTrue(zoom_out.get_sensitive())
+        self.assertTrue(zoom_in.get_sensitive())
         self.assertEqual(1, self.gui.map_view.get_zoom_level())
         self.gui.zoom_in()
         self.assertEqual(2, self.gui.map_view.get_zoom_level())
@@ -358,11 +360,11 @@ S 10.00000, W 10.00000
         self.gui.zoom_out()
         self.assertEqual(2, self.gui.map_view.get_zoom_level())
         self.gui.map_view.set_zoom_level(self.gui.map_view.get_max_zoom_level()-1)
-        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
-        self.assertTrue(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertTrue(zoom_out.get_sensitive())
+        self.assertTrue(zoom_in.get_sensitive())
         self.gui.zoom_in()
-        self.assertTrue(self.gui.button.gtk_zoom_out.get_sensitive())
-        self.assertFalse(self.gui.button.gtk_zoom_in.get_sensitive())
+        self.assertTrue(zoom_out.get_sensitive())
+        self.assertFalse(zoom_in.get_sensitive())
         self.assertEqual(self.gui.map_view.get_max_zoom_level(),
             self.gui.map_view.get_zoom_level())
         
