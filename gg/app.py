@@ -453,16 +453,20 @@ class GottenGeography:
     
     def preferences_dialog(self, widget=None, event=None):
         """Allow the user to configure this application."""
-        dialog = self.builder.get_object("preferences")
-        color  = Gdk.Color(
-            track_color.red   * 256,
-            track_color.green * 256,
-            track_color.blue  * 256)
         colorpicker = self.builder.get_object("colorselection")
-        colorpicker.set_current_color(color)
-        colorpicker.set_previous_color(color)
+        previous    = ReadableDictionary({
+            'color': Gdk.Color(
+                track_color.red   * 256,
+                track_color.green * 256,
+                track_color.blue  * 256
+            )
+        })
+        colorpicker.set_current_color(previous.color)
+        colorpicker.set_previous_color(previous.color)
+        dialog = self.builder.get_object("preferences")
         if not dialog.run():
-            print "you pressed cancel, I'm going to undo your changes!" # TODO
+            colorpicker.set_current_color(previous.color)
+            colorpicker.set_previous_color(previous.color)
         dialog.hide()
     
     def confirm_quit_dialog(self, widget=None, event=None):
