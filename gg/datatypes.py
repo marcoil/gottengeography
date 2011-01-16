@@ -158,10 +158,7 @@ class Photograph(ReadableDictionary):
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
         return _("Not geotagged") if not self.valid_coords() else \
-            '%s %.5f, %s %.5f' % (
-                _("N") if self.latitude  >= 0 else _("S"), abs(self.latitude),
-                _("E") if self.longitude >= 0 else _("W"), abs(self.longitude)
-            )
+            format_coords(self.latitude, self.longitude)
     
     def pretty_geoname(self):
         """Display city, state, and country, if present."""

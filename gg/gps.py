@@ -60,6 +60,12 @@ def maps_link(lat, lon, anchor=_("View in Google Maps")):
     """Create a Pango link to Google Maps."""
     return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (lat, lon, anchor)
 
+def format_coords(lat, lon):
+    """Add cardinal directions to decimal coordinates."""
+    return "%s %.5f, %s %.5f" % (
+        _("N") if lat >= 0 else _("S"), abs(lat),
+        _("E") if lon >= 0 else _("W"), abs(lon)
+    )
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""

@@ -129,7 +129,7 @@ class GottenGeography:
             lon   = self.map_view.get_property('longitude')
             label = self.actors.coords
             white = self.actors.coords_bg
-            label.set_markup("%.4f, %.4f" % (lat, lon))
+            label.set_markup(format_coords(lat, lon))
             white.set_size(stage_width, label.get_height() + 10)
             label.set_position((stage_width - label.get_width()) / 2, 5)
             self.builder.get_object("maps_link").set_markup(maps_link(lat, lon))
