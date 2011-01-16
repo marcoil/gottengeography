@@ -476,13 +476,48 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
             <property name="homogeneous">True</property>
             <property name="layout_style">center</property>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="quit_nosave">
+                <property name="label" translatable="yes">Close _without Saving</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="quit_cancel">
+                <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="quit_save">
+                <property name="label">gtk-save</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">2</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -493,6 +528,11 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
         </child>
       </object>
     </child>
+    <action-widgets>
+      <action-widget response="-7">quit_nosave</action-widget>
+      <action-widget response="-6">quit_cancel</action-widget>
+      <action-widget response="-3">quit_save</action-widget>
+    </action-widgets>
   </object>
   <object class="GtkFileChooserDialog" id="open">
     <property name="border_width">5</property>
