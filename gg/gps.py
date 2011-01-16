@@ -67,6 +67,12 @@ def format_coords(lat, lon):
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
 
+# GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
+# This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
+delimiters = re.compile(r'[:TZ-]')
+
+track_color = Clutter.Color.new(128, 0,  192, 128)
+
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
@@ -81,14 +87,6 @@ class GPXLoader:
         self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
         self.map_view = map_view
         self.progress = progressbar
-        
-        # TODO this should be user-configurable.
-        self.track_a = Clutter.Color.new(128, 0,  192, 128)
-        self.track_b = Clutter.Color.new(192, 64, 192, 128)
-        
-        # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
-        # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-        self.delimiters = re.compile(r'[:TZ-]')
         
         self.parser = expat.ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -127,8 +125,8 @@ class GPXLoader:
         if name == "trkseg":
             self.polygons.append(Champlain.Polygon())
             self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(self.track_a
-                if len(self.polygons) % 2 else self.track_b)
+            self.polygons[-1].set_stroke_color(track_color)
+#                if len(self.polygons) % 2 else self.track_b)
             self.polygons[-1].show()
             self.map_view.add_polygon(self.polygons[-1])
     
@@ -164,7 +162,7 @@ class GPXLoader:
             return
         try:
             timestamp = calendar.timegm(map(int,
-                self.delimiters.split(self.state['time'])[0:6]))
+                delimiters.split(self.state['time'])[0:6]))
             lat = float(self.state['lat'])
             lon = float(self.state['lon'])
         except:

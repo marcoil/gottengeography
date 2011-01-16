@@ -668,8 +668,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
     <property name="page_increment">4</property>
   </object>
   <object class="GtkDialog" id="preferences">
-    <property name="width_request">600</property>
-    <property name="height_request">300</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">GottenGeography Preferences</property>
     <property name="resizable">False</property>
@@ -689,17 +687,21 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
           <object class="GtkNotebook" id="pref_panes">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="tab_hborder">20</property>
             <child>
-              <object class="GtkLabel" id="label1">
+              <object class="GtkColorSelection" id="colorselection">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Colors placeholder</property>
+                <property name="border_width">12</property>
+                <property name="orientation">vertical</property>
+                <property name="current_alpha">4900</property>
               </object>
+              <packing>
+                <property name="tab_expand">True</property>
+              </packing>
             </child>
             <child type="tab">
               <object class="GtkLabel" id="color_label">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Colors</property>
+                <property name="label" translatable="yes">Track Color</property>
                 <property name="single_line_mode">True</property>
               </object>
               <packing>
@@ -713,6 +715,7 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
               </object>
               <packing>
                 <property name="position">1</property>
+                <property name="tab_expand">True</property>
               </packing>
             </child>
             <child type="tab">

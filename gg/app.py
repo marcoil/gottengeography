@@ -189,6 +189,19 @@ class GottenGeography:
         self.map_photo_layer.add_marker(marker)
         return marker
     
+    def track_color_changed(self, selection):
+        """Update the color of any loaded GPX tracks."""
+        color = selection.get_current_color()
+        track_color.red   = color.red   / 256
+        track_color.green = color.green / 256
+        track_color.blue  = color.blue  / 256
+        for gpx in self.gpx:
+            for polygon in gpx.polygons:
+                polygon.set_stroke_color(track_color)
+        self.gconf_set("track_red",   track_color.red)
+        self.gconf_set("track_green", track_color.green)
+        self.gconf_set("track_blue",  track_color.blue)
+    
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
         for gpx in self.gpx:
@@ -441,6 +454,13 @@ class GottenGeography:
     def preferences_dialog(self, widget=None, event=None):
         """Allow the user to configure this application."""
         dialog = self.builder.get_object("preferences")
+        color  = Gdk.Color(
+            track_color.red   * 256,
+            track_color.green * 256,
+            track_color.blue  * 256)
+        colorpicker = self.builder.get_object("colorselection")
+        colorpicker.set_current_color(color)
+        colorpicker.set_previous_color(color)
         if not dialog.run():
             print "you pressed cancel, I'm going to undo your changes!" # TODO
         dialog.hide()
@@ -524,6 +544,7 @@ class GottenGeography:
         })
         for spinbutton in self.offset.values():
             spinbutton.connect("value-changed", self.time_offset_changed)
+        self.builder.get_object("colorselection").connect("color-changed", self.track_color_changed)
         
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
@@ -593,6 +614,10 @@ class GottenGeography:
         self.redraw_interface()
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
+        
+        track_color.red   = self.gconf_get("track_red",   int)
+        track_color.green = self.gconf_get("track_green", int)
+        track_color.blue  = self.gconf_get("track_blue",  int)
         
         if not animate_crosshair:
             return
