@@ -229,7 +229,6 @@
             <property name="spacing">5</property>
             <child>
               <object class="GtkVBox" id="photos_with_buttons">
-                <property name="visible">True</property>
                 <property name="border_width">1</property>
                 <property name="orientation">vertical</property>
                 <child>
