@@ -438,6 +438,13 @@ class GottenGeography:
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
+    def preferences_dialog(self, widget=None, event=None):
+        """Allow the user to configure this application."""
+        dialog = self.builder.get_object("preferences")
+        if not dialog.run():
+            print "you pressed cancel, I'm going to undo your changes!" # TODO
+        dialog.hide()
+    
     def confirm_quit_dialog(self, widget=None, event=None):
         """Teardown method, inform user of unsaved files, if any."""
         self.remember_location_with_gconf()
@@ -580,8 +587,9 @@ class GottenGeography:
             "zoom_in_button":    self.zoom_in,
             "back_button":       self.return_to_last,
             "about_button":      self.about_dialog,
+            "pref_button":       self.preferences_dialog,
             "apply_button":      self.apply_selected_photos,
-            "select_all_button": self.toggle_selected_photos 
+            "select_all_button": self.toggle_selected_photos
         }
         for button, handler in click_handlers.items():
             self.builder.get_object(button).connect("clicked", handler)
