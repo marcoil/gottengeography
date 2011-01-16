@@ -512,13 +512,6 @@ class GottenGeography:
         
         self.progressbar = self.builder.get_object("progressbar")
         
-        opendialog = self.builder.get_object("open")
-        opendialog.connect("selection-changed", self.update_preview)
-        opendialog.add_buttons(
-            Gtk.STOCK_CANCEL,           Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN,             Gtk.ResponseType.OK)
-        opendialog.set_default_response(Gtk.ResponseType.OK)
-        
         self.strings = ReadableDictionary({
             "quit":    self.builder.get_object("quit").get_property('secondary-text'),
             "preview": self.builder.get_object("preview_label").get_text()

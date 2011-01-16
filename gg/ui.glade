@@ -508,6 +508,8 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
                 <property name="label">gtk-save</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
                 <property name="can_default">True</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
@@ -553,10 +555,36 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="open_cancel">
+                <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="open_ok">
+                <property name="label">gtk-ok</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -567,6 +595,10 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
         </child>
       </object>
     </child>
+    <action-widgets>
+      <action-widget response="-6">open_cancel</action-widget>
+      <action-widget response="-5">open_ok</action-widget>
+    </action-widgets>
   </object>
   <object class="GtkVBox" id="preview">
     <property name="width_request">310</property>
