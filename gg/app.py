@@ -198,8 +198,8 @@ class GottenGeography:
         track_color_alt   = track_color.lighten().lighten()
         polygons = self.polygons[:]
         while len(polygons) > 0:
-            polygons.pop().set_stroke_color(track_color
-                if len(polygons) % 2 else   track_color_alt)
+            polygons.pop().set_stroke_color(track_color_alt
+                if len(polygons) % 2 else   track_color)
         self.gconf_set("track_red",   track_color.red)
         self.gconf_set("track_green", track_color.green)
         self.gconf_set("track_blue",  track_color.blue)
