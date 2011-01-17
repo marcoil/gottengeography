@@ -552,7 +552,10 @@ class GottenGeography:
         })
         for spinbutton in self.offset.values():
             spinbutton.connect("value-changed", self.time_offset_changed)
-        self.builder.get_object("colorselection").connect("color-changed", self.track_color_changed)
+        self.builder.get_object("colorselection").connect(
+            "color-changed", self.track_color_changed)
+        self.builder.get_object("open").connect(
+            "update-preview", self.update_preview)
         
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
