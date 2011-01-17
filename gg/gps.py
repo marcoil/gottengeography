@@ -77,7 +77,7 @@ track_color_alt = track_color.lighten().lighten()
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, map_view, progressbar, filename):
+    def __init__(self, filename, map_view, progressbar, cache, callback):
         """Create the parser and begin parsing."""
         self.polygons = []
         self.state    = {}
@@ -88,6 +88,8 @@ class GPXLoader:
         self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
         self.map_view = map_view
         self.progress = progressbar
+        self.callback = callback
+        self.timezone = None
         
         self.parser = expat.ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -101,6 +103,22 @@ class GPXLoader:
             # Changing the exception raised means that I don't have to
             # import expat in app.py at all.
             raise IOError
+        
+        self.latitude  = (self.area[0] + self.area[2]) / 2
+        self.longitude = (self.area[1] + self.area[3]) / 2
+        cache.request_geoname(self)
+    
+    def valid_coords(self):
+        """Check if the median point of this GPX file is valid."""
+        return valid_coords(self.latitude, self.longitude)
+    
+    def set_geoname(self, geoname):
+        """Get the median timezone of this GPX file from geonames.org."""
+        try:
+            self.timezone = geoname['timezone']['timeZoneId']
+            self.callback(self.timezone)
+        except:
+            self.timezone = None
     
     def element_root(self, name, attributes):
         """Expat StartElementHandler.

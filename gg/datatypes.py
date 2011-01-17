@@ -71,12 +71,7 @@ class Photograph(ReadableDictionary):
                 filename, thumb_size, thumb_size)
         except:
             raise IOError
-        try:
-            # This assumes that the camera and computer have the same timezone.
-            self.timestamp = int(time.mktime(
-                self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
-        except:
-            self.timestamp = int(os.stat(filename).st_mtime)
+        self.calculate_timestamp()
         try:
             self.latitude = dms_to_decimal(
                 *self.exif[gps + 'Latitude'].value +
@@ -99,6 +94,20 @@ class Photograph(ReadableDictionary):
                 self[iptc] = self.exif['Iptc.Application2.' + iptc].values[0]
             except KeyError:
                 pass
+    
+    def calculate_timestamp(self):
+        """Determine the timestamp based on the currently selected timezone.
+        
+        This method relies on the TZ environment variable to be set before
+        it is called. If you don't set TZ before calling this method, then it
+        implicitely assumes that the camera and the computer are set to the
+        same timezone.
+        """
+        try:
+            self.timestamp = int(time.mktime(
+                self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
+        except:
+            self.timestamp = int(os.stat(self.filename).st_mtime)
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
@@ -223,18 +232,21 @@ class GeoCache:
     def receive_geoname(self, gfile, result, key):
         """This callback method is executed when geoname download completes."""
         try:
-            obj = json.loads(gfile.load_contents_finish(result)[1])['geonames']
+            obj = json.loads(gfile.load_contents_finish(result)[1])
         except Exception as inst:
-            if key in self.queue: del self.queue[key]
-            if key in self.stash: del self.stash[key]
+            del self.queue[key]
+            del self.stash[key]
             print inst
-            return
-        geoname = {}
-        for data in obj:
-            geoname.update(data)
-        self.stash[key] = geoname
-        while len(self.queue[key]) > 0:
-            self.queue[key].pop().set_geoname(geoname)
+        else:
+            if "status" in obj:
+                print obj["status"]
+                del self.queue[key]
+                del self.stash[key]
+            elif "geonames" in obj:
+                self.stash[key] = obj['geonames'][0]
+                print self.stash[key]
+                while len(self.queue[key]) > 0:
+                    self.queue[key].pop().set_geoname(self.stash[key])
 
 # This dictionary maps geonames.org jargon (keys) into IPTC jargon (values).
 geonames_of_interest = {

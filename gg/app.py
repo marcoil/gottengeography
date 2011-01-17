@@ -282,7 +282,8 @@ class GottenGeography:
         start_points = len(self.tracks)
         start_time   = time.clock()
         
-        gpx = GPXLoader(self.map_view, self.progressbar, filename)
+        gpx = GPXLoader(filename, self.map_view, self.progressbar,
+            self.cache, self.handle_gpx_timezone)
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
         self.polygons.extend(gpx.polygons)
@@ -422,6 +423,13 @@ class GottenGeography:
             del self.photo[photo.filename]
         self.builder.get_object("select_all_button").set_active(False)
         self.update_sensitivity()
+    
+    def handle_gpx_timezone(self, timezone):
+        """Recalculate photo timestamps when correct timezone is discovered."""
+        os.environ["TZ"] = timezone
+        for photo in self.photo.values():
+            photo.calculate_timestamp()
+            self.auto_timestamp_comparison(photo)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
