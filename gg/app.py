@@ -636,7 +636,7 @@ class GottenGeography:
         # 260-(0.51*i) ends at 255 or full opacity. The numbers come from
         # simplifying the formula ((508-i)/500) * 255.
         xhair = self.actors.crosshair
-        for i in range(500, 7, -1):
+        for i in range(200, 7, -1):
             xhair.set_size(i, i)
             xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
             xhair.set_property('opacity', int(260-(0.51*i)))
