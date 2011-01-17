@@ -77,7 +77,7 @@ track_color_alt = track_color.lighten().lighten()
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, filename, map_view, progressbar, cache, callback):
+    def __init__(self, filename, map_view, progressbar, callback):
         """Create the parser and begin parsing."""
         self.polygons = []
         self.state    = {}
@@ -106,7 +106,6 @@ class GPXLoader:
         
         self.latitude  = (self.area[0] + self.area[2]) / 2
         self.longitude = (self.area[1] + self.area[3]) / 2
-        cache.request_geoname(self)
     
     def valid_coords(self):
         """Check if the median point of this GPX file is valid."""

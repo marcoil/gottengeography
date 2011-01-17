@@ -244,7 +244,6 @@ class GeoCache:
                 del self.stash[key]
             elif "geonames" in obj:
                 self.stash[key] = obj['geonames'][0]
-                print self.stash[key]
                 while len(self.queue[key]) > 0:
                     self.queue[key].pop().set_geoname(self.stash[key])
 
