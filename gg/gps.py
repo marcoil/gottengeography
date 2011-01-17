@@ -72,6 +72,7 @@ def format_coords(lat, lon):
 delimiters = re.compile(r'[:TZ-]')
 
 track_color = Clutter.Color.new(128, 0,  192, 128)
+track_color_alt = track_color.lighten().lighten()
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
@@ -125,8 +126,8 @@ class GPXLoader:
         if name == "trkseg":
             self.polygons.append(Champlain.Polygon())
             self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(track_color)
-#                if len(self.polygons) % 2 else self.track_b)
+            self.polygons[-1].set_stroke_color(track_color
+                if len(self.polygons) % 2 else track_color_alt)
             self.polygons[-1].show()
             self.map_view.add_polygon(self.polygons[-1])
     

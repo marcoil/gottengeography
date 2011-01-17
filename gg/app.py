@@ -195,23 +195,25 @@ class GottenGeography:
         track_color.red   = color.red   / 256
         track_color.green = color.green / 256
         track_color.blue  = color.blue  / 256
-        for gpx in self.gpx:
-            for polygon in gpx.polygons:
-                polygon.set_stroke_color(track_color)
+        track_color_alt   = track_color.lighten().lighten()
+        polygons = self.polygons[:]
+        while len(polygons) > 0:
+            polygons.pop().set_stroke_color(track_color
+                if len(polygons) % 2 else   track_color_alt)
         self.gconf_set("track_red",   track_color.red)
         self.gconf_set("track_green", track_color.green)
         self.gconf_set("track_blue",  track_color.blue)
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
-        for gpx in self.gpx:
-            for polygon in gpx.polygons:
-                polygon.hide()
-                # Maybe some day...
-                #polygon.clear_points()
-                #self.map_view.remove_polygon(polygon)
+        for polygon in self.polygons:
+            polygon.hide()
+            # Maybe some day...
+            #polygon.clear_points()
+            #self.map_view.remove_polygon(polygon)
         
         self.gpx       = []
+        self.polygons  = []
         self.tracks    = {}
         self.metadata  = {
             'delta': 0,                  # Time offset
@@ -283,6 +285,7 @@ class GottenGeography:
         gpx = GPXLoader(self.map_view, self.progressbar, filename)
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
+        self.polygons.extend(gpx.polygons)
         
         self.metadata['alpha'] = min(self.metadata['alpha'], gpx.alpha)
         self.metadata['omega'] = max(self.metadata['omega'], gpx.omega)
@@ -500,6 +503,7 @@ class GottenGeography:
         self.cache    = GeoCache()
         self.selected = set()
         self.modified = set()
+        self.polygons = []
         self.history  = []
         self.photo    = {}
         self.gpx      = []
