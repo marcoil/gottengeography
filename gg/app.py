@@ -224,10 +224,11 @@ class GottenGeography:
         self.gpx       = []
         self.polygons  = []
         self.tracks    = {}
-        self.metadata  = {
+        self.metadata  = ReadableDictionary({
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
-            'alpha': float('inf') }      # Initial GPX track point
+            'alpha': float('inf')        # Initial GPX track point
+        })
         self.update_sensitivity()
     
 ################################################################################
@@ -297,8 +298,8 @@ class GottenGeography:
         self.gpx.append(gpx)
         self.polygons.extend(gpx.polygons)
         
-        self.metadata['alpha'] = min(self.metadata['alpha'], gpx.alpha)
-        self.metadata['omega'] = max(self.metadata['omega'], gpx.omega)
+        self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
+        self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
         self.update_sensitivity()
         self.status_message(_("%d points loaded in %.2fs.") %
@@ -336,10 +337,10 @@ class GottenGeography:
         """Use GPX data to calculate photo coordinates and elevation."""
         if photo.manual or len(self.tracks) < 2:
             return
-        timestamp = photo.timestamp + self.metadata['delta']
+        timestamp = photo.timestamp + self.metadata.delta
         # Chronological first and last timestamp created by the GPX device.
-        hi = self.metadata['omega']
-        lo = self.metadata['alpha']
+        hi = self.metadata.omega
+        lo = self.metadata.alpha
         # If the photo is out of range, simply peg it to the end of the range.
         timestamp = min(max(timestamp, lo), hi)
         try:
@@ -383,8 +384,8 @@ class GottenGeography:
             hours += minutes/60
             self.offset.minutes.set_value(0)
             self.offset.hours.set_value(hours)
-        if offset <> self.metadata['delta']:
-            self.metadata['delta'] = offset
+        if offset <> self.metadata.delta:
+            self.metadata.delta = offset
             for photo in self.photo.values():
                 self.auto_timestamp_comparison(photo)
         for spinbutton in self.offset.values():
