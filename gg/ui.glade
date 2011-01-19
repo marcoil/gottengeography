@@ -145,8 +145,8 @@
                 <property name="label" translatable="yes">Zoom In</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-in</property>
-                <accelerator key="plus" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                 <accelerator key="equal" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="plus" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -209,8 +209,8 @@
                 <property name="label" translatable="yes">About</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-about</property>
-                <accelerator key="question" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                 <accelerator key="slash" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="question" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -755,7 +755,7 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
                     <child>
                       <object class="GtkLabel" id="use_system_time_label">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">I never change my camera's clock when I go travelling, so it is safe to assume that my camera and my computer are set to the same timezone &lt;b&gt;(Recommended)&lt;/b&gt;</property>
+                        <property name="label" translatable="yes">I never change my camera's clock when I go travelling, so it is safe to assume that my camera and my computer are set to the same timezone.</property>
                         <property name="use_markup">True</property>
                         <property name="wrap">True</property>
                       </object>
@@ -778,7 +778,7 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
                     <child>
                       <object class="GtkLabel" id="lookup_timezone_label">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">I always set my camera to the local time when I travel, so my camera's timezone differs from my computer's. This option uses geonames.org to find out what timezone to use, and requires an internet connection.</property>
+                        <property name="label" translatable="yes">I always set my camera to the local time when I travel, so my camera's timezone differs from my computer's.</property>
                         <property name="use_markup">True</property>
                         <property name="wrap">True</property>
                       </object>

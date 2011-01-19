@@ -15,14 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import time
-import json
 import pyexiv2
 
 from gettext import gettext as _
 from gi.repository import Gio, GdkPixbuf
+from math import acos, sin, cos, radians
 
 from gps import *
+from territories import *
+
+PACKAGE_DIR  = os.path.dirname(__file__)
+earth_radius = 6371 #km
+iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -62,7 +68,7 @@ class Photograph(ReadableDictionary):
         self.callback = callback
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'marker', 'iter', 'timezone' ] + geonames_of_interest.values():
+        'marker', 'iter', 'timezone' ] + iptc_keys:
             self[key] = None
         try:
             self.exif = pyexiv2.ImageMetadata(filename)
@@ -89,7 +95,7 @@ class Photograph(ReadableDictionary):
                 self.altitude *= -1
         except:
             pass
-        for iptc in geonames_of_interest.values():
+        for iptc in iptc_keys:
             try:
                 self[iptc] = self.exif['Iptc.Application2.' + iptc].values[0]
             except KeyError:
@@ -120,7 +126,7 @@ class Photograph(ReadableDictionary):
         self.exif[key + 'Longitude']    = decimal_to_dms(self.longitude)
         self.exif[key + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
         self.exif[key + 'MapDatum']     = 'WGS-84'
-        for iptc in geonames_of_interest.values():
+        for iptc in iptc_keys:
             if self[iptc] is not None:
                 self.exif['Iptc.Application2.' + iptc] = [self[iptc]]
         self.exif.write()
@@ -132,13 +138,9 @@ class Photograph(ReadableDictionary):
         self.latitude  = lat
         self.longitude = lon
         self.position_marker()
-        self.cache.request_geoname(self)
-        self.callback(self)
-    
-    def set_geoname(self, geoname):
-        """Insert geonames into the photo."""
-        for geocode, iptc in geonames_of_interest.items():
-            self[iptc] = geoname.get(geocode)
+        self.City, state, self.CountryCode, timezone = self.cache[self]
+        self.ProvinceState = territories.get("%s.%s" % (self.CountryCode, state))
+        self.CountryName   = countries.get(self.CountryCode)
         self.callback(self)
     
     def position_marker(self):
@@ -214,59 +216,37 @@ class Photograph(ReadableDictionary):
     
     def long_summary(self):
         """Longer summary with Pango markup."""
-        return ('<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % (
+        return '<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % (
             os.path.basename(self.filename),
             self.short_summary()
-        )).encode('utf-8')
+        )
 
 class GeoCache:
     """This class serves as a data store for caching geonames.org data."""
     
     def __init__(self):
         self.stash = {}
-        self.queue = {}
     
-    def request_geoname(self, photo):
-        """Use the GeoNames.org webservice to name coordinates."""
+    def __getitem__(self, photo):
+        """Lookup geonames.org info from disk, not web."""
         if not photo.valid_coords():
             return
-        key = "%.2f,%.2f" % (photo.latitude, photo.longitude)
+        lat1, lon1 = radians(photo.latitude), radians(photo.longitude)
+        key        = "%.2f,%.2f" % (photo.latitude, photo.longitude)
         if key in self.stash:
-            if self.stash[key] is None:
-                self.queue[key].append(photo)
-            else:
-                photo.set_geoname(self.stash[key])
-        else:
-            self.queue[key] = [photo]
-            self.stash[key] = None
-            gfile = Gio.file_new_for_uri(
-                'http://ws.geonames.org/findNearbyJSON?lat=%s&lng=%s'
-                % (photo.latitude, photo.longitude) +
-                '&fclass=P&fcode=PPLA&fcode=PPL&fcode=PPLC&style=full')
-            gfile.load_contents_async(None, self.receive_geoname, key)
-    
-    def receive_geoname(self, gfile, result, key):
-        """This callback method is executed when geoname download completes."""
-        try:
-            obj = json.loads(gfile.load_contents_finish(result)[1])
-        except Exception as inst:
-            del self.queue[key]
-            del self.stash[key]
-            print inst
-        else:
-            if "status" in obj:
-                print obj["status"]
-                del self.queue[key]
-                del self.stash[key]
-            elif "geonames" in obj:
-                self.stash[key] = obj['geonames'][0]
-                while len(self.queue[key]) > 0:
-                    self.queue[key].pop().set_geoname(self.stash[key])
+            return self.stash[key]
+        near, dist = None, float('inf')
+        with open(PACKAGE_DIR + "/cities.txt") as cities:
+            for city in cities:
+                name, lat, lon, country, state, tz = city.split("\t")
+                lat2, lon2 = radians(float(lat)), radians(float(lon))
+                # lifted from http://www.movable-type.co.uk/scripts/latlong.html
+                delta = acos(sin(lat1) * sin(lat2) +
+                             cos(lat1) * cos(lat2) *
+                             cos(lon2  - lon1))    * earth_radius
+                if delta < dist:
+                    dist = delta
+                    near = [name, state, country, tz]
+        self.stash[key] = near
+        return near
 
-# This dictionary maps geonames.org jargon (keys) into IPTC jargon (values).
-geonames_of_interest = {
-    'countryCode': 'CountryCode',
-    'countryName': 'CountryName',
-    'adminName1':  'ProvinceState',
-    'name':        'City'
-}

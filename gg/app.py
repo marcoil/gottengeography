@@ -37,8 +37,6 @@ from gettext import gettext as _
 from datatypes import *
 from gps import *
 
-PACKAGE_DIR = os.path.dirname(__file__)
-
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -209,7 +207,9 @@ class GottenGeography:
         self.gconf_set("lookup_timezone", 1 if radio.get_active() else 0)
         if radio.get_active():
             if len(self.gpx) > 0:
-                self.cache.request_geoname(self.gpx[-1])
+                gpx = self.gpx[-1]
+                gpx.timezone = self.cache[gpx][3]
+                self.handle_gpx_timezone(gpx.timezone)
         else:
             self.handle_gpx_timezone(self.system_timezone)
     
@@ -292,8 +292,7 @@ class GottenGeography:
         start_points = len(self.tracks)
         start_time   = time.clock()
         
-        gpx = GPXLoader(filename, self.map_view, self.progressbar,
-            self.handle_gpx_timezone)
+        gpx = GPXLoader(filename, self.map_view, self.progressbar)
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
         self.polygons.extend(gpx.polygons)
@@ -307,7 +306,8 @@ class GottenGeography:
         if len(gpx.tracks) > 0:
             self.map_view.ensure_visible(*gpx.area + [False])
         if self.gconf_get("lookup_timezone", int):
-            self.cache.request_geoname(gpx)
+            gpx.timezone = self.cache[gpx][3]
+            self.handle_gpx_timezone(gpx.timezone)
         for photo in self.photo.values():
             self.auto_timestamp_comparison(photo)
     
@@ -426,7 +426,7 @@ class GottenGeography:
     
     def handle_gpx_timezone(self, timezone):
         """Recalculate photo timestamps when correct timezone is discovered."""
-        os.environ["TZ"] = timezone
+        os.environ["TZ"] = timezone.strip()
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
@@ -449,7 +449,8 @@ class GottenGeography:
         image = self.builder.get_object("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(), self.cache, self.modify_summary, 300)
+            photo = Photograph(chooser.get_preview_filename(), self.cache,
+                lambda x: None, 300)
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)

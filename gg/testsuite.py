@@ -166,17 +166,6 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.gpx), 0)
         self.assertEqual(len(self.gui.tracks), 0)
         
-        """ Geonames test disabled due to overloaded servers
-        # Wait for geonames to finish downloading before saving
-        mod = self.gui.modified.copy()
-        while len(mod) > 0:
-            photo = mod.pop()
-            while photo.City is None:
-                time.sleep(.1)
-                self.gui.redraw_interface()
-        self.assertEqual(len(self.gui.cache.stash), 4)
-        """
-        
         self.gui.save_all_files()
         self.assertEqual(len(self.gui.modified), 0)
         
@@ -192,11 +181,9 @@ class GottenGeographyTester(unittest.TestCase):
             photo = Photograph(filename, self.gui.cache, self.gui.modify_summary)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
-            """ Geonames test disabled due to overloaded servers
             self.assertEqual(photo.City, "Edmonton")
             self.assertEqual(photo.ProvinceState, "Alberta")
             self.assertEqual(photo.CountryName, "Canada")
-            """
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -206,7 +193,7 @@ class GottenGeographyTester(unittest.TestCase):
         photo = Photograph(marker.get_text(), self.gui.cache, self.gui.modify_summary)
         photo.marker = marker
         
-        for iptc in geonames_of_interest.values():
+        for iptc in iptc_keys:
             photo[iptc] = None
         
         photo.latitude  = None
