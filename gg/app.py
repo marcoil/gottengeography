@@ -276,7 +276,7 @@ class GottenGeography:
         } )
         
         photo.position_marker()
-        self.modified.discard(photo)
+        self.modified.discard(self.photo.get(filename, None))
         self.photo[filename] = photo
         self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
         self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
