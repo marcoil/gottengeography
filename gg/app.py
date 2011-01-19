@@ -438,6 +438,7 @@ class GottenGeography:
     def handle_gpx_timezone(self, timezone):
         """Recalculate photo timestamps when correct timezone is discovered."""
         os.environ["TZ"] = timezone
+        time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
             self.auto_timestamp_comparison(photo)
@@ -558,7 +559,7 @@ class GottenGeography:
             actor.raise_top()
             actor.show()
         
-        self.system_timezone = os.environ["TZ"]
+        self.system_timezone = time.strftime("%Z")
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
