@@ -23,6 +23,7 @@ import os
 import re
 import time
 import gettext
+import cPickle
 
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
@@ -198,9 +199,7 @@ class GottenGeography:
         while len(polygons) > 0:
             polygons.pop().set_stroke_color(track_color_alt
                 if len(polygons) % 2 else   track_color)
-        self.gconf_set("track_red",   track_color.red)
-        self.gconf_set("track_green", track_color.green)
-        self.gconf_set("track_blue",  track_color.blue)
+        self.gconf_set("track_color", [track_color.red, track_color.green, track_color.blue])
     
     def lookup_tz_changed(self, radio):
         """Control whether to lookup GPX timezones when preferences change."""
@@ -643,9 +642,12 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
-        track_color.red   = self.gconf_get("track_red",   int)
-        track_color.green = self.gconf_get("track_green", int)
-        track_color.blue  = self.gconf_get("track_blue",  int)
+        try:
+            colors = self.gconf_get("track_color", list)
+        except:
+            colors = [128, 0, 255]
+        finally:
+            track_color.red, track_color.green, track_color.blue = colors
         
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")
@@ -686,12 +688,14 @@ class GottenGeography:
         key = gconf_key(key)
         if   type(value) is float: self.gconf_client.set_float(key, value)
         elif type(value) is int:   self.gconf_client.set_int(key, value)
+        elif type(value) is list:  self.gconf_client.set_string(key, cPickle.dumps(value))
     
     def gconf_get(self, key, type):
         """Gets the given GConf key as the requested type."""
         key = gconf_key(key)
         if   type is float: return self.gconf_client.get_float(key)
         elif type is int:   return self.gconf_client.get_int(key)
+        elif type is list:  return cPickle.loads(self.gconf_client.get_string(key))
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
