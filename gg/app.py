@@ -206,10 +206,10 @@ class GottenGeography:
     
     def lookup_tz_changed(self, radio):
         """Control whether to lookup GPX timezones when preferences change."""
-        self.lookup_timezone = 1 if radio.get_active() else 0
-        self.gconf_set("lookup_timezone", self.lookup_timezone)
-        if self.lookup_timezone:
-            self.cache.request_geoname(self.gpx[-1])
+        self.gconf_set("lookup_timezone", 1 if radio.get_active() else 0)
+        if radio.get_active():
+            if len(self.gpx) > 0:
+                self.cache.request_geoname(self.gpx[-1])
         else:
             self.handle_gpx_timezone(self.system_timezone)
     
@@ -305,7 +305,7 @@ class GottenGeography:
             (len(self.tracks) - start_points, time.clock() - start_time))
         if len(gpx.tracks) > 0:
             self.map_view.ensure_visible(*gpx.area + [False])
-        if self.lookup_timezone:
+        if self.gconf_get("lookup_timezone", int):
             self.cache.request_geoname(gpx)
         for photo in self.photo.values():
             self.auto_timestamp_comparison(photo)
@@ -656,11 +656,12 @@ class GottenGeography:
         track_color.green = self.gconf_get("track_green", int)
         track_color.blue  = self.gconf_get("track_blue",  int)
         
-        self.lookup_timezone = self.gconf_get("lookup_timezone", int)
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")
-        if self.lookup_timezone: radio_lookup.set_active(True)
-        else:                    radio_system.set_active(True)
+        if self.gconf_get("lookup_timezone", int):
+            radio_lookup.set_active(True)
+        else:
+            radio_system.set_active(True)
         radio_lookup.connect("toggled", self.lookup_tz_changed)
         
         if not animate_crosshair:
