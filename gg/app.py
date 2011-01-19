@@ -317,20 +317,8 @@ class GottenGeography:
         for photo in self.modified.copy():
             self.redraw_interface(1 - len(self.modified) / total,
                 os.path.basename(photo.filename))
-            exif = photo.exif
-            if photo.altitude is not None:
-                exif[key + 'Altitude']    = float_to_rational(photo.altitude)
-                exif[key + 'AltitudeRef'] = '0' if photo.altitude >= 0 else '1'
-            exif[key + 'Latitude']     = decimal_to_dms(photo.latitude)
-            exif[key + 'LatitudeRef']  = "N" if photo.latitude >= 0 else "S"
-            exif[key + 'Longitude']    = decimal_to_dms(photo.longitude)
-            exif[key + 'LongitudeRef'] = "E" if photo.longitude >= 0 else "W"
-            exif[key + 'MapDatum']     = 'WGS-84'
-            for iptc in geonames_of_interest.values():
-                if photo[iptc] is not None:
-                    exif['Iptc.Application2.' + iptc] = [photo[iptc]]
             try:
-                exif.write()
+                photo.write()
             except Exception as inst:
                 self.status_message(", ".join(inst.args))
             else:

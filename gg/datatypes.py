@@ -109,6 +109,22 @@ class Photograph(ReadableDictionary):
         except:
             self.timestamp = int(os.stat(self.filename).st_mtime)
     
+    def write(self):
+        """Save exif data to photo file on disk."""
+        key = 'Exif.GPSInfo.GPS'
+        if self.altitude is not None:
+            self.exif[key + 'Altitude']    = float_to_rational(self.altitude)
+            self.exif[key + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
+        self.exif[key + 'Latitude']     = decimal_to_dms(self.latitude)
+        self.exif[key + 'LatitudeRef']  = "N" if self.latitude >= 0 else "S"
+        self.exif[key + 'Longitude']    = decimal_to_dms(self.longitude)
+        self.exif[key + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
+        self.exif[key + 'MapDatum']     = 'WGS-84'
+        for iptc in geonames_of_interest.values():
+            if self[iptc] is not None:
+                self.exif['Iptc.Application2.' + iptc] = [self[iptc]]
+        self.exif.write()
+    
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
         if ele is not None:
