@@ -237,11 +237,11 @@ class GeoCache:
         """Lookup geonames.org info from disk, not web."""
         if not photo.valid_coords():
             return
-        lat1, lon1 = radians(photo.latitude), radians(photo.longitude)
-        key        = "%.2f,%.2f" % (photo.latitude, photo.longitude)
+        key = "%.2f,%.2f" % (photo.latitude, photo.longitude)
         if key in self.stash:
             return self.stash[key]
         near, dist = None, float('inf')
+        lat1, lon1 = radians(photo.latitude), radians(photo.longitude)
         with open(os.path.join(PACKAGE_DIR, "cities.txt")) as cities:
             for city in cities:
                 name, lat, lon, country, state, tz = city.split("\t")
