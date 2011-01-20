@@ -36,7 +36,9 @@ class GottenGeographyTester(unittest.TestCase):
         """Start the GottenGeography application."""
         # Make the tests work for people outside my time zone.
         os.environ["TZ"] = "America/Edmonton"
+        time.tzset()
         self.gui = GottenGeography(animate_crosshair=False)
+        self.gui.builder.get_object("use_system_time").set_active(True)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -68,15 +70,15 @@ class GottenGeographyTester(unittest.TestCase):
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
+        os.system("git checkout demo")
         self.assertEqual(len(self.gui.tracks), 0)
         self.assertEqual(len(self.gui.gpx), 0)
         self.assertEqual(self.gui.metadata['alpha'], float('inf'))
         self.assertEqual(self.gui.metadata['omega'], float('-inf'))
         
         # Load only the photos first
-        os.chdir('./demo/')
-        for demo in os.listdir('.'):
-            filename = "%s/%s" % (os.getcwd(), demo)
+        for demo in os.listdir('./demo/'):
+            filename = os.path.join(os.getcwd(), "demo", demo)
             if not re.search(r'gpx$', demo):
                 self.assertRaises(IOError,
                     self.gui.load_gpx_from_file,
@@ -109,7 +111,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.selected), 0)
         
         # Load the GPX
-        gpx_filename="%s/%s" % (os.getcwd(), "20101016.gpx")
+        gpx_filename=os.path.join(os.getcwd(), "demo", "20101016.gpx")
         self.assertRaises(IOError, self.gui.add_or_reload_photo, gpx_filename)
         self.gui.load_gpx_from_file(gpx_filename)
         
@@ -184,6 +186,15 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(photo.City, "Edmonton")
             self.assertEqual(photo.ProvinceState, "Alberta")
             self.assertEqual(photo.CountryName, "Canada")
+    
+    def test_auto_timestamp(self):
+        """Ensure that we can determine the correct timezone if it is set incorrectly."""
+        os.environ["TZ"] = "Europe/Paris"
+        time.tzset()
+        self.gui.builder.get_object("lookup_timezone").set_active(True)
+        self.test_demo_data()
+        os.environ["TZ"] = "America/Edmonton"
+        time.tzset()
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
