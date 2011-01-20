@@ -271,18 +271,17 @@ class GottenGeography:
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = Photograph(filename, self.cache, self.modify_summary)
-        photo.update( {
-            'iter':   self.liststore.append([None] * 4),
-            'marker': self.add_marker(filename)
-        } if filename not in self.photo else {
-            'iter':   self.photo[filename].iter,
-            'marker': self.photo[filename].marker
-        } )
-        
+        if filename not in self.photo:
+            self.photo[filename] = Photograph(filename, self.cache, self.modify_summary)
+            self.photo[filename].update( {
+                'iter':   self.liststore.append([None] * 4),
+                'marker': self.add_marker(filename)
+            } )
+        else:
+            self.photo[filename].read()
+        photo = self.photo[filename]
         photo.position_marker()
-        self.modified.discard(self.photo.get(filename, None))
-        self.photo[filename] = photo
+        self.modified.discard(photo)
         self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
         self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
         self.liststore.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
