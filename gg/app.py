@@ -188,18 +188,23 @@ class GottenGeography:
         self.map_photo_layer.add_marker(marker)
         return marker
     
+    def make_clutter_color(self):
+        """Generate a Clutter.Color from the currently chosen color."""
+        color = self.colorpicker.get_current_color()
+        return Clutter.Color.new(
+            *map(lambda x: x / 256, [color.red, color.green, color.blue, 32768])
+        )
+    
     def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
-        color = selection.get_current_color()
-        track_color.red   = color.red   / 256
-        track_color.green = color.green / 256
-        track_color.blue  = color.blue  / 256
-        track_color_alt   = track_color.lighten().lighten()
+        color     = selection.get_current_color()
+        color_one = self.make_clutter_color()
+        color_two = color_one.lighten().lighten()
         polygons = self.polygons[:]
         while len(polygons) > 0:
-            polygons.pop().set_stroke_color(track_color_alt
-                if len(polygons) % 2 else   track_color)
-        self.gconf_set("track_color", [track_color.red, track_color.green, track_color.blue])
+            polygons.pop().set_stroke_color(color_two
+                if len(polygons) % 2 else   color_one)
+        self.gconf_set("track_color", [color.red, color.green, color.blue])
     
     def lookup_tz_changed(self, radio):
         """Control whether to lookup GPX timezones when preferences change."""
@@ -291,7 +296,7 @@ class GottenGeography:
         start_points = len(self.tracks)
         start_time   = time.clock()
         
-        gpx = GPXLoader(filename, self.map_view, self.progressbar)
+        gpx = GPXLoader(filename, self.map_view, self.progressbar, self.make_clutter_color())
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
         self.polygons.extend(gpx.polygons)
@@ -465,23 +470,16 @@ class GottenGeography:
     
     def preferences_dialog(self, widget=None, event=None):
         """Allow the user to configure this application."""
-        colorpicker  = self.builder.get_object("colorselection")
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")
         previous     = ReadableDictionary({
             'lookup': radio_lookup.get_active(),
-            'color':  Gdk.Color(
-                track_color.red   * 256,
-                track_color.green * 256,
-                track_color.blue  * 256
-            )
+            'color':  self.colorpicker.get_current_color()
         })
-        colorpicker.set_current_color(previous.color)
-        colorpicker.set_previous_color(previous.color)
         dialog = self.builder.get_object("preferences")
         if not dialog.run():
-            colorpicker.set_current_color(previous.color)
-            colorpicker.set_previous_color(previous.color)
+            self.colorpicker.set_current_color(previous.color)
+            self.colorpicker.set_previous_color(previous.color)
             radio_lookup.set_active(previous.lookup)
             radio_system.set_active(not previous.lookup)
         dialog.hide()
@@ -568,8 +566,6 @@ class GottenGeography:
         })
         for spinbutton in self.offset.values():
             spinbutton.connect("value-changed", self.time_offset_changed)
-        self.builder.get_object("colorselection").connect(
-            "color-changed", self.track_color_changed)
         self.builder.get_object("open").connect(
             "update-preview", self.update_preview)
         
@@ -642,12 +638,16 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
+        
         try:
             colors = self.gconf_get("track_color", list)
         except:
-            colors = [128, 0, 255]
+            colors = [32768, 0, 65535]
         finally:
-            track_color.red, track_color.green, track_color.blue = colors
+            self.colorpicker = self.builder.get_object("colorselection")
+            self.colorpicker.connect("color-changed", self.track_color_changed)
+            self.colorpicker.set_current_color(Gdk.Color(*colors))
+            self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")

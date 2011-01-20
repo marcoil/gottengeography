@@ -71,13 +71,10 @@ def format_coords(lat, lon):
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
 delimiters = re.compile(r'[:TZ-]')
 
-track_color = Clutter.Color.new(128, 0,  192, 128)
-track_color_alt = track_color.lighten().lighten()
-
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, filename, map_view, progressbar):
+    def __init__(self, filename, map_view, progressbar, color):
         """Create the parser and begin parsing."""
         self.polygons = []
         self.state    = {}
@@ -88,7 +85,8 @@ class GPXLoader:
         self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
         self.map_view = map_view
         self.progress = progressbar
-        self.timezone = None
+        self.color_a  = color
+        self.color_b  = color.lighten().lighten()
         
         self.parser = expat.ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -134,8 +132,8 @@ class GPXLoader:
         if name == "trkseg":
             self.polygons.append(Champlain.Polygon())
             self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(track_color
-                if len(self.polygons) % 2 else track_color_alt)
+            self.polygons[-1].set_stroke_color(self.color_a
+                if len(self.polygons) % 2 else self.color_b)
             self.polygons[-1].show()
             self.map_view.add_polygon(self.polygons[-1])
     
