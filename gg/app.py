@@ -313,7 +313,7 @@ class GottenGeography:
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        total, key = len(self.modified), 'Exif.GPSInfo.GPS'
+        total = len(self.modified)
         for photo in self.modified.copy():
             self.redraw_interface(1 - len(self.modified) / total,
                 os.path.basename(photo.filename))
@@ -552,7 +552,7 @@ class GottenGeography:
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
-        self.builder.add_from_file("%s/%s" % (PACKAGE_DIR, "ui.glade"))
+        self.builder.add_from_file(os.path.join(PACKAGE_DIR, "ui.glade"))
         
         self.progressbar = self.builder.get_object("progressbar")
         

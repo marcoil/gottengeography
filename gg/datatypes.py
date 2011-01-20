@@ -236,7 +236,7 @@ class GeoCache:
         if key in self.stash:
             return self.stash[key]
         near, dist = None, float('inf')
-        with open(PACKAGE_DIR + "/cities.txt") as cities:
+        with open(os.path.join(PACKAGE_DIR, "cities.txt")) as cities:
             for city in cities:
                 name, lat, lon, country, state, tz = city.split("\t")
                 lat2, lon2 = radians(float(lat)), radians(float(lon))
