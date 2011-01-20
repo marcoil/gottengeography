@@ -209,13 +209,17 @@ class GottenGeography:
     def lookup_tz_changed(self, radio):
         """Control whether to lookup GPX timezones when preferences change."""
         self.gconf_set("lookup_timezone", 1 if radio.get_active() else 0)
-        if radio.get_active():
-            if len(self.gpx) > 0:
-                gpx = self.gpx[-1]
-                gpx.timezone = self.cache[gpx][3]
-                self.handle_gpx_timezone(gpx.timezone)
-        else:
-            self.handle_gpx_timezone(self.system_timezone)
+        if len(self.gpx) > 0:
+            self.set_timezone()
+    
+    def set_timezone(self):
+        """Recalculate photo timestamps when correct timezone is discovered."""
+        os.environ["TZ"] = self.tz.gpx if self.gconf_get("lookup_timezone",
+            int) else self.tz.sys
+        time.tzset()
+        for photo in self.photo.values():
+            photo.calculate_timestamp()
+            self.auto_timestamp_comparison(photo)
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
@@ -308,11 +312,8 @@ class GottenGeography:
             (len(self.tracks) - start_points, time.clock() - start_time))
         if len(gpx.tracks) > 0:
             self.map_view.ensure_visible(*gpx.area + [False])
-        if self.gconf_get("lookup_timezone", int):
-            gpx.timezone = self.cache[gpx][3]
-            self.handle_gpx_timezone(gpx.timezone)
-        for photo in self.photo.values():
-            self.auto_timestamp_comparison(photo)
+        self.tz.gpx = self.cache[gpx][3].strip()
+        self.set_timezone()
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -427,14 +428,6 @@ class GottenGeography:
         self.builder.get_object("select_all_button").set_active(False)
         self.update_sensitivity()
     
-    def handle_gpx_timezone(self, timezone):
-        """Recalculate photo timestamps when correct timezone is discovered."""
-        os.environ["TZ"] = timezone.strip()
-        time.tzset()
-        for photo in self.photo.values():
-            photo.calculate_timestamp()
-            self.auto_timestamp_comparison(photo)
-    
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
         self.modified.add(photo)
@@ -545,7 +538,9 @@ class GottenGeography:
             actor.raise_top()
             actor.show()
         
-        self.system_timezone = time.strftime("%Z")
+        self.tz = ReadableDictionary()
+        self.tz.sys = time.strftime("%Z")
+        self.tz.gpx = None
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
