@@ -26,10 +26,13 @@ from math import acos, sin, cos, radians
 from gps import *
 from territories import *
 
-PACKAGE_DIR  = os.path.dirname(__file__)
 earth_radius = 6371 #km
 iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
 gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
+
+def get_file(filename):
+    """Find a file that's in the same directory as this program."""
+    return os.path.join(os.path.dirname(__file__), filename)
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -241,7 +244,7 @@ class GeoCache:
             return self.stash[key]
         near, dist = None, float('inf')
         lat1, lon1 = radians(photo.latitude), radians(photo.longitude)
-        with open(os.path.join(PACKAGE_DIR, "cities.txt")) as cities:
+        with open(get_file("cities.txt")) as cities:
             for city in cities:
                 name, lat, lon, country, state, tz = city.split("\t")
                 lat2, lon2 = radians(float(lat)), radians(float(lon))

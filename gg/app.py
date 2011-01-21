@@ -542,7 +542,7 @@ class GottenGeography:
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
-        self.builder.add_from_file(os.path.join(PACKAGE_DIR, "ui.glade"))
+        self.builder.add_from_file(get_file("ui.glade"))
         
         self.progressbar = self.builder.get_object("progressbar")
         

@@ -200,7 +200,7 @@ class GottenGeographyTester(unittest.TestCase):
         """Ensure that strings print properly."""
         
         marker = ReadableDictionary()
-        marker.get_text = lambda: PACKAGE_DIR + '/../demo/IMG_2411.JPG'
+        marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
         photo = Photograph(marker.get_text(), self.gui.geonamer, self.gui.modify_summary)
         photo.marker = marker
         
