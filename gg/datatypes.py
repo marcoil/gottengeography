@@ -29,6 +29,7 @@ from territories import *
 PACKAGE_DIR  = os.path.dirname(__file__)
 earth_radius = 6371 #km
 iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
+gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -74,7 +75,6 @@ class Photograph(ReadableDictionary):
     
     def read(self):
         """Load exif data from disk."""
-        gps = 'Exif.GPSInfo.GPS'
         try:
             self.exif = pyexiv2.ImageMetadata(self.filename)
             self.exif.read()
@@ -123,15 +123,14 @@ class Photograph(ReadableDictionary):
     
     def write(self):
         """Save exif data to photo file on disk."""
-        key = 'Exif.GPSInfo.GPS'
         if self.altitude is not None:
-            self.exif[key + 'Altitude']    = float_to_rational(self.altitude)
-            self.exif[key + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
-        self.exif[key + 'Latitude']     = decimal_to_dms(self.latitude)
-        self.exif[key + 'LatitudeRef']  = "N" if self.latitude >= 0 else "S"
-        self.exif[key + 'Longitude']    = decimal_to_dms(self.longitude)
-        self.exif[key + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
-        self.exif[key + 'MapDatum']     = 'WGS-84'
+            self.exif[gps + 'Altitude']    = float_to_rational(self.altitude)
+            self.exif[gps + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
+        self.exif[gps + 'Latitude']     = decimal_to_dms(self.latitude)
+        self.exif[gps + 'LatitudeRef']  = "N" if self.latitude >= 0 else "S"
+        self.exif[gps + 'Longitude']    = decimal_to_dms(self.longitude)
+        self.exif[gps + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
+        self.exif[gps + 'MapDatum']     = 'WGS-84'
         for iptc in iptc_keys:
             if self[iptc] is not None:
                 self.exif['Iptc.Application2.' + iptc] = [self[iptc]]
