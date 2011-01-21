@@ -624,6 +624,8 @@ class GottenGeography:
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
+        accel.connect(Gdk.keyval_from_name("q"),
+            Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
         self.clear_all_gpx()
         self.redraw_interface()
