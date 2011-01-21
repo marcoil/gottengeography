@@ -84,7 +84,7 @@ class GottenGeographyTester(unittest.TestCase):
                     self.gui.load_gpx_from_file,
                     filename
                 )
-                self.gui.add_or_reload_photo(filename)
+                self.gui.load_img_from_file(filename)
         
         iter = self.gui.liststore.get_iter_first()
         self.assertTrue(iter)
@@ -112,7 +112,7 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Load the GPX
         gpx_filename=os.path.join(os.getcwd(), "demo", "20101016.gpx")
-        self.assertRaises(IOError, self.gui.add_or_reload_photo, gpx_filename)
+        self.assertRaises(IOError, self.gui.load_img_from_file, gpx_filename)
         self.gui.load_gpx_from_file(gpx_filename)
         
         # Check that the GPX is loaded

@@ -252,7 +252,7 @@ class GottenGeography:
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
             try:
-                try:            self.add_or_reload_photo(filename)
+                try:            self.load_img_from_file(filename)
                 except IOError: self.load_gpx_from_file(filename)
             except IOError:
                 invalid_files.append(os.path.basename(filename))
@@ -263,7 +263,7 @@ class GottenGeography:
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
     
-    def add_or_reload_photo(self, filename):
+    def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
         
         Checks if the file has already been loaded, and if not, creates a new
@@ -411,7 +411,7 @@ class GottenGeography:
             photo = mod_in_sel.pop()
             self.redraw_interface(1 - len(mod_in_sel) / total,
                 os.path.basename(photo.filename))
-            self.add_or_reload_photo(photo.filename)
+            self.load_img_from_file(photo.filename)
         self.progressbar.hide()
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
