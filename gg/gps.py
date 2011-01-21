@@ -69,8 +69,7 @@ def format_coords(lat, lon):
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-delimiters = re.compile(r'[:TZ-]')
-split = delimiters.split
+split = re.compile(r'[:TZ-]').split
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
