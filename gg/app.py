@@ -206,16 +206,14 @@ class GottenGeography:
                 if len(polygons) % 2 else   color_one)
         self.gconf_set("track_color", [color.red, color.green, color.blue])
     
-    def lookup_tz_changed(self, radio):
-        """Control whether to lookup GPX timezones when preferences change."""
-        self.gconf_set("lookup_timezone", 1 if radio.get_active() else 0)
-        if len(self.gpx) > 0:
-            self.set_timezone()
-    
-    def set_timezone(self):
-        """Recalculate photo timestamps when correct timezone is discovered."""
-        os.environ["TZ"] = self.tz.gpx if self.gconf_get("lookup_timezone",
-            int) else self.tz.sys
+    def set_timezone(self, radio=None):
+        """Reposition photos depending on which timezone the user selected."""
+        try:
+            use_gpx = 1 if radio.get_active() else 0
+            self.gconf_set("lookup_timezone", use_gpx)
+        except:
+            use_gpx = self.gconf_get("lookup_timezone", int)
+        os.environ["TZ"] = self.tz.gpx if use_gpx else self.tz.sys
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
@@ -649,7 +647,7 @@ class GottenGeography:
             radio_lookup.set_active(True)
         else:
             radio_system.set_active(True)
-        radio_lookup.connect("toggled", self.lookup_tz_changed)
+        radio_lookup.connect("toggled", self.set_timezone)
         
         if not animate_crosshair:
             return
