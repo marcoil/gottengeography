@@ -20,12 +20,12 @@ import re
 import time
 import math
 import pyexiv2
-import calendar
 
 from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
 from fractions import Fraction
 from xml.parsers import expat
+from calendar import timegm
 
 def dms_to_decimal(degrees, minutes, seconds, sign=""):
     """Convert degrees, minutes, seconds into decimal degrees."""
@@ -70,6 +70,7 @@ def format_coords(lat, lon):
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
 delimiters = re.compile(r'[:TZ-]')
+split = delimiters.split
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
@@ -168,8 +169,7 @@ class GPXLoader:
         if name <> "trkpt":
             return
         try:
-            timestamp = calendar.timegm(map(int,
-                delimiters.split(self.state['time'])[0:6]))
+            timestamp = timegm(map(int, split(self.state['time'])[0:6]))
             lat = float(self.state['lat'])
             lon = float(self.state['lon'])
         except:
