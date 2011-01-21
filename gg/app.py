@@ -450,7 +450,7 @@ class GottenGeography:
         image.set_from_pixbuf(photo.thumb)
         label.set_label("%s\n%s" % (photo.short_summary(), photo.maps_link()))
     
-    def add_files_dialog(self, widget=None, data=None):
+    def add_files_dialog(self, *args):
         """Display a file chooser, and attempt to load chosen files."""
         chooser = self.builder.get_object("open")
         response = chooser.run()
@@ -458,7 +458,7 @@ class GottenGeography:
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
-    def preferences_dialog(self, widget=None, event=None):
+    def preferences_dialog(self, *args):
         """Allow the user to configure this application."""
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")
@@ -474,7 +474,7 @@ class GottenGeography:
             radio_system.set_active(not previous.lookup)
         dialog.hide()
     
-    def confirm_quit_dialog(self, widget=None, event=None):
+    def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
         self.remember_location_with_gconf()
         # If there's no unsaved data, just close without confirmation.
@@ -490,7 +490,7 @@ class GottenGeography:
         if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
         return True
     
-    def about_dialog(self, widget=None, data=None):
+    def about_dialog(self, *args):
         """Describe this application to the user."""
         dialog = self.builder.get_object("about")
         dialog.run()
@@ -629,7 +629,6 @@ class GottenGeography:
         self.redraw_interface()
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
-        
         
         try:
             colors = self.gconf_get("track_color", list)
