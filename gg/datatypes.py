@@ -63,7 +63,7 @@ class Photograph(ReadableDictionary):
     def __init__(self, filename, cache, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
-        self.cache    = cache
+        self.geonamer = cache
         self.callback = callback
         self.manual   = False
         for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
@@ -144,7 +144,7 @@ class Photograph(ReadableDictionary):
         self.latitude  = lat
         self.longitude = lon
         self.position_marker()
-        self.City, state, self.CountryCode, timezone = self.cache[self]
+        self.City, state, self.CountryCode, timezone = self.geonamer[self]
         self.ProvinceState = territories.get("%s.%s" % (self.CountryCode, state))
         self.CountryName   = countries.get(self.CountryCode)
         self.callback(self)

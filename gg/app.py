@@ -274,7 +274,7 @@ class GottenGeography:
         Raises IOError if filename refers to a file that is not a photograph.
         """
         if filename not in self.photo:
-            self.photo[filename] = Photograph(filename, self.cache, self.modify_summary)
+            self.photo[filename] = Photograph(filename, self.geonamer, self.modify_summary)
             self.photo[filename].update( {
                 'iter':   self.liststore.append([None] * 4),
                 'marker': self.add_marker(filename)
@@ -310,7 +310,7 @@ class GottenGeography:
             (len(self.tracks) - start_points, time.clock() - start_time))
         if len(gpx.tracks) > 0:
             self.map_view.ensure_visible(*gpx.area + [False])
-        self.tz.gpx = self.cache[gpx][3].strip()
+        self.tz.gpx = self.geonamer[gpx][3].strip()
         self.set_timezone()
     
     def save_all_files(self, widget=None):
@@ -443,7 +443,7 @@ class GottenGeography:
         image = self.builder.get_object("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(), self.cache,
+            photo = Photograph(chooser.get_preview_filename(), self.geonamer,
                 lambda x: None, 300)
         except IOError:
             return
@@ -502,7 +502,7 @@ class GottenGeography:
     
     def __init__(self, animate_crosshair=True):
         self.actors   = ReadableDictionary()
-        self.cache    = GeoCache()
+        self.geonamer = GeoCache()
         self.selected = set()
         self.modified = set()
         self.polygons = []
