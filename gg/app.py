@@ -664,14 +664,12 @@ class GottenGeography:
     
     def gconf_set(self, key, value):
         """Sets the given GConf key to the given value."""
-        key = gconf_key(key)
-        self.gconf_client.set_string(key, cPickle.dumps(value))
+        self.gconf_client.set_string(gconf_key(key), cPickle.dumps(value))
     
     def gconf_get(self, key):
         """Gets the given GConf key as the requested type."""
-        key = gconf_key(key)
         try:
-            return cPickle.loads(self.gconf_client.get_string(key))
+            return cPickle.loads(self.gconf_client.get_string(gconf_key(key)))
         except TypeError:
             return None
     
