@@ -424,24 +424,24 @@ S 10.00000, W 10.00000
             '/apps/gottengeography/foobar'
         )
         
-        orig_lat = self.gui.gconf_get('last_latitude', float)
-        orig_lon = self.gui.gconf_get('last_longitude', float)
-        orig_zoom = self.gui.gconf_get('last_zoom_level', int)
+        orig_lat = self.gui.gconf_get('last_latitude')
+        orig_lon = self.gui.gconf_get('last_longitude')
+        orig_zoom = self.gui.gconf_get('last_zoom_level')
         
         self.gui.gconf_set('last_zoom_level', 0)
-        self.assertEqual(self.gui.gconf_get('last_zoom_level', int), 0)
+        self.assertEqual(self.gui.gconf_get('last_zoom_level'), 0)
         self.gui.gconf_set('last_zoom_level', 3)
-        self.assertEqual(self.gui.gconf_get('last_zoom_level', int), 3)
+        self.assertEqual(self.gui.gconf_get('last_zoom_level'), 3)
         
         self.gui.gconf_set('last_latitude', 10.0)
-        self.assertEqual(self.gui.gconf_get('last_latitude', float), 10.0)
+        self.assertEqual(self.gui.gconf_get('last_latitude'), 10.0)
         self.gui.gconf_set('last_latitude', -53.0)
-        self.assertEqual(self.gui.gconf_get('last_latitude', float), -53.0)
+        self.assertEqual(self.gui.gconf_get('last_latitude'), -53.0)
         
         self.gui.gconf_set('last_longitude', 10.0)
-        self.assertEqual(self.gui.gconf_get('last_longitude', float), 10.0)
+        self.assertEqual(self.gui.gconf_get('last_longitude'), 10.0)
         self.gui.gconf_set('last_longitude', 113.0)
-        self.assertEqual(self.gui.gconf_get('last_longitude', float), 113.0)
+        self.assertEqual(self.gui.gconf_get('last_longitude'), 113.0)
         
         lat = random_coord(90)
         lon = random_coord(180)
@@ -450,11 +450,11 @@ S 10.00000, W 10.00000
         
         self.gui.remember_location_with_gconf()
         
-        self.assertAlmostEqual(lat, self.gui.gconf_get('last_latitude',  float), 4)
-        self.assertAlmostEqual(lon, self.gui.gconf_get('last_longitude', float), 4)
+        self.assertAlmostEqual(lat, self.gui.gconf_get('last_latitude'), 4)
+        self.assertAlmostEqual(lon, self.gui.gconf_get('last_longitude'), 4)
         self.assertEqual(
             self.gui.map_view.get_zoom_level(),
-            self.gui.gconf_get('last_zoom_level', int)
+            self.gui.gconf_get('last_zoom_level')
         )
         
         self.gui.gconf_set('last_latitude', orig_lat)

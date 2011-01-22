@@ -68,9 +68,9 @@ class GottenGeography:
         """Return the map view to where the user last set it."""
         try: lat, lon, zoom = self.history.pop()
         except IndexError:
-            lat  = self.gconf_get('last_latitude',   float)
-            lon  = self.gconf_get('last_longitude',  float)
-            zoom = self.gconf_get('last_zoom_level', int)
+            lat  = self.gconf_get('last_latitude')   or 0
+            lon  = self.gconf_get('last_longitude')  or 0
+            zoom = self.gconf_get('last_zoom_level') or 0
             if button is not False:
                 self.status_message(_("That's as far back as she goes, kiddo!"))
         self.map_view.center_on(lat, lon)
@@ -209,10 +209,10 @@ class GottenGeography:
     def set_timezone(self, radio=None):
         """Reposition photos depending on which timezone the user selected."""
         try:
-            use_gpx = 1 if radio.get_active() else 0
+            use_gpx = radio.get_active()
             self.gconf_set("lookup_timezone", use_gpx)
         except AttributeError:
-            use_gpx = self.gconf_get("lookup_timezone", int)
+            use_gpx = self.gconf_get("lookup_timezone") or False
         if use_gpx and self.timezone:
             os.environ["TZ"] = self.timezone
         elif "TZ" in os.environ:
@@ -626,19 +626,15 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
-        try:
-            colors = self.gconf_get("track_color", list)
-        except:
-            colors = [32768, 0, 65535]
-        finally:
-            self.colorpicker = self.builder.get_object("colorselection")
-            self.colorpicker.connect("color-changed", self.track_color_changed)
-            self.colorpicker.set_current_color(Gdk.Color(*colors))
-            self.colorpicker.set_previous_color(Gdk.Color(*colors))
+        colors = self.gconf_get("track_color") or [32768, 0, 65535]
+        self.colorpicker = self.builder.get_object("colorselection")
+        self.colorpicker.connect("color-changed", self.track_color_changed)
+        self.colorpicker.set_current_color(Gdk.Color(*colors))
+        self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("use_system_time")
-        if self.gconf_get("lookup_timezone", int):
+        if self.gconf_get("lookup_timezone"):
             radio_lookup.set_active(True)
         else:
             radio_system.set_active(True)
@@ -669,16 +665,15 @@ class GottenGeography:
     def gconf_set(self, key, value):
         """Sets the given GConf key to the given value."""
         key = gconf_key(key)
-        if   type(value) is float: self.gconf_client.set_float(key, value)
-        elif type(value) is int:   self.gconf_client.set_int(key, value)
-        elif type(value) is list:  self.gconf_client.set_string(key, cPickle.dumps(value))
+        self.gconf_client.set_string(key, cPickle.dumps(value))
     
-    def gconf_get(self, key, type):
+    def gconf_get(self, key):
         """Gets the given GConf key as the requested type."""
         key = gconf_key(key)
-        if   type is float: return self.gconf_client.get_float(key)
-        elif type is int:   return self.gconf_client.get_int(key)
-        elif type is list:  return cPickle.loads(self.gconf_client.get_string(key))
+        try:
+            return cPickle.loads(self.gconf_client.get_string(key))
+        except TypeError:
+            return None
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
