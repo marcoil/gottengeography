@@ -1,4 +1,5 @@
 gottengeography
+setup.cfg
 setup.py
 data/gottengeography.desktop
 gg/__init__.py
