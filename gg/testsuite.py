@@ -50,7 +50,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.liststore.get_n_columns(), 4)
         self.assertEqual(self.gui.builder.get_object("main").get_size(), (800, 600))
         self.assertTrue(self.gui.champlain.get_visible())
-        self.assertEqual(len(self.gui.offset), 3)
+        self.assertEqual(len(self.gui.offset), 2)
         
         # Button sensitivity
         self.assertFalse(self.gui.builder.get_object("apply_button").get_sensitive())
@@ -466,21 +466,18 @@ S 10.00000, W 10.00000
         self.assertEqual(self.gui.metadata['delta'], 0)
         self.gui.offset.minutes.set_value(1)
         self.assertEqual(self.gui.metadata['delta'], 60)
-        self.gui.offset.hours.set_value(1)
-        self.assertEqual(self.gui.metadata['delta'], 3660)
         self.gui.offset.seconds.set_value(1)
-        self.assertEqual(self.gui.metadata['delta'], 3661)
+        self.assertEqual(self.gui.metadata['delta'], 61)
         
         self.gui.offset.seconds.set_value(59)
-        self.assertEqual(self.gui.metadata['delta'], 3719)
+        self.assertEqual(self.gui.metadata['delta'], 119)
         self.gui.offset.minutes.set_value(59)
-        self.assertEqual(self.gui.metadata['delta'], 7199)
+        self.assertEqual(self.gui.metadata['delta'], 3599)
         
         self.gui.offset.seconds.set_value(60)
         self.assertEqual(self.gui.offset.seconds.get_value(), 0)
-        self.assertEqual(self.gui.offset.minutes.get_value(), 0)
-        self.assertEqual(self.gui.offset.hours.get_value(), 2)
-        self.assertEqual(self.gui.metadata['delta'], 7200)
+        self.assertEqual(self.gui.offset.minutes.get_value(), 60)
+        self.assertEqual(self.gui.metadata['delta'], 3600)
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""

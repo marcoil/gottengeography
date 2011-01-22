@@ -376,16 +376,11 @@ class GottenGeography:
             spinbutton.handler_block_by_func(self.time_offset_changed)
         seconds = self.offset.seconds.get_value()
         minutes = self.offset.minutes.get_value()
-        hours   = self.offset.hours.get_value()
-        offset  = int((hours * 3600) + (minutes * 60) + seconds)
+        offset  = int((minutes * 60) + seconds)
         if abs(seconds) == 60:
             minutes += seconds/60
             self.offset.seconds.set_value(0)
             self.offset.minutes.set_value(minutes)
-        if abs(minutes) == 60:
-            hours += minutes/60
-            self.offset.minutes.set_value(0)
-            self.offset.hours.set_value(hours)
         if offset <> self.metadata.delta:
             self.metadata.delta = offset
             for photo in self.photo.values():
@@ -552,7 +547,6 @@ class GottenGeography:
         })
         
         self.offset = ReadableDictionary({
-            "hours":   self.builder.get_object("hours"),
             "minutes": self.builder.get_object("minutes"),
             "seconds": self.builder.get_object("seconds")
         })
