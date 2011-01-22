@@ -211,9 +211,12 @@ class GottenGeography:
         try:
             use_gpx = 1 if radio.get_active() else 0
             self.gconf_set("lookup_timezone", use_gpx)
-        except:
+        except AttributeError:
             use_gpx = self.gconf_get("lookup_timezone", int)
-        os.environ["TZ"] = self.tz.gpx if use_gpx else self.tz.sys
+        if use_gpx and self.timezone:
+            os.environ["TZ"] = self.timezone
+        elif "TZ" in os.environ:
+            del os.environ["TZ"]
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
@@ -310,7 +313,7 @@ class GottenGeography:
             (len(self.tracks) - start_points, time.clock() - start_time))
         if len(gpx.tracks) > 0:
             self.map_view.ensure_visible(*gpx.area + [False])
-        self.tz.gpx = self.geonamer[gpx][3].strip()
+        self.timezone = self.geonamer[gpx][3].strip()
         self.set_timezone()
     
     def save_all_files(self, widget=None):
@@ -498,6 +501,7 @@ class GottenGeography:
     def __init__(self, animate_crosshair=True):
         self.actors   = ReadableDictionary()
         self.geonamer = GeoCache()
+        self.timezone = None
         self.selected = set()
         self.modified = set()
         self.polygons = []
@@ -530,10 +534,6 @@ class GottenGeography:
             actor.set_parent(self.stage)
             actor.raise_top()
             actor.show()
-        
-        self.tz = ReadableDictionary()
-        self.tz.sys = time.strftime("%Z")
-        self.tz.gpx = None
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
