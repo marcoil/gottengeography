@@ -661,12 +661,8 @@ class GottenGeography:
             self.redraw_interface()
             time.sleep(0.002)
     
-    def toggle_selected_photos(self, button=None):
+    def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
-        if button is None:
-            # User typed Ctrl+a, so select all!
-            button = self.builder.get_object("select_all_button")
-            button.set_active(True)
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
     
