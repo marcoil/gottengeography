@@ -34,10 +34,6 @@ Testing
 
 I feel I have tested most aspects of this application fairly thoroughly. However, I only own two cameras, and only one GPS unit, so my test data is limited. You should backup your files before using GottenGeography. If you find that GottenGeography fails with your files, please send them to me and I'll do my best to get everything working. I have supplied some demo data with the program to show you how it is *supposed* to work ;-)
 
-If you want to try out the included demo data and you're not in the Mountain Standard Time timezone, you can invoke GottenGeography like this:
-
-    TZ=America/Edmonton ./gottengeography
-
-Alternately, you can turn on the auto-timezone lookup in the preferences (Timezone tab, check the second radio button), and that will give correct results regardless of what timezone your computer is set to.
+If you want to try out the included demo data and you're not in the Mountain Standard Time timezone, you'll have to turn on the auto-timezone lookup in the preferences (Timezone tab, click the second radio button), and that will give correct results regardless of what timezone your computer is set to.
 
 Happy Tagging! --[Robert](mailto:rbpark@exolucere.ca)
