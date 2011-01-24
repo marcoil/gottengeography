@@ -104,6 +104,28 @@ class GottenGeography:
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
+    def populate_search_results(self, entry, event):
+        """Load a few search results based on what's been typed"""
+        text = entry.get_text() + Gdk.keyval_name(event.keyval)
+        if len(text) == 3:
+            with open(get_file("cities.txt")) as cities:
+                for line in cities:
+                    city, lat, lon, country, state, tz = line.split("\t")
+                    state    = territories.get("%s.%s" % (country, state), "")
+                    country  = countries.get(country, "")
+                    location = ", ".join([city, state, country])
+                    if re.match(text, location, flags=re.I):
+                        self.search_results.append(
+                            [location, float(lat), float(lon)])
+    
+    def search_completed(self, entry, model, itr):
+        """Go to the selected location."""
+        self.remember_location()
+        self.map_view.set_zoom_level(11)
+        self.map_view.center_on(
+            model.get_value(itr, 1),
+            model.get_value(itr, 2))
+    
 ################################################################################
 # Map features section. These methods control map objects.
 ################################################################################
@@ -617,7 +639,18 @@ class GottenGeography:
         self.listsel.connect("changed", self.update_sensitivity)
         
         self.builder.get_object("photoscroller").add(self.photos_view)
-        self.builder.get_object("photos_and_map").pack_start(self.champlain, True, True, 0)
+        self.builder.get_object("search_and_map").pack_start(self.champlain, True, True, 0)
+        
+        self.search_results = Gtk.ListStore(GObject.TYPE_STRING,
+            GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
+        search = Gtk.EntryCompletion.new()
+        search.set_model(self.search_results)
+        search.connect("match-selected", self.search_completed)
+        search.set_minimum_key_length(3)
+        search.set_text_column(0)
+        entry = self.builder.get_object("search")
+        entry.set_completion(search)
+        entry.connect("key-press-event", self.populate_search_results)
         
         self.gconf_client = GConf.Client.get_default()
         self.return_to_last(False)

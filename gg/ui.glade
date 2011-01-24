@@ -145,8 +145,8 @@
                 <property name="label" translatable="yes">Zoom In</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-in</property>
-                <accelerator key="equal" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                 <accelerator key="plus" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="equal" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -209,8 +209,8 @@
                 <property name="label" translatable="yes">About</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-about</property>
-                <accelerator key="slash" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                 <accelerator key="question" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="slash" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -302,7 +302,58 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkVBox" id="search_and_map">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkHBox" id="search_bar">
+                    <property name="visible">True</property>
+                    <property name="spacing">12</property>
+                    <child>
+                      <object class="GtkLabel" id="search_label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Search the map:</property>
+                        <property name="single_line_mode">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="search">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_markup">Type the name of the city you would like to view.</property>
+                        <property name="invisible_char">&#x25CF;</property>
+                        <property name="width_chars">30</property>
+                        <property name="caps_lock_warning">False</property>
+                        <property name="primary_icon_stock">gtk-jump-to</property>
+                        <accelerator key="l" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="padding">6</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
