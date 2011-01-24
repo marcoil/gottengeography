@@ -113,7 +113,7 @@ class GPXLoader:
         
         This is only called on the top level element in the given XML file.
         """
-        if name <> 'gpx':
+        if name != 'gpx':
             raise IOError
         self.parser.StartElementHandler = self.element_start
     
@@ -165,7 +165,7 @@ class GPXLoader:
         """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
-        if name <> "trkpt":
+        if name != "trkpt":
             return
         try:
             timestamp = timegm(map(int, split(self.state['time'])[0:6]))

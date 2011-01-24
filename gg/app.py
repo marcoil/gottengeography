@@ -389,7 +389,7 @@ class GottenGeography:
             minutes += seconds/60
             self.offset.seconds.set_value(0)
             self.offset.minutes.set_value(minutes)
-        if offset <> self.metadata.delta:
+        if offset != self.metadata.delta:
             self.metadata.delta = offset
             for photo in self.photo.values():
                 self.auto_timestamp_comparison(photo)
@@ -490,7 +490,7 @@ class GottenGeography:
         dialog.hide()
         self.redraw_interface()
         if response == Gtk.ResponseType.ACCEPT: self.save_all_files()
-        if response <> Gtk.ResponseType.CANCEL: Gtk.main_quit()
+        if response != Gtk.ResponseType.CANCEL: Gtk.main_quit()
         return True
     
     def about_dialog(self, *args):
