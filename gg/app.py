@@ -96,7 +96,12 @@ class GottenGeography:
         elif key == "Up":    y *= 0.9
         elif key == "Right": x *= 1.1
         elif key == "Down":  y *= 1.1
-        status, lat, lon = self.map_view.get_coords_at(int(x), int(y))
+        lat, lon = self.map_view.get_coords_at(x, y)
+        if   key == "Left" or key == "Right":
+            lat = self.map_view.get_property('latitude')
+        elif key == "Down" or key == "Up":
+            lon = self.map_view.get_property('longitude')
+        print lat, lon
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
