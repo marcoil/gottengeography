@@ -70,7 +70,7 @@ class GottenGeography:
         except IndexError:
             lat  = self.gconf_get('last_latitude')   or 0
             lon  = self.gconf_get('last_longitude')  or 0
-            zoom = self.gconf_get('last_zoom_level') or 0
+            zoom = self.gconf_get('last_zoom_level') or 2
             if button is not False:
                 self.status_message(_("That's as far back as she goes, kiddo!"))
         self.map_view.center_on(lat, lon)
