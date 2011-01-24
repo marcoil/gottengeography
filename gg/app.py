@@ -214,8 +214,7 @@ class GottenGeography:
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
             self.gconf_set("timezone_method", radio.get_name())
-            self.builder.get_object("custom_timezone_combos").set_sensitive(
-                radio.get_name() == "custom_timezone")
+            self.tz_combos.set_sensitive(radio.get_name() == "custom_timezone")
             self.set_timezone()
     
     def region_box_handler(self, combo):
@@ -226,6 +225,8 @@ class GottenGeography:
     
     def cities_box_handler(self, combo):
         """When a city is selected, update the chosen timezone."""
+        self.gconf_set("timezone",
+            [self.region_box.get_active(), combo.get_active()])
         if combo.get_active_id() is not None:
             self.set_timezone()
     
@@ -487,14 +488,18 @@ class GottenGeography:
         radio_lookup = self.builder.get_object("lookup_timezone")
         radio_system = self.builder.get_object("system_timezone")
         previous     = ReadableDictionary({
-            'zone':  self.gconf_get("timezone_method"),
-            'color': self.colorpicker.get_current_color()
+            'method': self.gconf_get("timezone_method"),
+            'region': self.region_box.get_active(),
+            'city':   self.cities_box.get_active(),
+            'color':  self.colorpicker.get_current_color()
         })
         dialog = self.builder.get_object("preferences")
         if not dialog.run():
             self.colorpicker.set_current_color(previous.color)
             self.colorpicker.set_previous_color(previous.color)
-            self.builder.get_object(previous.zone).set_active(True)
+            self.builder.get_object(previous.method).set_active(True)
+            self.region_box.set_active(previous.region)
+            self.cities_box.set_active(previous.city)
         dialog.hide()
     
     def confirm_quit_dialog(self, *args):
@@ -580,17 +585,6 @@ class GottenGeography:
         self.builder.get_object("open").connect(
             "update-preview", self.update_preview)
         
-        self.region_box = Gtk.ComboBoxText.new()
-        self.cities_box = Gtk.ComboBoxText.new()
-        for name in sorted(zones.keys()):
-            self.region_box.append(name, name)
-        self.region_box.connect("changed", self.region_box_handler)
-        self.cities_box.connect("changed", self.cities_box_handler)
-        combos = self.builder.get_object("custom_timezone_combos")
-        combos.pack_start(self.region_box, True, True, 10)
-        combos.pack_start(self.cities_box, True, True, 10)
-        combos.show_all()
-        
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
@@ -668,6 +662,20 @@ class GottenGeography:
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
+        self.region_box = Gtk.ComboBoxText.new()
+        self.cities_box = Gtk.ComboBoxText.new()
+        for name in sorted(zones.keys()):
+            self.region_box.append(name, name)
+        self.region_box.connect("changed", self.region_box_handler)
+        self.cities_box.connect("changed", self.cities_box_handler)
+        timezone = self.gconf_get("timezone") or [-1, -1]
+        self.region_box.set_active(timezone[0])
+        self.cities_box.set_active(timezone[1])
+        self.tz_combos = self.builder.get_object("custom_timezone_combos")
+        self.tz_combos.pack_start(self.region_box, False, False, 10)
+        self.tz_combos.pack_start(self.cities_box, False, False, 10)
+        self.tz_combos.show_all()
+        
         for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
             radio = self.builder.get_object(option)
             radio.connect("clicked", self.radio_handler)
@@ -702,7 +710,14 @@ class GottenGeography:
         self.gconf_client.set_string(gconf_key(key), cPickle.dumps(value))
     
     def gconf_get(self, key):
-        """Gets the given GConf key as the requested type."""
+        """Gets the given GConf key as the requested type.
+        
+        On the first run of this application, GConf will be empty and this
+        method will always return None, so I frequently specify first-run
+        default values by calling this method like this:
+        
+        self.gconf_get('foo') or "Default value"
+        """
         try:
             return cPickle.loads(self.gconf_client.get_string(gconf_key(key)))
         except TypeError:
