@@ -101,7 +101,6 @@ class GottenGeography:
             lat = self.map_view.get_property('latitude')
         elif key == "Down" or key == "Up":
             lon = self.map_view.get_property('longitude')
-        print lat, lon
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
