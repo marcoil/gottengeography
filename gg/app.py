@@ -210,17 +210,39 @@ class GottenGeography:
                 if len(polygons) % 2 else   color_one)
         self.gconf_set("track_color", [color.red, color.green, color.blue])
     
-    def set_timezone(self, radio=None):
+    def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""
-        try:
-            use_gpx = radio.get_active()
-            self.gconf_set("lookup_timezone", use_gpx)
-        except AttributeError:
-            use_gpx = self.gconf_get("lookup_timezone") or False
-        if use_gpx and self.timezone:
-            os.environ["TZ"] = self.timezone
-        elif "TZ" in os.environ:
-            del os.environ["TZ"]
+        if radio.get_active():
+            self.gconf_set("timezone_method", radio.get_name())
+            self.builder.get_object("custom_timezone_combos").set_sensitive(
+                radio.get_name() == "custom_timezone")
+            self.set_timezone()
+    
+    def region_box_handler(self, combo):
+        """Populate the list of cities when a continent is selected."""
+        self.cities_box.remove_all()
+        for city in zones[combo.get_active_id()]:
+            self.cities_box.append(city, city)
+    
+    def cities_box_handler(self, combo):
+        """When a city is selected, update the chosen timezone."""
+        if combo.get_active_id() is not None:
+            self.set_timezone()
+    
+    def set_timezone(self):
+        """Set the timezone to the given zone and update all photos."""
+        option = self.gconf_get("timezone_method")
+        if   option == "system_timezone":
+            if "TZ" in os.environ:
+                del os.environ["TZ"]
+        elif option == "lookup_timezone":
+            if self.timezone is not None:
+                os.environ["TZ"] = self.timezone
+        elif option == "custom_timezone":
+            region = self.region_box.get_active_id()
+            city   = self.cities_box.get_active_id()
+            if region is not None and city is not None:
+                os.environ["TZ"] = "%s/%s" % (region, city)
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
@@ -463,17 +485,16 @@ class GottenGeography:
     def preferences_dialog(self, *args):
         """Allow the user to configure this application."""
         radio_lookup = self.builder.get_object("lookup_timezone")
-        radio_system = self.builder.get_object("use_system_time")
+        radio_system = self.builder.get_object("system_timezone")
         previous     = ReadableDictionary({
-            'lookup': radio_lookup.get_active(),
-            'color':  self.colorpicker.get_current_color()
+            'zone':  self.gconf_get("timezone_method"),
+            'color': self.colorpicker.get_current_color()
         })
         dialog = self.builder.get_object("preferences")
         if not dialog.run():
             self.colorpicker.set_current_color(previous.color)
             self.colorpicker.set_previous_color(previous.color)
-            radio_lookup.set_active(previous.lookup)
-            radio_system.set_active(not previous.lookup)
+            self.builder.get_object(previous.zone).set_active(True)
         dialog.hide()
     
     def confirm_quit_dialog(self, *args):
@@ -559,6 +580,17 @@ class GottenGeography:
         self.builder.get_object("open").connect(
             "update-preview", self.update_preview)
         
+        self.region_box = Gtk.ComboBoxText.new()
+        self.cities_box = Gtk.ComboBoxText.new()
+        for name in sorted(zones.keys()):
+            self.region_box.append(name, name)
+        self.region_box.connect("changed", self.region_box_handler)
+        self.cities_box.connect("changed", self.cities_box_handler)
+        combos = self.builder.get_object("custom_timezone_combos")
+        combos.pack_start(self.region_box, True, True, 10)
+        combos.pack_start(self.cities_box, True, True, 10)
+        combos.show_all()
+        
         # Handy names for the following GtkListStore column numbers.
         self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
@@ -636,13 +668,12 @@ class GottenGeography:
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
-        radio_lookup = self.builder.get_object("lookup_timezone")
-        radio_system = self.builder.get_object("use_system_time")
-        if self.gconf_get("lookup_timezone"):
-            radio_lookup.set_active(True)
-        else:
-            radio_system.set_active(True)
-        radio_lookup.connect("toggled", self.set_timezone)
+        for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
+            radio = self.builder.get_object(option)
+            radio.connect("clicked", self.radio_handler)
+            radio.set_name(option)
+        timezone_method = self.gconf_get("timezone_method") or "system_timezone"
+        self.builder.get_object(timezone_method).clicked()
         
         if not animate_crosshair:
             return

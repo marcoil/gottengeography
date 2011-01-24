@@ -38,7 +38,7 @@ class GottenGeographyTester(unittest.TestCase):
         os.environ["TZ"] = "America/Edmonton"
         time.tzset()
         self.gui = GottenGeography(animate_crosshair=False)
-        self.gui.builder.get_object("use_system_time").set_active(True)
+        self.gui.builder.get_object("system_timezone").clicked()
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -191,7 +191,7 @@ class GottenGeographyTester(unittest.TestCase):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
         os.environ["TZ"] = "Europe/Paris"
         time.tzset()
-        self.gui.builder.get_object("lookup_timezone").set_active(True)
+        self.gui.builder.get_object("lookup_timezone").clicked()
         self.test_demo_data()
         os.environ["TZ"] = "America/Edmonton"
         time.tzset()
