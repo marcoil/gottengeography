@@ -233,17 +233,16 @@ class GottenGeography:
     def set_timezone(self):
         """Set the timezone to the given zone and update all photos."""
         option = self.gconf_get("timezone_method")
-        if   option == "system_timezone":
-            if "TZ" in os.environ:
-                del os.environ["TZ"]
-        elif option == "lookup_timezone":
-            if self.timezone is not None:
-                os.environ["TZ"] = self.timezone
+        if "TZ" in os.environ:
+            del os.environ["TZ"]
+        if   option == "lookup_timezone" and self.timezone is not None:
+            os.environ["TZ"] = self.timezone
         elif option == "custom_timezone":
             region = self.region_box.get_active_id()
             city   = self.cities_box.get_active_id()
             if region is not None and city is not None:
                 os.environ["TZ"] = "%s/%s" % (region, city)
+        print "Timezone:", os.environ.get("TZ", "System time")
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()

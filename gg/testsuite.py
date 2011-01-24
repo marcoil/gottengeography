@@ -198,6 +198,8 @@ class GottenGeographyTester(unittest.TestCase):
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
+        os.environ["TZ"] = "America/Edmonton"
+        time.tzset()
         
         marker = ReadableDictionary()
         marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
