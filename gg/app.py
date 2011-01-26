@@ -580,9 +580,9 @@ class GottenGeography:
         self.gpx      = []
         
         GtkClutter.init([])
-        self.champlain       = GtkChamplain.Embed()
+        champlain            = GtkChamplain.Embed()
         self.map_photo_layer = Champlain.Layer()
-        self.map_view        = self.champlain.get_view()
+        self.map_view        = champlain.get_view()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
@@ -655,7 +655,7 @@ class GottenGeography:
         self.listsel.connect("changed", self.update_sensitivity)
         
         self.builder.get_object("photoscroller").add(self.photos_view)
-        self.builder.get_object("search_and_map").pack_start(self.champlain, True, True, 0)
+        self.builder.get_object("search_and_map").pack_start(champlain, True, True, 0)
         
         self.search_results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)

@@ -44,7 +44,6 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.liststore.get_n_columns(), 4)
         self.assertEqual(self.gui.search_results.get_n_columns(), 3)
         self.assertEqual(self.gui.builder.get_object("main").get_size(), (800, 600))
-        self.assertTrue(self.gui.champlain.get_visible())
         self.assertEqual(len(self.gui.offset), 2)
         
         # Button sensitivity
