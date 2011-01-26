@@ -115,7 +115,7 @@ class GottenGeography:
         Requires 3 at least three letters typed, and is careful not to load
         duplicate results.
         """
-        text = entry.get_text()[0:3]
+        text = entry.get_text().lower()[0:3]
         if len(text) == 3 and text not in self.searched:
             self.searched.add(text)
             with open(get_file("cities.txt")) as cities:
@@ -128,14 +128,14 @@ class GottenGeography:
                         self.search_results.append(
                             [location, float(lat), float(lon)])
     
-    def completion_match_func(self, completion, string, itr, data):
+    def completion_match_func(self, completion, string, itr, model):
         """Determine whether or not to include a given search result.
         
         This matches the beginning of any word in the name of the city. For
         example, a search for "spring" will contain "Palm Springs" as well as
         "Springfield".
         """
-        location = self.search_results.get_value(itr, LOCATION)
+        location = model.get_value(itr, LOCATION)
         if location and search('(^|\s)' + string, location, flags=IGNORECASE):
             return True
     
@@ -661,7 +661,7 @@ class GottenGeography:
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
-        search.set_match_func(self.completion_match_func, None)
+        search.set_match_func(self.completion_match_func, self.search_results)
         search.connect("match-selected", self.search_completed)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
