@@ -506,8 +506,6 @@ class GottenGeography:
     
     def preferences_dialog(self, *args):
         """Allow the user to configure this application."""
-        radio_lookup = self.builder.get_object("lookup_timezone")
-        radio_system = self.builder.get_object("system_timezone")
         previous     = ReadableDictionary({
             'method': self.gconf_get("timezone_method"),
             'region': self.region_box.get_active(),
