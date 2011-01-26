@@ -10,6 +10,10 @@
 # The data was then converted from tab-delimited UTF8 into
 # python source code by Robert Park <rbpark@exolucere.ca>
 
+def get_state(country, state):
+    """Returns the name of a province/state given a Geonames.org admin1code."""
+    return territories.get("%s.%s" % (country, state))
+
 countries = {
 "AD": "Andorra",
 "AE": "United Arab Emirates",

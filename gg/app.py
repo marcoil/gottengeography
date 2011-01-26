@@ -111,7 +111,7 @@ class GottenGeography:
             with open(get_file("cities.txt")) as cities:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
-                    state    = territories.get("%s.%s" % (country, state), "")
+                    state    = get_state(country, state) or ""
                     country  = countries.get(country, "")
                     location = ", ".join([city, state, country])
                     if re.match(text, location, flags=re.I):

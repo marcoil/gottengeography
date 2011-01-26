@@ -23,8 +23,8 @@ from gettext import gettext as _
 from gi.repository import Gio, GdkPixbuf
 from math import acos, sin, cos, radians
 
-from gps import *
 from territories import *
+from gps import *
 
 earth_radius = 6371 #km
 iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
@@ -147,7 +147,7 @@ class Photograph(ReadableDictionary):
         self.longitude = lon
         self.position_marker()
         self.City, state, self.CountryCode, timezone = self.geonamer[self]
-        self.ProvinceState = territories.get("%s.%s" % (self.CountryCode, state))
+        self.ProvinceState = get_state(self.CountryCode, state)
         self.CountryName   = countries.get(self.CountryCode)
         self.callback(self)
     
