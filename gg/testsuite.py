@@ -99,7 +99,7 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertEqual(filename, self.gui.photo[filename].marker.get_name())
             self.assertEqual(self.gui.photo[filename].timestamp,
                 self.gui.liststore.get_value(
-                    self.gui.photo[filename].iter, self.gui.TIMESTAMP
+                    self.gui.photo[filename].iter, TIMESTAMP
                 )
             )
         

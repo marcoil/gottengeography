@@ -38,6 +38,10 @@ from gettext import gettext as _
 from datatypes import *
 from gps import *
 
+# Handy names for GtkListStore column numbers.
+PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
+LOCATION, LATITUDE, LONGITUDE = range(3)
+
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -130,7 +134,7 @@ class GottenGeography:
         example, a search for "spring" will contain "Palm Springs" as well as
         "Springfield".
         """
-        location = self.search_results.get_value(itr, 0)
+        location = self.search_results.get_value(itr, LOCATION)
         if location and search('(^|\s)' + string, location, flags=IGNORECASE):
             return True
     
@@ -139,8 +143,8 @@ class GottenGeography:
         self.remember_location()
         self.map_view.set_zoom_level(11)
         self.map_view.center_on(
-            model.get_value(itr, 1),
-            model.get_value(itr, 2))
+            model.get_value(itr, LATITUDE),
+            model.get_value(itr, LONGITUDE))
     
 ################################################################################
 # Map features section. These methods control map objects.
@@ -351,10 +355,10 @@ class GottenGeography:
         photo = self.photo[filename]
         photo.position_marker()
         self.modified.discard(photo)
-        self.liststore.set_value(photo.iter, self.PATH,      photo.filename)
-        self.liststore.set_value(photo.iter, self.THUMB,     photo.thumb)
-        self.liststore.set_value(photo.iter, self.TIMESTAMP, photo.timestamp)
-        self.liststore.set_value(photo.iter, self.SUMMARY,   photo.long_summary())
+        self.liststore.set_value(photo.iter, PATH,      photo.filename)
+        self.liststore.set_value(photo.iter, THUMB,     photo.thumb)
+        self.liststore.set_value(photo.iter, TIMESTAMP, photo.timestamp)
+        self.liststore.set_value(photo.iter, SUMMARY,   photo.long_summary())
         self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
     
@@ -393,7 +397,7 @@ class GottenGeography:
                 self.status_message(", ".join(inst.args))
             else:
                 self.modified.discard(photo)
-                self.liststore.set_value(photo.iter, self.SUMMARY,
+                self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
         self.update_sensitivity()
         self.progressbar.hide()
@@ -491,7 +495,7 @@ class GottenGeography:
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
         self.modified.add(photo)
-        self.liststore.set_value(photo.iter, self.SUMMARY,
+        self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
     
 ################################################################################
@@ -621,12 +625,9 @@ class GottenGeography:
         self.builder.get_object("open").connect(
             "update-preview", self.update_preview)
         
-        # Handy names for the following GtkListStore column numbers.
-        self.PATH, self.SUMMARY, self.THUMB, self.TIMESTAMP = range(4)
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
-        self.liststore.set_sort_column_id(self.TIMESTAMP,
-            Gtk.SortType.ASCENDING)
+        self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
         
         self.cell_string = Gtk.CellRendererText()
         self.cell_thumb  = Gtk.CellRendererPixbuf()
@@ -636,9 +637,9 @@ class GottenGeography:
         
         self.column = Gtk.TreeViewColumn('Photos')
         self.column.pack_start(self.cell_thumb, False)
-        self.column.add_attribute(self.cell_thumb, 'pixbuf', self.THUMB)
+        self.column.add_attribute(self.cell_thumb, 'pixbuf', THUMB)
         self.column.pack_start(self.cell_string, False)
-        self.column.add_attribute(self.cell_string, 'markup', self.SUMMARY)
+        self.column.add_attribute(self.cell_string, 'markup', SUMMARY)
         self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         self.photos_view = Gtk.TreeView(model=self.liststore)
