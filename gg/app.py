@@ -242,7 +242,7 @@ class GottenGeography:
     def region_box_handler(self, combo):
         """Populate the list of cities when a continent is selected."""
         self.cities_box.remove_all()
-        for city in zones[combo.get_active_id()]:
+        for city in zones.get(combo.get_active_id(), []):
             self.cities_box.append(city, city)
     
     def cities_box_handler(self, combo):
