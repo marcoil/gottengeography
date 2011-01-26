@@ -19,7 +19,6 @@ from __future__ import division
 APPNAME = "GottenGeography"
 VERSION = "0.5a"
 
-import os
 import time
 import gettext
 
@@ -30,10 +29,13 @@ from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from re import search, IGNORECASE
 from gettext import gettext as _
+from os.path import basename
+from os import environ
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from territories import *
 from datatypes import *
 from gps import *
 
@@ -224,7 +226,7 @@ class GottenGeography:
         """Create a new ChamplainMarker and add it to the map."""
         marker = Champlain.Marker()
         marker.set_name(label)
-        marker.set_text(os.path.basename(label))
+        marker.set_text(basename(label))
         marker.set_property('reactive', True)
         marker.connect("button-press-event", self.marker_clicked)
         marker.connect("enter-event", self.marker_mouse_in)
@@ -273,16 +275,16 @@ class GottenGeography:
     def set_timezone(self):
         """Set the timezone to the given zone and update all photos."""
         option = gconf_get("timezone_method")
-        if "TZ" in os.environ:
-            del os.environ["TZ"]
+        if "TZ" in environ:
+            del environ["TZ"]
         if   option == "lookup_timezone" and self.timezone is not None:
-            os.environ["TZ"] = self.timezone
+            environ["TZ"] = self.timezone
         elif option == "custom_timezone":
             region = self.region_box.get_active_id()
             city   = self.cities_box.get_active_id()
             if region is not None and city is not None:
-                os.environ["TZ"] = "%s/%s" % (region, city)
-        print "Timezone:", os.environ.get("TZ", "System time")
+                environ["TZ"] = "%s/%s" % (region, city)
+        print "Timezone:", environ.get("TZ", "System time")
         time.tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
@@ -317,14 +319,14 @@ class GottenGeography:
         while len(files) > 0:
             filename = files.pop()
             self.redraw_interface(1 - len(files) / total,
-                os.path.basename(filename))
+                basename(filename))
             # Assume the file is an image; if that fails, assume it's GPX;
             # if that fails, show an error
             try:
                 try:            self.load_img_from_file(filename)
                 except IOError: self.load_gpx_from_file(filename)
             except IOError:
-                invalid_files.append(os.path.basename(filename))
+                invalid_files.append(basename(filename))
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: %s") %
                 ", ".join(invalid_files))
@@ -388,7 +390,7 @@ class GottenGeography:
         total = len(self.modified)
         for photo in self.modified.copy():
             self.redraw_interface(1 - len(self.modified) / total,
-                os.path.basename(photo.filename))
+                basename(photo.filename))
             try:
                 photo.write()
             except Exception as inst:
@@ -474,7 +476,7 @@ class GottenGeography:
         while len(mod_in_sel) > 0:
             photo = mod_in_sel.pop()
             self.redraw_interface(1 - len(mod_in_sel) / total,
-                os.path.basename(photo.filename))
+                basename(photo.filename))
             self.load_img_from_file(photo.filename)
         self.progressbar.hide()
         self.update_sensitivity()

@@ -20,34 +20,29 @@ import os
 import re
 import time
 import math
-import random
 import unittest
-import datetime
 
 from gi.repository import Gdk, Clutter
 from fractions import Fraction
+from random import random
+from os.path import join
 
+# Implicitely imports everything that app imported, including datatypes and gps
 from app import *
-from datatypes import *
-from gps import *
 
 class GottenGeographyTester(unittest.TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
         # Make the tests work for people outside my time zone.
-        os.environ["TZ"] = "America/Edmonton"
+        environ["TZ"] = "America/Edmonton"
         time.tzset()
         self.gui = GottenGeography(animate_crosshair=False)
         self.gui.builder.get_object("system_timezone").clicked()
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
-        self.assertEqual(
-            str(type(gconf)),
-            "<class 'gi.repository.GConf.Client'>"
-        )
-        
         self.assertEqual(self.gui.liststore.get_n_columns(), 4)
+        self.assertEqual(self.gui.search_results.get_n_columns(), 3)
         self.assertEqual(self.gui.builder.get_object("main").get_size(), (800, 600))
         self.assertTrue(self.gui.champlain.get_visible())
         self.assertEqual(len(self.gui.offset), 2)
@@ -78,8 +73,8 @@ class GottenGeographyTester(unittest.TestCase):
         
         # Load only the photos first
         for demo in os.listdir('./demo/'):
-            filename = os.path.join(os.getcwd(), "demo", demo)
-            if not re.search(r'gpx$', demo):
+            filename = join(os.getcwd(), "demo", demo)
+            if not search(r'gpx$', demo):
                 self.assertRaises(IOError,
                     self.gui.load_gpx_from_file,
                     filename
@@ -111,7 +106,7 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(len(self.gui.selected), 0)
         
         # Load the GPX
-        gpx_filename=os.path.join(os.getcwd(), "demo", "20101016.gpx")
+        gpx_filename=join(os.getcwd(), "demo", "20101016.gpx")
         self.assertRaises(IOError, self.gui.load_img_from_file, gpx_filename)
         self.gui.load_gpx_from_file(gpx_filename)
         
@@ -189,16 +184,16 @@ class GottenGeographyTester(unittest.TestCase):
     
     def test_auto_timestamp(self):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
-        os.environ["TZ"] = "Europe/Paris"
+        environ["TZ"] = "Europe/Paris"
         time.tzset()
         self.gui.builder.get_object("lookup_timezone").clicked()
         self.test_demo_data()
-        os.environ["TZ"] = "America/Edmonton"
+        environ["TZ"] = "America/Edmonton"
         time.tzset()
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
-        os.environ["TZ"] = "America/Edmonton"
+        environ["TZ"] = "America/Edmonton"
         time.tzset()
         
         marker = ReadableDictionary()
@@ -421,11 +416,6 @@ S 10.00000, W 10.00000
         self.assertFalse(marker.get_parent())
     
     def test_gconf(self):
-        self.assertEqual(
-            gconf_key('foobar'),
-            '/apps/gottengeography/foobar'
-        )
-        
         orig_lat = gconf_get('last_latitude')
         orig_lon = gconf_get('last_longitude')
         orig_zoom = gconf_get('last_zoom_level')
@@ -483,7 +473,7 @@ S 10.00000, W 10.00000
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
-    return (random.random() * maximum * 2) - maximum
+    return (random() * maximum * 2) - maximum
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(

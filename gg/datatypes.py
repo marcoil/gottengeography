@@ -14,18 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import re
 import time
-import pyexiv2
-import cPickle
 
 from gettext import gettext as _
+from cPickle import dumps as pickle
+from cPickle import loads as unpickle
 from gi.repository import GdkPixbuf, GConf
+from os.path import join, basename, dirname
 from math import acos, sin, cos, radians
+from pyexiv2 import ImageMetadata
+from os import stat
 
 from territories import *
 from gps import *
+
+# Don't export everything, that's too sloppy.
+__all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'iptc_keys',
+    'ReadableDictionary', 'Photograph', 'GeoCache' ]
 
 earth_radius = 6371 #km
 iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
@@ -38,18 +44,18 @@ def gconf_key(key):
 
 def gconf_set(key, value):
     """Sets the given GConf key to the given value."""
-    gconf.set_string(gconf_key(key), cPickle.dumps(value))
+    gconf.set_string(gconf_key(key), pickle(value))
 
 def gconf_get(key, default=None):
     """Gets the given GConf key as the requested type."""
     try:
-        return cPickle.loads(gconf.get_string(gconf_key(key)))
+        return unpickle(gconf.get_string(gconf_key(key)))
     except TypeError:
         return default
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
-    return os.path.join(os.path.dirname(__file__), filename)
+    return join(dirname(__file__), filename)
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -96,7 +102,7 @@ class Photograph(ReadableDictionary):
     def read(self):
         """Load exif data from disk."""
         try:
-            self.exif = pyexiv2.ImageMetadata(self.filename)
+            self.exif = ImageMetadata(self.filename)
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 self.filename, self.thm_size, self.thm_size)
@@ -139,7 +145,7 @@ class Photograph(ReadableDictionary):
             self.timestamp = int(time.mktime(
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except:
-            self.timestamp = int(os.stat(self.filename).st_mtime)
+            self.timestamp = int(stat(self.filename).st_mtime)
     
     def write(self):
         """Save exif data to photo file on disk."""
@@ -242,7 +248,7 @@ class Photograph(ReadableDictionary):
     def long_summary(self):
         """Longer summary with Pango markup."""
         return '<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % (
-            os.path.basename(self.filename),
+            basename(self.filename),
             self.short_summary()
         )
 

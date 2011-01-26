@@ -18,14 +18,18 @@ from __future__ import division
 
 import re
 import time
-import math
-import pyexiv2
 
 from gi.repository import Gtk, Champlain, Clutter
+from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from xml.parsers import expat
+from pyexiv2 import Rational
 from calendar import timegm
+
+# Don't export everything, that's too sloppy.
+__all__ = [ 'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
+    'valid_coords', 'maps_link', 'format_coords', 'GPXLoader' ]
 
 def dms_to_decimal(degrees, minutes, seconds, sign=""):
     """Convert degrees, minutes, seconds into decimal degrees."""
@@ -37,18 +41,18 @@ def dms_to_decimal(degrees, minutes, seconds, sign=""):
 
 def decimal_to_dms(decimal):
     """Convert decimal degrees into degrees, minutes, seconds."""
-    remainder, degrees = math.modf(abs(decimal))
-    remainder, minutes = math.modf(remainder * 60)
+    remainder, degrees = split_float(abs(decimal))
+    remainder, minutes = split_float(remainder * 60)
     return [
-        pyexiv2.Rational(degrees, 1),
-        pyexiv2.Rational(minutes, 1),
+        Rational(degrees, 1),
+        Rational(minutes, 1),
         float_to_rational(remainder * 60)
     ]
 
 def float_to_rational(value):
     """Create a pyexiv2.Rational with help from fractions.Fraction."""
     frac = Fraction(abs(value)).limit_denominator(99999)
-    return pyexiv2.Rational(frac.numerator, frac.denominator)
+    return Rational(frac.numerator, frac.denominator)
 
 def valid_coords(lat, lon):
     """Determine the validity of coordinates."""
