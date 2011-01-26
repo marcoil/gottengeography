@@ -43,7 +43,7 @@ class GottenGeographyTester(unittest.TestCase):
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
         self.assertEqual(
-            str(type(self.gui.gconf_client)), 
+            str(type(gconf)),
             "<class 'gi.repository.GConf.Client'>"
         )
         
@@ -426,24 +426,24 @@ S 10.00000, W 10.00000
             '/apps/gottengeography/foobar'
         )
         
-        orig_lat = self.gui.gconf_get('last_latitude')
-        orig_lon = self.gui.gconf_get('last_longitude')
-        orig_zoom = self.gui.gconf_get('last_zoom_level')
+        orig_lat = gconf_get('last_latitude')
+        orig_lon = gconf_get('last_longitude')
+        orig_zoom = gconf_get('last_zoom_level')
         
-        self.gui.gconf_set('last_zoom_level', 0)
-        self.assertEqual(self.gui.gconf_get('last_zoom_level'), 0)
-        self.gui.gconf_set('last_zoom_level', 3)
-        self.assertEqual(self.gui.gconf_get('last_zoom_level'), 3)
+        gconf_set('last_zoom_level', 0)
+        self.assertEqual(gconf_get('last_zoom_level'), 0)
+        gconf_set('last_zoom_level', 3)
+        self.assertEqual(gconf_get('last_zoom_level'), 3)
         
-        self.gui.gconf_set('last_latitude', 10.0)
-        self.assertEqual(self.gui.gconf_get('last_latitude'), 10.0)
-        self.gui.gconf_set('last_latitude', -53.0)
-        self.assertEqual(self.gui.gconf_get('last_latitude'), -53.0)
+        gconf_set('last_latitude', 10.0)
+        self.assertEqual(gconf_get('last_latitude'), 10.0)
+        gconf_set('last_latitude', -53.0)
+        self.assertEqual(gconf_get('last_latitude'), -53.0)
         
-        self.gui.gconf_set('last_longitude', 10.0)
-        self.assertEqual(self.gui.gconf_get('last_longitude'), 10.0)
-        self.gui.gconf_set('last_longitude', 113.0)
-        self.assertEqual(self.gui.gconf_get('last_longitude'), 113.0)
+        gconf_set('last_longitude', 10.0)
+        self.assertEqual(gconf_get('last_longitude'), 10.0)
+        gconf_set('last_longitude', 113.0)
+        self.assertEqual(gconf_get('last_longitude'), 113.0)
         
         lat = random_coord(90)
         lon = random_coord(180)
@@ -452,16 +452,16 @@ S 10.00000, W 10.00000
         
         self.gui.remember_location_with_gconf()
         
-        self.assertAlmostEqual(lat, self.gui.gconf_get('last_latitude'), 4)
-        self.assertAlmostEqual(lon, self.gui.gconf_get('last_longitude'), 4)
+        self.assertAlmostEqual(lat, gconf_get('last_latitude'), 4)
+        self.assertAlmostEqual(lon, gconf_get('last_longitude'), 4)
         self.assertEqual(
             self.gui.map_view.get_zoom_level(),
-            self.gui.gconf_get('last_zoom_level')
+            gconf_get('last_zoom_level')
         )
         
-        self.gui.gconf_set('last_latitude', orig_lat)
-        self.gui.gconf_set('last_longitude', orig_lon)
-        self.gui.gconf_set('last_zoom_level', orig_zoom)
+        gconf_set('last_latitude', orig_lat)
+        gconf_set('last_longitude', orig_lon)
+        gconf_set('last_zoom_level', orig_zoom)
     
     def test_time_offset(self):
         """Fiddle with the time offset setting."""

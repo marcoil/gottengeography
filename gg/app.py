@@ -22,13 +22,12 @@ VERSION = "0.5a"
 import os
 import time
 import gettext
-import cPickle
 
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from re import search, IGNORECASE
 from gettext import gettext as _
 
@@ -56,9 +55,9 @@ class GottenGeography:
     
     def remember_location_with_gconf(self):
         """Use GConf for persistent storage of the currently viewed location."""
-        self.gconf_set('last_latitude',   self.map_view.get_property('latitude'))
-        self.gconf_set('last_longitude',  self.map_view.get_property('longitude'))
-        self.gconf_set('last_zoom_level', self.map_view.get_zoom_level())
+        gconf_set('last_latitude',   self.map_view.get_property('latitude'))
+        gconf_set('last_longitude',  self.map_view.get_property('longitude'))
+        gconf_set('last_zoom_level', self.map_view.get_zoom_level())
     
     def remember_location(self):
         """Add the current location to the history stack."""
@@ -72,9 +71,9 @@ class GottenGeography:
         """Return the map view to where the user last set it."""
         try: lat, lon, zoom = self.history.pop()
         except IndexError:
-            lat  = self.gconf_get('last_latitude')   or 0
-            lon  = self.gconf_get('last_longitude')  or 0
-            zoom = self.gconf_get('last_zoom_level') or 2
+            lat  = gconf_get('last_latitude', 0)
+            lon  = gconf_get('last_longitude', 0)
+            zoom = gconf_get('last_zoom_level', 2)
             if button is not False:
                 self.status_message(_("That's as far back as she goes, kiddo!"))
         self.map_view.center_on(lat, lon)
@@ -250,12 +249,12 @@ class GottenGeography:
         while len(polygons) > 0:
             polygons.pop().set_stroke_color(color_two
                 if len(polygons) % 2 else   color_one)
-        self.gconf_set("track_color", [color.red, color.green, color.blue])
+        gconf_set("track_color", [color.red, color.green, color.blue])
     
     def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
-            self.gconf_set("timezone_method", radio.get_name())
+            gconf_set("timezone_method", radio.get_name())
             self.tz_combos.set_sensitive(radio.get_name() == "custom_timezone")
             self.set_timezone()
     
@@ -267,14 +266,14 @@ class GottenGeography:
     
     def cities_box_handler(self, combo):
         """When a city is selected, update the chosen timezone."""
-        self.gconf_set("timezone",
+        gconf_set("timezone",
             [self.region_box.get_active(), combo.get_active()])
         if combo.get_active_id() is not None:
             self.set_timezone()
     
     def set_timezone(self):
         """Set the timezone to the given zone and update all photos."""
-        option = self.gconf_get("timezone_method")
+        option = gconf_get("timezone_method")
         if "TZ" in os.environ:
             del os.environ["TZ"]
         if   option == "lookup_timezone" and self.timezone is not None:
@@ -526,8 +525,8 @@ class GottenGeography:
     
     def preferences_dialog(self, *args):
         """Allow the user to configure this application."""
-        previous     = ReadableDictionary({
-            'method': self.gconf_get("timezone_method"),
+        previous = ReadableDictionary({
+            'method': gconf_get("timezone_method"),
             'region': self.region_box.get_active(),
             'city':   self.cities_box.get_active(),
             'color':  self.colorpicker.get_current_color()
@@ -669,7 +668,6 @@ class GottenGeography:
         entry.set_completion(search)
         entry.connect("changed", self.populate_search_results)
         
-        self.gconf_client = GConf.Client.get_default()
         self.return_to_last(False)
         
         click_handlers = {
@@ -705,7 +703,7 @@ class GottenGeography:
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
-        colors = self.gconf_get("track_color") or [32768, 0, 65535]
+        colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = self.builder.get_object("colorselection")
         self.colorpicker.connect("color-changed", self.track_color_changed)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
@@ -717,7 +715,7 @@ class GottenGeography:
             self.region_box.append(name, name)
         self.region_box.connect("changed", self.region_box_handler)
         self.cities_box.connect("changed", self.cities_box_handler)
-        timezone = self.gconf_get("timezone") or [-1, -1]
+        timezone = gconf_get("timezone", [-1, -1])
         self.region_box.set_active(timezone[0])
         self.cities_box.set_active(timezone[1])
         self.tz_combos = self.builder.get_object("custom_timezone_combos")
@@ -729,7 +727,7 @@ class GottenGeography:
             radio = self.builder.get_object(option)
             radio.connect("clicked", self.radio_handler)
             radio.set_name(option)
-        timezone_method = self.gconf_get("timezone_method") or "system_timezone"
+        timezone_method = gconf_get("timezone_method", "system_timezone")
         self.builder.get_object(timezone_method).clicked()
         
         if not animate_crosshair:
@@ -753,24 +751,6 @@ class GottenGeography:
         """Toggle the selection of photos."""
         if button.get_active(): self.listsel.select_all()
         else:                   self.listsel.unselect_all()
-    
-    def gconf_set(self, key, value):
-        """Sets the given GConf key to the given value."""
-        self.gconf_client.set_string(gconf_key(key), cPickle.dumps(value))
-    
-    def gconf_get(self, key):
-        """Gets the given GConf key as the requested type.
-        
-        On the first run of this application, GConf will be empty and this
-        method will always return None, so I frequently specify first-run
-        default values by calling this method like this:
-        
-        self.gconf_get('foo') or "Default value"
-        """
-        try:
-            return cPickle.loads(self.gconf_client.get_string(gconf_key(key)))
-        except TypeError:
-            return None
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
@@ -820,8 +800,3 @@ class GottenGeography:
     def main(self):
         """Go!"""
         Gtk.main()
-
-def gconf_key(key):
-    """Determine appropriate GConf key that is unique to this application."""
-    return "/".join(['', 'apps', APPNAME.lower(), key])
-

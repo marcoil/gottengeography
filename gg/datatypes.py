@@ -18,9 +18,10 @@ import os
 import re
 import time
 import pyexiv2
+import cPickle
 
 from gettext import gettext as _
-from gi.repository import Gio, GdkPixbuf
+from gi.repository import GdkPixbuf, GConf
 from math import acos, sin, cos, radians
 
 from territories import *
@@ -28,7 +29,23 @@ from gps import *
 
 earth_radius = 6371 #km
 iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
+gconf        = GConf.Client.get_default()
 gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
+
+def gconf_key(key):
+    """Determine appropriate GConf key that is unique to this application."""
+    return "/apps/gottengeography/" + key
+
+def gconf_set(key, value):
+    """Sets the given GConf key to the given value."""
+    gconf.set_string(gconf_key(key), cPickle.dumps(value))
+
+def gconf_get(key, default=None):
+    """Gets the given GConf key as the requested type."""
+    try:
+        return cPickle.loads(gconf.get_string(gconf_key(key)))
+    except TypeError:
+        return default
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
