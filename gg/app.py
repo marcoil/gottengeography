@@ -20,7 +20,6 @@ APPNAME = "GottenGeography"
 VERSION = "0.5a"
 
 import os
-import re
 import time
 import gettext
 import cPickle
@@ -30,6 +29,7 @@ gettext.textdomain(APPNAME.lower())
 
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf, GConf
+from re import search, IGNORECASE
 from gettext import gettext as _
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
@@ -104,19 +104,35 @@ class GottenGeography:
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
-    def populate_search_results(self, entry, event):
-        """Load a few search results based on what's been typed"""
-        text = entry.get_text() + Gdk.keyval_name(event.keyval)
-        if len(text) == 3:
+    def populate_search_results(self, entry):
+        """Load a few search results based on what's been typed.
+        
+        Requires 3 at least three letters typed, and is careful not to load
+        duplicate results.
+        """
+        text = entry.get_text()[0:3]
+        if len(text) == 3 and text not in self.searched:
+            self.searched.add(text)
             with open(get_file("cities.txt")) as cities:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
-                    state    = get_state(country, state) or ""
-                    country  = countries.get(country, "")
-                    location = ", ".join([city, state, country])
-                    if re.match(text, location, flags=re.I):
+                    if search('(^|\s)' + text, city, flags=IGNORECASE):
+                        state    = get_state(country, state) or ""
+                        country  = countries.get(country, "")
+                        location = ", ".join([city, state, country])
                         self.search_results.append(
                             [location, float(lat), float(lon)])
+    
+    def completion_match_func(self, completion, string, itr, data):
+        """Determine whether or not to include a given search result.
+        
+        This matches the beginning of any word in the name of the city. For
+        example, a search for "spring" will contain "Palm Springs" as well as
+        "Springfield".
+        """
+        location = self.search_results.get_value(itr, 0)
+        if location and search('(^|\s)' + string, location, flags=IGNORECASE):
+            return True
     
     def search_completed(self, entry, model, itr):
         """Go to the selected location."""
@@ -553,6 +569,7 @@ class GottenGeography:
         self.timezone = None
         self.selected = set()
         self.modified = set()
+        self.searched = set()
         self.polygons = []
         self.history  = []
         self.photo    = {}
@@ -643,12 +660,13 @@ class GottenGeography:
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
+        search.set_match_func(self.completion_match_func, None)
         search.connect("match-selected", self.search_completed)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = self.builder.get_object("search")
         entry.set_completion(search)
-        entry.connect("key-press-event", self.populate_search_results)
+        entry.connect("changed", self.populate_search_results)
         
         self.gconf_client = GConf.Client.get_default()
         self.return_to_last(False)
