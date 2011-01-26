@@ -186,8 +186,7 @@ class GottenGeography:
         just one item, but Ctrl+clicking allows you to select multiple.
         """
         photo = self.photo[marker.get_name()]
-        if (Clutter.ModifierType.CONTROL_MASK |
-            Clutter.ModifierType.MOD2_MASK      == event.get_state()):
+        if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
             if marker.get_highlighted(): self.listsel.unselect_iter(photo.iter)
             else:                        self.listsel.select_iter(photo.iter)
         else:
