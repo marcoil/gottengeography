@@ -214,12 +214,12 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(photo.pretty_coords(), "S 10.00000, W 10.00000")
         
         photo.timestamp = None
-        self.assertEqual(photo.pretty_time(), "No timestamp")
+        self.assertIsNone(photo.pretty_time())
         photo.timestamp = 999999999
         self.assertEqual(photo.pretty_time(), "2001-09-08 07:46:39 PM")
         
         photo.altitude = None
-        self.assertEqual(photo.pretty_elevation(), "")
+        self.assertIsNone(photo.pretty_elevation())
         photo.altitude = -10.20005
         self.assertEqual(photo.pretty_elevation(), "10.2m below sea level")
         photo.altitude = 600.71

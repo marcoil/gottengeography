@@ -122,9 +122,9 @@ class GottenGeography:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
                     if search('(^|\s)' + text, city, flags=IGNORECASE):
-                        state    = get_state(country, state) or ""
-                        country  = countries.get(country, "")
-                        location = ", ".join([city, state, country])
+                        state    = get_state(country, state)
+                        country  = countries.get(country)
+                        location = format_list(city, state, country)
                         self.search_results.append(
                             [location, float(lat), float(lon)])
     
@@ -329,7 +329,7 @@ class GottenGeography:
                 invalid_files.append(basename(filename))
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: %s") %
-                ", ".join(invalid_files))
+                format_list(*invalid_files))
         self.progressbar.hide()
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
@@ -394,7 +394,7 @@ class GottenGeography:
             try:
                 photo.write()
             except Exception as inst:
-                self.status_message(", ".join(inst.args))
+                self.status_message(format_list(inst.args))
             else:
                 self.modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,

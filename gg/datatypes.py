@@ -30,7 +30,7 @@ from territories import *
 from gps import *
 
 # Don't export everything, that's too sloppy.
-__all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'iptc_keys',
+__all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'iptc_keys', 'format_list',
     'ReadableDictionary', 'Photograph', 'GeoCache' ]
 
 earth_radius = 6371 #km
@@ -56,6 +56,10 @@ def gconf_get(key, default=None):
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
     return join(dirname(__file__), filename)
+
+def format_list(*args):
+    """Join geonames with a comma, ignoring missing names."""
+    return ", ".join([name for name in args if name])
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -206,50 +210,40 @@ class Photograph(ReadableDictionary):
     
     def maps_link(self):
         """Return a link to Google Maps if this photo has valid coordinates."""
-        return maps_link(self.latitude, self.longitude) if self.valid_coords() else ""
+        if self.valid_coords():
+            return maps_link(self.latitude, self.longitude)
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
-        return _("No timestamp") if type(self.timestamp) is not int else \
-            time.strftime("%Y-%m-%d %X", time.localtime(self.timestamp))
+        if type(self.timestamp) is int:
+            return time.strftime("%Y-%m-%d %X", time.localtime(self.timestamp))
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
-        return _("Not geotagged") if not self.valid_coords() else \
-            format_coords(self.latitude, self.longitude)
+        return format_coords(self.latitude, self.longitude) \
+            if self.valid_coords() else _("Not geotagged")
     
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
-        names, length = [], 0
-        for value in [self.City, self.ProvinceState, self.CountryName]:
-            if type(value) in (str, unicode) and len(value) > 0:
-                names.append(value)
-                length += len(value)
-        return (",\n" if length > 35 else ", ").join(names)
+        name = format_list(self.City, self.ProvinceState, self.CountryName)
+        return re.sub(", ", ",\n", name) if len(name) > 35 else name
     
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""
-        return "" if type(self.altitude) not in (float, int) else "%.1f%s" % (
-            abs(self.altitude),
-            _("m above sea level")
-            if self.altitude >= 0 else
-            _("m below sea level")
-        )
+        if type(self.altitude) in (float, int):
+            return "%.1f%s" % (abs(self.altitude), _("m above sea level")
+                        if self.altitude >= 0 else _("m below sea level"))
     
     def short_summary(self):
         """Plaintext summary of photo metadata."""
-        strings = []
-        for value in [self.pretty_time(), self.pretty_coords(),
-        self.pretty_geoname(), self.pretty_elevation()]:
-            if type(value) in (str, unicode) and len(value) > 0:
-                strings.append(value)
-        return "\n".join(strings)
+        return format_list(self.pretty_time(), self.pretty_coords(),
+            self.pretty_geoname(), self.pretty_elevation())
     
     def long_summary(self):
         """Longer summary with Pango markup."""
-        return '<span size="larger">%s</span>\n<span style="italic" size="smaller">%s</span>' % (
-            basename(self.filename),
-            self.short_summary()
+        return '<span %s>%s</span>\n<span %s>%s</span>' % (
+            'size="larger"', basename(self.filename),
+            'style="italic" size="smaller"', self.short_summary()
         )
 
 class GeoCache:
