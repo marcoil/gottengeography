@@ -57,9 +57,9 @@ def get_file(filename):
     """Find a file that's in the same directory as this program."""
     return join(dirname(__file__), filename)
 
-def format_list(*args):
+def format_list(strings, joiner=", "):
     """Join geonames with a comma, ignoring missing names."""
-    return ", ".join([name for name in args if name])
+    return joiner.join([name for name in strings if name])
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
@@ -225,7 +225,7 @@ class Photograph(ReadableDictionary):
     
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
-        name = format_list(self.City, self.ProvinceState, self.CountryName)
+        name = format_list([self.City, self.ProvinceState, self.CountryName])
         return re.sub(", ", ",\n", name) if len(name) > 35 else name
     
     def pretty_elevation(self):
@@ -236,8 +236,8 @@ class Photograph(ReadableDictionary):
     
     def short_summary(self):
         """Plaintext summary of photo metadata."""
-        return format_list(self.pretty_time(), self.pretty_coords(),
-            self.pretty_geoname(), self.pretty_elevation())
+        return format_list([self.pretty_time(), self.pretty_coords(),
+            self.pretty_geoname(), self.pretty_elevation()], "\n")
     
     def long_summary(self):
         """Longer summary with Pango markup."""

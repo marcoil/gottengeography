@@ -125,7 +125,7 @@ class GottenGeography:
                     if search('(^|\s)' + text, city, flags=IGNORECASE):
                         state    = get_state(country, state)
                         country  = get_country(country)
-                        location = format_list(city, state, country)
+                        location = format_list([city, state, country])
                         append([location, float(lat), float(lon)])
     
     def completion_match_func(self, completion, string, itr, model):
@@ -329,7 +329,7 @@ class GottenGeography:
                 invalid_files.append(basename(filename))
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: %s") %
-                format_list(*invalid_files))
+                format_list(invalid_files))
         self.progressbar.hide()
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
