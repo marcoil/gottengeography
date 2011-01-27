@@ -394,7 +394,7 @@ class GottenGeography:
             try:
                 photo.write()
             except Exception as inst:
-                self.status_message(format_list(inst.args))
+                self.status_message(str(inst))
             else:
                 self.modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,
