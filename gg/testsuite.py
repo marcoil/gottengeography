@@ -90,6 +90,16 @@ class GottenGeographyTester(unittest.TestCase):
             self.assertIsNone(self.gui.photo[filename].altitude)
             self.assertIsNone(self.gui.photo[filename].latitude)
             self.assertIsNone(self.gui.photo[filename].longitude)
+            self.assertFalse(self.gui.photo[filename].manual)
+            self.gui.photo[filename].manual = True
+            self.gui.photo[filename].latitude = 10.0
+            self.gui.photo[filename].altitude = 650
+            self.gui.photo[filename].latitude = 45.0
+            self.gui.photo[filename].read()
+            self.assertIsNone(self.gui.photo[filename].altitude)
+            self.assertIsNone(self.gui.photo[filename].latitude)
+            self.assertIsNone(self.gui.photo[filename].longitude)
+            self.assertFalse(self.gui.photo[filename].manual)
             self.assertEqual(filename, self.gui.photo[filename].marker.get_name())
             self.assertEqual(self.gui.photo[filename].timestamp,
                 self.gui.liststore.get_value(

@@ -93,20 +93,22 @@ class Photograph(ReadableDictionary):
     
     def __init__(self, filename, cache, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
+        self.exif     = ImageMetadata(filename)
         self.filename = filename
         self.geonamer = cache
         self.callback = callback
-        self.manual   = False
-        for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'marker', 'iter', 'timezone' ] + iptc_keys:
-            self[key] = None
         self.thm_size = thumb_size
+        self.marker   = None
+        self.iter     = None
         self.read()
     
     def read(self):
         """Load exif data from disk."""
+        for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
+        'timezone' ] + iptc_keys:
+            self[key] = None
+        self.manual = False
         try:
-            self.exif = ImageMetadata(self.filename)
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 self.filename, self.thm_size, self.thm_size)
@@ -123,19 +125,18 @@ class Photograph(ReadableDictionary):
                 [self.exif[gps + 'LongitudeRef'].value]
             )
         except KeyError:
-            self.latitude  = None
-            self.longitude = None
+            pass
         try:
             self.altitude = self.exif[gps + 'Altitude'].value.to_float()
             if int(self.exif[gps + 'AltitudeRef'].value) > 0:
                 self.altitude *= -1
         except:
-            self.altitude = None
+            pass
         for iptc in iptc_keys:
             try:
                 self[iptc] = self.exif['Iptc.Application2.' + iptc].values[0]
             except KeyError:
-                self[iptc] = None
+                pass
     
     def calculate_timestamp(self):
         """Determine the timestamp based on the currently selected timezone.
