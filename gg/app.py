@@ -43,6 +43,8 @@ from gps import *
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 LOCATION, LATITUDE, LONGITUDE = range(3)
 
+GtkClutter.init([])
+
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -579,7 +581,6 @@ class GottenGeography:
         self.photo    = {}
         self.gpx      = []
         
-        GtkClutter.init([])
         champlain            = GtkChamplain.Embed()
         self.map_photo_layer = Champlain.Layer()
         self.map_view        = champlain.get_view()
