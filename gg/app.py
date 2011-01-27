@@ -118,15 +118,15 @@ class GottenGeography:
         text = entry.get_text().lower()[0:3]
         if len(text) == 3 and text not in self.searched:
             self.searched.add(text)
+            append = self.search_results.append
             with open(get_file("cities.txt")) as cities:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
                     if search('(^|\s)' + text, city, flags=IGNORECASE):
                         state    = get_state(country, state)
-                        country  = countries.get(country)
+                        country  = get_country(country)
                         location = format_list(city, state, country)
-                        self.search_results.append(
-                            [location, float(lat), float(lon)])
+                        append([location, float(lat), float(lon)])
     
     def completion_match_func(self, completion, string, itr, model):
         """Determine whether or not to include a given search result.

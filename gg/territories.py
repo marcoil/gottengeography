@@ -268,6 +268,8 @@ countries = {
 "AN": "Netherlands Antilles"
 }
 
+get_country = countries.get
+
 territories = {
 "AD.06": "Parròquia de Sant Julià de Lòria",
 "AD.05": "Parròquia d'Ordino",

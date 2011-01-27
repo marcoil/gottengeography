@@ -175,7 +175,7 @@ class Photograph(ReadableDictionary):
         self.position_marker()
         self.City, state, self.CountryCode, timezone = self.geonamer[self]
         self.ProvinceState = get_state(self.CountryCode, state)
-        self.CountryName   = countries.get(self.CountryCode)
+        self.CountryName   = get_country(self.CountryCode)
         self.callback(self)
     
     def position_marker(self):
