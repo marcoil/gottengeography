@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography 0.5\n"
 "Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"
-"POT-Creation-Date: 2011-01-11 18:48-0700\n"
+"POT-Creation-Date: 2011-01-27 20:28-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,163 +17,252 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: gg/app.py:76
+#: gg/app.py:82
 msgid "That's as far back as she goes, kiddo!"
 msgstr ""
 
-#: gg/app.py:315
-#, python-format
-msgid "%d points loaded in %.2fs."
-msgstr ""
-
-#: gg/app.py:471
-msgid "No preview available"
-msgstr ""
-
-#: gg/app.py:495
-msgid "Open Files"
-msgstr ""
-
-#: gg/app.py:526
+#: gg/app.py:336
 #, python-format
 msgid "Could not open: %s"
 msgstr ""
 
-#: gg/app.py:544
-msgid "Close _without Saving"
-msgstr ""
-
-#: gg/app.py:600
-msgid "Load photos or GPS data (Ctrl+O)"
-msgstr ""
-
-#: gg/app.py:600
-msgid "Open"
-msgstr ""
-
-#: gg/app.py:602
-msgid "Save all photos (Ctrl+S)"
-msgstr ""
-
-#: gg/app.py:602
-msgid "Save All"
-msgstr ""
-
-#: gg/app.py:605
-msgid "Unload all GPS data (Ctrl+X)"
-msgstr ""
-
-#: gg/app.py:605
-msgid "Clear GPX"
-msgstr ""
-
-#: gg/app.py:607
-msgid "Close selected photos (Ctrl+W)"
-msgstr ""
-
-#: gg/app.py:607
-msgid "Close Photo"
-msgstr ""
-
-#: gg/app.py:611
-msgid "Reload selected photos, losing all changes (Ctrl+Z)"
-msgstr ""
-
-#: gg/app.py:617
-msgid "Zoom the map out one step."
-msgstr ""
-
-#: gg/app.py:618
-msgid "Enhance!"
-msgstr ""
-
-#: gg/app.py:621
-msgid "Return to previous location in map view."
-msgstr ""
-
-#: gg/app.py:624
+#: gg/app.py:385
 #, python-format
-msgid "About %s"
+msgid "%d points loaded in %.2fs."
 msgstr ""
 
-#: gg/app.py:666
-msgid "Place selected photos onto center of map (Ctrl+Return)"
-msgstr ""
-
-#: gg/app.py:672
-msgid "Toggle whether all photos are selected (Ctrl+A)"
-msgstr ""
-
-#: gg/app.py:691
-msgid "Clock Offset: "
-msgstr ""
-
-#: gg/app.py:701
-msgid "seconds"
-msgstr ""
-
-#: gg/app.py:702
-msgid "minutes"
-msgstr ""
-
-#: gg/app.py:703
-msgid "hours"
-msgstr ""
-
-#: gg/app.py:807
-#, python-format
-msgid "Add or subtract %s from your camera's clock."
-msgstr ""
-
-#: gg/datatypes.py:119
-msgid "No timestamp"
-msgstr ""
-
-#: gg/datatypes.py:124
+#: gg/datatypes.py:225
 msgid "Not geotagged"
 msgstr ""
 
-#: gg/datatypes.py:126
-msgid "N"
-msgstr ""
-
-#: gg/datatypes.py:126
-msgid "S"
-msgstr ""
-
-#: gg/datatypes.py:127
-msgid "E"
-msgstr ""
-
-#: gg/datatypes.py:127
-msgid "W"
-msgstr ""
-
-#: gg/datatypes.py:143
+#: gg/datatypes.py:235
 msgid "m above sea level"
 msgstr ""
 
-#: gg/datatypes.py:145
+#: gg/datatypes.py:236
 msgid "m below sea level"
 msgstr ""
 
-#: gg/gps.py:59
+#: gg/gps.py:63
 msgid "View in Google Maps"
 msgstr ""
 
-#: gg/longstrings.py:19
-msgid "Save changes to your photos before closing?"
+#: gg/gps.py:70
+msgid "N"
 msgstr ""
 
-#: gg/longstrings.py:22
-#, python-format
+#: gg/gps.py:70
+msgid "S"
+msgstr ""
+
+#: gg/gps.py:71
+msgid "E"
+msgstr ""
+
+#: gg/gps.py:71
+msgid "W"
+msgstr ""
+
+#: gg/ui.glade:24
+msgid "Load photos or GPS data (Ctrl O)"
+msgstr ""
+
+#: gg/ui.glade:26
+msgid "_Open"
+msgstr ""
+
+#: gg/ui.glade:40
+msgid "Save all photos (Ctrl S)"
+msgstr ""
+
+#: gg/ui.glade:42
+msgid "_Save All"
+msgstr ""
+
+#: gg/ui.glade:65
+msgid "Unload all GPS data (Ctrl X)"
+msgstr ""
+
+#: gg/ui.glade:67
+msgid "Clear GP_X"
+msgstr ""
+
+#: gg/ui.glade:81
+msgid "Close selected photos (Ctrl W)"
+msgstr ""
+
+#: gg/ui.glade:83
+msgid "Close Photo"
+msgstr ""
+
+#: gg/ui.glade:105
+msgid "Reload selected photos, losing all changes (Ctrl Z)"
+msgstr ""
+
+#: gg/ui.glade:106
+msgid "Revert"
+msgstr ""
+
+#: gg/ui.glade:129
+msgid "Zoom the map out one step (Ctrl -)"
+msgstr ""
+
+#: gg/ui.glade:130
+msgid "Zoom Out"
+msgstr ""
+
+#: gg/ui.glade:144
+msgid "Enhance! (Ctrl +)"
+msgstr ""
+
+#: gg/ui.glade:145
+msgid "Zoom In"
+msgstr ""
+
+#: gg/ui.glade:169
+msgid "Return to the previous location viewed on map (Ctrl Left)"
+msgstr ""
+
+#: gg/ui.glade:170
+msgid "Go Back"
+msgstr ""
+
+#: gg/ui.glade:193
+msgid "Preferences (Ctrl P)"
+msgstr ""
+
+#: gg/ui.glade:194
+msgid "Preferences"
+msgstr ""
+
+#: gg/ui.glade:208
+msgid "About GottenGeography (Ctrl ?)"
+msgstr ""
+
+#: gg/ui.glade:209
+msgid "About"
+msgstr ""
+
+#: gg/ui.glade:263
+msgid "Select all photographs (Ctrl A)"
+msgstr ""
+
+#: gg/ui.glade:279
+msgid "Place selected photos onto center of map (Ctrl Enter)"
+msgstr ""
+
+#: gg/ui.glade:392
+msgid "Clock Offset:"
+msgstr ""
+
+#: gg/ui.glade:407
+msgid "Add or subtract minutes from your camera's clock."
+msgstr ""
+
+#: gg/ui.glade:424
+msgid "Add or subtract seconds from your camera's clock."
+msgstr ""
+
+#: gg/ui.glade:447
+msgid "About GottenGeography"
+msgstr ""
+
+#: gg/ui.glade:458
+msgid ""
+"GottenGeography: Go open thy tagger!\n"
+"\n"
+"This program is written in the Python programming language, and adds geotags "
+"to your photos. The name is an anagram of \"Python Geotagger.\""
+msgstr ""
+
+#: gg/ui.glade:462
+msgid "GottenGeography Wiki"
+msgstr ""
+
+#: gg/ui.glade:463
+msgid ""
+"Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>\n"
+"\n"
+"This program is free software: you can redistribute it and/or modify\n"
+"it under the terms of the GNU General Public License as published by\n"
+"the Free Software Foundation, either version 3 of the License, or\n"
+"(at your option) any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+"You should have received a copy of the GNU General Public License\n"
+"along with this program.  If not, see <http://www.gnu.org/licenses/>."
+msgstr ""
+
+#: gg/ui.glade:500
+msgid " "
+msgstr ""
+
+#: gg/ui.glade:510
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Save changes to your photos before "
+"closing?</span>"
+msgstr ""
+
+#: gg/ui.glade:512
 msgid ""
 "The changes you've made to %d of your photos will be permanently lost if you "
 "do not save."
 msgstr ""
 
-#: gg/longstrings.py:27
+#: gg/ui.glade:526
+msgid "Close _without Saving"
+msgstr ""
+
+#: gg/ui.glade:587
+msgid "Open Files"
+msgstr ""
+
+#: gg/ui.glade:671
+msgid "No preview available"
+msgstr ""
+
+#: gg/ui.glade:703
+msgid "GottenGeography Preferences"
+msgstr ""
+
+#: gg/ui.glade:731
 msgid ""
-"This program is written in the Python programming language, and adds geotags "
-"to your photos. The name is an anagram of \"Python Geotagger.\""
+"Unfortunately, it isn't possible to know what timezone your camera is set to."
+msgstr ""
+
+#: gg/ui.glade:754
+msgid ""
+"<b>Use system time.</b> Select this option if your camera's clock is set the "
+"same as this computer. "
+msgstr ""
+
+#: gg/ui.glade:777
+msgid ""
+"<b>Check GPX timezone.</b> Select this option if you set your clock to the "
+"local time of the location you've photographed."
+msgstr ""
+
+#: gg/ui.glade:799
+msgid ""
+"<b>Specify timezone manually.</b> Select this option if your camera is set "
+"to some other timezone."
+msgstr ""
+
+#: gg/ui.glade:836
+msgid "Timezone"
+msgstr ""
+
+#: gg/ui.glade:854
+msgid ""
+"If you load a GPX file that has more than one track, the color you select "
+"here will be used for odd numbered tracks, and even numbered tracks will be "
+"a lighter shade of this color."
+msgstr ""
+
+#: gg/ui.glade:873
+msgid "Track Color"
 msgstr ""
