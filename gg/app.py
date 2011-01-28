@@ -599,15 +599,15 @@ class GottenGeography:
         self.actors.coords_bg.set_position(0, 0)
         self.actors.coords = Clutter.Text()
         self.actors.coords.set_single_line_mode(True)
-        self.actors.coords.raise_top()
         self.actors.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32))
         self.actors.crosshair.set_property('has-border', True)
         self.actors.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.actors.crosshair.set_border_width(1)
-        for actor in self.actors.values():
-            actor.set_parent(self.stage)
-            actor.show()
+        for actor in ["crosshair", "coords_bg", "coords"]:
+            self.actors[actor].set_parent(self.stage)
+            self.actors[actor].raise_top()
+            self.actors[actor].show()
         
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
@@ -744,7 +744,7 @@ class GottenGeography:
         # 260-(0.51*i) ends at 255 or full opacity. The numbers come from
         # simplifying the formula ((508-i)/500) * 255.
         xhair = self.actors.crosshair
-        for i in range(200, 7, -1):
+        for i in range(500, 7, -1):
             xhair.set_size(i, i)
             xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
             xhair.set_property('opacity', int(260-(0.51*i)))
