@@ -252,6 +252,14 @@ class GottenGeography:
             polygon.set_stroke_color(two if index(polygon) % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
     
+    def paint_handler(self, map_view):
+        """Force the map to redraw.
+        
+        This is a workaround for this libchamplain bug:
+        https://bugzilla.gnome.org/show_bug.cgi?id=638652
+        """
+        map_view.queue_redraw()
+    
     def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
@@ -587,6 +595,7 @@ class GottenGeography:
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::%s' % signal, self.display_actors)
+        self.map_view.connect("paint", self.paint_handler)
         
         self.stage = self.map_view.get_stage()
         self.actors.coords_bg = Clutter.Rectangle.new_with_color(
