@@ -369,10 +369,10 @@ class GottenGeography:
         start_points = len(self.tracks)
         start_time   = time.clock()
         
-        gpx = GPXLoader(filename, self.map_view, self.progressbar, self.make_clutter_color())
+        gpx = GPXLoader(filename, self.polygons, self.map_view,
+            self.progressbar, self.make_clutter_color())
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
-        self.polygons.extend(gpx.polygons)
         
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)

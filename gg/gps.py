@@ -78,9 +78,9 @@ split = re.compile(r'[:TZ-]').split
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, filename, map_view, progressbar, color):
+    def __init__(self, filename, polygons, map_view, progressbar, color):
         """Create the parser and begin parsing."""
-        self.polygons = []
+        self.polygons = polygons
         self.state    = {}
         self.tracks   = {}
         self.clock    = time.clock()
