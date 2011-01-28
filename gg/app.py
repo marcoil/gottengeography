@@ -446,22 +446,21 @@ class GottenGeography:
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
-        for spinbutton in self.offset.values():
-            # Suppress extraneous invocations of this method.
-            spinbutton.handler_block_by_func(self.time_offset_changed)
-        seconds = self.offset.seconds.get_value()
-        minutes = self.offset.minutes.get_value()
+        try:    widget.get_tooltip_text().index("seconds")
+        except: minbutton, secbutton = widget, self.builder.get_object("seconds")
+        else:   secbutton, minbutton = widget, self.builder.get_object("minutes")
+        seconds = secbutton.get_value()
+        minutes = minbutton.get_value()
         offset  = int((minutes * 60) + seconds)
-        if abs(seconds) == 60:
-            minutes += seconds/60
-            self.offset.seconds.set_value(0)
-            self.offset.minutes.set_value(minutes)
+        gconf_set("clock_offset", [minutes, seconds])
         if offset != self.metadata.delta:
             self.metadata.delta = offset
+            if abs(seconds) == 60 and abs(minutes) != 60:
+                minutes += seconds / 60
+                secbutton.set_value(0)
+                minbutton.set_value(minutes)
             for photo in self.photo.values():
                 self.auto_timestamp_comparison(photo)
-        for spinbutton in self.offset.values():
-            spinbutton.handler_unblock_by_func(self.time_offset_changed)
     
     def apply_selected_photos(self, button=None):
         """Manually apply map center coordinates to all selected photos."""
@@ -620,11 +619,10 @@ class GottenGeography:
             "preview": self.builder.get_object("preview_label").get_text()
         })
         
-        self.offset = ReadableDictionary({
-            "minutes": self.builder.get_object("minutes"),
-            "seconds": self.builder.get_object("seconds")
-        })
-        for spinbutton in self.offset.values():
+        offset = gconf_get("clock_offset", [0, 0])
+        for name in [ "seconds", "minutes" ]:
+            spinbutton = self.builder.get_object(name)
+            spinbutton.set_value(offset.pop())
             spinbutton.connect("value-changed", self.time_offset_changed)
         self.builder.get_object("open").connect(
             "update-preview", self.update_preview)
@@ -794,10 +792,8 @@ class GottenGeography:
         self.builder.get_object("revert_button").set_sensitive(
             len(self.modified & self.selected) > 0)
         gpx_sensitive = len(self.tracks) > 0
-        for widget in self.offset.values() + [
-        self.builder.get_object("offset_label"),
-        self.builder.get_object("clear_button") ]:
-            widget.set_sensitive(gpx_sensitive)
+        for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
+            self.builder.get_object(widget).set_sensitive(gpx_sensitive)
         left = self.builder.get_object("photos_with_buttons")
         if len(self.photo) > 0: left.show()
         else:                   left.hide()

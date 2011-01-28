@@ -44,7 +44,6 @@ class GottenGeographyTester(unittest.TestCase):
         self.assertEqual(self.gui.liststore.get_n_columns(), 4)
         self.assertEqual(self.gui.search_results.get_n_columns(), 3)
         self.assertEqual(self.gui.builder.get_object("main").get_size(), (800, 600))
-        self.assertEqual(len(self.gui.offset), 2)
         
         # Button sensitivity
         self.assertFalse(self.gui.builder.get_object("apply_button").get_sensitive())
@@ -464,20 +463,24 @@ S 10.00000, W 10.00000
     
     def test_time_offset(self):
         """Fiddle with the time offset setting."""
+        minutes = self.gui.builder.get_object("minutes")
+        seconds = self.gui.builder.get_object("seconds")
+        seconds.set_value(0)
+        minutes.set_value(0)
         self.assertEqual(self.gui.metadata['delta'], 0)
-        self.gui.offset.minutes.set_value(1)
+        minutes.set_value(1)
         self.assertEqual(self.gui.metadata['delta'], 60)
-        self.gui.offset.seconds.set_value(1)
+        seconds.set_value(1)
         self.assertEqual(self.gui.metadata['delta'], 61)
         
-        self.gui.offset.seconds.set_value(59)
+        seconds.set_value(59)
         self.assertEqual(self.gui.metadata['delta'], 119)
-        self.gui.offset.minutes.set_value(59)
+        minutes.set_value(59)
         self.assertEqual(self.gui.metadata['delta'], 3599)
         
-        self.gui.offset.seconds.set_value(60)
-        self.assertEqual(self.gui.offset.seconds.get_value(), 0)
-        self.assertEqual(self.gui.offset.minutes.get_value(), 60)
+        seconds.set_value(60)
+        self.assertEqual(seconds.get_value(), 0)
+        self.assertEqual(minutes.get_value(), 60)
         self.assertEqual(self.gui.metadata['delta'], 3600)
 
 def random_coord(maximum=180):
