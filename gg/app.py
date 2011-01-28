@@ -244,13 +244,12 @@ class GottenGeography:
     
     def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
-        color     = selection.get_current_color()
-        color_one = self.make_clutter_color()
-        color_two = color_one.lighten().lighten()
-        polygons = self.polygons[:]
-        while len(polygons) > 0:
-            polygons.pop().set_stroke_color(color_two
-                if len(polygons) % 2 else   color_one)
+        color = selection.get_current_color()
+        one   = self.make_clutter_color()
+        two   = one.lighten().lighten()
+        index = self.polygons.index
+        for polygon in self.polygons:
+            polygon.set_stroke_color(two if index(polygon) % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
     
     def radio_handler(self, radio):
