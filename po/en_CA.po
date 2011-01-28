@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography 0.5\n"
 "Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"
-"POT-Creation-Date: 2011-01-27 20:28-0700\n"
-"PO-Revision-Date: 2011-01-27 20:32-0700\n"
+"POT-Creation-Date: 2011-01-28 02:09-0700\n"
+"PO-Revision-Date: 2011-01-28 02:12-0700\n"
 "Last-Translator: Robert Park <rbpark@exolucere.ca>\n"
 "Language-Team: English\n"
 "Language: en_CA\n"
@@ -22,11 +22,10 @@ msgid "That's as far back as she goes, kiddo!"
 msgstr "That's as far back as she goes, kiddo!"
 
 #: gg/app.py:336
-#, python-format
-msgid "Could not open: %s"
-msgstr "Could not open: %s"
+msgid "Could not open: "
+msgstr "Could not open: "
 
-#: gg/app.py:385
+#: gg/app.py:384
 #, python-format
 msgid "%d points loaded in %.2fs."
 msgstr "%d points loaded in %.2fs."
@@ -68,24 +67,24 @@ msgid "Load photos or GPS data (Ctrl O)"
 msgstr "Load photos or GPS data (Ctrl O)"
 
 #: gg/ui.glade:26
-msgid "_Open"
-msgstr "_Open"
+msgid "Open"
+msgstr "Open"
 
 #: gg/ui.glade:40
 msgid "Save all photos (Ctrl S)"
 msgstr "Save all photos (Ctrl S)"
 
 #: gg/ui.glade:42
-msgid "_Save All"
-msgstr "_Save All"
+msgid "Save All"
+msgstr "Save All"
 
 #: gg/ui.glade:65
 msgid "Unload all GPS data (Ctrl X)"
 msgstr "Unload all GPS data (Ctrl X)"
 
 #: gg/ui.glade:67
-msgid "Clear GP_X"
-msgstr "Clear GP_X"
+msgid "Clear GPX"
+msgstr "Clear GPX"
 
 #: gg/ui.glade:81
 msgid "Close selected photos (Ctrl W)"
@@ -151,23 +150,23 @@ msgstr "Select all photographs (Ctrl A)"
 msgid "Place selected photos onto center of map (Ctrl Enter)"
 msgstr "Place selected photos onto center of map (Ctrl Enter)"
 
-#: gg/ui.glade:392
+#: gg/ui.glade:391
 msgid "Clock Offset:"
 msgstr "Clock Offset:"
 
-#: gg/ui.glade:407
+#: gg/ui.glade:406
 msgid "Add or subtract minutes from your camera's clock."
 msgstr "Add or subtract minutes from your camera's clock."
 
-#: gg/ui.glade:424
+#: gg/ui.glade:423
 msgid "Add or subtract seconds from your camera's clock."
 msgstr "Add or subtract seconds from your camera's clock."
 
-#: gg/ui.glade:447
+#: gg/ui.glade:446
 msgid "About GottenGeography"
 msgstr "About GottenGeography"
 
-#: gg/ui.glade:458
+#: gg/ui.glade:457
 msgid ""
 "GottenGeography: Go open thy tagger!\n"
 "\n"
@@ -179,11 +178,11 @@ msgstr ""
 "This program is written in the Python programming language, and adds geotags "
 "to your photos. The name is an anagram of \"Python Geotagger.\""
 
-#: gg/ui.glade:462
+#: gg/ui.glade:461
 msgid "GottenGeography Wiki"
 msgstr "GottenGeography Wiki"
 
-#: gg/ui.glade:463
+#: gg/ui.glade:462
 msgid ""
 "Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>\n"
 "\n"
@@ -215,11 +214,7 @@ msgstr ""
 "You should have received a copy of the GNU General Public License\n"
 "along with this program.  If not, see <http://www.gnu.org/licenses/>."
 
-#: gg/ui.glade:500
-msgid " "
-msgstr " "
-
-#: gg/ui.glade:510
+#: gg/ui.glade:509
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Save changes to your photos before "
 "closing?</span>"
@@ -227,7 +222,7 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Save changes to your photos before "
 "closing?</span>"
 
-#: gg/ui.glade:512
+#: gg/ui.glade:511
 msgid ""
 "The changes you've made to %d of your photos will be permanently lost if you "
 "do not save."
@@ -235,57 +230,57 @@ msgstr ""
 "The changes you've made to %d of your photos will be permanently lost if you "
 "do not save."
 
-#: gg/ui.glade:526
+#: gg/ui.glade:525
 msgid "Close _without Saving"
 msgstr "Close _without Saving"
 
-#: gg/ui.glade:587
+#: gg/ui.glade:586
 msgid "Open Files"
 msgstr "Open Files"
 
-#: gg/ui.glade:671
+#: gg/ui.glade:670
 msgid "No preview available"
 msgstr "No preview available"
 
-#: gg/ui.glade:703
+#: gg/ui.glade:702
 msgid "GottenGeography Preferences"
 msgstr "GottenGeography Preferences"
 
-#: gg/ui.glade:731
+#: gg/ui.glade:730
 msgid ""
 "Unfortunately, it isn't possible to know what timezone your camera is set to."
 msgstr ""
 "Unfortunately, it isn't possible to know what timezone your camera is set to."
 
-#: gg/ui.glade:754
+#: gg/ui.glade:753
 msgid ""
-"<b>Use system time.</b> Select this option if your camera's clock is set the "
-"same as this computer. "
+"<b>Use the _system timezone</b> if your camera's clock is set the same as "
+"this computer."
 msgstr ""
-"<b>Use system time.</b> Select this option if your camera's clock is set the "
-"same as this computer. "
+"<b>Use the _system timezone</b> if your camera's clock is set the same as "
+"this computer."
 
 #: gg/ui.glade:777
 msgid ""
-"<b>Check GPX timezone.</b> Select this option if you set your clock to the "
-"local time of the location you've photographed."
+"<b>Use the _GPX timezone</b> if your camera's clock is set to the local time "
+"where your photos were taken."
 msgstr ""
-"<b>Check GPX timezone.</b> Select this option if you set your clock to the "
-"local time of the location you've photographed."
+"<b>Use the _GPX timezone</b> if your camera's clock is set to the local time "
+"where your photos were taken."
 
-#: gg/ui.glade:799
+#: gg/ui.glade:800
 msgid ""
-"<b>Specify timezone manually.</b> Select this option if your camera is set "
-"to some other timezone."
+"<b>Specify the timezone _manually</b> if your camera is set to some other "
+"timezone."
 msgstr ""
-"<b>Specify timezone manually.</b> Select this option if your camera is set "
-"to some other timezone."
+"<b>Specify the timezone _manually</b> if your camera is set to some other "
+"timezone."
 
-#: gg/ui.glade:836
+#: gg/ui.glade:838
 msgid "Timezone"
 msgstr "Timezone"
 
-#: gg/ui.glade:854
+#: gg/ui.glade:856
 msgid ""
 "If you load a GPX file that has more than one track, the color you select "
 "here will be used for odd numbered tracks, and even numbered tracks will be "
@@ -295,6 +290,6 @@ msgstr ""
 "here will be used for odd numbered tracks, and even numbered tracks will be "
 "a lighter shade of this color."
 
-#: gg/ui.glade:873
+#: gg/ui.glade:875
 msgid "Track Color"
 msgstr "Track Color"

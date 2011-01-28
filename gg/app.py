@@ -333,8 +333,7 @@ class GottenGeography:
             except IOError:
                 invalid_files.append(basename(name))
         if len(invalid_files) > 0:
-            self.status_message(_("Could not open: %s") %
-                format_list(invalid_files))
+            self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
@@ -519,7 +518,7 @@ class GottenGeography:
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
-        label.set_label("%s\n%s" % (photo.short_summary(), photo.maps_link()))
+        label.set_label(format_list([photo.short_summary(), photo.maps_link()], "\n"))
     
     def add_files_dialog(self, *args):
         """Display a file chooser, and attempt to load chosen files."""
@@ -591,7 +590,7 @@ class GottenGeography:
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::%s' % signal, self.display_actors)
+            self.map_view.connect('notify::' + signal, self.display_actors)
         self.map_view.connect("paint", self.paint_handler)
         
         self.stage = self.map_view.get_stage()
