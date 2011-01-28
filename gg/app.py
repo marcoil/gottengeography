@@ -323,18 +323,15 @@ class GottenGeography:
     def open_files(self, files):
         """Attempt to load all of the specified files."""
         self.progressbar.show()
-        invalid_files, total = [], len(files)
-        while len(files) > 0:
-            filename = files.pop()
-            self.redraw_interface(1 - len(files) / total,
-                basename(filename))
-            # Assume the file is an image; if that fails, assume it's GPX;
-            # if that fails, show an error
+        invalid_files = []
+        index = files.index
+        for name in files:
+            self.redraw_interface(index(name) / len(files), basename(name))
             try:
-                try:            self.load_img_from_file(filename)
-                except IOError: self.load_gpx_from_file(filename)
+                try:            self.load_img_from_file(name)
+                except IOError: self.load_gpx_from_file(name)
             except IOError:
-                invalid_files.append(basename(filename))
+                invalid_files.append(basename(name))
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: %s") %
                 format_list(invalid_files))
