@@ -96,18 +96,17 @@ class GottenGeography:
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
-        x = self.map_view.get_width()  / 2
-        y = self.map_view.get_height() / 2
+        x   = self.map_view.get_width()  / 2
+        y   = self.map_view.get_height() / 2
         key = Gdk.keyval_name(keyval)
-        if   key == "Left":  x *= 0.9
-        elif key == "Up":    y *= 0.9
-        elif key == "Right": x *= 1.1
-        elif key == "Down":  y *= 1.1
-        lat, lon = self.map_view.get_coords_at(x, y)
-        if   key == "Left" or key == "Right":
-            lat = self.map_view.get_property('latitude')
-        elif key == "Down" or key == "Up":
-            lon = self.map_view.get_property('longitude')
+        lat = self.map_view.get_property('latitude')
+        lon = self.map_view.get_property('longitude')
+        if key in ("Up", "Down"):
+            lat = self.map_view.get_coords_at(
+                x, y * (0.9 if key == "Up" else 1.1))[0]
+        elif key in ("Left", "Right"):
+            lon = self.map_view.get_coords_at(
+                x * (0.9 if key == "Left" else 1.1), y)[1]
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
