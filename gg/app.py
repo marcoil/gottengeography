@@ -600,6 +600,7 @@ class GottenGeography:
         self.actors.coords_bg.set_position(0, 0)
         self.actors.coords = Clutter.Text()
         self.actors.coords.set_single_line_mode(True)
+        self.actors.coords.raise_top()
         self.actors.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32))
         self.actors.crosshair.set_property('has-border', True)
@@ -607,7 +608,6 @@ class GottenGeography:
         self.actors.crosshair.set_border_width(1)
         for actor in self.actors.values():
             actor.set_parent(self.stage)
-            actor.raise_top()
             actor.show()
         
         self.builder = Gtk.Builder()
