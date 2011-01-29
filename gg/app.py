@@ -376,10 +376,9 @@ class GottenGeography:
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
         self.update_sensitivity()
+        self.zoom_button_sensitivity()
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(self.tracks) - start_points, time.clock() - start_time))
-        if len(gpx.tracks) > 0:
-            self.map_view.ensure_visible(*gpx.area + [False])
         self.timezone = self.geonamer[gpx][3].strip()
         self.set_timezone()
     

@@ -101,10 +101,11 @@ class GPXLoader:
             with open(filename) as gpx:
                 self.parser.ParseFile(gpx)
         except expat.ExpatError:
-            # Changing the exception raised means that I don't have to
-            # import expat in app.py at all.
             raise IOError
         
+        if len(self.tracks) > 0:
+            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+            self.map_view.ensure_visible(*self.area + [False])
         self.latitude  = (self.area[0] + self.area[2]) / 2
         self.longitude = (self.area[1] + self.area[3]) / 2
     
