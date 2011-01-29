@@ -468,17 +468,7 @@ class GottenGeography:
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
-        self.progressbar.show()
-        mod_in_sel = self.modified & self.selected
-        total = len(mod_in_sel)
-        while len(mod_in_sel) > 0:
-            photo = mod_in_sel.pop()
-            self.redraw_interface(1 - len(mod_in_sel) / total,
-                basename(photo.filename))
-            self.load_img_from_file(photo.filename)
-        self.progressbar.hide()
-        self.update_sensitivity()
-        self.update_all_marker_highlights(self.listsel)
+        self.open_files([photo.filename for photo in self.modified & self.selected])
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
