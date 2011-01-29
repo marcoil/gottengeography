@@ -79,17 +79,15 @@ class GPXLoader:
     
     def __init__(self, filename, polygons, map_view, progressbar, color):
         """Create the parser and begin parsing."""
-        self.polygons = polygons
-        self.state    = {}
-        self.tracks   = {}
-        self.clock    = clock()
-        self.alpha    = float('inf')
-        self.omega    = float('-inf')
-        self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
-        self.map_view = map_view
-        self.progress = progressbar
-        self.color_a  = color
         self.color_b  = color.lighten().lighten()
+        self.color_a  = color
+        self.progress = progressbar
+        self.map_view = map_view
+        self.polygons = polygons
+        self.clock    = clock()
+        self.tracks   = {}
+        self.state    = {}
+        self.area     = []
         
         self.parser = expat.ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -101,6 +99,13 @@ class GPXLoader:
                 self.parser.ParseFile(gpx)
         except expat.ExpatError:
             raise IOError
+        
+        self.area.append(min([p["point"].lat for p in self.tracks.values()]))
+        self.area.append(min([p["point"].lon for p in self.tracks.values()]))
+        self.area.append(max([p["point"].lat for p in self.tracks.values()]))
+        self.area.append(max([p["point"].lon for p in self.tracks.values()]))
+        self.alpha   = min(self.tracks.keys())
+        self.omega   = max(self.tracks.keys())
         
         if len(self.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
@@ -185,14 +190,7 @@ class GPXLoader:
         }
         
         self.state.clear()
-        self.omega   = max(self.omega, timestamp)
-        self.alpha   = min(self.alpha, timestamp)
-        self.area[0] = min(self.area[0], lat)
-        self.area[1] = min(self.area[1], lon)
-        self.area[2] = max(self.area[2], lat)
-        self.area[3] = max(self.area[3], lon)
         if clock() - self.clock > .2:
-            self.map_view.ensure_visible(*self.area + [False])
             self.progress.pulse()
             while Gtk.events_pending():
                 Gtk.main_iteration()
