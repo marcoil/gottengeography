@@ -348,7 +348,7 @@ class GottenGeography:
         if filename not in self.photo:
             self.photo[filename] = Photograph(filename, self.geonamer, self.modify_summary)
             self.photo[filename].update( {
-                'iter':   self.liststore.append([None] * 4),
+                'iter':   self.liststore.append(),
                 'marker': self.add_marker(filename)
             } )
         else:
@@ -356,10 +356,8 @@ class GottenGeography:
         photo = self.photo[filename]
         photo.position_marker()
         self.modified.discard(photo)
-        self.liststore.set_value(photo.iter, PATH,      photo.filename)
-        self.liststore.set_value(photo.iter, THUMB,     photo.thumb)
-        self.liststore.set_value(photo.iter, TIMESTAMP, photo.timestamp)
-        self.liststore.set_value(photo.iter, SUMMARY,   photo.long_summary())
+        self.liststore.set_row(photo.iter,
+            [filename, photo.long_summary(), photo.thumb, photo.timestamp])
         self.auto_timestamp_comparison(photo)
         self.update_sensitivity()
     
