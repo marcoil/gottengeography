@@ -36,8 +36,13 @@ class GottenGeographyTester(unittest.TestCase):
         # Make the tests work for people outside my time zone.
         environ["TZ"] = "America/Edmonton"
         time.tzset()
+        self.history = gconf_get("history")
         self.gui = GottenGeography()
         self.gui.builder.get_object("system_timezone").clicked()
+    
+    def tearDown(self):
+        """Restore history."""
+        gconf_set("history", self.history)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
