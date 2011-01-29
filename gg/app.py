@@ -321,9 +321,8 @@ class GottenGeography:
         """Attempt to load all of the specified files."""
         self.progressbar.show()
         invalid_files = []
-        index = files.index
-        for name in files:
-            self.redraw_interface(index(name) / len(files), basename(name))
+        for i, name in enumerate(files, 1):
+            self.redraw_interface(i / len(files), basename(name))
             try:
                 try:            self.load_img_from_file(name)
                 except IOError: self.load_gpx_from_file(name)
@@ -386,9 +385,8 @@ class GottenGeography:
         """Ensure all loaded files are saved."""
         self.progressbar.show()
         photos = list(self.modified)
-        index  = photos.index
-        for photo in photos:
-            self.redraw_interface(index(photo) / len(photos), basename(photo.filename))
+        for i, photo in enumerate(photos, 1):
+            self.redraw_interface(i / len(photos), basename(photo.filename))
             try:
                 photo.write()
             except Exception as inst:
