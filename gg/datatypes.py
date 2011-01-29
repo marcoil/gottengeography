@@ -14,17 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-import time
-
 from gettext import gettext as _
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from gi.repository import GdkPixbuf, GConf
+from time import strftime, mktime, localtime
 from os.path import join, basename, dirname
 from math import acos, sin, cos, radians
 from pyexiv2 import ImageMetadata
 from os import stat
+from re import sub
 
 from territories import *
 from gps import *
@@ -147,7 +146,7 @@ class Photograph(ReadableDictionary):
         same timezone.
         """
         try:
-            self.timestamp = int(time.mktime(
+            self.timestamp = int(mktime(
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except:
             self.timestamp = int(stat(self.filename).st_mtime)
@@ -217,7 +216,7 @@ class Photograph(ReadableDictionary):
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
         if type(self.timestamp) is int:
-            return time.strftime("%Y-%m-%d %X", time.localtime(self.timestamp))
+            return strftime("%Y-%m-%d %X", localtime(self.timestamp))
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
@@ -227,7 +226,7 @@ class Photograph(ReadableDictionary):
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
         name = format_list([self.City, self.ProvinceState, self.CountryName])
-        return re.sub(", ", ",\n", name) if len(name) > 35 else name
+        return sub(", ", ",\n", name) if len(name) > 35 else name
     
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""

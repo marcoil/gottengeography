@@ -16,16 +16,15 @@
 
 from __future__ import division
 
-import re
-import time
-
 from gi.repository import Gtk, Champlain, Clutter
+from re import match, compile as re_compile
 from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from xml.parsers import expat
 from pyexiv2 import Rational
 from calendar import timegm
+from time import clock
 
 # Don't export everything, that's too sloppy.
 __all__ = [ 'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
@@ -33,7 +32,7 @@ __all__ = [ 'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
 
 def dms_to_decimal(degrees, minutes, seconds, sign=""):
     """Convert degrees, minutes, seconds into decimal degrees."""
-    return (-1 if re.match(r'[SWsw]', sign) else 1) * (
+    return (-1 if match(r'[SWsw]', sign) else 1) * (
         degrees.to_float()        +
         minutes.to_float() / 60   +
         seconds.to_float() / 3600
@@ -73,7 +72,7 @@ def format_coords(lat, lon):
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-split = re.compile(r'[:TZ-]').split
+split = re_compile(r'[:TZ-]').split
 
 class GPXLoader:
     """Use expat to parse GPX data quickly."""
@@ -83,7 +82,7 @@ class GPXLoader:
         self.polygons = polygons
         self.state    = {}
         self.tracks   = {}
-        self.clock    = time.clock()
+        self.clock    = clock()
         self.alpha    = float('inf')
         self.omega    = float('-inf')
         self.area     = [ float('inf') ] * 2 + [ float('-inf') ] * 2
@@ -192,10 +191,10 @@ class GPXLoader:
         self.area[1] = min(self.area[1], lon)
         self.area[2] = max(self.area[2], lat)
         self.area[3] = max(self.area[3], lon)
-        if time.clock() - self.clock > .2:
+        if clock() - self.clock > .2:
             self.map_view.ensure_visible(*self.area + [False])
             self.progress.pulse()
             while Gtk.events_pending():
                 Gtk.main_iteration()
-            self.clock = time.clock()
+            self.clock = clock()
 
