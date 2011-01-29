@@ -317,7 +317,7 @@ S 10.00000, W 10.00000
         
         history_length = len(self.gui.history)
         
-        self.assertEqual(history_length, 0)
+        self.assertEqual(history_length, len(self.gui.history))
         self.gui.remember_location()
         self.assertEqual(history_length + 1, len(self.gui.history))
         
@@ -371,11 +371,11 @@ S 10.00000, W 10.00000
         self.assertEqual(self.gui.map_view.get_max_zoom_level(),
             self.gui.map_view.get_zoom_level())
         
-        self.gui.return_to_last()
+        self.gui.return_to_last(self.gui.builder.get_object("back_button"))
         self.assertEqual(history_length + 1, len(self.gui.history))
         self.assertEqual(zoom, self.gui.map_view.get_zoom_level())
         
-        self.gui.return_to_last()
+        self.gui.return_to_last(self.gui.builder.get_object("back_button"))
         self.assertEqual(history_length, len(self.gui.history))
         
         self.gui.map_view.set_zoom_level(5)
@@ -424,42 +424,26 @@ S 10.00000, W 10.00000
         self.assertFalse(marker.get_parent())
     
     def test_gconf(self):
-        orig_lat = gconf_get('last_latitude')
-        orig_lon = gconf_get('last_longitude')
-        orig_zoom = gconf_get('last_zoom_level')
+        history = gconf_get("history")
         
-        gconf_set('last_zoom_level', 0)
-        self.assertEqual(gconf_get('last_zoom_level'), 0)
-        gconf_set('last_zoom_level', 3)
-        self.assertEqual(gconf_get('last_zoom_level'), 3)
-        
-        gconf_set('last_latitude', 10.0)
-        self.assertEqual(gconf_get('last_latitude'), 10.0)
-        gconf_set('last_latitude', -53.0)
-        self.assertEqual(gconf_get('last_latitude'), -53.0)
-        
-        gconf_set('last_longitude', 10.0)
-        self.assertEqual(gconf_get('last_longitude'), 10.0)
-        gconf_set('last_longitude', 113.0)
-        self.assertEqual(gconf_get('last_longitude'), 113.0)
+        gconf_set('history', [[0,0,0]])
+        self.assertEqual(gconf_get('history'), [[0,0,0]])
+        gconf_set('history', [[50,-113,11]])
+        self.assertEqual(gconf_get('history'), [[50,-113,11]])
         
         lat = random_coord(90)
         lon = random_coord(180)
         
         self.gui.map_view.center_on(lat, lon)
         
-        self.gui.remember_location_with_gconf()
+        self.gui.remember_location()
         
-        self.assertAlmostEqual(lat, gconf_get('last_latitude'), 4)
-        self.assertAlmostEqual(lon, gconf_get('last_longitude'), 4)
-        self.assertEqual(
-            self.gui.map_view.get_zoom_level(),
-            gconf_get('last_zoom_level')
-        )
+        gconf_val = gconf_get("history")
+        self.assertAlmostEqual(lat, gconf_val[-1][0], 4)
+        self.assertAlmostEqual(lon, gconf_val[-1][1], 4)
+        self.assertEqual(self.gui.map_view.get_zoom_level(), gconf_val[-1][2])
         
-        gconf_set('last_latitude', orig_lat)
-        gconf_set('last_longitude', orig_lon)
-        gconf_set('last_zoom_level', orig_zoom)
+        gconf_set('history', history)
     
     def test_time_offset(self):
         """Fiddle with the time offset setting."""

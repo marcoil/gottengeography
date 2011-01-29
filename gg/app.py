@@ -57,12 +57,6 @@ class GottenGeography:
 # Map navigation section. These methods move and zoom the map around.
 ################################################################################
     
-    def remember_location_with_gconf(self):
-        """Use GConf for persistent storage of the currently viewed location."""
-        gconf_set('last_latitude',   self.map_view.get_property('latitude'))
-        gconf_set('last_longitude',  self.map_view.get_property('longitude'))
-        gconf_set('last_zoom_level', self.map_view.get_zoom_level())
-    
     def remember_location(self):
         """Add the current location to the history stack."""
         self.history.append( [
@@ -70,19 +64,16 @@ class GottenGeography:
             self.map_view.get_property('longitude'),
             self.map_view.get_zoom_level()
         ] )
+        gconf_set("history", self.history[-5:len(self.history)])
+        self.builder.get_object("back_button").set_sensitive(True)
     
-    def return_to_last(self, button=None):
+    def return_to_last(self, button):
         """Return the map view to where the user last set it."""
-        try: lat, lon, zoom = self.history.pop()
-        except IndexError:
-            lat  = gconf_get('last_latitude', 0)
-            lon  = gconf_get('last_longitude', 0)
-            zoom = gconf_get('last_zoom_level', 2)
-            if button is not False:
-                self.status_message(_("That's as far back as she goes, kiddo!"))
+        lat, lon, zoom = self.history.pop()
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
         self.zoom_button_sensitivity()
+        button.set_sensitive(len(self.history) > 0)
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
@@ -546,8 +537,7 @@ class GottenGeography:
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.remember_location_with_gconf()
-        # If there's no unsaved data, just close without confirmation.
+        self.remember_location()
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
@@ -571,14 +561,13 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self, animate_crosshair=True):
-        self.actors   = ReadableDictionary()
+        self.history  = gconf_get("history", [[34.5,15.8,2]])
         self.geonamer = GeoCache()
-        self.timezone = None
         self.selected = set()
         self.modified = set()
         self.searched = set()
+        self.timezone = None
         self.polygons = []
-        self.history  = []
         self.photo    = {}
         self.gpx      = []
         
@@ -592,7 +581,8 @@ class GottenGeography:
             self.map_view.connect('notify::' + signal, self.display_actors)
         self.map_view.connect("paint", self.paint_handler)
         
-        self.stage = self.map_view.get_stage()
+        self.stage  = self.map_view.get_stage()
+        self.actors = ReadableDictionary()
         self.actors.coords_bg = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(255, 255, 255, 164))
         self.actors.coords_bg.set_position(0, 0)
@@ -671,7 +661,7 @@ class GottenGeography:
         entry.set_completion(search)
         entry.connect("changed", self.populate_search_results)
         
-        self.return_to_last(False)
+        self.return_to_last(self.builder.get_object("back_button"))
         
         click_handlers = {
             "open_button":       self.add_files_dialog,
