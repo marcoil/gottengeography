@@ -385,10 +385,10 @@ class GottenGeography:
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        total = len(self.modified)
-        for photo in self.modified.copy():
-            self.redraw_interface(1 - len(self.modified) / total,
-                basename(photo.filename))
+        photos = list(self.modified)
+        index  = photos.index
+        for photo in photos:
+            self.redraw_interface(index(photo) / len(photos), basename(photo.filename))
             try:
                 photo.write()
             except Exception as inst:
