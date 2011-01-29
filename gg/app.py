@@ -554,7 +554,7 @@ class GottenGeography:
 # Initialization and Gtk boilerplate/housekeeping type stuff and such.
 ################################################################################
     
-    def __init__(self, animate_crosshair=True):
+    def __init__(self):
         self.history  = gconf_get("history", [[34.5,15.8,2]])
         self.geonamer = GeoCache()
         self.selected = set()
@@ -587,7 +587,7 @@ class GottenGeography:
         self.actors.crosshair.set_property('has-border', True)
         self.actors.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.actors.crosshair.set_border_width(1)
-        for actor in ["crosshair", "coords_bg", "coords"]:
+        for actor in ["coords_bg", "coords"]:
             self.actors[actor].set_parent(self.stage)
             self.actors[actor].raise_top()
             self.actors[actor].show()
@@ -717,23 +717,6 @@ class GottenGeography:
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method", "system_timezone")
         self.builder.get_object(timezone_method).clicked()
-        
-        if not animate_crosshair:
-            return
-        
-        # This causes the crosshair to start off huge and invisible, and it
-        # quickly shrinks, spins, and fades into existence. The last value for
-        # i before it stops will be 8, so: 53-i ends at 45 degrees, and
-        # 260-(0.51*i) ends at 255 or full opacity. The numbers come from
-        # simplifying the formula ((508-i)/500) * 255.
-        xhair = self.actors.crosshair
-        for i in range(500, 7, -1):
-            xhair.set_size(i, i)
-            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
-            xhair.set_property('opacity', int(260-(0.51*i)))
-            self.display_actors()
-            self.redraw_interface()
-            time.sleep(0.002)
     
     def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
@@ -784,5 +767,19 @@ class GottenGeography:
         else:                   left.hide()
     
     def main(self):
-        """Go!"""
+        """Animate the crosshair and begin user interaction."""
+        xhair = self.actors.crosshair
+        xhair.set_parent(self.stage)
+        xhair.raise_top()
+        xhair.show()
+        # This causes the crosshair to start off huge and invisible, and it
+        # quickly shrinks, spins, and fades into existence.
+        for i in range(500, 7, -1):
+            xhair.set_size(i, i)
+            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
+            xhair.set_property('opacity', int(259-(0.5*i)))
+            self.display_actors()
+            self.redraw_interface()
+            time.sleep(0.002)
         Gtk.main()
+

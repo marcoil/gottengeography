@@ -36,7 +36,7 @@ class GottenGeographyTester(unittest.TestCase):
         # Make the tests work for people outside my time zone.
         environ["TZ"] = "America/Edmonton"
         time.tzset()
-        self.gui = GottenGeography(animate_crosshair=False)
+        self.gui = GottenGeography()
         self.gui.builder.get_object("system_timezone").clicked()
     
     def test_gtk_window(self):
