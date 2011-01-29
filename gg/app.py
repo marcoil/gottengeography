@@ -19,7 +19,6 @@ from __future__ import division
 APPNAME = "GottenGeography"
 VERSION = "0.5a"
 
-import time
 import gettext
 
 gettext.bindtextdomain(APPNAME.lower())
@@ -27,6 +26,7 @@ gettext.textdomain(APPNAME.lower())
 
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from time import tzset, sleep, clock
 from re import search, IGNORECASE
 from gettext import gettext as _
 from os.path import basename
@@ -290,7 +290,7 @@ class GottenGeography:
             if region is not None and city is not None:
                 environ["TZ"] = "%s/%s" % (region, city)
         print "Timezone:", environ.get("TZ", "System time")
-        time.tzset()
+        tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
             self.auto_timestamp_comparison(photo)
@@ -365,7 +365,7 @@ class GottenGeography:
         """Parse GPX data, drawing each GPS track segment on the map."""
         self.remember_location()
         start_points = len(self.tracks)
-        start_time   = time.clock()
+        start_time   = clock()
         
         gpx = GPXLoader(filename, self.polygons, self.map_view,
             self.progressbar, self.make_clutter_color())
@@ -378,7 +378,7 @@ class GottenGeography:
         self.update_sensitivity()
         self.zoom_button_sensitivity()
         self.status_message(_("%d points loaded in %.2fs.") %
-            (len(self.tracks) - start_points, time.clock() - start_time))
+            (len(self.tracks) - start_points, clock() - start_time))
         self.timezone = self.geonamer[gpx][3].strip()
         self.set_timezone()
     
@@ -779,6 +779,6 @@ class GottenGeography:
             xhair.set_property('opacity', int(259-(0.5*i)))
             self.display_actors()
             self.redraw_interface()
-            time.sleep(0.002)
+            sleep(0.002)
         Gtk.main()
 
