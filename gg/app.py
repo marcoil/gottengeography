@@ -134,10 +134,16 @@ class GottenGeography:
     def search_completed(self, entry, model, itr):
         """Go to the selected location."""
         self.remember_location()
+        loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
+        gconf_set("searched", [loc, lat, lon])
         self.map_view.set_zoom_level(11)
-        self.map_view.center_on(
-            model.get_value(itr, LATITUDE),
-            model.get_value(itr, LONGITUDE))
+        self.map_view.center_on(lat, lon)
+    
+    def search_bar_clicked(self, entry, icon_pos, event):
+        location, lat, lon = gconf_get("searched", [None, None, None])
+        if valid_coords(lat, lon):
+            entry.set_text(location)
+            self.map_view.center_on(lat, lon)
     
 ################################################################################
 # Map features section. These methods control map objects.
@@ -660,6 +666,7 @@ class GottenGeography:
         entry = self.builder.get_object("search")
         entry.set_completion(search)
         entry.connect("changed", self.populate_search_results)
+        entry.connect("icon-release", self.search_bar_clicked)
         
         self.return_to_last(self.builder.get_object("back_button"))
         
