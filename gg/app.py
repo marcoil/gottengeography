@@ -196,11 +196,11 @@ class GottenGeography:
     
     def marker_mouse_in(self, marker, event):
         """Enlarge a hovered-over ChamplainMarker by 5%."""
-        marker.set_scale(*[marker.get_scale()[0] * 1.05] * 2)
+        marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
     
     def marker_mouse_out(self, marker, event):
         """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-        marker.set_scale(*[marker.get_scale()[0] / 1.05] * 2)
+        marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
     
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
@@ -236,8 +236,7 @@ class GottenGeography:
         """Generate a Clutter.Color from the currently chosen color."""
         color = self.colorpicker.get_current_color()
         return Clutter.Color.new(
-            *map(lambda x: x / 256, [color.red, color.green, color.blue, 32768])
-        )
+            *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
     
     def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
