@@ -593,14 +593,6 @@ class GottenGeography:
             "preview": get_obj("preview_label").get_text()
         })
         
-        offset = gconf_get("clock_offset", [0, 0])
-        for name in [ "seconds", "minutes" ]:
-            spinbutton = get_obj(name)
-            spinbutton.set_value(offset.pop())
-            spinbutton.connect("value-changed", self.time_offset_changed)
-        get_obj("open").connect(
-            "update-preview", self.update_preview)
-        
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
@@ -680,6 +672,14 @@ class GottenGeography:
         self.redraw_interface()
         self.zoom_button_sensitivity()
         self.display_actors(self.stage)
+        
+        offset = gconf_get("clock_offset", [0, 0])
+        for name in [ "seconds", "minutes" ]:
+            spinbutton = get_obj(name)
+            spinbutton.connect("value-changed", self.time_offset_changed)
+            spinbutton.set_value(offset.pop())
+        get_obj("open").connect(
+            "update-preview", self.update_preview)
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
