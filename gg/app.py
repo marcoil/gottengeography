@@ -415,16 +415,13 @@ class GottenGeography:
             lon = self.tracks[timestamp]['point'].lon
             ele = self.tracks[timestamp]['elevation']
         except KeyError:
-            # Iterate over the available gpx points, find the two that are
-            # nearest (in time) to the photo timestamp.
-            for point in self.tracks:
-                if point > timestamp: hi = min(point, hi)
-                if point < timestamp: lo = max(point, lo)
-            delta = hi - lo    # in seconds
+            # Find the two points that are nearest (in time) to the photo.
+            hi = min([point for point in self.tracks if point > timestamp])
+            lo = max([point for point in self.tracks if point < timestamp])
             # lo_perc and hi_perc are ratios (between 0 and 1) representing the
             # proportional amount of time between the photo and the points.
-            hi_perc = (timestamp - lo) / delta
-            lo_perc = (hi - timestamp) / delta
+            hi_perc = (timestamp - lo) / (hi - lo)
+            lo_perc = (hi - timestamp) / (hi - lo)
             # Find intermediate values using the proportional ratios.
             lat = ((self.tracks[lo]['point'].lat * lo_perc)  +
                    (self.tracks[hi]['point'].lat * hi_perc))
