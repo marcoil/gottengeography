@@ -76,14 +76,11 @@ class GottenGeographyTester(TestCase):
         for demo in listdir('./demo/'):
             filename = join(getcwd(), "demo", demo)
             if not search(r'gpx$', demo):
-                self.assertRaises(IOError,
-                    gui.load_gpx_from_file,
-                    filename
-                )
+                self.assertRaises(IOError, gui.load_gpx_from_file, filename)
                 gui.load_img_from_file(filename)
         
-        iter = gui.liststore.get_iter_first()
-        self.assertTrue(iter)
+        treeiter = gui.liststore.get_iter_first()
+        self.assertTrue(treeiter)
         
         for filename in gui.photo:
             self.assertFalse(filename in gui.modified)
@@ -122,7 +119,7 @@ class GottenGeographyTester(TestCase):
         gui.load_gpx_from_file(gpx_filename)
         
         # Check that the GPX is loaded
-        self.assertEqual(len(gui.tracks),   374)
+        self.assertEqual(len(gui.tracks), 374)
         self.assertEqual(len(gui.gpx), 1)
         self.assertEqual(len(gui.gpx[0].polygons), 1)
         self.assertEqual(len(gui.gpx[0].tracks), 374)
@@ -179,7 +176,7 @@ class GottenGeographyTester(TestCase):
         
         gui.listsel.select_all()
         self.assertEqual(len(gui.selected), 6)
-        files = map(lambda x:x.filename, gui.selected)
+        files = [photo.filename for photo in gui.selected]
         gui.close_selected_photos()
         self.assertEqual(len(gui.photo), 0)
         self.assertEqual(len(gui.modified), 0)
@@ -387,26 +384,38 @@ S 10.00000, W 10.00000
         lon = gui.map_view.get_property('longitude')
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
-        self.assertGreater(lon, gui.map_view.get_property('longitude'))
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
+        self.assertGreater(    lon, gui.map_view.get_property('longitude'))
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
-        #self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 5)
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 0)
+        
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
-        self.assertLess(lon, gui.map_view.get_property('longitude'))
+        self.assertLess(       lon, gui.map_view.get_property('longitude'))
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
-        #self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 5)
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 0)
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
+        
+        lon = gui.map_view.get_property('longitude')
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
-        #self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 5)
-        self.assertLess(lat, gui.map_view.get_property('latitude'))
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+        self.assertLess(       lat, gui.map_view.get_property('latitude'))
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
-        #self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 5)
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 0)
         
         gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
-        #self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 5)
-        self.assertGreater(lat, gui.map_view.get_property('latitude'))
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+        self.assertGreater(    lat, gui.map_view.get_property('latitude'))
+        
+        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+        self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 0)
     
     def test_map_objects(self):
         """Test ChamplainMarkers."""
