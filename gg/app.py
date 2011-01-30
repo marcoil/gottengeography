@@ -243,9 +243,8 @@ class GottenGeography:
         color = selection.get_current_color()
         one   = self.make_clutter_color()
         two   = one.lighten().lighten()
-        index = self.polygons.index
-        for polygon in self.polygons:
-            polygon.set_stroke_color(two if index(polygon) % 2 else one)
+        for i, polygon in enumerate(self.polygons):
+            polygon.set_stroke_color(two if i % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
     
     def paint_handler(self, map_view):
