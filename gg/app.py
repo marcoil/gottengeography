@@ -97,12 +97,10 @@ class GottenGeography:
         key = Gdk.keyval_name(keyval)
         lat = self.map_view.get_property('latitude')
         lon = self.map_view.get_property('longitude')
-        if key in ("Up", "Down"):
-            lat = self.map_view.get_coords_at(
-                x, y * (0.9 if key == "Up" else 1.1))[0]
-        elif key in ("Left", "Right"):
-            lon = self.map_view.get_coords_at(
-                x * (0.9 if key == "Left" else 1.1), y)[1]
+        lat2, lon2 = self.map_view.get_coords_at(
+            *[i * (0.9 if key in ("Up", "Left") else 1.1) for i in (x, y)])
+        if   key in ("Up", "Down"):    lat = lat2
+        elif key in ("Left", "Right"): lon = lon2
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
