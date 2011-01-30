@@ -65,7 +65,7 @@ class GottenGeography:
             self.map_view.get_zoom_level()
         ] )
         gconf_set("history", self.history[-5:len(self.history)])
-        self.builder.get_object("back_button").set_sensitive(True)
+        self.get("back_button").set_sensitive(True)
     
     def return_to_last(self, button):
         """Return the map view to where the user last set it."""
@@ -176,7 +176,7 @@ class GottenGeography:
             label.set_markup(format_coords(lat, lon))
             white.set_size(stage_width, label.get_height() + 10)
             label.set_position((stage_width - label.get_width()) / 2, 5)
-            self.builder.get_object("maps_link").set_markup(maps_link(lat, lon))
+            self.get("maps_link").set_markup(maps_link(lat, lon))
     
     def marker_clicked(self, marker, event):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
@@ -190,7 +190,7 @@ class GottenGeography:
             if marker.get_highlighted(): self.listsel.unselect_iter(photo.iter)
             else:                        self.listsel.select_iter(photo.iter)
         else:
-            self.builder.get_object("select_all_button").set_active(False)
+            self.get("select_all_button").set_active(False)
             self.listsel.unselect_all()
             self.listsel.select_iter(photo.iter)
     
@@ -437,8 +437,8 @@ class GottenGeography:
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         try:    widget.get_tooltip_text().index("seconds")
-        except: minbutton, secbutton = widget, self.builder.get_object("seconds")
-        else:   secbutton, minbutton = widget, self.builder.get_object("minutes")
+        except: minbutton, secbutton = widget, self.get("seconds")
+        else:   secbutton, minbutton = widget, self.get("minutes")
         seconds = secbutton.get_value()
         minutes = minbutton.get_value()
         offset  = int((minutes * 60) + seconds)
@@ -472,7 +472,7 @@ class GottenGeography:
             self.liststore.remove(photo.iter)
             self.modified.discard(photo)
             del self.photo[photo.filename]
-        self.builder.get_object("select_all_button").set_active(False)
+        self.get("select_all_button").set_active(False)
         self.update_sensitivity()
     
     def modify_summary(self, photo):
@@ -487,9 +487,9 @@ class GottenGeography:
     
     def update_preview(self, chooser):
         """Display photo thumbnail and geotag data in file chooser."""
-        label = self.builder.get_object("preview_label")
+        label = self.get("preview_label")
         label.set_label(self.strings.preview)
-        image = self.builder.get_object("preview_image")
+        image = self.get("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
             photo = Photograph(chooser.get_preview_filename(), self.geonamer,
@@ -501,7 +501,7 @@ class GottenGeography:
     
     def add_files_dialog(self, *args):
         """Display a file chooser, and attempt to load chosen files."""
-        chooser = self.builder.get_object("open")
+        chooser = self.get("open")
         response = chooser.run()
         chooser.hide()
         if response == Gtk.ResponseType.OK:
@@ -515,11 +515,11 @@ class GottenGeography:
             'city':   self.cities_box.get_active(),
             'color':  self.colorpicker.get_current_color()
         })
-        dialog = self.builder.get_object("preferences")
+        dialog = self.get("preferences")
         if not dialog.run():
             self.colorpicker.set_current_color(previous.color)
             self.colorpicker.set_previous_color(previous.color)
-            self.builder.get_object(previous.method).set_active(True)
+            self.get(previous.method).set_active(True)
             self.region_box.set_active(previous.region)
             self.cities_box.set_active(previous.city)
         dialog.hide()
@@ -530,7 +530,7 @@ class GottenGeography:
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
-        dialog = self.builder.get_object("quit")
+        dialog = self.get("quit")
         dialog.format_secondary_markup(self.strings.quit % len(self.modified))
         response = dialog.run()
         dialog.hide()
@@ -541,7 +541,7 @@ class GottenGeography:
     
     def about_dialog(self, *args):
         """Describe this application to the user."""
-        dialog = self.builder.get_object("about")
+        dialog = self.get("about")
         dialog.run()
         dialog.hide()
     
@@ -590,20 +590,21 @@ class GottenGeography:
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(APPNAME.lower())
         self.builder.add_from_file(get_file("ui.glade"))
+        self.get = self.builder.get_object
         
-        self.progressbar = self.builder.get_object("progressbar")
+        self.progressbar = self.get("progressbar")
         
         self.strings = ReadableDictionary({
-            "quit":    self.builder.get_object("quit").get_property('secondary-text'),
-            "preview": self.builder.get_object("preview_label").get_text()
+            "quit":    self.get("quit").get_property('secondary-text'),
+            "preview": self.get("preview_label").get_text()
         })
         
         offset = gconf_get("clock_offset", [0, 0])
         for name in [ "seconds", "minutes" ]:
-            spinbutton = self.builder.get_object(name)
+            spinbutton = self.get(name)
             spinbutton.set_value(offset.pop())
             spinbutton.connect("value-changed", self.time_offset_changed)
-        self.builder.get_object("open").connect(
+        self.get("open").connect(
             "update-preview", self.update_preview)
         
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
@@ -635,8 +636,8 @@ class GottenGeography:
         self.listsel.connect("changed", self.update_all_marker_highlights)
         self.listsel.connect("changed", self.update_sensitivity)
         
-        self.builder.get_object("photoscroller").add(self.photos_view)
-        self.builder.get_object("search_and_map").pack_start(champlain, True, True, 0)
+        self.get("photoscroller").add(self.photos_view)
+        self.get("search_and_map").pack_start(champlain, True, True, 0)
         
         self.search_results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
@@ -646,12 +647,12 @@ class GottenGeography:
         search.connect("match-selected", self.search_completed)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
-        entry = self.builder.get_object("search")
+        entry = self.get("search")
         entry.set_completion(search)
         entry.connect("changed", self.populate_search_results)
         entry.connect("icon-release", self.search_bar_clicked)
         
-        self.return_to_last(self.builder.get_object("back_button"))
+        self.return_to_last(self.get("back_button"))
         
         click_handlers = {
             "open_button":       self.add_files_dialog,
@@ -668,10 +669,10 @@ class GottenGeography:
             "select_all_button": self.toggle_selected_photos
         }
         for button, handler in click_handlers.items():
-            self.builder.get_object(button).connect("clicked", handler)
+            self.get(button).connect("clicked", handler)
         
         accel  = Gtk.AccelGroup()
-        window = self.builder.get_object("main")
+        window = self.get("main")
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
@@ -687,7 +688,7 @@ class GottenGeography:
         self.display_actors(self.stage)
         
         colors = gconf_get("track_color", [32768, 0, 65535])
-        self.colorpicker = self.builder.get_object("colorselection")
+        self.colorpicker = self.get("colorselection")
         self.colorpicker.connect("color-changed", self.track_color_changed)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
@@ -701,17 +702,17 @@ class GottenGeography:
         timezone = gconf_get("timezone", [-1, -1])
         self.region_box.set_active(timezone[0])
         self.cities_box.set_active(timezone[1])
-        self.tz_combos = self.builder.get_object("custom_timezone_combos")
+        self.tz_combos = self.get("custom_timezone_combos")
         self.tz_combos.pack_start(self.region_box, False, False, 10)
         self.tz_combos.pack_start(self.cities_box, False, False, 10)
         self.tz_combos.show_all()
         
         for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
-            radio = self.builder.get_object(option)
+            radio = self.get(option)
             radio.connect("clicked", self.radio_handler)
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method", "system_timezone")
-        self.builder.get_object(timezone_method).clicked()
+        self.get(timezone_method).clicked()
     
     def toggle_selected_photos(self, button):
         """Toggle the selection of photos."""
@@ -720,7 +721,7 @@ class GottenGeography:
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
-        status = self.builder.get_object("status")
+        status = self.get("status")
         status.push(status.get_context_id("msg"), message)
         print message
     
@@ -738,9 +739,9 @@ class GottenGeography:
     def zoom_button_sensitivity(self):
         """Ensure zoom buttons are only sensitive when they need to be."""
         zoom_level = self.map_view.get_zoom_level()
-        self.builder.get_object("zoom_out_button").set_sensitive(
+        self.get("zoom_out_button").set_sensitive(
             self.map_view.get_min_zoom_level() is not zoom_level)
-        self.builder.get_object("zoom_in_button").set_sensitive(
+        self.get("zoom_in_button").set_sensitive(
             self.map_view.get_max_zoom_level() is not zoom_level)
     
     def update_sensitivity(self, selection=None):
@@ -749,15 +750,15 @@ class GottenGeography:
         This method should be called every time any program state changes,
         eg, when modifying a photo in any way, and when the selection changes.
         """
-        self.builder.get_object("apply_button").set_sensitive(len(self.selected) > 0)
-        self.builder.get_object("close_button").set_sensitive(len(self.selected) > 0)
-        self.builder.get_object("save_button").set_sensitive( len(self.modified) > 0)
-        self.builder.get_object("revert_button").set_sensitive(
+        self.get("apply_button").set_sensitive(len(self.selected) > 0)
+        self.get("close_button").set_sensitive(len(self.selected) > 0)
+        self.get("save_button").set_sensitive( len(self.modified) > 0)
+        self.get("revert_button").set_sensitive(
             len(self.modified & self.selected) > 0)
         gpx_sensitive = len(self.tracks) > 0
         for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
-            self.builder.get_object(widget).set_sensitive(gpx_sensitive)
-        left = self.builder.get_object("photos_with_buttons")
+            self.get(widget).set_sensitive(gpx_sensitive)
+        left = self.get("photos_with_buttons")
         if len(self.photo) > 0: left.show()
         else:                   left.hide()
     
