@@ -139,7 +139,8 @@ class GPXLoader:
             timestamp = timegm(map(int, split(self.state['time'])[0:6]))
             lat = float(self.state['lat'])
             lon = float(self.state['lon'])
-        except:
+        except Exception as error:
+            print error
             # If any of lat, lon, or time is missing, we cannot continue.
             # Better to just give up on this track point and go to the next.
             return

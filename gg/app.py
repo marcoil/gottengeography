@@ -110,7 +110,7 @@ class GottenGeography:
     def populate_search_results(self, entry):
         """Load a few search results based on what's been typed.
         
-        Requires 3 at least three letters typed, and is careful not to load
+        Requires at least three letters typed, and is careful not to load
         duplicate results.
         """
         text = entry.get_text().lower()[0:3]
@@ -438,19 +438,16 @@ class GottenGeography:
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
-        try:    widget.get_tooltip_text().index("seconds")
-        except: minbutton, secbutton = widget, get_obj("seconds")
-        else:   secbutton, minbutton = widget, get_obj("minutes")
-        seconds = secbutton.get_value()
-        minutes = minbutton.get_value()
+        seconds = get_obj("seconds").get_value()
+        minutes = get_obj("minutes").get_value()
         offset  = int((minutes * 60) + seconds)
         gconf_set("clock_offset", [minutes, seconds])
         if offset != self.metadata.delta:
             self.metadata.delta = offset
             if abs(seconds) == 60 and abs(minutes) != 60:
                 minutes += seconds / 60
-                secbutton.set_value(0)
-                minbutton.set_value(minutes)
+                get_obj("seconds").set_value(0)
+                get_obj("minutes").set_value(minutes)
             for photo in self.photo.values():
                 self.auto_timestamp_comparison(photo)
     
