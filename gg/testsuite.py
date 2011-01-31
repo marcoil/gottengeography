@@ -17,17 +17,20 @@
 from __future__ import division
 
 from unittest import TestCase, TextTestRunner, TestLoader
+from os import listdir, getcwd, system, environ
 from gi.repository import Gdk, Clutter
-from os import listdir, getcwd, system
-from fractions import Fraction
 from random import random
 from os.path import join
 from math import floor
+from time import tzset
+from re import search
 
-# Implicitely imports everything that app imported, including datatypes and gps
-from app import *
+import app
+from datatypes import *
+from gps import *
 
-gui = GottenGeography()
+gui = app.GottenGeography()
+get_obj = app.get_obj
 
 class GottenGeographyTester(TestCase):
     def setUp(self):
@@ -102,7 +105,7 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(filename, gui.photo[filename].marker.get_name())
             self.assertEqual(gui.photo[filename].timestamp,
                 gui.liststore.get_value(
-                    gui.photo[filename].iter, TIMESTAMP
+                    gui.photo[filename].iter, app.TIMESTAMP
                 )
             )
         
