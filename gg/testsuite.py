@@ -26,7 +26,7 @@ from time import tzset
 from re import search
 
 import app
-from datatypes import Photograph
+from files import Photograph
 from utils import ReadableDictionary
 from utils import iptc_keys, get_file, gconf_get, gconf_set
 from utils import maps_link, valid_coords, float_to_rational

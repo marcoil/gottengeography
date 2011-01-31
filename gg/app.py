@@ -36,11 +36,10 @@ from os import environ
 #                                    --- Isaac Newton
 
 from utils import ReadableDictionary
+from files import GeoCache, Photograph, GPXLoader
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
 from territories import tz_regions, get_timezone, get_state, get_country
-from datatypes import GeoCache, Photograph
-from gps import GPXLoader
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
