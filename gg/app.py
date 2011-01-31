@@ -35,9 +35,10 @@ from os import environ
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from territories import *
-from datatypes import *
-from gps import *
+from territories import tz_regions, get_timezone, get_state, get_country
+from gps import format_coords, valid_coords, maps_link, GPXLoader
+from datatypes import get_file, gconf_get, gconf_set, format_list
+from datatypes import GeoCache, ReadableDictionary, Photograph
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -268,7 +269,7 @@ class GottenGeography:
     def region_box_handler(self, combo):
         """Populate the list of cities when a continent is selected."""
         self.cities_box.remove_all()
-        for city in zones.get(combo.get_active_id(), []):
+        for city in get_timezone(combo.get_active_id(), []):
             self.cities_box.append(city, city)
     
     def cities_box_handler(self, combo):
@@ -689,7 +690,7 @@ class GottenGeography:
         
         self.region_box = Gtk.ComboBoxText.new()
         self.cities_box = Gtk.ComboBoxText.new()
-        for name in sorted(zones.keys()):
+        for name in tz_regions:
             self.region_box.append(name, name)
         self.region_box.connect("changed", self.region_box_handler)
         self.cities_box.connect("changed", self.cities_box_handler)

@@ -10,10 +10,6 @@
 # The data was then converted from tab-delimited UTF8 into
 # python source code by Robert Park <rbpark@exolucere.ca>
 
-def get_state(country, state):
-    """Returns the name of a province/state given a Geonames.org admin1code."""
-    return territories.get("%s.%s" % (country, state))
-
 countries = {
 "AD": "Andorra",
 "AE": "United Arab Emirates",
@@ -267,8 +263,6 @@ countries = {
 "CS": "Serbia and Montenegro",
 "AN": "Netherlands Antilles"
 }
-
-get_country = countries.get
 
 territories = {
 "AD.06": "Parròquia de Sant Julià de Lòria",
@@ -4489,3 +4483,13 @@ zones = {
 'Tongatapu',
 'Wallis']
 }
+
+tz_regions   = sorted(zones.keys())
+get_timezone = zones.get
+get_country  = countries.get
+
+def get_state(country, state):
+    """Returns the name of a province/state given a Geonames.org admin1code."""
+    return territories.get("%s.%s" % (country, state))
+
+__all__ = [ 'tz_regions', 'get_timezone', 'get_country', 'get_state' ]

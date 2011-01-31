@@ -17,7 +17,7 @@
 from gettext import gettext as _
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
-from gi.repository import GdkPixbuf, GConf
+from gi.repository import GdkPixbuf, GConf, GObject
 from time import strftime, mktime, localtime
 from os.path import join, basename, dirname
 from math import acos, sin, cos, radians
@@ -25,8 +25,9 @@ from pyexiv2 import ImageMetadata
 from os import stat
 from re import sub
 
-from territories import *
-from gps import *
+from territories import get_state, get_country
+from gps import decimal_to_dms, dms_to_decimal, float_to_rational
+from gps import valid_coords, format_coords
 
 # Don't export everything, that's too sloppy.
 __all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'iptc_keys', 'format_list',
@@ -111,7 +112,7 @@ class Photograph(ReadableDictionary):
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 self.filename, self.thm_size, self.thm_size)
-        except:
+        except GObject.GError:
             raise IOError
         self.calculate_timestamp()
         try:
@@ -129,7 +130,7 @@ class Photograph(ReadableDictionary):
             self.altitude = self.exif[gps + 'Altitude'].value.to_float()
             if int(self.exif[gps + 'AltitudeRef'].value) > 0:
                 self.altitude *= -1
-        except:
+        except KeyError:
             pass
         for iptc in iptc_keys:
             try:
@@ -148,7 +149,7 @@ class Photograph(ReadableDictionary):
         try:
             self.timestamp = int(mktime(
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
-        except:
+        except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
     
     def write(self):

@@ -26,8 +26,10 @@ from time import tzset
 from re import search
 
 import app
-from datatypes import *
-from gps import *
+from datatypes import iptc_keys, get_file, gconf_get, gconf_set
+from datatypes import ReadableDictionary, Photograph
+from gps import maps_link, valid_coords, float_to_rational
+from gps import decimal_to_dms, dms_to_decimal
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
