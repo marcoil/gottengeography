@@ -26,10 +26,11 @@ from time import tzset
 from re import search
 
 import app
-from datatypes import iptc_keys, get_file, gconf_get, gconf_set
-from datatypes import ReadableDictionary, Photograph
-from gps import maps_link, valid_coords, float_to_rational
-from gps import decimal_to_dms, dms_to_decimal
+from datatypes import Photograph
+from utils import ReadableDictionary
+from utils import iptc_keys, get_file, gconf_get, gconf_set
+from utils import maps_link, valid_coords, float_to_rational
+from utils import decimal_to_dms, dms_to_decimal
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
@@ -41,11 +42,13 @@ class GottenGeographyTester(TestCase):
         environ["TZ"] = "America/Edmonton"
         tzset()
         self.history = gconf_get("history")
+        self.clock_offset = gconf_get("clock_offset")
         get_obj("system_timezone").clicked()
     
     def tearDown(self):
         """Restore history."""
         gconf_set("history", self.history)
+        gconf_set("clock_offset", self.clock_offset)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -489,7 +492,7 @@ S 10.00000, W 10.00000
         entry   = get_obj("search")
         results = []
         foreach = lambda model,path,itr,itrs: itrs.append(
-            [itr.copy(), model.get(itr, 0, 1, 2)])
+            [itr.copy(), model.get(itr, app.LOCATION, app.LATITUDE, app.LONGITUDE)])
         
         gui.search_results.foreach(foreach, results)
         self.assertEqual(gui.searched, set([]))

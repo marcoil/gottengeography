@@ -15,78 +15,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gettext import gettext as _
-from cPickle import dumps as pickle
-from cPickle import loads as unpickle
-from gi.repository import GdkPixbuf, GConf, GObject
+from gi.repository import GdkPixbuf, GObject
 from time import strftime, mktime, localtime
-from os.path import join, basename, dirname
 from math import acos, sin, cos, radians
 from pyexiv2 import ImageMetadata
+from os.path import basename
 from os import stat
 from re import sub
 
 from territories import get_state, get_country
-from gps import decimal_to_dms, dms_to_decimal, float_to_rational
-from gps import valid_coords, format_coords
+from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from utils import valid_coords, format_coords, iptc_keys, format_list
+from utils import get_file, ReadableDictionary
 
 # Don't export everything, that's too sloppy.
-__all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'iptc_keys', 'format_list',
-    'ReadableDictionary', 'Photograph', 'GeoCache' ]
+__all__ = [ 'Photograph', 'GeoCache' ]
 
 earth_radius = 6371 #km
-iptc_keys    = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
-gconf        = GConf.Client.get_default()
 gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
-
-def gconf_key(key):
-    """Determine appropriate GConf key that is unique to this application."""
-    return "/apps/gottengeography/" + key
-
-def gconf_set(key, value):
-    """Sets the given GConf key to the given value."""
-    gconf.set_string(gconf_key(key), pickle(value))
-
-def gconf_get(key, default=None):
-    """Gets the given GConf key as the requested type."""
-    try:
-        return unpickle(gconf.get_string(gconf_key(key)))
-    except TypeError:
-        return default
-
-def get_file(filename):
-    """Find a file that's in the same directory as this program."""
-    return join(dirname(__file__), filename)
-
-def format_list(strings, joiner=", "):
-    """Join geonames with a comma, ignoring missing names."""
-    return joiner.join([name for name in strings if name])
-
-class ReadableDictionary:
-    """Object that exposes it's internal namespace as a dictionary.
-    
-    This can for the most part be used just like a normal dictionary, except
-    you can access it's keys with readable.key as well as readable['key'].
-    """
-    def values(self):
-        return self.__dict__.values()
-    
-    def update(self, attributes):
-        self.__dict__.update(attributes)
-    
-    def __init__(self, attributes={}):
-        self.update(attributes)
-    
-    def __len__(self):
-        return len(self.__dict__)
-    
-    def __getitem__(self, key):
-        return self.__dict__[key]
-    
-    def __setitem__(self, key, value):
-        self.__dict__[key] = value
-    
-    def __delitem__(self, key):
-        del self.__dict__[key]
 
 class Photograph(ReadableDictionary):
     """Represents a single photograph and it's location in space and time."""
@@ -112,7 +58,7 @@ class Photograph(ReadableDictionary):
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 self.filename, self.thm_size, self.thm_size)
-        except GObject.GError:
+        except (GObject.GError, TypeError):
             raise IOError
         self.calculate_timestamp()
         try:
@@ -248,13 +194,13 @@ class Photograph(ReadableDictionary):
         )
 
 class GeoCache:
-    """This class serves as a data store for caching geonames.org data."""
+    """Caches geonames.org lookups."""
     
     def __init__(self):
         self.stash = {}
     
     def __getitem__(self, photo):
-        """Lookup geonames.org info from disk, not web."""
+        """Search cities.txt for nearest city."""
         if not photo.valid_coords():
             return
         key = "%.2f,%.2f" % (photo.latitude, photo.longitude)

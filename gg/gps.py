@@ -1,4 +1,4 @@
-# GottenGeography - GPS-related functions including GPX parsing
+# GottenGeography - GPX (XML) parsing module
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,59 +16,16 @@
 
 from __future__ import division
 
-from gi.repository import Gtk, Champlain, Clutter
-from re import match, compile as re_compile
-from math import modf as split_float
-from gettext import gettext as _
-from fractions import Fraction
-from xml.parsers import expat
-from pyexiv2 import Rational
+from xml.parsers.expat import ParserCreate, ExpatError
+from gi.repository import Gtk, Champlain
+from re import compile as re_compile
 from calendar import timegm
 from time import clock
 
+from utils import valid_coords
+
 # Don't export everything, that's too sloppy.
-__all__ = [ 'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
-    'valid_coords', 'maps_link', 'format_coords', 'GPXLoader' ]
-
-def dms_to_decimal(degrees, minutes, seconds, sign=""):
-    """Convert degrees, minutes, seconds into decimal degrees."""
-    return (-1 if match(r'[SWsw]', sign) else 1) * (
-        degrees.to_float()        +
-        minutes.to_float() / 60   +
-        seconds.to_float() / 3600
-    )
-
-def decimal_to_dms(decimal):
-    """Convert decimal degrees into degrees, minutes, seconds."""
-    remainder, degrees = split_float(abs(decimal))
-    remainder, minutes = split_float(remainder * 60)
-    return [
-        Rational(degrees, 1),
-        Rational(minutes, 1),
-        float_to_rational(remainder * 60)
-    ]
-
-def float_to_rational(value):
-    """Create a pyexiv2.Rational with help from fractions.Fraction."""
-    frac = Fraction(abs(value)).limit_denominator(99999)
-    return Rational(frac.numerator, frac.denominator)
-
-def valid_coords(lat, lon):
-    """Determine the validity of coordinates."""
-    if type(lat) not in (float, int): return False
-    if type(lon) not in (float, int): return False
-    return abs(lat) <= 90 and abs(lon) <= 180
-
-def maps_link(lat, lon, anchor=_("View in Google Maps")):
-    """Create a Pango link to Google Maps."""
-    return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (lat, lon, anchor)
-
-def format_coords(lat, lon):
-    """Add cardinal directions to decimal coordinates."""
-    return "%s %.5f, %s %.5f" % (
-        _("N") if lat >= 0 else _("S"), abs(lat),
-        _("E") if lon >= 0 else _("W"), abs(lon)
-    )
+__all__ = [ 'GPXLoader' ]
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
@@ -89,7 +46,7 @@ class GPXLoader:
         self.state    = {}
         self.area     = []
         
-        self.parser = expat.ParserCreate()
+        self.parser = ParserCreate()
         self.parser.StartElementHandler  = self.element_root
         self.parser.CharacterDataHandler = self.element_data
         self.parser.EndElementHandler    = self.element_end
@@ -97,7 +54,7 @@ class GPXLoader:
         try:
             with open(filename) as gpx:
                 self.parser.ParseFile(gpx)
-        except expat.ExpatError:
+        except ExpatError:
             raise IOError
         
         self.area.append(min([p["point"].lat for p in self.tracks.values()]))
@@ -114,7 +71,9 @@ class GPXLoader:
         self.longitude = (self.area[1] + self.area[3]) / 2
     
     def valid_coords(self):
-        """Check if the median point of this GPX file is valid."""
+        """Check if the median point of this GPX file is valid.
+        
+        This is used by the GeoCache object when looking up the timezone."""
         return valid_coords(self.latitude, self.longitude)
     
     def element_root(self, name, attributes):
