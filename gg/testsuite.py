@@ -481,6 +481,40 @@ S 10.00000, W 10.00000
         self.assertEqual(seconds.get_value(), 0)
         self.assertEqual(minutes.get_value(), 60)
         self.assertEqual(gui.metadata['delta'], 3600)
+    
+    def test_search(self):
+        """Make sure the search box functions."""
+        entry   = get_obj("search")
+        results = []
+        foreach = lambda model,path,itr,itrs: itrs.append(
+            [itr.copy(), model.get(itr, 0, 1, 2)])
+        
+        gui.search_results.foreach(foreach, results)
+        self.assertEqual(gui.searched, set([]))
+        self.assertEqual(len(results), 0)
+        
+        entry.set_text("jo")
+        gui.search_results.foreach(foreach, results)
+        self.assertEqual(gui.searched, set([]))
+        self.assertEqual(len(results), 0)
+        
+        entry.set_text("edm")
+        gui.search_results.foreach(foreach, results)
+        self.assertEqual(gui.searched, set(['edm']))
+        self.assertEqual(len(results), 8)
+        
+        entry.set_text("calg")
+        results = []
+        gui.search_results.foreach(foreach, results)
+        self.assertEqual(gui.searched, set(['edm', 'cal']))
+        self.assertEqual(len(results), 339)
+        
+        for itr, data in results:
+            gui.search_completed(entry, gui.search_results, itr)
+            loc, lat, lon = data
+            self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
+            self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+            self.assertEqual(list(data), gconf_get("searched"))
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
