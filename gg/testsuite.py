@@ -131,7 +131,6 @@ class GottenGeographyTester(TestCase):
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
         self.assertEqual(len(gui.gpx), 1)
-        self.assertEqual(len(gui.gpx[0].polygons), 1)
         self.assertEqual(len(gui.gpx[0].tracks), 374)
         self.assertEqual(gui.gpx[0].alpha, 1287259751)
         self.assertEqual(gui.gpx[0].omega, 1287260756)

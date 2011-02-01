@@ -193,13 +193,11 @@ split = re_compile(r'[:TZ-]').split
 class GPXLoader(Coordinates):
     """Use expat to parse GPX data quickly."""
     
-    def __init__(self, filename, polygons, map_view, progressbar, color):
+    def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
-        self.color_b  = color.lighten().lighten()
-        self.color_a  = color
-        self.progress = progressbar
-        self.map_view = map_view
-        self.polygons = polygons
+        self.polygon  = None
+        self.add_poly = add_polygon
+        self.pulse    = callback
         self.clock    = clock()
         self.tracks   = {}
         self.state    = {}
@@ -216,16 +214,14 @@ class GPXLoader(Coordinates):
         except ExpatError:
             raise IOError
         
+        self.alpha = min(self.tracks.keys())
+        self.omega = max(self.tracks.keys())
+        
         self.area.append(min([p["point"].lat for p in self.tracks.values()]))
         self.area.append(min([p["point"].lon for p in self.tracks.values()]))
         self.area.append(max([p["point"].lat for p in self.tracks.values()]))
         self.area.append(max([p["point"].lon for p in self.tracks.values()]))
-        self.alpha   = min(self.tracks.keys())
-        self.omega   = max(self.tracks.keys())
         
-        if len(self.tracks) > 0:
-            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-            self.map_view.ensure_visible(*self.area + [False])
         self.latitude  = (self.area[0] + self.area[2]) / 2
         self.longitude = (self.area[1] + self.area[3]) / 2
     
@@ -251,12 +247,7 @@ class GPXLoader(Coordinates):
         self.state[name] = ""
         self.state.update(attributes)
         if name == "trkseg":
-            self.polygons.append(Champlain.Polygon())
-            self.polygons[-1].set_stroke_width(5)
-            self.polygons[-1].set_stroke_color(self.color_a
-                if len(self.polygons) % 2 else self.color_b)
-            self.polygons[-1].show()
-            self.map_view.add_polygon(self.polygons[-1])
+            self.polygon = self.add_poly()
     
     def element_data(self, data):
         """Expat CharacterDataHandler.
@@ -299,14 +290,12 @@ class GPXLoader(Coordinates):
             return
         self.tracks[timestamp] = {
             'elevation': float(self.state.get('ele', 0.0)),
-            'point':     self.polygons[-1].append_point(lat, lon)
+            'point':     self.polygon.append_point(lat, lon)
         }
         
         self.state.clear()
         if clock() - self.clock > .2:
-            self.progress.pulse()
-            while Gtk.events_pending():
-                Gtk.main_iteration()
+            self.pulse(self)
             self.clock = clock()
 
 class GeoCache:

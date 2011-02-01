@@ -365,21 +365,21 @@ class GottenGeography:
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
         self.remember_location()
-        start_points = len(self.tracks)
         start_time   = clock()
         
-        gpx = GPXLoader(filename, self.polygons, self.map_view,
-            self.progressbar, self.make_clutter_color())
+        gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
+        self.status_message(_("%d points loaded in %.2fs.") %
+            (len(gpx.tracks), clock() - start_time))
+        
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
-        
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
-        
         self.update_sensitivity()
         self.zoom_button_sensitivity()
-        self.status_message(_("%d points loaded in %.2fs.") %
-            (len(self.tracks) - start_points, clock() - start_time))
+        if len(gpx.tracks) > 0:
+            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+            self.map_view.ensure_visible(*gpx.area + [False])
         self.timezone = self.geonamer[gpx][3].strip()
         self.set_timezone()
     
@@ -478,6 +478,28 @@ class GottenGeography:
         self.modified.add(photo)
         self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
+    
+    def gpx_pulse(self, gpx):
+        """Update the display during GPX parsing.
+        
+        This is called by GPXLoader every 0.2s during parsing so that we
+        can prevent the display from looking hung.
+        """
+        self.progressbar.pulse()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+    
+    def create_polygon(self):
+        """Get a newly created Champlain.Polygon and decorate it."""
+        color = self.make_clutter_color()
+        polygon = Champlain.Polygon()
+        self.polygons.append(polygon)
+        polygon.set_stroke_width(5)
+        polygon.set_stroke_color(
+            color if len(self.polygons) % 2 else color.lighten().lighten())
+        polygon.show()
+        self.map_view.add_polygon(polygon)
+        return polygon
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
