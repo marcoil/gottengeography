@@ -28,32 +28,13 @@ from os import stat
 from territories import get_state, get_country
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from utils import valid_coords, format_coords, iptc_keys, format_list
-from utils import get_file, ReadableDictionary
+from utils import get_file, ReadableDictionary, Coordinates
 
 # Don't export everything, that's too sloppy.
 __all__ = [ 'Photograph', 'GPXLoader', 'GeoCache' ]
 
 earth_radius = 6371 #km
 gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
-
-class Coordinates():
-    """A generic object containing latitude and longitude coordinates.
-    
-    This class is inherited by Photograph and GPXLoader and contains methods
-    required by both of those classes.
-    """
-    
-    latitude  = None
-    longitude = None
-    
-    def valid_coords(self):
-        """Check if this object contains valid coordinates."""
-        return valid_coords(self.latitude, self.longitude)
-    
-    def maps_link(self):
-        """Return a link to Google Maps if this object has valid coordinates."""
-        if self.valid_coords():
-            return maps_link(self.latitude, self.longitude)
 
 class Photograph(ReadableDictionary, Coordinates):
     """Represents a single photograph and it's location in space and time."""

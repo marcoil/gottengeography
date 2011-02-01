@@ -29,7 +29,8 @@ from re import match
 # Don't export everything, that's too sloppy.
 __all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'format_list',
     'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
-    'valid_coords', 'maps_link', 'format_coords', 'iptc_keys' ]
+    'valid_coords', 'maps_link', 'format_coords', 'iptc_keys',
+    'Coordinates', 'ReadableDictionary' ]
 
 iptc_keys = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
 gconf     = GConf.Client.get_default()
@@ -96,6 +97,25 @@ def format_coords(lat, lon):
         _("N") if lat >= 0 else _("S"), abs(lat),
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
+
+class Coordinates():
+    """A generic object containing latitude and longitude coordinates.
+    
+    This class is inherited by Photograph and GPXLoader and contains methods
+    required by both of those classes.
+    """
+    
+    latitude  = None
+    longitude = None
+    
+    def valid_coords(self):
+        """Check if this object contains valid coordinates."""
+        return valid_coords(self.latitude, self.longitude)
+    
+    def maps_link(self):
+        """Return a link to Google Maps if this object has valid coordinates."""
+        if self.valid_coords():
+            return maps_link(self.latitude, self.longitude)
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
