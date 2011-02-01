@@ -39,6 +39,7 @@ class GottenGeographyTester(TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
         # Make the tests work for people outside my time zone.
+        system("git checkout demo")
         environ["TZ"] = "America/Edmonton"
         tzset()
         self.history = gconf_get("history")
@@ -47,6 +48,7 @@ class GottenGeographyTester(TestCase):
     
     def tearDown(self):
         """Restore history."""
+        system("git checkout demo")
         gconf_set("history", self.history)
         gconf_set("clock_offset", self.clock_offset)
     
