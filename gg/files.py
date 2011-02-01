@@ -36,7 +36,23 @@ __all__ = [ 'Photograph', 'GPXLoader', 'GeoCache' ]
 earth_radius = 6371 #km
 gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
 
-class Photograph(ReadableDictionary):
+class Coordinates():
+    """A generic object containing latitude and longitude coordinates.
+    
+    This class is inherited by Photograph and GPXLoader and contains methods
+    required by both of those classes.
+    """
+    
+    def valid_coords(self):
+        """Check if this object contains valid coordinates."""
+        return valid_coords(self.latitude, self.longitude)
+    
+    def maps_link(self):
+        """Return a link to Google Maps if this object has valid coordinates."""
+        if self.valid_coords():
+            return maps_link(self.latitude, self.longitude)
+
+class Photograph(ReadableDictionary, Coordinates):
     """Represents a single photograph and it's location in space and time."""
     
     def __init__(self, filename, cache, callback, thumb_size=200):
@@ -153,15 +169,6 @@ class Photograph(ReadableDictionary):
                 area[2] = max(area[2], lat)
                 area[3] = max(area[3], lon)
     
-    def valid_coords(self):
-        """Check if this photograph contains valid coordinates."""
-        return valid_coords(self.latitude, self.longitude)
-    
-    def maps_link(self):
-        """Return a link to Google Maps if this photo has valid coordinates."""
-        if self.valid_coords():
-            return maps_link(self.latitude, self.longitude)
-    
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
         if type(self.timestamp) is int:
@@ -199,7 +206,7 @@ class Photograph(ReadableDictionary):
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
 split = re_compile(r'[:TZ-]').split
 
-class GPXLoader:
+class GPXLoader(Coordinates):
     """Use expat to parse GPX data quickly."""
     
     def __init__(self, filename, polygons, map_view, progressbar, color):
@@ -237,12 +244,6 @@ class GPXLoader:
             self.map_view.ensure_visible(*self.area + [False])
         self.latitude  = (self.area[0] + self.area[2]) / 2
         self.longitude = (self.area[1] + self.area[3]) / 2
-    
-    def valid_coords(self):
-        """Check if the median point of this GPX file is valid.
-        
-        This is used by the GeoCache object when looking up the timezone."""
-        return valid_coords(self.latitude, self.longitude)
     
     def element_root(self, name, attributes):
         """Expat StartElementHandler.
