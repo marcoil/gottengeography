@@ -43,6 +43,9 @@ class Coordinates():
     required by both of those classes.
     """
     
+    latitude  = None
+    longitude = None
+    
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
         return valid_coords(self.latitude, self.longitude)
