@@ -654,21 +654,21 @@ class GottenGeography:
         self.return_to_last(get_obj("back_button"))
         
         click_handlers = {
-            "open_button":       self.add_files_dialog,
-            "save_button":       self.save_all_files,
-            "clear_button":      self.clear_all_gpx,
-            "close_button":      self.close_selected_photos,
-            "revert_button":     self.revert_selected_photos,
-            "zoom_out_button":   self.zoom_out,
-            "zoom_in_button":    self.zoom_in,
-            "back_button":       self.return_to_last,
-            "about_button":      self.about_dialog,
-            "pref_button":       self.preferences_dialog,
-            "apply_button":      self.apply_selected_photos,
-            "select_all_button": self.toggle_selected_photos
+            "open_button":       [self.add_files_dialog],
+            "save_button":       [self.save_all_files],
+            "clear_button":      [self.clear_all_gpx],
+            "close_button":      [self.close_selected_photos],
+            "revert_button":     [self.revert_selected_photos],
+            "zoom_out_button":   [self.zoom_out],
+            "zoom_in_button":    [self.zoom_in],
+            "back_button":       [self.return_to_last],
+            "about_button":      [self.about_dialog],
+            "pref_button":       [self.preferences_dialog],
+            "apply_button":      [self.apply_selected_photos],
+            "select_all_button": [self.toggle_selected_photos, self.listsel]
         }
         for button, handler in click_handlers.items():
-            get_obj(button).connect("clicked", handler)
+            get_obj(button).connect("clicked", *handler)
         
         accel  = Gtk.AccelGroup()
         window = get_obj("main")
@@ -720,10 +720,10 @@ class GottenGeography:
         timezone_method = gconf_get("timezone_method", "system_timezone")
         get_obj(timezone_method).clicked()
     
-    def toggle_selected_photos(self, button):
+    def toggle_selected_photos(self, button, selection):
         """Toggle the selection of photos."""
-        if button.get_active(): self.listsel.select_all()
-        else:                   self.listsel.unselect_all()
+        if button.get_active(): selection.select_all()
+        else:                   selection.unselect_all()
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
