@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import Gtk, GdkPixbuf, GObject, Champlain
+from gi.repository import GdkPixbuf, GObject
 from xml.parsers.expat import ParserCreate, ExpatError
 from time import strftime, mktime, localtime, clock
 from re import sub, compile as re_compile
@@ -27,7 +27,7 @@ from os import stat
 from territories import get_state, get_country
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from utils import valid_coords, format_coords, iptc_keys, format_list
-from utils import get_file, ReadableDictionary, Coordinates
+from utils import ReadableDictionary, Coordinates
 
 gps = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
 

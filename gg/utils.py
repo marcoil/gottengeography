@@ -20,7 +20,7 @@ from gi.repository import GConf
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from math import acos, sin, cos, radians
-from os.path import join, basename, dirname
+from os.path import join, dirname
 from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
