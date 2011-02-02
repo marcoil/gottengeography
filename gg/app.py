@@ -330,7 +330,6 @@ class GottenGeography:
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
-        self.update_sensitivity()
         self.update_all_marker_highlights(self.listsel)
     
     def load_img_from_file(self, filename):
@@ -357,7 +356,6 @@ class GottenGeography:
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
         self.auto_timestamp_comparison(photo)
-        self.update_sensitivity()
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -372,7 +370,6 @@ class GottenGeography:
         self.gpx.append(gpx)
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
-        self.update_sensitivity()
         if len(gpx.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
@@ -394,7 +391,6 @@ class GottenGeography:
                 self.modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
-        self.update_sensitivity()
         self.progressbar.hide()
     
 ################################################################################
@@ -454,7 +450,6 @@ class GottenGeography:
             photo.set_location(
                 self.map_view.get_property('latitude'),
                 self.map_view.get_property('longitude'))
-        self.update_sensitivity()
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -468,7 +463,6 @@ class GottenGeography:
             self.modified.discard(photo)
             del self.photo[photo.filename]
         get_obj("select_all_button").set_active(False)
-        self.update_sensitivity()
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -614,6 +608,7 @@ class GottenGeography:
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
+        self.liststore.connect("row-changed", self.update_sensitivity)
         
         self.cell_string = Gtk.CellRendererText()
         self.cell_thumb  = Gtk.CellRendererPixbuf()
@@ -752,7 +747,7 @@ class GottenGeography:
         zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
     
-    def update_sensitivity(self, selection=None):
+    def update_sensitivity(self, *args):
         """Ensure widgets are sensitive only when they need to be.
         
         This method should be called every time any program state changes,
