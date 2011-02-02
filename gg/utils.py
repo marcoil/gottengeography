@@ -19,6 +19,7 @@ from __future__ import division
 from gi.repository import GConf
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
+from math import acos, sin, cos, radians
 from os.path import join, basename, dirname
 from math import modf as split_float
 from gettext import gettext as _
@@ -26,11 +27,7 @@ from fractions import Fraction
 from pyexiv2 import Rational
 from re import match
 
-# Don't export everything, that's too sloppy.
-__all__ = [ 'gconf_set', 'gconf_get', 'get_file', 'format_list',
-    'dms_to_decimal', 'decimal_to_dms', 'float_to_rational',
-    'valid_coords', 'maps_link', 'format_coords', 'iptc_keys',
-    'Coordinates', 'ReadableDictionary' ]
+from territories import get_state, get_country
 
 iptc_keys = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
 gconf     = GConf.Client.get_default()
@@ -103,10 +100,19 @@ class Coordinates():
     
     This class is inherited by Photograph and GPXLoader and contains methods
     required by both of those classes.
+    
+    The geodata attribute of this class is shared across all instances of
+    all subclasses of this class. When it is modified by any instance, the
+    changes are immediately available to all other instances. It serves as
+    a cache for data read from cities.txt, which contains geocoding data
+    provided by geonames.org. All subclasses of this class can call
+    self.lookup_geoname() and receive cached data if it was already
+    looked up by another instance of any subclass.
     """
     
     latitude  = None
     longitude = None
+    geodata   = {}
     
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
@@ -116,6 +122,35 @@ class Coordinates():
         """Return a link to Google Maps if this object has valid coordinates."""
         if self.valid_coords():
             return maps_link(self.latitude, self.longitude)
+    
+    def lookup_geoname(self):
+        """Search cities.txt for nearest city."""
+        if not self.valid_coords():
+            return
+        key = "%.2f,%.2f" % (self.latitude, self.longitude)
+        if key in self.geodata:
+            self.set_geodata(self.geodata[key])
+        near, dist = None, float('inf')
+        lat1, lon1 = radians(self.latitude), radians(self.longitude)
+        with open(get_file("cities.txt")) as cities:
+            for city in cities:
+                name, lat, lon, country, state, tz = city.split("\t")
+                lat2, lon2 = radians(float(lat)), radians(float(lon))
+                delta = acos(sin(lat1) * sin(lat2) +
+                             cos(lat1) * cos(lat2) *
+                             cos(lon2  - lon1))    * 6371 # earth's radius in km
+                if delta < dist:
+                    dist = delta
+                    near = [name, state, country, tz]
+        self.geodata[key] = near
+        self.set_geodata(near)
+    
+    def set_geodata(self, data):
+        """Apply geodata to internal attributes."""
+        self.city, state, self.countrycode, tz = data
+        self.provincestate = get_state(self.countrycode, state)
+        self.countryname   = get_country(self.countrycode)
+        self.timezone      = tz.strip()
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.

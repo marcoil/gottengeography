@@ -192,12 +192,12 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(gui.selected), 0)
         
         for filename in files:
-            photo = Photograph(filename, gui.geonamer, gui.modify_summary)
+            photo = Photograph(filename, gui.modify_summary)
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
-            self.assertEqual(photo.City, "Edmonton")
-            self.assertEqual(photo.ProvinceState, "Alberta")
-            self.assertEqual(photo.CountryName, "Canada")
+            self.assertEqual(photo.city, "Edmonton")
+            self.assertEqual(photo.provincestate, "Alberta")
+            self.assertEqual(photo.countryname, "Canada")
     
     def test_auto_timestamp(self):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
@@ -215,7 +215,7 @@ class GottenGeographyTester(TestCase):
         
         marker = ReadableDictionary()
         marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
-        photo = Photograph(marker.get_text(), gui.geonamer, gui.modify_summary)
+        photo = Photograph(marker.get_text(), gui.modify_summary)
         photo.marker = marker
         
         for iptc in iptc_keys:

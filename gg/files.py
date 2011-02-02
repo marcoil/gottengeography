@@ -18,7 +18,6 @@ from gi.repository import Gtk, GdkPixbuf, GObject, Champlain
 from xml.parsers.expat import ParserCreate, ExpatError
 from time import strftime, mktime, localtime, clock
 from re import sub, compile as re_compile
-from math import acos, sin, cos, radians
 from pyexiv2 import ImageMetadata
 from gettext import gettext as _
 from os.path import basename
@@ -30,20 +29,15 @@ from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from utils import valid_coords, format_coords, iptc_keys, format_list
 from utils import get_file, ReadableDictionary, Coordinates
 
-# Don't export everything, that's too sloppy.
-__all__ = [ 'Photograph', 'GPXLoader', 'GeoCache' ]
-
-earth_radius = 6371 #km
-gps          = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
+gps = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
 
 class Photograph(ReadableDictionary, Coordinates):
     """Represents a single photograph and it's location in space and time."""
     
-    def __init__(self, filename, cache, callback, thumb_size=200):
+    def __init__(self, filename, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
         self.exif     = ImageMetadata(filename)
         self.filename = filename
-        self.geonamer = cache
         self.callback = callback
         self.thm_size = thumb_size
         self.marker   = None
@@ -82,7 +76,7 @@ class Photograph(ReadableDictionary, Coordinates):
             pass
         for iptc in iptc_keys:
             try:
-                self[iptc] = self.exif['Iptc.Application2.' + iptc].values[0]
+                self[iptc.lower()] = self.exif['Iptc.Application2.' + iptc].values[0]
             except KeyError:
                 pass
     
@@ -111,8 +105,8 @@ class Photograph(ReadableDictionary, Coordinates):
         self.exif[gps + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
         self.exif[gps + 'MapDatum']     = 'WGS-84'
         for iptc in iptc_keys:
-            if self[iptc] is not None:
-                self.exif['Iptc.Application2.' + iptc] = [self[iptc]]
+            if self[iptc.lower()] is not None:
+                self.exif['Iptc.Application2.' + iptc] = [self[iptc.lower()]]
         self.exif.write()
     
     def set_location(self, lat, lon, ele=None):
@@ -122,9 +116,7 @@ class Photograph(ReadableDictionary, Coordinates):
         self.latitude  = lat
         self.longitude = lon
         self.position_marker()
-        self.City, state, self.CountryCode, timezone = self.geonamer[self]
-        self.ProvinceState = get_state(self.CountryCode, state)
-        self.CountryName   = get_country(self.CountryCode)
+        self.lookup_geoname()
         self.callback(self)
     
     def position_marker(self):
@@ -297,33 +289,4 @@ class GPXLoader(Coordinates):
         if clock() - self.clock > .2:
             self.pulse(self)
             self.clock = clock()
-
-class GeoCache:
-    """Caches geonames.org lookups."""
-    
-    def __init__(self):
-        self.stash = {}
-    
-    def __getitem__(self, photo):
-        """Search cities.txt for nearest city."""
-        if not photo.valid_coords():
-            return
-        key = "%.2f,%.2f" % (photo.latitude, photo.longitude)
-        if key in self.stash:
-            return self.stash[key]
-        near, dist = None, float('inf')
-        lat1, lon1 = radians(photo.latitude), radians(photo.longitude)
-        with open(get_file("cities.txt")) as cities:
-            for city in cities:
-                name, lat, lon, country, state, tz = city.split("\t")
-                lat2, lon2 = radians(float(lat)), radians(float(lon))
-                # lifted from http://www.movable-type.co.uk/scripts/latlong.html
-                delta = acos(sin(lat1) * sin(lat2) +
-                             cos(lat1) * cos(lat2) *
-                             cos(lon2  - lon1))    * earth_radius
-                if delta < dist:
-                    dist = delta
-                    near = [name, state, country, tz]
-        self.stash[key] = near
-        return near
 

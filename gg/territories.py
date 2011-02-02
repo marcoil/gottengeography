@@ -4492,4 +4492,3 @@ def get_state(country, state):
     """Returns the name of a province/state given a Geonames.org admin1code."""
     return territories.get("%s.%s" % (country, state))
 
-__all__ = [ 'tz_regions', 'get_timezone', 'get_country', 'get_state' ]

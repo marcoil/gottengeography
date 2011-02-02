@@ -36,7 +36,7 @@ from os import environ
 #                                    --- Isaac Newton
 
 from utils import ReadableDictionary
-from files import GeoCache, Photograph, GPXLoader
+from files import Photograph, GPXLoader
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
 from territories import tz_regions, get_timezone, get_state, get_country
@@ -347,7 +347,7 @@ class GottenGeography:
         Raises IOError if filename refers to a file that is not a photograph.
         """
         if filename not in self.photo:
-            self.photo[filename] = Photograph(filename, self.geonamer, self.modify_summary)
+            self.photo[filename] = Photograph(filename, self.modify_summary)
             self.photo[filename].update( {
                 'iter':   self.liststore.append(),
                 'marker': self.add_marker(filename)
@@ -380,7 +380,8 @@ class GottenGeography:
         if len(gpx.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
-        self.timezone = self.geonamer[gpx][3].strip()
+        gpx.lookup_geoname()
+        self.timezone = gpx.timezone
         self.set_timezone()
     
     def save_all_files(self, widget=None):
@@ -512,8 +513,7 @@ class GottenGeography:
         image = get_obj("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(), self.geonamer,
-                lambda x: None, 300)
+            photo = Photograph(chooser.get_preview_filename(), lambda x: None, 300)
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
@@ -571,7 +571,6 @@ class GottenGeography:
     
     def __init__(self):
         self.history  = gconf_get("history", [[34.5,15.8,2]])
-        self.geonamer = GeoCache()
         self.selected = set()
         self.modified = set()
         self.searched = set()
