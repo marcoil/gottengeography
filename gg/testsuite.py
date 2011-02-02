@@ -149,12 +149,12 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.longitude)
             
             self.assertEqual(photo.marker.get_scale(), (1, 1))
-            gui.marker_mouse_in(photo.marker, None)
+            app.marker_mouse_in(photo.marker, None)
             self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
-            gui.marker_mouse_out(photo.marker, None)
+            app.marker_mouse_out(photo.marker, None)
             self.assertEqual(photo.marker.get_scale(), (1, 1))
             
-            gui.marker_clicked(photo.marker, Clutter.Event())
+            app.marker_clicked(photo.marker, Clutter.Event(), gui.listsel, gui.photo)
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
             self.assertTrue(photo in gui.selected)
@@ -361,20 +361,20 @@ S 10.00000, W 10.00000
         gui.zoom_button_sensitivity(gui.map_view, None, zoom_in, zoom_out)
         self.assertFalse(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
-        gui.zoom_in()
+        app.zoom_in(None, gui.map_view)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
         self.assertEqual(1, gui.map_view.get_zoom_level())
-        gui.zoom_in()
+        app.zoom_in(None, gui.map_view)
         self.assertEqual(2, gui.map_view.get_zoom_level())
-        gui.zoom_in()
+        app.zoom_in(None, gui.map_view)
         self.assertEqual(3, gui.map_view.get_zoom_level())
-        gui.zoom_out()
+        app.zoom_out(None, gui.map_view)
         self.assertEqual(2, gui.map_view.get_zoom_level())
         gui.map_view.set_zoom_level(gui.map_view.get_max_zoom_level()-1)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
-        gui.zoom_in()
+        app.zoom_in(None, gui.map_view)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertFalse(zoom_in.get_sensitive())
         self.assertEqual(gui.map_view.get_max_zoom_level(),
@@ -432,7 +432,7 @@ S 10.00000, W 10.00000
         lat = random_coord(90)
         lon = random_coord(180)
         
-        marker = gui.add_marker("foobar")
+        marker = app.add_marker("foobar", gui.map_photo_layer, gui.listsel, gui.photo)
         marker.set_position(lat, lon)
         
         self.assertEqual(marker.get_latitude(), lat)
@@ -496,27 +496,23 @@ S 10.00000, W 10.00000
             [itr.copy(), model.get(itr, app.LOCATION, app.LATITUDE, app.LONGITUDE)])
         
         gui.search_results.foreach(foreach, results)
-        self.assertEqual(gui.searched, set([]))
         self.assertEqual(len(results), 0)
         
         entry.set_text("jo")
         gui.search_results.foreach(foreach, results)
-        self.assertEqual(gui.searched, set([]))
         self.assertEqual(len(results), 0)
         
         entry.set_text("edm")
         gui.search_results.foreach(foreach, results)
-        self.assertEqual(gui.searched, set(['edm']))
         self.assertEqual(len(results), 8)
         
         entry.set_text("calg")
         results = []
         gui.search_results.foreach(foreach, results)
-        self.assertEqual(gui.searched, set(['edm', 'cal']))
         self.assertEqual(len(results), 339)
         
         for itr, data in results:
-            gui.search_completed(entry, gui.search_results, itr)
+            app.search_completed(entry, gui.search_results, itr, gui.map_view, gui.remember_location)
             loc, lat, lon = data
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)

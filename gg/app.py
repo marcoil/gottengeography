@@ -81,14 +81,6 @@ class GottenGeography:
         self.map_view.set_zoom_level(zoom)
         button.set_sensitive(len(self.history) > 0)
     
-    def zoom_in(self, button=None):
-        """Zoom the map in by one level."""
-        self.map_view.zoom_in()
-    
-    def zoom_out(self, button=None):
-        """Zoom the map out by one level."""
-        self.map_view.zoom_out()
-    
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
         x   = self.map_view.get_width()  / 2
@@ -103,55 +95,11 @@ class GottenGeography:
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
     
-    def populate_search_results(self, entry):
-        """Load a few search results based on what's been typed.
-        
-        Requires at least three letters typed, and is careful not to load
-        duplicate results.
-        """
-        text = entry.get_text().lower()[0:3]
-        if len(text) == 3 and text not in self.searched:
-            self.searched.add(text)
-            append = self.search_results.append
-            with open(get_file("cities.txt")) as cities:
-                for line in cities:
-                    city, lat, lon, country, state, tz = line.split("\t")
-                    if search('(^|\s)' + text, city, flags=IGNORECASE):
-                        state    = get_state(country, state)
-                        country  = get_country(country)
-                        location = format_list([city, state, country])
-                        append([location, float(lat), float(lon)])
-    
-    def completion_match_func(self, completion, string, itr, model):
-        """Determine whether or not to include a given search result.
-        
-        This matches the beginning of any word in the name of the city. For
-        example, a search for "spring" will contain "Palm Springs" as well as
-        "Springfield".
-        """
-        location = model.get_value(itr, LOCATION)
-        if location and search('(^|\s)' + string, location, flags=IGNORECASE):
-            return True
-    
-    def search_completed(self, entry, model, itr):
-        """Go to the selected location."""
-        self.remember_location()
-        loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
-        gconf_set("searched", [loc, lat, lon])
-        self.map_view.set_zoom_level(11)
-        self.map_view.center_on(lat, lon)
-    
-    def search_bar_clicked(self, entry, icon_pos, event):
-        location, lat, lon = gconf_get("searched", [None, None, None])
-        if valid_coords(lat, lon):
-            entry.set_text(location)
-            self.map_view.center_on(lat, lon)
-    
 ################################################################################
 # Map features section. These methods control map objects.
 ################################################################################
     
-    def display_actors(self, stage=None, parameter=None):
+    def display_actors(self, *args):
         """Position and update my custom ClutterActors.
         
         self.actors.coords:       Map center coordinates at top of map view.
@@ -170,7 +118,7 @@ class GottenGeography:
             (stage_height - self.actors.crosshair.get_height()) / 2
         )
         
-        if stage is not None:
+        if len(args) > 0:
             lat   = self.map_view.get_property('latitude')
             lon   = self.map_view.get_property('longitude')
             label = self.actors.coords
@@ -180,34 +128,10 @@ class GottenGeography:
             label.set_position((stage_width - label.get_width()) / 2, 5)
             get_obj("maps_link").set_markup(maps_link(lat, lon))
     
-    def marker_clicked(self, marker, event):
-        """When a ChamplainMarker is clicked, select it in the GtkListStore.
-        
-        The interface defined by this method is consistent with the behavior of
-        the GtkListStore itself in the sense that a normal click will select
-        just one item, but Ctrl+clicking allows you to select multiple.
-        """
-        photo = self.photo[marker.get_name()]
-        if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
-            if marker.get_highlighted(): self.listsel.unselect_iter(photo.iter)
-            else:                        self.listsel.select_iter(photo.iter)
-        else:
-            get_obj("select_all_button").set_active(False)
-            self.listsel.unselect_all()
-            self.listsel.select_iter(photo.iter)
-    
-    def marker_mouse_in(self, marker, event):
-        """Enlarge a hovered-over ChamplainMarker by 5%."""
-        marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
-    
-    def marker_mouse_out(self, marker, event):
-        """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-        marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
-    
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
         selection_exists = sel.count_selected_rows() > 0
-        self.selected = set()
+        self.selected.clear()
         for photo in self.photo.values():
             photo.set_marker_highlight(None, selection_exists)
             # Maintain self.selected for easy iterating.
@@ -222,59 +146,24 @@ class GottenGeography:
                 self.remember_location()
                 self.map_view.ensure_visible(*area + [False])
     
-    def add_marker(self, label):
-        """Create a new ChamplainMarker and add it to the map."""
-        marker = Champlain.Marker()
-        marker.set_name(label)
-        marker.set_text(basename(label))
-        marker.set_property('reactive', True)
-        marker.connect("button-press-event", self.marker_clicked)
-        marker.connect("enter-event", self.marker_mouse_in)
-        marker.connect("leave-event", self.marker_mouse_out)
-        self.map_photo_layer.add_marker(marker)
-        return marker
-    
-    def make_clutter_color(self):
-        """Generate a Clutter.Color from the currently chosen color."""
-        color = self.colorpicker.get_current_color()
-        return Clutter.Color.new(
-            *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
-    
-    def track_color_changed(self, selection):
-        """Update the color of any loaded GPX tracks."""
-        color = selection.get_current_color()
-        one   = self.make_clutter_color()
-        two   = one.lighten().lighten()
-        for i, polygon in enumerate(self.polygons):
-            polygon.set_stroke_color(two if i % 2 else one)
-        gconf_set("track_color", [color.red, color.green, color.blue])
-    
-    def paint_handler(self, map_view):
-        """Force the map to redraw.
-        
-        This is a workaround for this libchamplain bug:
-        https://bugzilla.gnome.org/show_bug.cgi?id=638652
-        """
-        map_view.queue_redraw()
-    
-    def radio_handler(self, radio):
+    def radio_handler(self, radio, combos):
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
             gconf_set("timezone_method", radio.get_name())
-            self.tz_combos.set_sensitive(radio.get_name() == "custom_timezone")
+            combos.set_sensitive(radio.get_name() == "custom_timezone")
             self.set_timezone()
     
-    def region_box_handler(self, combo):
+    def region_handler(self, regions, cities):
         """Populate the list of cities when a continent is selected."""
-        self.cities_box.remove_all()
-        for city in get_timezone(combo.get_active_id(), []):
-            self.cities_box.append(city, city)
+        cities.remove_all()
+        for city in get_timezone(regions.get_active_id(), []):
+            cities.append(city, city)
     
-    def cities_box_handler(self, combo):
+    def cities_handler(self, cities, regions):
         """When a city is selected, update the chosen timezone."""
         gconf_set("timezone",
-            [self.region_box.get_active(), combo.get_active()])
-        if combo.get_active_id() is not None:
+            [regions.get_active(), cities.get_active()])
+        if cities.get_active_id() is not None:
             self.set_timezone()
     
     def set_timezone(self):
@@ -285,8 +174,9 @@ class GottenGeography:
         if   option == "lookup_timezone" and self.timezone is not None:
             environ["TZ"] = self.timezone
         elif option == "custom_timezone":
-            region = self.region_box.get_active_id()
-            city   = self.cities_box.get_active_id()
+            region, cities = get_obj("custom_timezone_combos").get_children()
+            region = region.get_active_id()
+            city   = cities.get_active_id()
             if region is not None and city is not None:
                 environ["TZ"] = "%s/%s" % (region, city)
         tzset()
@@ -328,7 +218,7 @@ class GottenGeography:
             except IOError:
                 invalid_files.append(basename(name))
         if len(invalid_files) > 0:
-            self.status_message(_("Could not open: ") + format_list(invalid_files))
+            status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.update_all_marker_highlights(self.listsel)
     
@@ -346,7 +236,7 @@ class GottenGeography:
             self.photo[filename] = Photograph(filename, self.modify_summary)
             self.photo[filename].update( {
                 'iter':   self.liststore.append(),
-                'marker': self.add_marker(filename)
+                'marker': add_marker(filename, self.map_photo_layer, self.listsel, self.photo)
             } )
         else:
             self.photo[filename].read()
@@ -363,7 +253,7 @@ class GottenGeography:
         start_time   = clock()
         
         gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
-        self.status_message(_("%d points loaded in %.2fs.") %
+        status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
         
         self.tracks.update(gpx.tracks)
@@ -386,7 +276,7 @@ class GottenGeography:
             try:
                 photo.write()
             except Exception as inst:
-                self.status_message(str(inst))
+                status_message(str(inst))
             else:
                 self.modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,
@@ -482,7 +372,7 @@ class GottenGeography:
     
     def create_polygon(self):
         """Get a newly created Champlain.Polygon and decorate it."""
-        color = self.make_clutter_color()
+        color = make_clutter_color(self.colorpicker)
         polygon = Champlain.Polygon()
         self.polygons.append(polygon)
         polygon.set_stroke_width(5)
@@ -519,10 +409,11 @@ class GottenGeography:
     
     def preferences_dialog(self, *args):
         """Allow the user to configure this application."""
+        region, cities = get_obj("custom_timezone_combos").get_children()
         previous = ReadableDictionary({
             'method': gconf_get("timezone_method"),
-            'region': self.region_box.get_active(),
-            'city':   self.cities_box.get_active(),
+            'region': region.get_active(),
+            'city':   cities.get_active(),
             'color':  self.colorpicker.get_current_color()
         })
         dialog = get_obj("preferences")
@@ -530,8 +421,8 @@ class GottenGeography:
             self.colorpicker.set_current_color(previous.color)
             self.colorpicker.set_previous_color(previous.color)
             get_obj(previous.method).set_active(True)
-            self.region_box.set_active(previous.region)
-            self.cities_box.set_active(previous.city)
+            region.set_active(previous.region)
+            cities.set_active(previous.city)
         dialog.hide()
     
     def confirm_quit_dialog(self, *args):
@@ -563,7 +454,6 @@ class GottenGeography:
         self.history  = gconf_get("history", [[34.5,15.8,2]])
         self.selected = set()
         self.modified = set()
-        self.searched = set()
         self.timezone = None
         self.polygons = []
         self.photo    = {}
@@ -579,7 +469,7 @@ class GottenGeography:
             self.map_view.connect('notify::' + signal, self.display_actors)
         self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             get_obj("zoom_in_button"), get_obj("zoom_out_button"))
-        self.map_view.connect("paint", self.paint_handler)
+        self.map_view.connect("paint", paint_handler)
         
         self.stage  = self.map_view.get_stage()
         self.actors = ReadableDictionary()
@@ -642,14 +532,14 @@ class GottenGeography:
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
-        search.set_match_func(self.completion_match_func, self.search_results)
-        search.connect("match-selected", self.search_completed)
+        search.set_match_func(completion_match_func, self.search_results)
+        search.connect("match-selected", search_completed, self.map_view, self.remember_location)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = get_obj("search")
         entry.set_completion(search)
-        entry.connect("changed", self.populate_search_results)
-        entry.connect("icon-release", self.search_bar_clicked)
+        entry.connect("changed", populate_search_results, self.search_results)
+        entry.connect("icon-release", search_bar_clicked, self.map_view)
         
         self.return_to_last(get_obj("back_button"))
         
@@ -659,13 +549,13 @@ class GottenGeography:
             "clear_button":      [self.clear_all_gpx],
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
-            "zoom_out_button":   [self.zoom_out],
-            "zoom_in_button":    [self.zoom_in],
+            "zoom_out_button":   [zoom_out, self.map_view],
+            "zoom_in_button":    [zoom_in, self.map_view],
             "back_button":       [self.return_to_last],
             "about_button":      [self.about_dialog],
             "pref_button":       [self.preferences_dialog],
             "apply_button":      [self.apply_selected_photos],
-            "select_all_button": [self.toggle_selected_photos, self.listsel]
+            "select_all_button": [toggle_selected_photos, self.listsel]
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect("clicked", *handler)
@@ -683,7 +573,7 @@ class GottenGeography:
         
         self.clear_all_gpx()
         self.redraw_interface()
-        self.display_actors(self.stage)
+        self.display_actors(self.map_view)
         
         offset = gconf_get("clock_offset", [0, 0])
         for name in [ "seconds", "minutes" ]:
@@ -695,40 +585,30 @@ class GottenGeography:
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
-        self.colorpicker.connect("color-changed", self.track_color_changed)
+        self.colorpicker.connect("color-changed", track_color_changed, self.polygons)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
-        self.region_box = Gtk.ComboBoxText.new()
-        self.cities_box = Gtk.ComboBoxText.new()
+        region_box = Gtk.ComboBoxText.new()
+        cities_box = Gtk.ComboBoxText.new()
+        tz_combos = get_obj("custom_timezone_combos")
+        tz_combos.pack_start(region_box, False, False, 10)
+        tz_combos.pack_start(cities_box, False, False, 10)
+        tz_combos.show_all()
         for name in tz_regions:
-            self.region_box.append(name, name)
-        self.region_box.connect("changed", self.region_box_handler)
-        self.cities_box.connect("changed", self.cities_box_handler)
+            region_box.append(name, name)
+        region_box.connect("changed", self.region_handler, cities_box)
+        cities_box.connect("changed", self.cities_handler, region_box)
         timezone = gconf_get("timezone", [-1, -1])
-        self.region_box.set_active(timezone[0])
-        self.cities_box.set_active(timezone[1])
-        self.tz_combos = get_obj("custom_timezone_combos")
-        self.tz_combos.pack_start(self.region_box, False, False, 10)
-        self.tz_combos.pack_start(self.cities_box, False, False, 10)
-        self.tz_combos.show_all()
+        region_box.set_active(timezone[0])
+        cities_box.set_active(timezone[1])
         
         for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
             radio = get_obj(option)
-            radio.connect("clicked", self.radio_handler)
+            radio.connect("clicked", self.radio_handler, tz_combos)
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method", "system_timezone")
         get_obj(timezone_method).clicked()
-    
-    def toggle_selected_photos(self, button, selection):
-        """Toggle the selection of photos."""
-        if button.get_active(): selection.select_all()
-        else:                   selection.unselect_all()
-    
-    def status_message(self, message):
-        """Display a message on the GtkStatusBar."""
-        status = get_obj("status")
-        status.push(status.get_context_id("msg"), message)
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
@@ -777,4 +657,133 @@ class GottenGeography:
             self.redraw_interface()
             sleep(0.002)
         Gtk.main()
+
+################################################################################
+# Search functions. These methods control the behavior of the search box.
+################################################################################
+
+def populate_search_results(entry, search_results, searched=set()):
+    """Load a few search results based on what's been typed.
+    
+    Requires at least three letters typed, and is careful not to load
+    duplicate results.
+    """
+    text = entry.get_text().lower()[0:3]
+    if len(text) == 3 and text not in searched:
+        searched.add(text)
+        with open(get_file("cities.txt")) as cities:
+            append = search_results.append
+            for line in cities:
+                city, lat, lon, country, state, tz = line.split("\t")
+                if search('(^|\s)' + text, city, flags=IGNORECASE):
+                    state    = get_state(country, state)
+                    country  = get_country(country)
+                    location = format_list([city, state, country])
+                    append([location, float(lat), float(lon)])
+
+def completion_match_func(completion, string, itr, model):
+    """Determine whether or not to include a given search result.
+    
+    This matches the beginning of any word in the name of the city. For
+    example, a search for "spring" will contain "Palm Springs" as well as
+    "Springfield".
+    """
+    location = model.get_value(itr, LOCATION)
+    if location and search('(^|\s)' + string, location, flags=IGNORECASE):
+        return True
+
+def search_completed(entry, model, itr, view, remember_location):
+    """Go to the selected location."""
+    remember_location()
+    loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
+    gconf_set("searched", [loc, lat, lon])
+    view.set_zoom_level(11)
+    view.center_on(lat, lon)
+
+def search_bar_clicked(entry, icon_pos, event, view):
+    location, lat, lon = gconf_get("searched", [None, None, None])
+    if valid_coords(lat, lon):
+        entry.set_text(location)
+        view.center_on(lat, lon)
+
+################################################################################
+# Misc. functions. TODO: organize these better.
+################################################################################
+
+def paint_handler(map_view):
+    """Force the map to redraw.
+    
+    This is a workaround for this libchamplain bug:
+    https://bugzilla.gnome.org/show_bug.cgi?id=638652
+    """
+    map_view.queue_redraw()
+
+def track_color_changed(selection, polygons):
+    """Update the color of any loaded GPX tracks."""
+    color = selection.get_current_color()
+    one   = make_clutter_color(selection)
+    two   = one.lighten().lighten()
+    for i, polygon in enumerate(polygons):
+        polygon.set_stroke_color(two if i % 2 else one)
+    gconf_set("track_color", [color.red, color.green, color.blue])
+
+def make_clutter_color(colorpicker):
+    """Generate a Clutter.Color from the currently chosen color."""
+    color = colorpicker.get_current_color()
+    return Clutter.Color.new(
+        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
+    
+def add_marker(label, photo_layer, selection, photos):
+    """Create a new ChamplainMarker and add it to the map."""
+    marker = Champlain.Marker()
+    marker.set_name(label)
+    marker.set_text(basename(label))
+    marker.set_property('reactive', True)
+    marker.connect("button-press-event", marker_clicked, selection, photos)
+    marker.connect("enter-event", marker_mouse_in)
+    marker.connect("leave-event", marker_mouse_out)
+    photo_layer.add_marker(marker)
+    return marker
+    
+def marker_clicked(marker, event, selection, photos):
+    """When a ChamplainMarker is clicked, select it in the GtkListStore.
+    
+    The interface defined by this method is consistent with the behavior of
+    the GtkListStore itself in the sense that a normal click will select
+    just one item, but Ctrl+clicking allows you to select multiple.
+    """
+    photo = photos[marker.get_name()]
+    if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
+        if marker.get_highlighted(): selection.unselect_iter(photo.iter)
+        else:                        selection.select_iter(photo.iter)
+    else:
+        get_obj("select_all_button").set_active(False)
+        selection.unselect_all()
+        selection.select_iter(photo.iter)
+
+def marker_mouse_in(marker, event):
+    """Enlarge a hovered-over ChamplainMarker by 5%."""
+    marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
+
+def marker_mouse_out(marker, event):
+    """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
+    marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
+
+def zoom_in(button, view):
+    """Zoom the map in by one level."""
+    view.zoom_in()
+
+def zoom_out(button, view):
+    """Zoom the map out by one level."""
+    view.zoom_out()
+
+def toggle_selected_photos(button, selection):
+    """Toggle the selection of photos."""
+    if button.get_active(): selection.select_all()
+    else:                   selection.unselect_all()
+
+def status_message(message):
+    """Display a message on the GtkStatusBar."""
+    status = get_obj("status")
+    status.push(status.get_context_id("msg"), message)
 
