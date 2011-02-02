@@ -584,7 +584,7 @@ class GottenGeography:
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors)
         self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
-            [get_obj("zoom_%s_button" % name) for name in ("in", "out")])
+            get_obj("zoom_in_button"), get_obj("zoom_out_button"))
         self.map_view.connect("paint", self.paint_handler)
         
         self.stage  = self.map_view.get_stage()
@@ -746,9 +746,8 @@ class GottenGeography:
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    def zoom_button_sensitivity(self, view, signal, buttons):
+    def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
         """Ensure zoom buttons are only sensitive when they need to be."""
-        zoom_in, zoom_out = buttons
         zoom = view.get_zoom_level()
         zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
