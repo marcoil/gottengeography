@@ -459,9 +459,9 @@ class GottenGeography:
         """Discard all selected photos."""
         for photo in self.selected.copy():
             photo.marker.destroy()
-            self.liststore.remove(photo.iter)
-            self.modified.discard(photo)
             del self.photo[photo.filename]
+            self.modified.discard(photo)
+            self.liststore.remove(photo.iter)
         get_obj("select_all_button").set_active(False)
     
     def modify_summary(self, photo):
@@ -748,11 +748,7 @@ class GottenGeography:
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
     
     def update_sensitivity(self, *args):
-        """Ensure widgets are sensitive only when they need to be.
-        
-        This method should be called every time any program state changes,
-        eg, when modifying a photo in any way, and when the selection changes.
-        """
+        """Ensure widgets are sensitive only when they need to be."""
         get_obj("apply_button").set_sensitive(len(self.selected) > 0)
         get_obj("close_button").set_sensitive(len(self.selected) > 0)
         get_obj("save_button").set_sensitive( len(self.modified) > 0)

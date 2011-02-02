@@ -36,6 +36,7 @@
             <child>
               <object class="GtkToolButton" id="save_button">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Save all photos (Ctrl S)</property>
                 <property name="is_important">True</property>
@@ -77,6 +78,7 @@
             <child>
               <object class="GtkToolButton" id="close_button">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Close selected photos (Ctrl W)</property>
                 <property name="is_important">True</property>
@@ -102,6 +104,7 @@
             <child>
               <object class="GtkToolButton" id="revert_button">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="tooltip_text" translatable="yes">Reload selected photos, losing all changes (Ctrl Z)</property>
                 <property name="label" translatable="yes">Revert</property>
                 <property name="use_underline">True</property>
@@ -274,6 +277,7 @@
                       <object class="GtkButton" id="apply_button">
                         <property name="label">gtk-apply</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Place selected photos onto center of map (Ctrl Enter)</property>
