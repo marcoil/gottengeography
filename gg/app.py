@@ -79,18 +79,15 @@ class GottenGeography:
         lat, lon, zoom = self.history.pop()
         self.map_view.center_on(lat, lon)
         self.map_view.set_zoom_level(zoom)
-        self.zoom_button_sensitivity()
         button.set_sensitive(len(self.history) > 0)
     
     def zoom_in(self, button=None):
         """Zoom the map in by one level."""
         self.map_view.zoom_in()
-        self.zoom_button_sensitivity()
     
     def zoom_out(self, button=None):
         """Zoom the map out by one level."""
         self.map_view.zoom_out()
-        self.zoom_button_sensitivity()
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -376,7 +373,6 @@ class GottenGeography:
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         self.update_sensitivity()
-        self.zoom_button_sensitivity()
         if len(gpx.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
@@ -587,6 +583,8 @@ class GottenGeography:
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors)
+        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
+            [get_obj("zoom_%s_button" % name) for name in ("in", "out")])
         self.map_view.connect("paint", self.paint_handler)
         
         self.stage  = self.map_view.get_stage()
@@ -690,7 +688,6 @@ class GottenGeography:
         
         self.clear_all_gpx()
         self.redraw_interface()
-        self.zoom_button_sensitivity()
         self.display_actors(self.stage)
         
         offset = gconf_get("clock_offset", [0, 0])
@@ -749,13 +746,12 @@ class GottenGeography:
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    def zoom_button_sensitivity(self):
+    def zoom_button_sensitivity(self, view, signal, buttons):
         """Ensure zoom buttons are only sensitive when they need to be."""
-        zoom_level = self.map_view.get_zoom_level()
-        get_obj("zoom_out_button").set_sensitive(
-            self.map_view.get_min_zoom_level() is not zoom_level)
-        get_obj("zoom_in_button").set_sensitive(
-            self.map_view.get_max_zoom_level() is not zoom_level)
+        zoom_in, zoom_out = buttons
+        zoom = view.get_zoom_level()
+        zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
+        zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
     
     def update_sensitivity(self, selection=None):
         """Ensure widgets are sensitive only when they need to be.

@@ -358,7 +358,7 @@ S 10.00000, W 10.00000
         zoom_in  = get_obj("zoom_in_button")
         zoom_out = get_obj("zoom_out_button")
         gui.map_view.set_zoom_level(0)
-        gui.zoom_button_sensitivity()
+        gui.zoom_button_sensitivity(gui.map_view, None, [zoom_in, zoom_out])
         self.assertFalse(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
         gui.zoom_in()
