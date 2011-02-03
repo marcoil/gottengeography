@@ -132,34 +132,33 @@ class GottenGeography:
 # Map features section. These methods control map objects.
 ################################################################################
     
-    def display_actors(self, *args):
+    def display_actors(self, view, param, mlink, label, white, xhair):
         """Position and update my custom ClutterActors.
         
-        self.actors.coords:       Map center coordinates at top of map view.
-        self.actors.coords_bg:    Translucent white bar at top of map view.
-        self.actors.crosshair:    Black diamond at map center.
+        label:    Map center coordinates at top of map view.
+        white:    Translucent white bar at top of map view.
+        xhair:    Black diamond at map center.
+        mlink:    Link to google maps in status bar.
         
         This method is called whenever the size of the map view changes, and
         whenever the map center coordinates change, so that everything is
         always positioned and sized correctly, and displaying the correct
         coordinates.
         """
-        stage_width  = self.stage.get_width()
-        stage_height = self.stage.get_height()
-        self.actors.crosshair.set_position(
-            (stage_width  - self.actors.crosshair.get_width())  / 2,
-            (stage_height - self.actors.crosshair.get_height()) / 2
+        stage_width  = view.get_width()
+        stage_height = view.get_height()
+        xhair.set_position(
+            (stage_width  - xhair.get_width())  / 2,
+            (stage_height - xhair.get_height()) / 2
         )
         
-        if len(args) > 0:
-            lat   = self.map_view.get_property('latitude')
-            lon   = self.map_view.get_property('longitude')
-            label = self.actors.coords
-            white = self.actors.coords_bg
+        if param is not None:
+            lat   = view.get_property('latitude')
+            lon   = view.get_property('longitude')
             label.set_markup(format_coords(lat, lon))
             white.set_size(stage_width, label.get_height() + 10)
             label.set_position((stage_width - label.get_width()) / 2, 5)
-            get_obj("maps_link").set_markup(maps_link(lat, lon))
+            mlink.set_markup(maps_link(lat, lon))
     
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
@@ -466,11 +465,6 @@ class GottenGeography:
         self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
-        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::' + signal, self.display_actors)
-        self.map_view.connect("notify::zoom-level", zoom_button_sensitivity,
-            get_obj("zoom_in_button"), get_obj("zoom_out_button"))
-        self.map_view.connect("paint", paint_handler)
         
         self.stage  = self.map_view.get_stage()
         self.actors = ReadableDictionary()
@@ -488,6 +482,12 @@ class GottenGeography:
             self.actors[actor].set_parent(self.stage)
             self.actors[actor].raise_top()
             self.actors[actor].show()
+        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+            self.map_view.connect('notify::' + signal, self.display_actors,
+                get_obj("maps_link"), *self.actors.values())
+        self.map_view.connect("notify::zoom-level", zoom_button_sensitivity,
+            get_obj("zoom_in_button"), get_obj("zoom_out_button"))
+        self.map_view.connect("paint", paint_handler)
         
         self.progressbar = get_obj("progressbar")
         
@@ -592,7 +592,6 @@ class GottenGeography:
         modification_sensitivity(*objs)
         self.clear_all_gpx()
         self.redraw_interface()
-        self.display_actors(self.map_view)
         
         offset = gconf_get("clock_offset", [0, 0])
         for name in [ "seconds", "minutes" ]:
@@ -632,13 +631,14 @@ class GottenGeography:
         xhair.set_parent(self.stage)
         xhair.raise_top()
         xhair.show()
+        display = [self.map_view, None, get_obj("maps_link")] + self.actors.values()
         # This causes the crosshair to start off huge and invisible, and it
         # quickly shrinks, spins, and fades into existence.
         for i in range(500, 7, -1):
             xhair.set_size(i, i)
             xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
             xhair.set_property('opacity', int(259-(0.5*i)))
-            self.display_actors()
+            self.display_actors(*display)
             self.redraw_interface()
             sleep(0.002)
         Gtk.main()
