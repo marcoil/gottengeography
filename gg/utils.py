@@ -16,11 +16,11 @@
 
 from __future__ import division
 
-from gi.repository import GConf
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
 from re import match, sub, search, IGNORECASE
+from gi.repository import GConf, Champlain, Clutter
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -40,6 +40,33 @@ LOCATION, LATITUDE, LONGITUDE = range(3)
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
     return join(dirname(__file__), filename)
+
+def paint_handler(map_view):
+    """Force the map to redraw.
+    
+    This is a workaround for this libchamplain bug:
+    https://bugzilla.gnome.org/show_bug.cgi?id=638652
+    """
+    map_view.queue_redraw()
+
+################################################################################
+# Color methods. These methods create and modify colors.
+################################################################################
+
+def track_color_changed(selection, polygons):
+    """Update the color of any loaded GPX tracks."""
+    color = selection.get_current_color()
+    one   = make_clutter_color(selection)
+    two   = one.lighten().lighten()
+    for i, polygon in enumerate(polygons):
+        polygon.set_stroke_color(two if i % 2 else one)
+    gconf_set("track_color", [color.red, color.green, color.blue])
+
+def make_clutter_color(colorpicker):
+    """Generate a Clutter.Color from the currently chosen color."""
+    color = colorpicker.get_current_color()
+    return Clutter.Color.new(
+        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
 ################################################################################
 # GConf methods. These methods interact with GConf.
@@ -160,6 +187,49 @@ def search_bar_clicked(entry, icon_pos, event, view):
         entry.set_text(location)
         view.center_on(lat, lon)
 
+################################################################################
+# Marker logic. These methods create and manipulate markers.
+################################################################################
+
+def add_marker(label, photo_layer, selection, photos, select_all):
+    """Create a new ChamplainMarker and add it to the map."""
+    marker = Champlain.Marker()
+    marker.set_name(label)
+    marker.set_text(basename(label))
+    marker.set_property('reactive', True)
+    marker.connect("button-press-event", marker_clicked, selection, photos, select_all)
+    marker.connect("enter-event", marker_mouse_in)
+    marker.connect("leave-event", marker_mouse_out)
+    photo_layer.add_marker(marker)
+    return marker
+
+def marker_clicked(marker, event, selection, photos, select_all):
+    """When a ChamplainMarker is clicked, select it in the GtkListStore.
+    
+    The interface defined by this method is consistent with the behavior of
+    the GtkListStore itself in the sense that a normal click will select
+    just one item, but Ctrl+clicking allows you to select multiple.
+    """
+    photo = photos[marker.get_name()]
+    if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
+        if marker.get_highlighted(): selection.unselect_iter(photo.iter)
+        else:                        selection.select_iter(photo.iter)
+    else:
+        select_all.set_active(False)
+        selection.unselect_all()
+        selection.select_iter(photo.iter)
+
+def marker_mouse_in(marker, event):
+    """Enlarge a hovered-over ChamplainMarker by 5%."""
+    marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
+
+def marker_mouse_out(marker, event):
+    """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
+    marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
+
+################################################################################
+# Superclasses. These classes are inherited by other classes in GottenGeography.
+################################################################################
 
 class Coordinates():
     """A generic object containing latitude and longitude coordinates.
@@ -260,7 +330,6 @@ class Coordinates():
             'size="larger"', basename(self.filename),
             'style="italic" size="smaller"', self.short_summary()
         )
-
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.

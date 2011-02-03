@@ -40,6 +40,8 @@ from utils import LOCATION, LATITUDE, LONGITUDE
 from utils import PATH, SUMMARY, THUMB, TIMESTAMP
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
+from utils import paint_handler, track_color_changed, make_clutter_color
+from utils import add_marker, marker_clicked, marker_mouse_in, marker_mouse_out
 from utils import load_results, match_func, search_completed, search_bar_clicked
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -92,6 +94,116 @@ class GottenGeography:
     automatically cross-reference the timestamps on the photos to the timestamps
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
+    
+    selected = set()
+    modified = set()
+    timezone = None
+    polygons = []
+    photo    = {}
+    gpx      = []
+    
+################################################################################
+# File data handling. These methods interact with files (loading, saving, etc)
+################################################################################
+    
+    def open_files(self, files):
+        """Attempt to load all of the specified files."""
+        self.progressbar.show()
+        invalid_files = []
+        for i, name in enumerate(files, 1):
+            self.redraw_interface(i / len(files), basename(name))
+            try:
+                try:            self.load_img_from_file(name)
+                except IOError: self.load_gpx_from_file(name)
+            except IOError:
+                invalid_files.append(basename(name))
+        if len(invalid_files) > 0:
+            status_message(_("Could not open: ") + format_list(invalid_files))
+        self.progressbar.hide()
+        self.update_all_marker_highlights(self.listsel)
+    
+    def load_img_from_file(self, filename):
+        """Create or update a row in the ListStore.
+        
+        Checks if the file has already been loaded, and if not, creates a new
+        row in the ListStore. Either way, it then populates that row with
+        photo metadata as read from disk. Effectively, this is used both for
+        loading new photos, and reverting old photos, discarding any changes.
+        
+        Raises IOError if filename refers to a file that is not a photograph.
+        """
+        if filename not in self.photo:
+            self.photo[filename] = Photograph(filename, self.modify_summary)
+            self.photo[filename].update( {
+                'iter':   self.liststore.append(),
+                'marker': add_marker(filename, self.map_photo_layer,
+                    self.listsel, self.photo, get_obj("select_all_button"))
+            } )
+        else:
+            self.photo[filename].read()
+        photo = self.photo[filename]
+        photo.position_marker()
+        self.modified.discard(photo)
+        self.liststore.set_row(photo.iter,
+            [filename, photo.long_summary(), photo.thumb, photo.timestamp])
+        auto_timestamp_comparison(photo, self.tracks, self.metadata)
+    
+    def load_gpx_from_file(self, filename):
+        """Parse GPX data, drawing each GPS track segment on the map."""
+        self.remember_location()
+        start_time   = clock()
+        
+        gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
+        status_message(_("%d points loaded in %.2fs.") %
+            (len(gpx.tracks), clock() - start_time))
+        
+        self.tracks.update(gpx.tracks)
+        self.gpx.append(gpx)
+        self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
+        self.metadata.omega = max(self.metadata.omega, gpx.omega)
+        if len(gpx.tracks) > 0:
+            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+            self.map_view.ensure_visible(*gpx.area + [False])
+        self.timezone = gpx.lookup_geoname()
+        gpx_sensitivity(self.tracks)
+        self.set_timezone()
+    
+    def apply_selected_photos(self, button, selected, view):
+        """Manually apply map center coordinates to all selected photos."""
+        for photo in selected:
+            photo.manual = True
+            photo.set_location(
+                view.get_property('latitude'),
+                view.get_property('longitude'))
+    
+    def revert_selected_photos(self, button=None):
+        """Discard any modifications to all selected photos."""
+        self.open_files([photo.filename for photo in self.modified & self.selected])
+    
+    def close_selected_photos(self, button=None):
+        """Discard all selected photos."""
+        for photo in self.selected.copy():
+            photo.marker.destroy()
+            del self.photo[photo.filename]
+            self.modified.discard(photo)
+            self.liststore.remove(photo.iter)
+        get_obj("select_all_button").set_active(False)
+    
+    def save_all_files(self, widget=None):
+        """Ensure all loaded files are saved."""
+        self.progressbar.show()
+        photos = list(self.modified)
+        for i, photo in enumerate(photos, 1):
+            self.redraw_interface(i / len(photos), basename(photo.filename))
+            try:
+                photo.write()
+            except Exception as inst:
+                status_message(str(inst))
+            else:
+                self.modified.discard(photo)
+                self.liststore.set_value(photo.iter, SUMMARY,
+                    photo.long_summary())
+        self.progressbar.hide()
     
 ################################################################################
 # Map navigation section. These methods move and zoom the map around.
@@ -178,6 +290,28 @@ class GottenGeography:
                 self.remember_location()
                 self.map_view.ensure_visible(*area + [False])
     
+    def clear_all_gpx(self, widget=None):
+        """Forget all GPX data, start over with a clean slate."""
+        for polygon in self.polygons:
+            polygon.hide()
+            # Maybe some day...
+            #polygon.clear_points()
+            #self.map_view.remove_polygon(polygon)
+        
+        self.gpx       = []
+        self.polygons  = []
+        self.tracks    = {}
+        self.metadata  = ReadableDictionary({
+            'delta': 0,                  # Time offset
+            'omega': float('-inf'),      # Final GPX track point
+            'alpha': float('inf')        # Initial GPX track point
+        })
+        gpx_sensitivity(self.tracks)
+    
+################################################################################
+# Data manipulation. These methods modify the loaded files in some way.
+################################################################################
+    
     def radio_handler(self, radio, combos):
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
@@ -216,109 +350,6 @@ class GottenGeography:
             photo.calculate_timestamp()
             auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
-    def clear_all_gpx(self, widget=None):
-        """Forget all GPX data, start over with a clean slate."""
-        for polygon in self.polygons:
-            polygon.hide()
-            # Maybe some day...
-            #polygon.clear_points()
-            #self.map_view.remove_polygon(polygon)
-        
-        self.gpx       = []
-        self.polygons  = []
-        self.tracks    = {}
-        self.metadata  = ReadableDictionary({
-            'delta': 0,                  # Time offset
-            'omega': float('-inf'),      # Final GPX track point
-            'alpha': float('inf')        # Initial GPX track point
-        })
-        gpx_sensitivity(self.tracks)
-    
-################################################################################
-# File data handling. These methods interact with files (loading, saving, etc)
-################################################################################
-    
-    def open_files(self, files):
-        """Attempt to load all of the specified files."""
-        self.progressbar.show()
-        invalid_files = []
-        for i, name in enumerate(files, 1):
-            self.redraw_interface(i / len(files), basename(name))
-            try:
-                try:            self.load_img_from_file(name)
-                except IOError: self.load_gpx_from_file(name)
-            except IOError:
-                invalid_files.append(basename(name))
-        if len(invalid_files) > 0:
-            status_message(_("Could not open: ") + format_list(invalid_files))
-        self.progressbar.hide()
-        self.update_all_marker_highlights(self.listsel)
-    
-    def load_img_from_file(self, filename):
-        """Create or update a row in the ListStore.
-        
-        Checks if the file has already been loaded, and if not, creates a new
-        row in the ListStore. Either way, it then populates that row with
-        photo metadata as read from disk. Effectively, this is used both for
-        loading new photos, and reverting old photos, discarding any changes.
-        
-        Raises IOError if filename refers to a file that is not a photograph.
-        """
-        if filename not in self.photo:
-            self.photo[filename] = Photograph(filename, self.modify_summary)
-            self.photo[filename].update( {
-                'iter':   self.liststore.append(),
-                'marker': add_marker(filename, self.map_photo_layer, self.listsel, self.photo)
-            } )
-        else:
-            self.photo[filename].read()
-        photo = self.photo[filename]
-        photo.position_marker()
-        self.modified.discard(photo)
-        self.liststore.set_row(photo.iter,
-            [filename, photo.long_summary(), photo.thumb, photo.timestamp])
-        auto_timestamp_comparison(photo, self.tracks, self.metadata)
-    
-    def load_gpx_from_file(self, filename):
-        """Parse GPX data, drawing each GPS track segment on the map."""
-        self.remember_location()
-        start_time   = clock()
-        
-        gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
-        status_message(_("%d points loaded in %.2fs.") %
-            (len(gpx.tracks), clock() - start_time))
-        
-        self.tracks.update(gpx.tracks)
-        self.gpx.append(gpx)
-        self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
-        self.metadata.omega = max(self.metadata.omega, gpx.omega)
-        if len(gpx.tracks) > 0:
-            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-            self.map_view.ensure_visible(*gpx.area + [False])
-        self.timezone = gpx.lookup_geoname()
-        gpx_sensitivity(self.tracks)
-        self.set_timezone()
-    
-    def save_all_files(self, widget=None):
-        """Ensure all loaded files are saved."""
-        self.progressbar.show()
-        photos = list(self.modified)
-        for i, photo in enumerate(photos, 1):
-            self.redraw_interface(i / len(photos), basename(photo.filename))
-            try:
-                photo.write()
-            except Exception as inst:
-                status_message(str(inst))
-            else:
-                self.modified.discard(photo)
-                self.liststore.set_value(photo.iter, SUMMARY,
-                    photo.long_summary())
-        self.progressbar.hide()
-    
-################################################################################
-# Data manipulation. These methods modify the loaded files in some way.
-################################################################################
-    
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         seconds = get_obj("seconds").get_value()
@@ -333,27 +364,6 @@ class GottenGeography:
                 get_obj("minutes").set_value(minutes)
             for photo in self.photo.values():
                 auto_timestamp_comparison(photo, self.tracks, self.metadata)
-    
-    def apply_selected_photos(self, button=None):
-        """Manually apply map center coordinates to all selected photos."""
-        for photo in self.selected:
-            photo.manual = True
-            photo.set_location(
-                self.map_view.get_property('latitude'),
-                self.map_view.get_property('longitude'))
-    
-    def revert_selected_photos(self, button=None):
-        """Discard any modifications to all selected photos."""
-        self.open_files([photo.filename for photo in self.modified & self.selected])
-    
-    def close_selected_photos(self, button=None):
-        """Discard all selected photos."""
-        for photo in self.selected.copy():
-            photo.marker.destroy()
-            del self.photo[photo.filename]
-            self.modified.discard(photo)
-            self.liststore.remove(photo.iter)
-        get_obj("select_all_button").set_active(False)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -449,14 +459,6 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self):
-        self.history  = gconf_get("history", [[34.5,15.8,2]])
-        self.selected = set()
-        self.modified = set()
-        self.timezone = None
-        self.polygons = []
-        self.photo    = {}
-        self.gpx      = []
-        
         champlain            = GtkChamplain.Embed()
         self.map_photo_layer = Champlain.Layer()
         self.map_view        = champlain.get_view()
@@ -545,6 +547,7 @@ class GottenGeography:
         entry.connect("changed", load_results, self.search_results)
         entry.connect("icon-release", search_bar_clicked, self.map_view)
         
+        self.history = gconf_get("history", [[34.5,15.8,2]])
         self.return_to_last(get_obj("back_button"))
         
         region_box = Gtk.ComboBoxText.new()
@@ -572,7 +575,7 @@ class GottenGeography:
             "back_button":       [self.return_to_last],
             "about_button":      [self.about_dialog, get_obj("about")],
             "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
-            "apply_button":      [self.apply_selected_photos],
+            "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
             "select_all_button": [toggle_selected_photos, self.listsel]
         }
         for button, handler in click_handlers.items():
@@ -644,7 +647,7 @@ class GottenGeography:
         Gtk.main()
 
 ################################################################################
-# Misc. functions. TODO: organize these better.
+# Sensitivity. These methods ensure proper sensitivity of various widgets.
 ################################################################################
 
 def modification_sensitivity(*args):
@@ -659,12 +662,6 @@ def modification_sensitivity(*args):
     if len(photo) > 0: left.show()
     else:              left.hide()
 
-def zoom_button_sensitivity(view, signal, zoom_in, zoom_out):
-    """Ensure zoom buttons are only sensitive when they need to be."""
-    zoom = view.get_zoom_level()
-    zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
-    zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
-
 def gpx_sensitivity(tracks):
     """Control the sensitivity of GPX-related widgets."""
     gpx_sensitive = len(tracks) > 0
@@ -676,65 +673,16 @@ def selection_sensitivity(selection, apply_button, close_button):
     sensitive = selection.count_selected_rows() > 0
     apply_button.set_sensitive(sensitive)
     close_button.set_sensitive(sensitive)
-    
-def paint_handler(map_view):
-    """Force the map to redraw.
-    
-    This is a workaround for this libchamplain bug:
-    https://bugzilla.gnome.org/show_bug.cgi?id=638652
-    """
-    map_view.queue_redraw()
 
-def track_color_changed(selection, polygons):
-    """Update the color of any loaded GPX tracks."""
-    color = selection.get_current_color()
-    one   = make_clutter_color(selection)
-    two   = one.lighten().lighten()
-    for i, polygon in enumerate(polygons):
-        polygon.set_stroke_color(two if i % 2 else one)
-    gconf_set("track_color", [color.red, color.green, color.blue])
+################################################################################
+# Zoom zoom! These methods control the zoom behavior.
+################################################################################
 
-def make_clutter_color(colorpicker):
-    """Generate a Clutter.Color from the currently chosen color."""
-    color = colorpicker.get_current_color()
-    return Clutter.Color.new(
-        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
-    
-def add_marker(label, photo_layer, selection, photos):
-    """Create a new ChamplainMarker and add it to the map."""
-    marker = Champlain.Marker()
-    marker.set_name(label)
-    marker.set_text(basename(label))
-    marker.set_property('reactive', True)
-    marker.connect("button-press-event", marker_clicked, selection, photos)
-    marker.connect("enter-event", marker_mouse_in)
-    marker.connect("leave-event", marker_mouse_out)
-    photo_layer.add_marker(marker)
-    return marker
-    
-def marker_clicked(marker, event, selection, photos):
-    """When a ChamplainMarker is clicked, select it in the GtkListStore.
-    
-    The interface defined by this method is consistent with the behavior of
-    the GtkListStore itself in the sense that a normal click will select
-    just one item, but Ctrl+clicking allows you to select multiple.
-    """
-    photo = photos[marker.get_name()]
-    if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
-        if marker.get_highlighted(): selection.unselect_iter(photo.iter)
-        else:                        selection.select_iter(photo.iter)
-    else:
-        get_obj("select_all_button").set_active(False)
-        selection.unselect_all()
-        selection.select_iter(photo.iter)
-
-def marker_mouse_in(marker, event):
-    """Enlarge a hovered-over ChamplainMarker by 5%."""
-    marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
-
-def marker_mouse_out(marker, event):
-    """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-    marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
+def zoom_button_sensitivity(view, signal, zoom_in, zoom_out):
+    """Ensure zoom buttons are only sensitive when they need to be."""
+    zoom = view.get_zoom_level()
+    zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
+    zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
 
 def zoom_in(button, view):
     """Zoom the map in by one level."""
@@ -743,6 +691,10 @@ def zoom_in(button, view):
 def zoom_out(button, view):
     """Zoom the map out by one level."""
     view.zoom_out()
+
+################################################################################
+# Misc. functions. TODO: organize these better.
+################################################################################
 
 def toggle_selected_photos(button, selection):
     """Toggle the selection of photos."""
