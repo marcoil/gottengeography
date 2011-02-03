@@ -206,13 +206,17 @@ class GPXLoader(Coordinates):
         except ExpatError:
             raise IOError
         
-        self.alpha = min(self.tracks.keys())
-        self.omega = max(self.tracks.keys())
+        keys = self.tracks.keys()
+        self.alpha = min(keys)
+        self.omega = max(keys)
         
-        self.area.append(min([p["point"].lat for p in self.tracks.values()]))
-        self.area.append(min([p["point"].lon for p in self.tracks.values()]))
-        self.area.append(max([p["point"].lat for p in self.tracks.values()]))
-        self.area.append(max([p["point"].lon for p in self.tracks.values()]))
+        points = self.tracks.values()
+        lats   = [p["point"].lat for p in points]
+        lons   = [p["point"].lon for p in points]
+        self.area.append(min(lats))
+        self.area.append(min(lons))
+        self.area.append(max(lats))
+        self.area.append(max(lons))
         
         self.latitude  = (self.area[0] + self.area[2]) / 2
         self.longitude = (self.area[1] + self.area[3]) / 2
