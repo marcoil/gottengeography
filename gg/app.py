@@ -27,7 +27,6 @@ gettext.textdomain(APPNAME.lower())
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from time import tzset, sleep, clock
-from re import search, IGNORECASE
 from gettext import gettext as _
 from os.path import basename
 from os import environ
@@ -37,13 +36,12 @@ from os import environ
 
 from utils import ReadableDictionary
 from files import Photograph, GPXLoader
+from utils import LOCATION, LATITUDE, LONGITUDE
+from utils import PATH, SUMMARY, THUMB, TIMESTAMP
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
+from utils import load_results, match_func, search_completed, search_bar_clicked
 from territories import tz_regions, get_timezone, get_state, get_country
-
-# Handy names for GtkListStore column numbers.
-PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
-LOCATION, LATITUDE, LONGITUDE = range(3)
 
 GtkClutter.init([])
 
@@ -538,13 +536,13 @@ class GottenGeography:
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
-        search.set_match_func(completion_match_func, self.search_results)
+        search.set_match_func(match_func, self.search_results)
         search.connect("match-selected", search_completed, self.map_view, self.remember_location)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = get_obj("search")
         entry.set_completion(search)
-        entry.connect("changed", populate_search_results, self.search_results)
+        entry.connect("changed", load_results, self.search_results)
         entry.connect("icon-release", search_bar_clicked, self.map_view)
         
         self.return_to_last(get_obj("back_button"))
@@ -644,54 +642,6 @@ class GottenGeography:
             self.redraw_interface()
             sleep(0.002)
         Gtk.main()
-
-################################################################################
-# Search functions. These methods control the behavior of the search box.
-################################################################################
-
-def populate_search_results(entry, search_results, searched=set()):
-    """Load a few search results based on what's been typed.
-    
-    Requires at least three letters typed, and is careful not to load
-    duplicate results.
-    """
-    text = entry.get_text().lower()[0:3]
-    if len(text) == 3 and text not in searched:
-        searched.add(text)
-        with open(get_file("cities.txt")) as cities:
-            append = search_results.append
-            for line in cities:
-                city, lat, lon, country, state, tz = line.split("\t")
-                if search('(^|\s)' + text, city, flags=IGNORECASE):
-                    state    = get_state(country, state)
-                    country  = get_country(country)
-                    location = format_list([city, state, country])
-                    append([location, float(lat), float(lon)])
-
-def completion_match_func(completion, string, itr, model):
-    """Determine whether or not to include a given search result.
-    
-    This matches the beginning of any word in the name of the city. For
-    example, a search for "spring" will contain "Palm Springs" as well as
-    "Springfield".
-    """
-    location = model.get_value(itr, LOCATION)
-    if location and search('(^|\s)' + string, location, flags=IGNORECASE):
-        return True
-
-def search_completed(entry, model, itr, view, remember_location):
-    """Go to the selected location."""
-    remember_location()
-    loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
-    gconf_set("searched", [loc, lat, lon])
-    view.set_zoom_level(11)
-    view.center_on(lat, lon)
-
-def search_bar_clicked(entry, icon_pos, event, view):
-    location, lat, lon = gconf_get("searched", [None, None, None])
-    if valid_coords(lat, lon):
-        entry.set_text(location)
-        view.center_on(lat, lon)
 
 ################################################################################
 # Misc. functions. TODO: organize these better.
