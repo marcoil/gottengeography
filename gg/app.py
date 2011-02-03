@@ -87,6 +87,41 @@ def auto_timestamp_comparison(photo, points, metadata):
     photo.set_location(lat, lon, ele)
 
 
+class HistoryController:
+    """Controls the behavior of the 'back' button."""
+    default = [[34.5,15.8,2]]
+    
+    def __init__(self, map_view):
+        """Start the map at the previous location, and connect signals."""
+        self.map_view    = map_view
+        self.back_button = get_obj("back_button")
+        self.back_button.connect("clicked", self.return_to_last)
+        self.return_to_last()
+    
+    def remember_location(self):
+        """Add the current location to the history stack."""
+        history = gconf_get("history", self.default)
+        history.append( [
+            self.map_view.get_property('latitude'),
+            self.map_view.get_property('longitude'),
+            self.map_view.get_zoom_level()
+        ] )
+        gconf_set("history", history[-30:len(history)])
+        self.back_button.set_sensitive(True)
+    
+    def return_to_last(self, *args):
+        """Return the map view to where the user last set it."""
+        history = gconf_get("history", self.default)
+        if len(history) < 1:
+            history = self.default
+        lat, lon, zoom = history.pop()
+        if valid_coords(lat, lon):
+            self.map_view.center_on(lat, lon)
+            self.map_view.set_zoom_level(zoom)
+        self.back_button.set_sensitive(len(history) > 0)
+        gconf_set("history", history)
+
+
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -150,7 +185,7 @@ class GottenGeography:
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
-        self.remember_location()
+        self.history.remember_location()
         start_time   = clock()
         
         gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
@@ -208,23 +243,6 @@ class GottenGeography:
 ################################################################################
 # Map navigation section. These methods move and zoom the map around.
 ################################################################################
-    
-    def remember_location(self):
-        """Add the current location to the history stack."""
-        self.history.append( [
-            self.map_view.get_property('latitude'),
-            self.map_view.get_property('longitude'),
-            self.map_view.get_zoom_level()
-        ] )
-        gconf_set("history", self.history[-5:len(self.history)])
-        get_obj("back_button").set_sensitive(True)
-    
-    def return_to_last(self, button):
-        """Return the map view to where the user last set it."""
-        lat, lon, zoom = self.history.pop()
-        self.map_view.center_on(lat, lon)
-        self.map_view.set_zoom_level(zoom)
-        button.set_sensitive(len(self.history) > 0)
     
     def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -292,7 +310,7 @@ class GottenGeography:
             for photo in self.selected:
                 photo.set_marker_highlight(area, False)
             if valid_coords(area[0], area[1]):
-                self.remember_location()
+                self.history.remember_location()
                 self.map_view.ensure_visible(*area + [False])
     
     def clear_all_gpx(self, widget=None):
@@ -438,7 +456,7 @@ class GottenGeography:
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.remember_location()
+        self.history.remember_location()
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
@@ -470,6 +488,8 @@ class GottenGeography:
         self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
+        
+        self.history = HistoryController(self.map_view)
         
         self.stage  = self.map_view.get_stage()
         self.actors = ReadableDictionary()
@@ -545,16 +565,13 @@ class GottenGeography:
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
         search.set_match_func(match_func, self.search_results)
-        search.connect("match-selected", search_completed, self.map_view, self.remember_location)
+        search.connect("match-selected", search_completed, self.map_view, self.history.remember_location)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = get_obj("search")
         entry.set_completion(search)
         entry.connect("changed", load_results, self.search_results)
         entry.connect("icon-release", search_bar_clicked, self.map_view)
-        
-        self.history = gconf_get("history", [[34.5,15.8,2]])
-        self.return_to_last(get_obj("back_button"))
         
         region_box = Gtk.ComboBoxText.new()
         cities_box = Gtk.ComboBoxText.new()
@@ -578,7 +595,6 @@ class GottenGeography:
             "revert_button":     [self.revert_selected_photos],
             "zoom_out_button":   [zoom_out, self.map_view],
             "zoom_in_button":    [zoom_in, self.map_view],
-            "back_button":       [self.return_to_last],
             "about_button":      [self.about_dialog, get_obj("about")],
             "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],

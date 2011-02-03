@@ -326,11 +326,11 @@ S 10.00000, W 10.00000
     def test_map_navigation(self):
         """Ensure that it's possible to navigate the map."""
         
-        history_length = len(gui.history)
+        history_length = len(gconf_get("history"))
         
-        self.assertEqual(history_length, len(gui.history))
-        gui.remember_location()
-        self.assertEqual(history_length + 1, len(gui.history))
+        self.assertEqual(history_length, len(gconf_get("history")))
+        gui.history.remember_location()
+        self.assertEqual(history_length + 1, len(gconf_get("history")))
         
         coords = []
         
@@ -347,10 +347,10 @@ S 10.00000, W 10.00000
         coords.append([lat, lon])
         zoom = gui.map_view.get_zoom_level()
         
-        gui.remember_location()
-        self.assertEqual(history_length + 2, len(gui.history))
-        self.assertAlmostEqual(lat, gui.history[-1][0], 1)
-        self.assertAlmostEqual(lon, gui.history[-1][1], 1)
+        gui.history.remember_location()
+        self.assertEqual(history_length + 2, len(gconf_get("history")))
+        self.assertAlmostEqual(lat, gconf_get("history")[-1][0], 1)
+        self.assertAlmostEqual(lon, gconf_get("history")[-1][1], 1)
         
         lat = round(random_coord(90),  6)
         lon = round(random_coord(180), 6)
@@ -382,12 +382,12 @@ S 10.00000, W 10.00000
         self.assertEqual(gui.map_view.get_max_zoom_level(),
             gui.map_view.get_zoom_level())
         
-        gui.return_to_last(get_obj("back_button"))
-        self.assertEqual(history_length + 1, len(gui.history))
+        gui.history.return_to_last(get_obj("back_button"))
+        self.assertEqual(history_length + 1, len(gconf_get("history")))
         self.assertEqual(zoom, gui.map_view.get_zoom_level())
         
-        gui.return_to_last(get_obj("back_button"))
-        self.assertEqual(history_length, len(gui.history))
+        gui.history.return_to_last(get_obj("back_button"))
+        self.assertEqual(history_length, len(gconf_get("history")))
         
         gui.map_view.set_zoom_level(5)
         
@@ -459,7 +459,7 @@ S 10.00000, W 10.00000
         
         gui.map_view.center_on(lat, lon)
         
-        gui.remember_location()
+        gui.history.remember_location()
         
         gconf_val = gconf_get("history")
         self.assertAlmostEqual(lat, gconf_val[-1][0], 4)
@@ -514,7 +514,7 @@ S 10.00000, W 10.00000
         self.assertEqual(len(results), 339)
         
         for itr, data in results:
-            app.search_completed(entry, gui.search_results, itr, gui.map_view, gui.remember_location)
+            app.search_completed(entry, gui.search_results, itr, gui.map_view, gui.history.remember_location)
             loc, lat, lon = data
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
