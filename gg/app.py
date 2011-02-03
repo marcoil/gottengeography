@@ -387,11 +387,9 @@ class GottenGeography:
 # Dialogs. Various dialog-related methods for user interaction.
 ################################################################################
     
-    def update_preview(self, chooser):
+    def update_preview(self, chooser, label, image):
         """Display photo thumbnail and geotag data in file chooser."""
-        label = get_obj("preview_label")
         label.set_label(self.strings.preview)
-        image = get_obj("preview_image")
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
             photo = Photograph(chooser.get_preview_filename(), lambda x: None, 300)
@@ -400,15 +398,14 @@ class GottenGeography:
         image.set_from_pixbuf(photo.thumb)
         label.set_label(format_list([photo.short_summary(), photo.maps_link()], "\n"))
     
-    def add_files_dialog(self, *args):
+    def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
-        chooser = get_obj("open")
         response = chooser.run()
         chooser.hide()
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
-    def preferences_dialog(self, button, region, cities):
+    def preferences_dialog(self, button, dialog, region, cities):
         """Allow the user to configure this application."""
         previous = ReadableDictionary({
             'method': gconf_get("timezone_method"),
@@ -416,7 +413,6 @@ class GottenGeography:
             'city':   cities.get_active(),
             'color':  self.colorpicker.get_current_color()
         })
-        dialog = get_obj("preferences")
         if not dialog.run():
             self.colorpicker.set_current_color(previous.color)
             self.colorpicker.set_previous_color(previous.color)
@@ -440,11 +436,13 @@ class GottenGeography:
         if response != Gtk.ResponseType.CANCEL: Gtk.main_quit()
         return True
     
-    def about_dialog(self, *args):
+    def about_dialog(self, button, dialog):
         """Describe this application to the user."""
-        dialog = get_obj("about")
+        # you can
         dialog.run()
+        # but you can't
         dialog.hide()
+        # ahahahhahahah!
     
 ################################################################################
 # Initialization and Gtk boilerplate/housekeeping type stuff and such.
@@ -496,7 +494,9 @@ class GottenGeography:
             "preview": get_obj("preview_label").get_text()
         })
         
-        objs = [get_obj("save_button"), get_obj("revert_button"), get_obj("photos_with_buttons"), self.modified, self.selected, self.photo]
+        objs = [get_obj("save_button"), get_obj("revert_button"),
+            get_obj("photos_with_buttons"), self.modified, self.selected,
+            self.photo]
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
@@ -562,7 +562,7 @@ class GottenGeography:
         cities_box.set_active(timezone[1])
         
         click_handlers = {
-            "open_button":       [self.add_files_dialog],
+            "open_button":       [self.add_files_dialog, get_obj("open")],
             "save_button":       [self.save_all_files],
             "clear_button":      [self.clear_all_gpx],
             "close_button":      [self.close_selected_photos],
@@ -570,8 +570,8 @@ class GottenGeography:
             "zoom_out_button":   [zoom_out, self.map_view],
             "zoom_in_button":    [zoom_in, self.map_view],
             "back_button":       [self.return_to_last],
-            "about_button":      [self.about_dialog],
-            "pref_button":       [self.preferences_dialog, region_box, cities_box],
+            "about_button":      [self.about_dialog, get_obj("about")],
+            "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
             "apply_button":      [self.apply_selected_photos],
             "select_all_button": [toggle_selected_photos, self.listsel]
         }
@@ -598,8 +598,8 @@ class GottenGeography:
             spinbutton = get_obj(name)
             spinbutton.connect("value-changed", self.time_offset_changed)
             spinbutton.set_value(offset.pop())
-        get_obj("open").connect(
-            "update-preview", self.update_preview)
+        get_obj("open").connect("update-preview", self.update_preview,
+            get_obj("preview_label"), get_obj("preview_image"))
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
