@@ -52,6 +52,41 @@ builder.set_translation_domain(APPNAME.lower())
 builder.add_from_file(get_file("ui.glade"))
 get_obj = builder.get_object
 
+# This function embodies almost the entirety of my application's logic.
+# The things that come after this method are just implementation details.
+def auto_timestamp_comparison(photo, points, metadata):
+    """Use GPX data to calculate photo coordinates and elevation."""
+    if photo.manual or len(points) < 2:
+        return
+    
+    stamp = metadata.delta + photo.timestamp # in epoch seconds
+    hi    = metadata.omega                   # Latest timestamp in GPX file.
+    lo    = metadata.alpha                   # Earliest timestamp in GPX file.
+    stamp = min(max(stamp, lo), hi)          # Keep timestamp within range.
+    
+    try:
+        lat = points[stamp]['point'].lat     # Try to use an exact match,
+        lon = points[stamp]['point'].lon     # if such a thing were to exist.
+        ele = points[stamp]['elevation']     # It's more likely than you think.
+    
+    except KeyError:
+        # Find the two points that are nearest (in time) to the photo.
+        hi = min([point for point in points if point > stamp])
+        lo = max([point for point in points if point < stamp])
+        hi_ratio = (stamp - lo) / (hi - lo)  # Proportional amount of time
+        lo_ratio = (hi - stamp) / (hi - lo)  # between each point & the photo.
+        
+        # Find intermediate values using the proportional ratios.
+        lat = ((points[lo]['point'].lat * lo_ratio)  +
+               (points[hi]['point'].lat * hi_ratio))
+        lon = ((points[lo]['point'].lon * lo_ratio)  +
+               (points[hi]['point'].lon * hi_ratio))
+        ele = ((points[lo]['elevation'] * lo_ratio)  +
+               (points[hi]['elevation'] * hi_ratio))
+    
+    photo.set_location(lat, lon, ele)
+
+
 class GottenGeography:
     """Provides a graphical interface to automagically geotag photos.
     
@@ -182,7 +217,7 @@ class GottenGeography:
         tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
-            self.auto_timestamp_comparison(photo)
+            auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
@@ -245,7 +280,7 @@ class GottenGeography:
         self.modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
-        self.auto_timestamp_comparison(photo)
+        auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -286,37 +321,6 @@ class GottenGeography:
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
     
-    def auto_timestamp_comparison(self, photo):
-        """Use GPX data to calculate photo coordinates and elevation."""
-        if photo.manual or len(self.tracks) < 2:
-            return
-        timestamp = photo.timestamp + self.metadata.delta
-        # Chronological first and last timestamp created by the GPX device.
-        hi = self.metadata.omega
-        lo = self.metadata.alpha
-        # If the photo is out of range, simply peg it to the end of the range.
-        timestamp = min(max(timestamp, lo), hi)
-        try:
-            lat = self.tracks[timestamp]['point'].lat
-            lon = self.tracks[timestamp]['point'].lon
-            ele = self.tracks[timestamp]['elevation']
-        except KeyError:
-            # Find the two points that are nearest (in time) to the photo.
-            hi = min([point for point in self.tracks if point > timestamp])
-            lo = max([point for point in self.tracks if point < timestamp])
-            # lo_perc and hi_perc are ratios (between 0 and 1) representing the
-            # proportional amount of time between the photo and the points.
-            hi_perc = (timestamp - lo) / (hi - lo)
-            lo_perc = (hi - timestamp) / (hi - lo)
-            # Find intermediate values using the proportional ratios.
-            lat = ((self.tracks[lo]['point'].lat * lo_perc)  +
-                   (self.tracks[hi]['point'].lat * hi_perc))
-            lon = ((self.tracks[lo]['point'].lon * lo_perc)  +
-                   (self.tracks[hi]['point'].lon * hi_perc))
-            ele = ((self.tracks[lo]['elevation'] * lo_perc)  +
-                   (self.tracks[hi]['elevation'] * hi_perc))
-        photo.set_location(lat, lon, ele)
-    
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         seconds = get_obj("seconds").get_value()
@@ -330,7 +334,7 @@ class GottenGeography:
                 get_obj("seconds").set_value(0)
                 get_obj("minutes").set_value(minutes)
             for photo in self.photo.values():
-                self.auto_timestamp_comparison(photo)
+                auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def apply_selected_photos(self, button=None):
         """Manually apply map center coordinates to all selected photos."""
