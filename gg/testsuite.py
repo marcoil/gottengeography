@@ -59,20 +59,15 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(get_obj("main").get_size(), (800, 600))
         
         # Button sensitivity
-        self.assertFalse(get_obj("apply_button").get_sensitive())
-        self.assertFalse(get_obj("close_button").get_sensitive())
         self.assertFalse(get_obj("save_button").get_sensitive())
         self.assertFalse(get_obj("revert_button").get_sensitive())
-        self.assertFalse(get_obj("clear_button").get_sensitive())
         gui.selected.add(True)
         gui.modified.add(True)
         gui.tracks["herp"] = "derp"
-        gui.update_sensitivity()
-        self.assertTrue(get_obj("apply_button").get_sensitive())
-        self.assertTrue(get_obj("close_button").get_sensitive())
+        app.modification_sensitivity(get_obj("save_button"), get_obj("revert_button"),
+            get_obj("photos_with_buttons"), gui.modified, gui.selected, gui.photo)
         self.assertTrue(get_obj("save_button").get_sensitive())
         self.assertTrue(get_obj("revert_button").get_sensitive())
-        self.assertTrue(get_obj("clear_button").get_sensitive())
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -89,6 +84,7 @@ class GottenGeographyTester(TestCase):
                 self.assertRaises(IOError, gui.load_gpx_from_file, filename)
                 gui.load_img_from_file(filename)
         
+        self.assertFalse(get_obj("clear_button").get_sensitive())
         treeiter = gui.liststore.get_iter_first()
         self.assertTrue(treeiter)
         
@@ -127,6 +123,7 @@ class GottenGeographyTester(TestCase):
         gpx_filename=join(getcwd(), "demo", "20101016.gpx")
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.load_gpx_from_file(gpx_filename)
+        self.assertTrue(get_obj("clear_button").get_sensitive())
         
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
@@ -142,6 +139,8 @@ class GottenGeographyTester(TestCase):
              53.537399000000001, -113.443061]
         )
         
+        self.assertFalse(get_obj("apply_button").get_sensitive())
+        self.assertFalse(get_obj("close_button").get_sensitive())
         for photo in gui.photo.values():
             self.assertTrue(photo in gui.modified)
             
@@ -157,6 +156,8 @@ class GottenGeographyTester(TestCase):
             app.marker_clicked(photo.marker, Clutter.Event(), gui.listsel, gui.photo)
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
+            self.assertTrue(get_obj("apply_button").get_sensitive())
+            self.assertTrue(get_obj("close_button").get_sensitive())
             self.assertTrue(photo in gui.selected)
             self.assertEqual(len(gui.selected), 1)
             self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
@@ -358,7 +359,7 @@ S 10.00000, W 10.00000
         zoom_in  = get_obj("zoom_in_button")
         zoom_out = get_obj("zoom_out_button")
         gui.map_view.set_zoom_level(0)
-        gui.zoom_button_sensitivity(gui.map_view, None, zoom_in, zoom_out)
+        app.zoom_button_sensitivity(gui.map_view, None, zoom_in, zoom_out)
         self.assertFalse(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
         app.zoom_in(None, gui.map_view)

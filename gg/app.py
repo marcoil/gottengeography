@@ -235,7 +235,7 @@ class GottenGeography:
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf')        # Initial GPX track point
         })
-        self.update_sensitivity()
+        gpx_sensitivity(self.tracks)
     
 ################################################################################
 # File data handling. These methods interact with files (loading, saving, etc)
@@ -299,6 +299,7 @@ class GottenGeography:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
         self.timezone = gpx.lookup_geoname()
+        gpx_sensitivity(self.tracks)
         self.set_timezone()
     
     def save_all_files(self, widget=None):
@@ -469,7 +470,7 @@ class GottenGeography:
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors)
-        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
+        self.map_view.connect("notify::zoom-level", zoom_button_sensitivity,
             get_obj("zoom_in_button"), get_obj("zoom_out_button"))
         self.map_view.connect("paint", paint_handler)
         
@@ -497,10 +498,11 @@ class GottenGeography:
             "preview": get_obj("preview_label").get_text()
         })
         
+        objs = [get_obj("save_button"), get_obj("revert_button"), get_obj("photos_with_buttons"), self.modified, self.selected, self.photo]
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
-        self.liststore.connect("row-changed", self.update_sensitivity)
+        self.liststore.connect("row-changed", modification_sensitivity, *objs)
         
         self.cell_string = Gtk.CellRendererText()
         self.cell_thumb  = Gtk.CellRendererPixbuf()
@@ -525,7 +527,7 @@ class GottenGeography:
         self.listsel = self.photos_view.get_selection()
         self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.listsel.connect("changed", self.update_all_marker_highlights)
-        self.listsel.connect("changed", self.update_sensitivity)
+        self.listsel.connect("changed", modification_sensitivity, *objs)
         self.listsel.connect("changed", selection_sensitivity,
             get_obj("apply_button"), get_obj("close_button"))
         
@@ -589,6 +591,7 @@ class GottenGeography:
         accel.connect(Gdk.keyval_from_name("q"),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
+        modification_sensitivity(*objs)
         self.clear_all_gpx()
         self.redraw_interface()
         self.display_actors(self.map_view)
@@ -624,24 +627,6 @@ class GottenGeography:
         if fraction is not None: self.progressbar.set_fraction(fraction)
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
-    
-    def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
-        """Ensure zoom buttons are only sensitive when they need to be."""
-        zoom = view.get_zoom_level()
-        zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
-        zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
-    
-    def update_sensitivity(self, *args):
-        """Ensure widgets are sensitive only when they need to be."""
-        get_obj("save_button").set_sensitive( len(self.modified) > 0)
-        get_obj("revert_button").set_sensitive(
-            len(self.modified & self.selected) > 0)
-        gpx_sensitive = len(self.tracks) > 0
-        for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
-            get_obj(widget).set_sensitive(gpx_sensitive)
-        left = get_obj("photos_with_buttons")
-        if len(self.photo) > 0: left.show()
-        else:                   left.hide()
     
     def main(self):
         """Animate the crosshair and begin user interaction."""
@@ -711,6 +696,30 @@ def search_bar_clicked(entry, icon_pos, event, view):
 ################################################################################
 # Misc. functions. TODO: organize these better.
 ################################################################################
+
+def modification_sensitivity(*args):
+    """Ensure save and revert buttons are sensitive only when they need to be.
+    
+    The signature of this method is weird because it's the handler for two
+    different signals that pass a different number of irrelevant arguments.
+    """
+    save, revert, left, modified, selected, photo = args[-6:len(args)]
+    save.set_sensitive(  len(modified) > 0)
+    revert.set_sensitive(len(modified & selected) > 0)
+    if len(photo) > 0: left.show()
+    else:              left.hide()
+
+def zoom_button_sensitivity(view, signal, zoom_in, zoom_out):
+    """Ensure zoom buttons are only sensitive when they need to be."""
+    zoom = view.get_zoom_level()
+    zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
+    zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
+
+def gpx_sensitivity(tracks):
+    """Control the sensitivity of GPX-related widgets."""
+    gpx_sensitive = len(tracks) > 0
+    for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
+        get_obj(widget).set_sensitive(gpx_sensitive)
 
 def selection_sensitivity(selection, apply_button, close_button):
     """Control the sensitivity of Apply and Close buttons."""
