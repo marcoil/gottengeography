@@ -263,8 +263,7 @@ class GottenGeography:
         if len(gpx.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
-        gpx.lookup_geoname()
-        self.timezone = gpx.timezone
+        self.timezone = gpx.lookup_geoname()
         self.set_timezone()
     
     def save_all_files(self, widget=None):

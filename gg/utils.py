@@ -129,7 +129,7 @@ class Coordinates():
             return
         key = "%.2f,%.2f" % (self.latitude, self.longitude)
         if key in self.geodata:
-            self.set_geodata(self.geodata[key])
+            return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(get_file("cities.txt")) as cities:
@@ -143,7 +143,7 @@ class Coordinates():
                     dist = delta
                     near = [name, state, country, tz]
         self.geodata[key] = near
-        self.set_geodata(near)
+        return self.set_geodata(near)
     
     def set_geodata(self, data):
         """Apply geodata to internal attributes."""
@@ -151,6 +151,7 @@ class Coordinates():
         self.provincestate = get_state(self.countrycode, state)
         self.countryname   = get_country(self.countrycode)
         self.timezone      = tz.strip()
+        return self.timezone
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
