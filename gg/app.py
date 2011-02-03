@@ -118,7 +118,7 @@ class GottenGeography:
             except IOError:
                 invalid_files.append(basename(name))
         if len(invalid_files) > 0:
-            status_message(_("Could not open: ") + format_list(invalid_files))
+            self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.update_all_marker_highlights(self.listsel)
     
@@ -154,7 +154,7 @@ class GottenGeography:
         start_time   = clock()
         
         gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
-        status_message(_("%d points loaded in %.2fs.") %
+        self.status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
         
         self.tracks.update(gpx.tracks)
@@ -198,7 +198,7 @@ class GottenGeography:
             try:
                 photo.write()
             except Exception as inst:
-                status_message(str(inst))
+                self.status_message(str(inst))
             else:
                 self.modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,
@@ -271,6 +271,11 @@ class GottenGeography:
             white.set_size(stage_width, label.get_height() + 10)
             label.set_position((stage_width - label.get_width()) / 2, 5)
             mlink.set_markup(maps_link(lat, lon))
+    
+    def toggle_selected_photos(self, button, selection):
+        """Toggle the selection of photos."""
+        if button.get_active(): selection.select_all()
+        else:                   selection.unselect_all()
     
     def update_all_marker_highlights(self, sel):
         """Ensure only the selected markers are highlighted."""
@@ -490,6 +495,7 @@ class GottenGeography:
         self.map_view.connect("paint", paint_handler)
         
         self.progressbar = get_obj("progressbar")
+        self.status      = get_obj("status")
         
         self.strings = ReadableDictionary({
             "quit":    get_obj("quit").get_property('secondary-text'),
@@ -576,7 +582,7 @@ class GottenGeography:
             "about_button":      [self.about_dialog, get_obj("about")],
             "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
-            "select_all_button": [toggle_selected_photos, self.listsel]
+            "select_all_button": [self.toggle_selected_photos, self.listsel]
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect("clicked", *handler)
@@ -627,6 +633,10 @@ class GottenGeography:
         if fraction is not None: self.progressbar.set_fraction(fraction)
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
+    
+    def status_message(self, message):
+        """Display a message on the GtkStatusBar."""
+        self.status.push(self.status.get_context_id("msg"), message)
     
     def main(self):
         """Animate the crosshair and begin user interaction."""
@@ -691,18 +701,4 @@ def zoom_in(button, view):
 def zoom_out(button, view):
     """Zoom the map out by one level."""
     view.zoom_out()
-
-################################################################################
-# Misc. functions. TODO: organize these better.
-################################################################################
-
-def toggle_selected_photos(button, selection):
-    """Toggle the selection of photos."""
-    if button.get_active(): selection.select_all()
-    else:                   selection.unselect_all()
-
-def status_message(message):
-    """Display a message on the GtkStatusBar."""
-    status = get_obj("status")
-    status.push(status.get_context_id("msg"), message)
 
