@@ -187,7 +187,7 @@ class GPXLoader(Coordinates):
     
     def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
-        self.polygon  = None
+        self.append   = None
         self.add_poly = add_polygon
         self.pulse    = callback
         self.clock    = clock()
@@ -243,7 +243,7 @@ class GPXLoader(Coordinates):
         self.state[name] = ""
         self.state.update(attributes)
         if name == "trkseg":
-            self.polygon = self.add_poly()
+            self.append = self.add_poly()
     
     def element_data(self, data):
         """Expat CharacterDataHandler.
@@ -286,7 +286,7 @@ class GPXLoader(Coordinates):
             return
         self.tracks[timestamp] = {
             'elevation': float(self.state.get('ele', 0.0)),
-            'point':     self.polygon.append_point(lat, lon)
+            'point':     self.append(lat, lon)
         }
         
         self.state.clear()

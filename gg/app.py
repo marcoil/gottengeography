@@ -384,7 +384,7 @@ class GottenGeography:
             color if len(self.polygons) % 2 else color.lighten().lighten())
         polygon.show()
         self.map_view.add_polygon(polygon)
-        return polygon
+        return polygon.append_point
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
