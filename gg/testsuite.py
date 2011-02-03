@@ -259,9 +259,10 @@ S 10.00000, W 10.00000
             r'href="http://maps.google.com'
         )
         
-        gui.display_actors()
+        mlink = get_obj("maps_link")
+        gui.display_actors(gui.map_view, None, mlink, *gui.actors.values())
         self.assertRegexpMatches(
-            get_obj("maps_link").get_label(),
+            mlink.get_label(),
             r'href="http://maps.google.com'
         )
     
