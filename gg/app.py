@@ -526,6 +526,8 @@ class GottenGeography:
         self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.listsel.connect("changed", self.update_all_marker_highlights)
         self.listsel.connect("changed", self.update_sensitivity)
+        self.listsel.connect("changed", selection_sensitivity,
+            get_obj("apply_button"), get_obj("close_button"))
         
         get_obj("photoscroller").add(self.photos_view)
         get_obj("search_and_map").pack_start(champlain, True, True, 0)
@@ -631,8 +633,6 @@ class GottenGeography:
     
     def update_sensitivity(self, *args):
         """Ensure widgets are sensitive only when they need to be."""
-        get_obj("apply_button").set_sensitive(len(self.selected) > 0)
-        get_obj("close_button").set_sensitive(len(self.selected) > 0)
         get_obj("save_button").set_sensitive( len(self.modified) > 0)
         get_obj("revert_button").set_sensitive(
             len(self.modified & self.selected) > 0)
@@ -712,6 +712,12 @@ def search_bar_clicked(entry, icon_pos, event, view):
 # Misc. functions. TODO: organize these better.
 ################################################################################
 
+def selection_sensitivity(selection, apply_button, close_button):
+    """Control the sensitivity of Apply and Close buttons."""
+    sensitive = selection.count_selected_rows() > 0
+    apply_button.set_sensitive(sensitive)
+    close_button.set_sensitive(sensitive)
+    
 def paint_handler(map_view):
     """Force the map to redraw.
     
