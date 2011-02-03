@@ -14,20 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import GdkPixbuf, GObject
 from xml.parsers.expat import ParserCreate, ExpatError
-from time import strftime, mktime, localtime, clock
+from gi.repository import GdkPixbuf, GObject
 from re import sub, compile as re_compile
 from pyexiv2 import ImageMetadata
-from gettext import gettext as _
-from os.path import basename
+from time import mktime, clock
 from calendar import timegm
 from os import stat
 
 from territories import get_state, get_country
+from utils import ReadableDictionary, Coordinates
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from utils import valid_coords, format_coords, iptc_keys, format_list
-from utils import ReadableDictionary, Coordinates
 
 gps = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
 
@@ -144,39 +142,6 @@ class Photograph(ReadableDictionary, Coordinates):
                 area[1] = min(area[1], lon)
                 area[2] = max(area[2], lat)
                 area[3] = max(area[3], lon)
-    
-    def pretty_time(self):
-        """Convert epoch seconds to a human-readable date."""
-        if type(self.timestamp) is int:
-            return strftime("%Y-%m-%d %X", localtime(self.timestamp))
-    
-    def pretty_coords(self):
-        """Add cardinal directions to decimal coordinates."""
-        return format_coords(self.latitude, self.longitude) \
-            if self.valid_coords() else _("Not geotagged")
-    
-    def pretty_geoname(self):
-        """Display city, state, and country, if present."""
-        name = format_list([self.City, self.ProvinceState, self.CountryName])
-        return sub(", ", ",\n", name) if len(name) > 35 else name
-    
-    def pretty_elevation(self):
-        """Convert elevation into a human readable format."""
-        if type(self.altitude) in (float, int):
-            return "%.1f%s" % (abs(self.altitude), _("m above sea level")
-                        if self.altitude >= 0 else _("m below sea level"))
-    
-    def short_summary(self):
-        """Plaintext summary of photo metadata."""
-        return format_list([self.pretty_time(), self.pretty_coords(),
-            self.pretty_geoname(), self.pretty_elevation()], "\n")
-    
-    def long_summary(self):
-        """Longer summary with Pango markup."""
-        return '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'size="larger"', basename(self.filename),
-            'style="italic" size="smaller"', self.short_summary()
-        )
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
@@ -187,6 +152,7 @@ class GPXLoader(Coordinates):
     
     def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
+        self.filename = filename
         self.append   = None
         self.add_poly = add_polygon
         self.pulse    = callback

@@ -19,13 +19,14 @@ from __future__ import division
 from gi.repository import GConf
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
+from os.path import join, dirname, basename
 from math import acos, sin, cos, radians
-from os.path import join, dirname
+from time import strftime, localtime
 from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
-from re import match
+from re import match, sub
 
 from territories import get_state, get_country
 
@@ -110,8 +111,17 @@ class Coordinates():
     looked up by another instance of any subclass.
     """
     
+    provincestate = None
+    countrycode   = None
+    countryname   = None
+    city          = None
+    
+    filename  = ""
+    altitude  = None
     latitude  = None
     longitude = None
+    timestamp = None
+    timezone  = None
     geodata   = {}
     
     def valid_coords(self):
@@ -152,6 +162,40 @@ class Coordinates():
         self.countryname   = get_country(self.countrycode)
         self.timezone      = tz.strip()
         return self.timezone
+    
+    def pretty_time(self):
+        """Convert epoch seconds to a human-readable date."""
+        if type(self.timestamp) is int:
+            return strftime("%Y-%m-%d %X", localtime(self.timestamp))
+    
+    def pretty_coords(self):
+        """Add cardinal directions to decimal coordinates."""
+        return format_coords(self.latitude, self.longitude) \
+            if self.valid_coords() else _("Not geotagged")
+    
+    def pretty_geoname(self):
+        """Display city, state, and country, if present."""
+        name = format_list([self.city, self.provincestate, self.countryname])
+        return sub(", ", ",\n", name) if len(name) > 35 else name
+    
+    def pretty_elevation(self):
+        """Convert elevation into a human readable format."""
+        if type(self.altitude) in (float, int):
+            return "%.1f%s" % (abs(self.altitude), _("m above sea level")
+                        if self.altitude >= 0 else _("m below sea level"))
+    
+    def short_summary(self):
+        """Plaintext summary of photo metadata."""
+        return format_list([self.pretty_time(), self.pretty_coords(),
+            self.pretty_geoname(), self.pretty_elevation()], "\n")
+    
+    def long_summary(self):
+        """Longer summary with Pango markup."""
+        return '<span %s>%s</span>\n<span %s>%s</span>' % (
+            'size="larger"', basename(self.filename),
+            'style="italic" size="smaller"', self.short_summary()
+        )
+
 
 class ReadableDictionary:
     """Object that exposes it's internal namespace as a dictionary.
