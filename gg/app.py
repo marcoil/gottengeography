@@ -407,9 +407,8 @@ class GottenGeography:
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
-    def preferences_dialog(self, *args):
+    def preferences_dialog(self, button, region, cities):
         """Allow the user to configure this application."""
-        region, cities = get_obj("custom_timezone_combos").get_children()
         previous = ReadableDictionary({
             'method': gconf_get("timezone_method"),
             'region': region.get_active(),
@@ -543,6 +542,20 @@ class GottenGeography:
         
         self.return_to_last(get_obj("back_button"))
         
+        region_box = Gtk.ComboBoxText.new()
+        cities_box = Gtk.ComboBoxText.new()
+        tz_combos = get_obj("custom_timezone_combos")
+        tz_combos.pack_start(region_box, False, False, 10)
+        tz_combos.pack_start(cities_box, False, False, 10)
+        tz_combos.show_all()
+        for name in tz_regions:
+            region_box.append(name, name)
+        region_box.connect("changed", self.region_handler, cities_box)
+        cities_box.connect("changed", self.cities_handler, region_box)
+        timezone = gconf_get("timezone", [-1, -1])
+        region_box.set_active(timezone[0])
+        cities_box.set_active(timezone[1])
+        
         click_handlers = {
             "open_button":       [self.add_files_dialog],
             "save_button":       [self.save_all_files],
@@ -553,7 +566,7 @@ class GottenGeography:
             "zoom_in_button":    [zoom_in, self.map_view],
             "back_button":       [self.return_to_last],
             "about_button":      [self.about_dialog],
-            "pref_button":       [self.preferences_dialog],
+            "pref_button":       [self.preferences_dialog, region_box, cities_box],
             "apply_button":      [self.apply_selected_photos],
             "select_all_button": [toggle_selected_photos, self.listsel]
         }
@@ -588,20 +601,6 @@ class GottenGeography:
         self.colorpicker.connect("color-changed", track_color_changed, self.polygons)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
-        
-        region_box = Gtk.ComboBoxText.new()
-        cities_box = Gtk.ComboBoxText.new()
-        tz_combos = get_obj("custom_timezone_combos")
-        tz_combos.pack_start(region_box, False, False, 10)
-        tz_combos.pack_start(cities_box, False, False, 10)
-        tz_combos.show_all()
-        for name in tz_regions:
-            region_box.append(name, name)
-        region_box.connect("changed", self.region_handler, cities_box)
-        cities_box.connect("changed", self.cities_handler, region_box)
-        timezone = gconf_get("timezone", [-1, -1])
-        region_box.set_active(timezone[0])
-        cities_box.set_active(timezone[1])
         
         for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
             radio = get_obj(option)
