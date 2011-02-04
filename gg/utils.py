@@ -19,7 +19,6 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
-from re import match, sub
 from gi.repository import GConf, Champlain, Clutter
 from math import acos, sin, cos, radians
 from time import strftime, localtime
@@ -27,6 +26,7 @@ from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
+from re import match
 
 from territories import get_state, get_country
 
@@ -258,8 +258,9 @@ class Coordinates():
     
     def pretty_geoname(self):
         """Display city, state, and country, if present."""
-        name = format_list([self.city, self.provincestate, self.countryname])
-        return sub(", ", ",\n", name) if len(name) > 35 else name
+        names = [self.city, self.provincestate, self.countryname]
+        length = sum(map(len, names))
+        return format_list(names, ',\n' if length > 35 else ', ')
     
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""
