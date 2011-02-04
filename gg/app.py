@@ -93,9 +93,13 @@ class NavigationController:
     
     def __init__(self, view):
         """Start the map at the previous location, and connect signals."""
-        self.map_view    = view
-        self.back_button = get_obj("back_button")
+        self.map_view        = view
+        self.back_button     = get_obj("back_button")
+        self.zoom_in_button  = get_obj("zoom_in_button")
+        self.zoom_out_button = get_obj("zoom_out_button")
         self.back_button.connect("clicked", self.go_back)
+        self.zoom_in_button.connect("clicked", self.zoom_in, view)
+        self.zoom_out_button.connect("clicked", self.zoom_out, view)
         accel = Gtk.AccelGroup()
         get_obj("main").add_accel_group(accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
@@ -107,6 +111,8 @@ class NavigationController:
         self.map_view.connect("notify::latitude", self.remember_location)
         self.map_view.connect("notify::longitude", self.remember_location)
         self.map_view.connect("notify::zoom-level", self.remember_location)
+        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
+            self.zoom_in_button, self.zoom_out_button)
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -146,6 +152,20 @@ class NavigationController:
             self.map_view.set_zoom_level(zoom)
         self.back_button.set_sensitive(len(history) > 0)
         gconf_set("history", history)
+    
+    def zoom_in(self, button, view):
+        """Zoom the map in by one level."""
+        view.zoom_in()
+    
+    def zoom_out(self, button, view):
+        """Zoom the map out by one level."""
+        view.zoom_out()
+    
+    def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
+        """Ensure zoom buttons are only sensitive when they need to be."""
+        zoom = view.get_zoom_level()
+        zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
+        zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
 
 
 class GottenGeography:
@@ -516,8 +536,6 @@ class GottenGeography:
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors,
                 get_obj("maps_link"), *self.actors.values())
-        self.map_view.connect("notify::zoom-level", zoom_button_sensitivity,
-            get_obj("zoom_in_button"), get_obj("zoom_out_button"))
         self.map_view.connect("paint", paint_handler)
         
         self.progressbar = get_obj("progressbar")
@@ -599,8 +617,6 @@ class GottenGeography:
             "clear_button":      [self.clear_all_gpx],
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
-            "zoom_out_button":   [zoom_out, self.map_view],
-            "zoom_in_button":    [zoom_in, self.map_view],
             "about_button":      [self.about_dialog, get_obj("about")],
             "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
@@ -702,22 +718,4 @@ def selection_sensitivity(selection, apply_button, close_button):
     sensitive = selection.count_selected_rows() > 0
     apply_button.set_sensitive(sensitive)
     close_button.set_sensitive(sensitive)
-
-################################################################################
-# Zoom zoom! These methods control the zoom behavior.
-################################################################################
-
-def zoom_button_sensitivity(view, signal, zoom_in, zoom_out):
-    """Ensure zoom buttons are only sensitive when they need to be."""
-    zoom = view.get_zoom_level()
-    zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
-    zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
-
-def zoom_in(button, view):
-    """Zoom the map in by one level."""
-    view.zoom_in()
-
-def zoom_out(button, view):
-    """Zoom the map out by one level."""
-    view.zoom_out()
 
