@@ -30,8 +30,7 @@ from re import match
 
 from territories import get_state, get_country
 
-iptc_keys = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
-gconf     = GConf.Client.get_default()
+gconf = GConf.Client.get_default()
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
@@ -280,30 +279,9 @@ class Coordinates():
             'style="italic" size="smaller"', self.short_summary()
         )
 
-class ReadableDictionary:
-    """Object that exposes it's internal namespace as a dictionary.
-    
-    This can for the most part be used just like a normal dictionary, except
-    you can access it's keys with readable.key as well as readable['key'].
-    """
-    def values(self):
-        return self.__dict__.values()
-    
-    def update(self, attributes):
-        self.__dict__.update(attributes)
-    
+
+class Struct:
+    """This is a generic object which can be assigned arbitrary attributes."""
     def __init__(self, attributes={}):
-        self.update(attributes)
-    
-    def __len__(self):
-        return len(self.__dict__)
-    
-    def __getitem__(self, key):
-        return self.__dict__[key]
-    
-    def __setitem__(self, key, value):
-        self.__dict__[key] = value
-    
-    def __delitem__(self, key):
-        del self.__dict__[key]
+        self.__dict__.update(attributes)
 

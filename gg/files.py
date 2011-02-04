@@ -22,10 +22,9 @@ from time import mktime, clock
 from calendar import timegm
 from os import stat
 
-from territories import get_state, get_country
-from utils import ReadableDictionary, Coordinates
+from utils import Coordinates, valid_coords, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
-from utils import valid_coords, format_coords, iptc_keys, format_list
+from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
 gps  = 'Exif.GPSInfo.GPS'

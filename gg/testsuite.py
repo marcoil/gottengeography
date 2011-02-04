@@ -27,10 +27,9 @@ from re import search
 
 import app
 from files import Photograph
-from utils import ReadableDictionary
-from utils import iptc_keys, get_file, gconf_get, gconf_set
-from utils import maps_link, valid_coords, float_to_rational
-from utils import decimal_to_dms, dms_to_decimal
+from utils import get_file, gconf_get, gconf_set
+from utils import maps_link, valid_coords, Struct
+from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
@@ -74,8 +73,8 @@ class GottenGeographyTester(TestCase):
         system("git checkout demo")
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.gpx), 0)
-        self.assertEqual(gui.metadata['alpha'], float('inf'))
-        self.assertEqual(gui.metadata['omega'], float('-inf'))
+        self.assertEqual(gui.metadata.alpha, float('inf'))
+        self.assertEqual(gui.metadata.omega, float('-inf'))
         
         # Load only the photos first
         for demo in listdir('./demo/'):
@@ -131,8 +130,8 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(gui.gpx[0].tracks), 374)
         self.assertEqual(gui.gpx[0].alpha, 1287259751)
         self.assertEqual(gui.gpx[0].omega, 1287260756)
-        self.assertEqual(gui.metadata['alpha'], 1287259751)
-        self.assertEqual(gui.metadata['omega'], 1287260756)
+        self.assertEqual(gui.metadata.alpha, 1287259751)
+        self.assertEqual(gui.metadata.omega, 1287260756)
         self.assertEqual(
             gui.gpx[0].area,
             [53.522495999999997, -113.453148,
@@ -212,7 +211,7 @@ class GottenGeographyTester(TestCase):
         environ["TZ"] = "America/Edmonton"
         tzset()
         
-        marker = ReadableDictionary()
+        marker = Struct()
         marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
         photo = Photograph(marker.get_text(), gui.modify_summary)
         photo.marker = marker
@@ -255,7 +254,7 @@ S 10.00000, W 10.00000
         )
         
         mlink = get_obj("maps_link")
-        gui.display_actors(gui.map_view, None, mlink, *gui.actors.values())
+        gui.display_actors(gui.map_view, None, mlink)
         self.assertRegexpMatches(
             mlink.get_label(),
             r'href="http://maps.google.com'
@@ -458,21 +457,21 @@ S 10.00000, W 10.00000
         seconds = get_obj("seconds")
         seconds.set_value(0)
         minutes.set_value(0)
-        self.assertEqual(gui.metadata['delta'], 0)
+        self.assertEqual(gui.metadata.delta, 0)
         minutes.set_value(1)
-        self.assertEqual(gui.metadata['delta'], 60)
+        self.assertEqual(gui.metadata.delta, 60)
         seconds.set_value(1)
-        self.assertEqual(gui.metadata['delta'], 61)
+        self.assertEqual(gui.metadata.delta, 61)
         
         seconds.set_value(59)
-        self.assertEqual(gui.metadata['delta'], 119)
+        self.assertEqual(gui.metadata.delta, 119)
         minutes.set_value(59)
-        self.assertEqual(gui.metadata['delta'], 3599)
+        self.assertEqual(gui.metadata.delta, 3599)
         
         seconds.set_value(60)
         self.assertEqual(seconds.get_value(), 0)
         self.assertEqual(minutes.get_value(), 60)
-        self.assertEqual(gui.metadata['delta'], 3600)
+        self.assertEqual(gui.metadata.delta, 3600)
     
     def test_search(self):
         """Make sure the search box functions."""

@@ -35,7 +35,7 @@ from os import environ
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from utils import ReadableDictionary
+from utils import Struct
 from files import Photograph, GPXLoader
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
@@ -354,7 +354,7 @@ class GottenGeography:
 # Map features section. These methods control map objects.
 ################################################################################
     
-    def display_actors(self, view, param, mlink, label, white, xhair):
+    def display_actors(self, view, param, mlink):
         """Position and update my custom ClutterActors.
         
         label:    Map center coordinates at top of map view.
@@ -367,6 +367,7 @@ class GottenGeography:
         always positioned and sized correctly, and displaying the correct
         coordinates.
         """
+        xhair = self.actors.crosshair
         stage_width  = view.get_width()
         stage_height = view.get_height()
         xhair.set_position(
@@ -375,6 +376,7 @@ class GottenGeography:
         )
         
         if param is not None:
+            label, white = self.actors.coords, self.actors.coords_bg
             lat   = view.get_property('latitude')
             lon   = view.get_property('longitude')
             label.set_markup(format_coords(lat, lon))
@@ -415,7 +417,7 @@ class GottenGeography:
         self.gpx       = []
         self.polygons  = []
         self.tracks    = {}
-        self.metadata  = ReadableDictionary({
+        self.metadata  = Struct({
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf')        # Initial GPX track point
@@ -531,7 +533,7 @@ class GottenGeography:
     
     def preferences_dialog(self, button, dialog, region, cities):
         """Allow the user to configure this application."""
-        previous = ReadableDictionary({
+        previous = Struct({
             'method': gconf_get("timezone_method"),
             'region': region.get_active(),
             'city':   cities.get_active(),
@@ -583,7 +585,7 @@ class GottenGeography:
         self.navigator = NavigationController(self.map_view)
         
         self.stage  = self.map_view.get_stage()
-        self.actors = ReadableDictionary()
+        self.actors = Struct()
         self.actors.coords_bg = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(255, 255, 255, 164))
         self.actors.coords_bg.set_position(0, 0)
@@ -594,19 +596,19 @@ class GottenGeography:
         self.actors.crosshair.set_property('has-border', True)
         self.actors.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
         self.actors.crosshair.set_border_width(1)
-        for actor in ["coords_bg", "coords"]:
-            self.actors[actor].set_parent(self.stage)
-            self.actors[actor].raise_top()
-            self.actors[actor].show()
+        for actor in [self.actors.coords_bg, self.actors.coords]:
+            actor.set_parent(self.stage)
+            actor.raise_top()
+            actor.show()
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors,
-                get_obj("maps_link"), *self.actors.values())
+                get_obj("maps_link"))
         self.map_view.connect("paint", paint_handler)
         
         self.progressbar = get_obj("progressbar")
         self.status      = get_obj("status")
         
-        self.strings = ReadableDictionary({
+        self.strings = Struct({
             "quit":    get_obj("quit").get_property('secondary-text'),
             "preview": get_obj("preview_label").get_text()
         })
@@ -733,7 +735,7 @@ class GottenGeography:
         xhair.set_parent(self.stage)
         xhair.raise_top()
         xhair.show()
-        display = [self.map_view, None, get_obj("maps_link")] + self.actors.values()
+        display = [self.map_view, None, get_obj("maps_link")]
         # This causes the crosshair to start off huge and invisible, and it
         # quickly shrinks, spins, and fades into existence.
         for i in range(500, 7, -1):
