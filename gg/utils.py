@@ -173,13 +173,12 @@ def match_func(completion, string, itr, model):
     if location and search('(^|\s)' + string, location, flags=IGNORECASE):
         return True
 
-def search_completed(entry, model, itr, view, remember_location):
+def search_completed(entry, model, itr, view):
     """Go to the selected location."""
-    remember_location()
     loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
     gconf_set("searched", [loc, lat, lon])
-    view.set_zoom_level(11)
     view.center_on(lat, lon)
+    view.set_zoom_level(11)
 
 def search_bar_clicked(entry, icon_pos, event, view):
     location, lat, lon = gconf_get("searched", [None, None, None])

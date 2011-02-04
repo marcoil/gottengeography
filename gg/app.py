@@ -87,29 +87,55 @@ def auto_timestamp_comparison(photo, points, metadata):
     photo.set_location(lat, lon, ele)
 
 
-class HistoryController:
-    """Controls the behavior of the 'back' button."""
-    default = [[34.5,15.8,2]]
+class NavigationController:
+    """Controls how users navigate the map."""
+    default = [[34.5,15.8,2]] # Default lat, lon, zoom for first run.
     
-    def __init__(self, map_view):
+    def __init__(self, view):
         """Start the map at the previous location, and connect signals."""
-        self.map_view    = map_view
+        self.map_view    = view
         self.back_button = get_obj("back_button")
-        self.back_button.connect("clicked", self.return_to_last)
-        self.return_to_last()
+        self.back_button.connect("clicked", self.go_back)
+        accel = Gtk.AccelGroup()
+        get_obj("main").add_accel_group(accel)
+        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
+            accel.connect(Gdk.keyval_from_name(key),
+                Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
+        self.go_back()
+        self.location = [view.get_property(x) for x in
+            ('latitude', 'longitude', 'zoom-level')]
+        self.map_view.connect("notify::latitude", self.remember_location)
+        self.map_view.connect("notify::longitude", self.remember_location)
+        self.map_view.connect("notify::zoom-level", self.remember_location)
     
-    def remember_location(self):
+    def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
+        """Move the map view by 5% of its length in the given direction."""
+        x   = self.map_view.get_width()  / 2
+        y   = self.map_view.get_height() / 2
+        key = Gdk.keyval_name(keyval)
+        lat = self.map_view.get_property('latitude')
+        lon = self.map_view.get_property('longitude')
+        lat2, lon2 = self.map_view.get_coords_at(
+            *[i * (0.9 if key in ("Up", "Left") else 1.1) for i in (x, y)])
+        if   key in ("Up", "Down"):    lat = lat2
+        elif key in ("Left", "Right"): lon = lon2
+        if valid_coords(lat, lon):
+            self.map_view.center_on(lat, lon)
+    
+    def remember_location(self, view, param):
         """Add the current location to the history stack."""
-        history = gconf_get("history", self.default)
-        history.append( [
-            self.map_view.get_property('latitude'),
-            self.map_view.get_property('longitude'),
-            self.map_view.get_zoom_level()
-        ] )
-        gconf_set("history", history[-30:len(history)])
-        self.back_button.set_sensitive(True)
+        location = [view.get_property(x) for x in
+            ('latitude', 'longitude', 'zoom-level')]
+        for x, y in zip(location, self.location):
+            if abs(x-y) > 0.25:
+                history = gconf_get("history", self.default)
+                if len(history) == 0 or history[-1] != location:
+                    history.append(self.location)
+                    gconf_set("history", history[-30:len(history)])
+                self.location = location
+                self.back_button.set_sensitive(True)
     
-    def return_to_last(self, *args):
+    def go_back(self, *args):
         """Return the map view to where the user last set it."""
         history = gconf_get("history", self.default)
         if len(history) < 1:
@@ -185,8 +211,7 @@ class GottenGeography:
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
-        self.history.remember_location()
-        start_time   = clock()
+        start_time = clock()
         
         gpx = GPXLoader(filename, self.gpx_pulse, self.create_polygon)
         self.status_message(_("%d points loaded in %.2fs.") %
@@ -241,24 +266,6 @@ class GottenGeography:
         self.progressbar.hide()
     
 ################################################################################
-# Map navigation section. These methods move and zoom the map around.
-################################################################################
-    
-    def move_map_view_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
-        """Move the map view by 5% of its length in the given direction."""
-        x   = self.map_view.get_width()  / 2
-        y   = self.map_view.get_height() / 2
-        key = Gdk.keyval_name(keyval)
-        lat = self.map_view.get_property('latitude')
-        lon = self.map_view.get_property('longitude')
-        lat2, lon2 = self.map_view.get_coords_at(
-            *[i * (0.9 if key in ("Up", "Left") else 1.1) for i in (x, y)])
-        if   key in ("Up", "Down"):    lat = lat2
-        elif key in ("Left", "Right"): lon = lon2
-        if valid_coords(lat, lon):
-            self.map_view.center_on(lat, lon)
-    
-################################################################################
 # Map features section. These methods control map objects.
 ################################################################################
     
@@ -310,7 +317,6 @@ class GottenGeography:
             for photo in self.selected:
                 photo.set_marker_highlight(area, False)
             if valid_coords(area[0], area[1]):
-                self.history.remember_location()
                 self.map_view.ensure_visible(*area + [False])
     
     def clear_all_gpx(self, widget=None):
@@ -456,7 +462,7 @@ class GottenGeography:
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.history.remember_location()
+        self.navigator.remember_location(self.map_view, None)
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
@@ -489,7 +495,7 @@ class GottenGeography:
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         
-        self.history = HistoryController(self.map_view)
+        self.navigator = NavigationController(self.map_view)
         
         self.stage  = self.map_view.get_stage()
         self.actors = ReadableDictionary()
@@ -565,7 +571,7 @@ class GottenGeography:
         search = Gtk.EntryCompletion.new()
         search.set_model(self.search_results)
         search.set_match_func(match_func, self.search_results)
-        search.connect("match-selected", search_completed, self.map_view, self.history.remember_location)
+        search.connect("match-selected", search_completed, self.map_view)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = get_obj("search")
@@ -608,9 +614,6 @@ class GottenGeography:
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
-        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            accel.connect(Gdk.keyval_from_name(key),
-                Gdk.ModifierType.MOD1_MASK, 0, self.move_map_view_by_arrow_keys)
         accel.connect(Gdk.keyval_from_name("q"),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         

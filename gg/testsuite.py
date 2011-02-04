@@ -326,12 +326,6 @@ S 10.00000, W 10.00000
     def test_map_navigation(self):
         """Ensure that it's possible to navigate the map."""
         
-        history_length = len(gconf_get("history"))
-        
-        self.assertEqual(history_length, len(gconf_get("history")))
-        gui.history.remember_location()
-        self.assertEqual(history_length + 1, len(gconf_get("history")))
-        
         coords = []
         
         coords.append([
@@ -347,8 +341,6 @@ S 10.00000, W 10.00000
         coords.append([lat, lon])
         zoom = gui.map_view.get_zoom_level()
         
-        gui.history.remember_location()
-        self.assertEqual(history_length + 2, len(gconf_get("history")))
         self.assertAlmostEqual(lat, gconf_get("history")[-1][0], 1)
         self.assertAlmostEqual(lon, gconf_get("history")[-1][1], 1)
         
@@ -376,55 +368,54 @@ S 10.00000, W 10.00000
         gui.map_view.set_zoom_level(gui.map_view.get_max_zoom_level()-1)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
+        zoom = gui.map_view.get_zoom_level()
         app.zoom_in(None, gui.map_view)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertFalse(zoom_in.get_sensitive())
         self.assertEqual(gui.map_view.get_max_zoom_level(),
             gui.map_view.get_zoom_level())
         
-        gui.history.return_to_last(get_obj("back_button"))
-        self.assertEqual(history_length + 1, len(gconf_get("history")))
+        gui.navigator.go_back(get_obj("back_button"))
         self.assertEqual(zoom, gui.map_view.get_zoom_level())
         
-        gui.history.return_to_last(get_obj("back_button"))
-        self.assertEqual(history_length, len(gconf_get("history")))
+        gui.navigator.go_back(get_obj("back_button"))
         
         gui.map_view.set_zoom_level(5)
         
         lat = gui.map_view.get_property('latitude')
         lon = gui.map_view.get_property('longitude')
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
         self.assertGreater(    lon, gui.map_view.get_property('longitude'))
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 0)
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
         self.assertLess(       lon, gui.map_view.get_property('longitude'))
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 0)
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
         
         lon = gui.map_view.get_property('longitude')
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
         self.assertLess(       lat, gui.map_view.get_property('latitude'))
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 0)
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
         self.assertGreater(    lat, gui.map_view.get_property('latitude'))
         
-        gui.move_map_view_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
         self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
         self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 0)
     
@@ -458,8 +449,6 @@ S 10.00000, W 10.00000
         lon = random_coord(180)
         
         gui.map_view.center_on(lat, lon)
-        
-        gui.history.remember_location()
         
         gconf_val = gconf_get("history")
         self.assertAlmostEqual(lat, gconf_val[-1][0], 4)
@@ -514,7 +503,7 @@ S 10.00000, W 10.00000
         self.assertEqual(len(results), 339)
         
         for itr, data in results:
-            app.search_completed(entry, gui.search_results, itr, gui.map_view, gui.history.remember_location)
+            app.search_completed(entry, gui.search_results, itr, gui.map_view)
             loc, lat, lon = data
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
