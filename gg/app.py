@@ -27,6 +27,7 @@ gettext.textdomain(APPNAME.lower())
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from time import tzset, sleep, clock
+from re import search, IGNORECASE
 from gettext import gettext as _
 from os.path import basename
 from os import environ
@@ -36,14 +37,15 @@ from os import environ
 
 from utils import ReadableDictionary
 from files import Photograph, GPXLoader
-from utils import LOCATION, LATITUDE, LONGITUDE
-from utils import PATH, SUMMARY, THUMB, TIMESTAMP
 from utils import format_coords, valid_coords, maps_link
 from utils import get_file, gconf_get, gconf_set, format_list
 from utils import paint_handler, track_color_changed, make_clutter_color
 from utils import add_marker, marker_clicked, marker_mouse_in, marker_mouse_out
-from utils import load_results, match_func, search_completed, search_bar_clicked
 from territories import tz_regions, get_timezone, get_state, get_country
+
+# Handy names for GtkListStore column numbers.
+PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
+LOCATION, LATITUDE, LONGITUDE = range(3)
 
 GtkClutter.init([])
 
@@ -166,6 +168,70 @@ class NavigationController:
         zoom = view.get_zoom_level()
         zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
+
+class SearchController:
+    """Controls the behavior for searching the map."""
+    def __init__(self, view):
+        """Make the search box and insert it into the window."""
+        self.results = Gtk.ListStore(GObject.TYPE_STRING,
+            GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
+        search = Gtk.EntryCompletion.new()
+        search.set_model(self.results)
+        search.set_match_func(self.match_func, self.results)
+        search.connect("match-selected", self.search_completed, view)
+        search.set_minimum_key_length(3)
+        search.set_text_column(0)
+        entry = get_obj("search")
+        entry.set_completion(search)
+        entry.connect("changed", self.load_results, self.results)
+        entry.connect("icon-release", self.search_bar_clicked, view)
+    
+    def load_results(self, entry, results, searched=set()):
+        """Load a few search results based on what's been typed.
+        
+        Requires at least three letters typed, and is careful not to load
+        duplicate results.
+        
+        The searched argument persists across calls to this method, and should
+        not be passed as an argument unless your intention is to trigger the
+        loading of duplicate results.
+        """
+        text = entry.get_text().lower()[0:3]
+        if len(text) == 3 and text not in searched:
+            searched.add(text)
+            with open(get_file("cities.txt")) as cities:
+                append = results.append
+                for line in cities:
+                    city, lat, lon, country, state, tz = line.split("\t")
+                    if search('(^|\s)' + text, city, flags=IGNORECASE):
+                        state    = get_state(country, state)
+                        country  = get_country(country)
+                        location = format_list([city, state, country])
+                        append([location, float(lat), float(lon)])
+    
+    def match_func(self, completion, string, itr, model):
+        """Determine whether or not to include a given search result.
+        
+        This matches the beginning of any word in the name of the city. For
+        example, a search for "spring" will contain "Palm Springs" as well as
+        "Springfield".
+        """
+        location = model.get_value(itr, LOCATION)
+        if location and search('(^|\s)' + string, location, flags=IGNORECASE):
+            return True
+    
+    def search_completed(self, entry, model, itr, view):
+        """Go to the selected location."""
+        loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
+        gconf_set("searched", [loc, lat, lon])
+        view.center_on(lat, lon)
+        view.set_zoom_level(11)
+    
+    def search_bar_clicked(self, entry, icon_pos, event, view):
+        location, lat, lon = gconf_get("searched", [None, None, None])
+        if valid_coords(lat, lon):
+            entry.set_text(location)
+            view.center_on(lat, lon)
 
 
 class GottenGeography:
@@ -584,18 +650,7 @@ class GottenGeography:
         get_obj("photoscroller").add(self.photos_view)
         get_obj("search_and_map").pack_start(champlain, True, True, 0)
         
-        self.search_results = Gtk.ListStore(GObject.TYPE_STRING,
-            GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
-        search = Gtk.EntryCompletion.new()
-        search.set_model(self.search_results)
-        search.set_match_func(match_func, self.search_results)
-        search.connect("match-selected", search_completed, self.map_view)
-        search.set_minimum_key_length(3)
-        search.set_text_column(0)
-        entry = get_obj("search")
-        entry.set_completion(search)
-        entry.connect("changed", load_results, self.search_results)
-        entry.connect("icon-release", search_bar_clicked, self.map_view)
+        self.search = SearchController(self.map_view)
         
         region_box = Gtk.ComboBoxText.new()
         cities_box = Gtk.ComboBoxText.new()

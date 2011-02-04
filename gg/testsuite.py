@@ -55,7 +55,7 @@ class GottenGeographyTester(TestCase):
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
-        self.assertEqual(gui.search_results.get_n_columns(), 3)
+        self.assertEqual(gui.search.results.get_n_columns(), 3)
         self.assertEqual(get_obj("main").get_size(), (800, 600))
         
         # Button sensitivity
@@ -486,24 +486,24 @@ S 10.00000, W 10.00000
         foreach = lambda model,path,itr,itrs: itrs.append(
             [itr.copy(), model.get(itr, app.LOCATION, app.LATITUDE, app.LONGITUDE)])
         
-        gui.search_results.foreach(foreach, results)
+        gui.search.results.foreach(foreach, results)
         self.assertEqual(len(results), 0)
         
         entry.set_text("jo")
-        gui.search_results.foreach(foreach, results)
+        gui.search.results.foreach(foreach, results)
         self.assertEqual(len(results), 0)
         
         entry.set_text("edm")
-        gui.search_results.foreach(foreach, results)
+        gui.search.results.foreach(foreach, results)
         self.assertEqual(len(results), 8)
         
         entry.set_text("calg")
         results = []
-        gui.search_results.foreach(foreach, results)
+        gui.search.results.foreach(foreach, results)
         self.assertEqual(len(results), 339)
         
         for itr, data in results:
-            app.search_completed(entry, gui.search_results, itr, gui.map_view)
+            gui.search.search_completed(entry, gui.search.results, itr, gui.map_view)
             loc, lat, lon = data
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)

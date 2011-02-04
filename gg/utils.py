@@ -19,7 +19,7 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
-from re import match, sub, search, IGNORECASE
+from re import match, sub
 from gi.repository import GConf, Champlain, Clutter
 from math import acos, sin, cos, radians
 from time import strftime, localtime
@@ -32,10 +32,6 @@ from territories import get_state, get_country
 
 iptc_keys = ['CountryCode', 'CountryName', 'ProvinceState', 'City']
 gconf     = GConf.Client.get_default()
-
-# Handy names for GtkListStore column numbers.
-PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
-LOCATION, LATITUDE, LONGITUDE = range(3)
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
@@ -138,53 +134,6 @@ def format_coords(lat, lon):
         _("N") if lat >= 0 else _("S"), abs(lat),
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
-
-################################################################################
-# Search functions. These methods control the behavior of the search box.
-################################################################################
-
-def load_results(entry, search_results, searched=set()):
-    """Load a few search results based on what's been typed.
-    
-    Requires at least three letters typed, and is careful not to load
-    duplicate results.
-    """
-    text = entry.get_text().lower()[0:3]
-    if len(text) == 3 and text not in searched:
-        searched.add(text)
-        with open(get_file("cities.txt")) as cities:
-            append = search_results.append
-            for line in cities:
-                city, lat, lon, country, state, tz = line.split("\t")
-                if search('(^|\s)' + text, city, flags=IGNORECASE):
-                    state    = get_state(country, state)
-                    country  = get_country(country)
-                    location = format_list([city, state, country])
-                    append([location, float(lat), float(lon)])
-
-def match_func(completion, string, itr, model):
-    """Determine whether or not to include a given search result.
-    
-    This matches the beginning of any word in the name of the city. For
-    example, a search for "spring" will contain "Palm Springs" as well as
-    "Springfield".
-    """
-    location = model.get_value(itr, LOCATION)
-    if location and search('(^|\s)' + string, location, flags=IGNORECASE):
-        return True
-
-def search_completed(entry, model, itr, view):
-    """Go to the selected location."""
-    loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
-    gconf_set("searched", [loc, lat, lon])
-    view.center_on(lat, lon)
-    view.set_zoom_level(11)
-
-def search_bar_clicked(entry, icon_pos, event, view):
-    location, lat, lon = gconf_get("searched", [None, None, None])
-    if valid_coords(lat, lon):
-        entry.set_text(location)
-        view.center_on(lat, lon)
 
 ################################################################################
 # Marker logic. These methods create and manipulate markers.
