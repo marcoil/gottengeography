@@ -140,8 +140,8 @@ class NavigationController:
                 if len(history) == 0 or history[-1] != location:
                     history.append(self.location)
                     gconf_set("history", history[-30:len(history)])
-                self.location = location
-                self.back_button.set_sensitive(True)
+                    self.back_button.set_sensitive(True)
+                    self.location = location
     
     def go_back(self, *args):
         """Return the map view to where the user last set it."""
@@ -168,6 +168,7 @@ class NavigationController:
         zoom = view.get_zoom_level()
         zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
+
 
 class SearchController:
     """Controls the behavior for searching the map."""
