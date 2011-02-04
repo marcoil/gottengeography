@@ -27,9 +27,11 @@ from utils import ReadableDictionary, Coordinates
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from utils import valid_coords, format_coords, iptc_keys, format_list
 
-gps = 'Exif.GPSInfo.GPS' # This is a prefix for common EXIF keys.
+# Prefixes for common EXIF keys.
+gps  = 'Exif.GPSInfo.GPS'
+iptc = 'Iptc.Application2.'
 
-class Photograph(ReadableDictionary, Coordinates):
+class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     
     def __init__(self, filename, callback, thumb_size=200):
@@ -44,10 +46,12 @@ class Photograph(ReadableDictionary, Coordinates):
     
     def read(self):
         """Load exif data from disk."""
-        for key in [ 'timestamp', 'altitude', 'latitude', 'longitude',
-        'timezone' ] + iptc_keys:
-            self[key] = None
-        self.manual = False
+        self.timestamp = None
+        self.altitude  = None
+        self.latitude  = None
+        self.longitude = None
+        self.timezone  = None
+        self.manual    = False
         try:
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -72,11 +76,6 @@ class Photograph(ReadableDictionary, Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
-        for iptc in iptc_keys:
-            try:
-                self[iptc.lower()] = self.exif['Iptc.Application2.' + iptc].values[0]
-            except KeyError:
-                pass
     
     def calculate_timestamp(self):
         """Determine the timestamp based on the currently selected timezone.
@@ -102,9 +101,6 @@ class Photograph(ReadableDictionary, Coordinates):
         self.exif[gps + 'Longitude']    = decimal_to_dms(self.longitude)
         self.exif[gps + 'LongitudeRef'] = "E" if self.longitude >= 0 else "W"
         self.exif[gps + 'MapDatum']     = 'WGS-84'
-        for iptc in iptc_keys:
-            if self[iptc.lower()] is not None:
-                self.exif['Iptc.Application2.' + iptc] = [self[iptc.lower()]]
         self.exif.write()
     
     def set_location(self, lat, lon, ele=None):
@@ -142,6 +138,24 @@ class Photograph(ReadableDictionary, Coordinates):
                 area[1] = min(area[1], lon)
                 area[2] = max(area[2], lat)
                 area[3] = max(area[3], lon)
+    
+    def set_geodata(self, data):
+        """Override Coordinates.set_geodata to apply directly into IPTC."""
+        city, state, countrycode, tz      = data
+        self.exif[iptc + 'City']          = [city]
+        self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state)]
+        self.exif[iptc + 'CountryName']   = [get_country(countrycode)]
+        self.exif[iptc + 'CountryCode']   = [countrycode]
+        self.timezone                     = tz.strip()
+    
+    def pretty_geoname(self):
+        """Override Coordinates.pretty_geoname to read from IPTC."""
+        names = []
+        for key in [ 'City', 'ProvinceState', 'CountryName' ]:
+            try: names.extend(self.exif[iptc + key].values)
+            except KeyError: pass
+        length = sum(map(len, names))
+        return format_list(names, ',\n' if length > 35 else ', ')
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.

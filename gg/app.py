@@ -281,11 +281,9 @@ class GottenGeography:
         """
         if filename not in self.photo:
             self.photo[filename] = Photograph(filename, self.modify_summary)
-            self.photo[filename].update( {
-                'iter':   self.liststore.append(),
-                'marker': add_marker(filename, self.map_photo_layer,
-                    self.listsel, self.photo, get_obj("select_all_button"))
-            } )
+            self.photo[filename].iter   = self.liststore.append()
+            self.photo[filename].marker = add_marker(filename, self.map_photo_layer,
+                self.listsel, self.photo, get_obj("select_all_button"))
         else:
             self.photo[filename].read()
         photo = self.photo[filename]
