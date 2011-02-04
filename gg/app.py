@@ -691,7 +691,6 @@ class GottenGeography:
         
         modification_sensitivity(*objs)
         self.clear_all_gpx()
-        self.redraw_interface()
         
         offset = gconf_get("clock_offset", [0, 0])
         for name in [ "seconds", "minutes" ]:
@@ -700,6 +699,8 @@ class GottenGeography:
             spinbutton.set_value(offset.pop())
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
+        
+        self.redraw_interface()
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")

@@ -30,8 +30,6 @@ from re import match
 
 from territories import get_state, get_country
 
-gconf = GConf.Client.get_default()
-
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
     return join(dirname(__file__), filename)
@@ -66,6 +64,8 @@ def make_clutter_color(colorpicker):
 ################################################################################
 # GConf methods. These methods interact with GConf.
 ################################################################################
+
+gconf = GConf.Client.get_default()
 
 def gconf_key(key):
     """Determine appropriate GConf key that is unique to this application."""
