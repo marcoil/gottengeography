@@ -111,7 +111,6 @@ class NavigationController:
             ('latitude', 'longitude', 'zoom-level')]
         view.connect("notify::latitude", self.remember_location)
         view.connect("notify::longitude", self.remember_location)
-        view.connect("notify::zoom-level", self.remember_location)
         view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             self.zoom_in_button, self.zoom_out_button)
     
@@ -133,7 +132,7 @@ class NavigationController:
         """Add the current location to the history stack."""
         location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
-        for x, y in zip(location, self.location):
+        for x, y in zip(location[0:2], self.location[0:2]):
             if abs(x-y) > 0.25:
                 history = gconf_get("history", self.default)
                 if len(history) == 0 or history[-1] != location:
@@ -141,6 +140,7 @@ class NavigationController:
                     gconf_set("history", history[-30:len(history)])
                     self.back_button.set_sensitive(True)
                     self.location = location
+                    break
     
     def go_back(self, *args):
         """Return the map view to where the user last set it."""
