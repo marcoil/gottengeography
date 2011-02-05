@@ -109,10 +109,10 @@ class NavigationController:
         self.go_back()
         self.location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
-        self.map_view.connect("notify::latitude", self.remember_location)
-        self.map_view.connect("notify::longitude", self.remember_location)
-        self.map_view.connect("notify::zoom-level", self.remember_location)
-        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
+        view.connect("notify::latitude", self.remember_location)
+        view.connect("notify::longitude", self.remember_location)
+        view.connect("notify::zoom-level", self.remember_location)
+        view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             self.zoom_in_button, self.zoom_out_button)
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
