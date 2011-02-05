@@ -122,21 +122,14 @@ class Photograph(Coordinates):
         else:
             self.marker.hide()
     
-    def set_marker_highlight(self, area, transparent):
+    def set_marker_highlight(self, highlight, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         if self.marker.get_property('visible'):
-            highlight = area is not None
             self.marker.set_property('opacity', 64 if transparent else 255)
             self.marker.set_scale(*[1.1 if highlight else 1] * 2)
             self.marker.set_highlighted(highlight)
             if highlight:
                 self.marker.raise_top()
-                lat = self.marker.get_latitude()
-                lon = self.marker.get_longitude()
-                area[0] = min(area[0], lat)
-                area[1] = min(area[1], lon)
-                area[2] = max(area[2], lat)
-                area[3] = max(area[3], lon)
     
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""

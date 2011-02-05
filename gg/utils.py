@@ -128,7 +128,7 @@ class MarkerController:
         self.select_all  = select_all
         self.photo       = photos
         self.selection   = selection
-        selection.connect("changed", self.update_highlights, selected, view)
+        selection.connect("changed", self.update_highlights, selected, view, photos.values)
     
     def add(self, label):
         """Create a new ChamplainMarker and add it to the map."""
@@ -143,22 +143,20 @@ class MarkerController:
         self.photo_layer.add_marker(marker)
         return marker
     
-    def update_highlights(self, selection, selected, view):
+    def update_highlights(self, selection, selected, view, photos):
         """Ensure only the selected markers are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
         selected.clear()
-        for photo in self.photo.values():
-            photo.set_marker_highlight(None, selection_exists)
+        for photo in photos():
+            photo.set_marker_highlight(False, selection_exists)
             # Maintain the 'selected' set() for easier iterating later.
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
         # Highlight and center the map view over the selected photos.
         if selection_exists:
-            area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
             for photo in selected:
-                photo.set_marker_highlight(area, False)
-            if valid_coords(area[0], area[1]):
-                view.ensure_visible(*area + [False])
+                photo.set_marker_highlight(True, False)
+            view.ensure_markers_visible([p.marker for p in selected], False)
     
     def clicked(self, marker, event, selection, select_all, photos):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
