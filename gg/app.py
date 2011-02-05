@@ -35,11 +35,10 @@ from os import environ
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from utils import Struct
 from files import Photograph, GPXLoader
 from utils import format_coords, valid_coords, maps_link
+from utils import Struct, paint_handler, make_clutter_color
 from utils import get_file, gconf_get, gconf_set, format_list
-from utils import paint_handler, track_color_changed, make_clutter_color
 from utils import add_marker, marker_clicked, marker_mouse_in, marker_mouse_out
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -229,10 +228,94 @@ class SearchController:
         view.set_zoom_level(11)
     
     def search_bar_clicked(self, entry, icon_pos, event, view):
+        """Go to the most recent location when the user clicks the jump icon."""
         location, lat, lon = gconf_get("searched", [None, None, None])
         if valid_coords(lat, lon):
             entry.set_text(location)
             view.center_on(lat, lon)
+
+
+class PreferencesController:
+    """Controls the behavior of the preferences dialog."""
+    def __init__(self, set_timezone):
+        self.set_timezone = set_timezone
+        self.pref_button  = get_obj("pref_button")
+        self.region       = Gtk.ComboBoxText.new()
+        self.cities       = Gtk.ComboBoxText.new()
+        tz_combos         = get_obj("custom_timezone_combos")
+        tz_combos.pack_start(self.region, False, False, 10)
+        tz_combos.pack_start(self.cities, False, False, 10)
+        tz_combos.show_all()
+        
+        for name in tz_regions:
+            self.region.append(name, name)
+        self.region.connect("changed", self.region_handler, self.cities)
+        self.cities.connect("changed", self.cities_handler, self.region)
+        timezone = gconf_get("timezone", [-1, -1])
+        self.region.set_active(timezone[0])
+        self.cities.set_active(timezone[1])
+        
+        self.pref_button.connect("clicked", self.preferences_dialog,
+            get_obj("preferences"), self.region, self.cities)
+        
+        colors = gconf_get("track_color", [32768, 0, 65535])
+        self.colorpicker = get_obj("colorselection")
+        self.colorpicker.connect("color-changed", self.track_color_changed, GottenGeography.polygons)
+        self.colorpicker.set_current_color(Gdk.Color(*colors))
+        self.colorpicker.set_previous_color(Gdk.Color(*colors))
+        
+        for option in ["system", "lookup", "custom"]:
+            option += "_timezone"
+            radio = get_obj(option)
+            radio.connect("clicked", self.radio_handler, tz_combos)
+            radio.set_name(option)
+        timezone_method = gconf_get("timezone_method", "system_timezone")
+        get_obj(timezone_method).clicked()
+    
+    def preferences_dialog(self, button, dialog, region, cities):
+        """Allow the user to configure this application."""
+        previous = Struct({
+            'method': gconf_get("timezone_method"),
+            'region': region.get_active(),
+            'city':   cities.get_active(),
+            'color':  self.colorpicker.get_current_color()
+        })
+        if not dialog.run():
+            self.colorpicker.set_current_color(previous.color)
+            self.colorpicker.set_previous_color(previous.color)
+            get_obj(previous.method).set_active(True)
+            region.set_active(previous.region)
+            cities.set_active(previous.city)
+        dialog.hide()
+    
+    def radio_handler(self, radio, combos):
+        """Reposition photos depending on which timezone the user selected."""
+        if radio.get_active():
+            gconf_set("timezone_method", radio.get_name())
+            combos.set_sensitive(radio.get_name() == "custom_timezone")
+            self.set_timezone()
+    
+    def region_handler(self, regions, cities):
+        """Populate the list of cities when a continent is selected."""
+        cities.remove_all()
+        for city in get_timezone(regions.get_active_id(), []):
+            cities.append(city, city)
+    
+    def cities_handler(self, cities, regions):
+        """When a city is selected, update the chosen timezone."""
+        gconf_set("timezone",
+            [regions.get_active(), cities.get_active()])
+        if cities.get_active_id() is not None:
+            self.set_timezone()
+    
+    def track_color_changed(self, selection, polygons):
+        """Update the color of any loaded GPX tracks."""
+        color = selection.get_current_color()
+        one   = make_clutter_color(color)
+        two   = one.lighten().lighten()
+        for i, polygon in enumerate(polygons):
+            polygon.set_stroke_color(two if i % 2 else one)
+        gconf_set("track_color", [color.red, color.green, color.blue])
 
 
 class GottenGeography:
@@ -247,6 +330,7 @@ class GottenGeography:
     modified = set()
     timezone = None
     polygons = []
+    tracks   = {}
     photo    = {}
     gpx      = []
     
@@ -414,10 +498,10 @@ class GottenGeography:
             #polygon.clear_points()
             #self.map_view.remove_polygon(polygon)
         
-        self.gpx       = []
-        self.polygons  = []
-        self.tracks    = {}
-        self.metadata  = Struct({
+        del self.gpx[:]
+        del self.polygons[:]
+        self.tracks.clear()
+        self.metadata = Struct({
             'delta': 0,                  # Time offset
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf')        # Initial GPX track point
@@ -427,26 +511,6 @@ class GottenGeography:
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
-    
-    def radio_handler(self, radio, combos):
-        """Reposition photos depending on which timezone the user selected."""
-        if radio.get_active():
-            gconf_set("timezone_method", radio.get_name())
-            combos.set_sensitive(radio.get_name() == "custom_timezone")
-            self.set_timezone()
-    
-    def region_handler(self, regions, cities):
-        """Populate the list of cities when a continent is selected."""
-        cities.remove_all()
-        for city in get_timezone(regions.get_active_id(), []):
-            cities.append(city, city)
-    
-    def cities_handler(self, cities, regions):
-        """When a city is selected, update the chosen timezone."""
-        gconf_set("timezone",
-            [regions.get_active(), cities.get_active()])
-        if cities.get_active_id() is not None:
-            self.set_timezone()
     
     def set_timezone(self):
         """Set the timezone to the given zone and update all photos."""
@@ -499,7 +563,7 @@ class GottenGeography:
     
     def create_polygon(self):
         """Get a newly created Champlain.Polygon and decorate it."""
-        color = make_clutter_color(self.colorpicker)
+        color = make_clutter_color(self.prefs.colorpicker.get_current_color())
         polygon = Champlain.Polygon()
         self.polygons.append(polygon)
         polygon.set_stroke_width(5)
@@ -530,22 +594,6 @@ class GottenGeography:
         chooser.hide()
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
-    
-    def preferences_dialog(self, button, dialog, region, cities):
-        """Allow the user to configure this application."""
-        previous = Struct({
-            'method': gconf_get("timezone_method"),
-            'region': region.get_active(),
-            'city':   cities.get_active(),
-            'color':  self.colorpicker.get_current_color()
-        })
-        if not dialog.run():
-            self.colorpicker.set_current_color(previous.color)
-            self.colorpicker.set_previous_color(previous.color)
-            get_obj(previous.method).set_active(True)
-            region.set_active(previous.region)
-            cities.set_active(previous.city)
-        dialog.hide()
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
@@ -652,20 +700,7 @@ class GottenGeography:
         get_obj("search_and_map").pack_start(champlain, True, True, 0)
         
         self.search = SearchController(self.map_view)
-        
-        region_box = Gtk.ComboBoxText.new()
-        cities_box = Gtk.ComboBoxText.new()
-        tz_combos = get_obj("custom_timezone_combos")
-        tz_combos.pack_start(region_box, False, False, 10)
-        tz_combos.pack_start(cities_box, False, False, 10)
-        tz_combos.show_all()
-        for name in tz_regions:
-            region_box.append(name, name)
-        region_box.connect("changed", self.region_handler, cities_box)
-        cities_box.connect("changed", self.cities_handler, region_box)
-        timezone = gconf_get("timezone", [-1, -1])
-        region_box.set_active(timezone[0])
-        cities_box.set_active(timezone[1])
+        self.prefs  = PreferencesController(self.set_timezone)
         
         click_handlers = {
             "open_button":       [self.add_files_dialog, get_obj("open")],
@@ -674,7 +709,6 @@ class GottenGeography:
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
             "about_button":      [self.about_dialog, get_obj("about")],
-            "pref_button":       [self.preferences_dialog, get_obj("preferences"), region_box, cities_box],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
             "select_all_button": [self.toggle_selected_photos, self.listsel]
         }
@@ -701,19 +735,6 @@ class GottenGeography:
             get_obj("preview_label"), get_obj("preview_image"))
         
         self.redraw_interface()
-        
-        colors = gconf_get("track_color", [32768, 0, 65535])
-        self.colorpicker = get_obj("colorselection")
-        self.colorpicker.connect("color-changed", track_color_changed, self.polygons)
-        self.colorpicker.set_current_color(Gdk.Color(*colors))
-        self.colorpicker.set_previous_color(Gdk.Color(*colors))
-        
-        for option in ["system_timezone", "lookup_timezone", "custom_timezone"]:
-            radio = get_obj(option)
-            radio.connect("clicked", self.radio_handler, tz_combos)
-            radio.set_name(option)
-        timezone_method = gconf_get("timezone_method", "system_timezone")
-        get_obj(timezone_method).clicked()
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.

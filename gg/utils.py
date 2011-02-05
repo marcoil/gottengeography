@@ -46,18 +46,8 @@ def paint_handler(map_view):
 # Color methods. These methods create and modify colors.
 ################################################################################
 
-def track_color_changed(selection, polygons):
-    """Update the color of any loaded GPX tracks."""
-    color = selection.get_current_color()
-    one   = make_clutter_color(selection)
-    two   = one.lighten().lighten()
-    for i, polygon in enumerate(polygons):
-        polygon.set_stroke_color(two if i % 2 else one)
-    gconf_set("track_color", [color.red, color.green, color.blue])
-
-def make_clutter_color(colorpicker):
+def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
-    color = colorpicker.get_current_color()
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 

@@ -505,23 +505,23 @@ S 10.00000, W 10.00000
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
-        orig = gui.colorpicker.get_current_color()
+        orig = gui.prefs.colorpicker.get_current_color()
         
-        gui.colorpicker.set_current_color(Gdk.Color(0, 0, 0))
-        new = gui.colorpicker.get_current_color()
+        gui.prefs.colorpicker.set_current_color(Gdk.Color(0, 0, 0))
+        new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 0)
         self.assertEqual(new.green, 0)
         self.assertEqual(new.blue, 0)
         self.assertEqual(gconf_get("track_color"), [0, 0, 0])
         
-        gui.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
-        new = gui.colorpicker.get_current_color()
+        gui.prefs.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
+        new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 32768)
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
         self.assertEqual(gconf_get("track_color"), [32768, 32768, 32768])
         
-        gui.colorpicker.set_current_color(orig)
+        gui.prefs.colorpicker.set_current_color(orig)
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
