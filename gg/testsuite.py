@@ -335,11 +335,11 @@ S 10.00000, W 10.00000
         coords.append([lat, lon])
         zoom = gui.map_view.get_zoom_level()
         
-        self.assertAlmostEqual(lat, gconf_get("history")[-1][0], 1)
-        self.assertAlmostEqual(lon, gconf_get("history")[-1][1], 1)
+        self.assertAlmostEqual(coords[0][0], gconf_get("history")[-1][0], 1)
+        self.assertAlmostEqual(coords[0][1], gconf_get("history")[-1][1], 1)
         
-        lat = round(random_coord(90),  6)
-        lon = round(random_coord(180), 6)
+        lat = round(random_coord(80),  6)
+        lon = round(random_coord(170), 6)
         
         gui.map_view.center_on(lat, lon)
         
@@ -368,9 +368,6 @@ S 10.00000, W 10.00000
         self.assertFalse(zoom_in.get_sensitive())
         self.assertEqual(gui.map_view.get_max_zoom_level(),
             gui.map_view.get_zoom_level())
-        
-        gui.navigator.go_back(get_obj("back_button"))
-        self.assertEqual(zoom, gui.map_view.get_zoom_level())
         
         gui.navigator.go_back(get_obj("back_button"))
         
@@ -439,15 +436,8 @@ S 10.00000, W 10.00000
         gconf_set('history', [[50,-113,11]])
         self.assertEqual(gconf_get('history'), [[50,-113,11]])
         
-        lat = random_coord(90)
-        lon = random_coord(180)
-        
-        gui.map_view.center_on(lat, lon)
-        
-        gconf_val = gconf_get("history")
-        self.assertAlmostEqual(lat, gconf_val[-1][0], 4)
-        self.assertAlmostEqual(lon, gconf_val[-1][1], 4)
-        self.assertEqual(gui.map_view.get_zoom_level(), gconf_val[-1][2])
+        gconf_set('ran_testsuite', True)
+        self.assertTrue(gconf_get('ran_testsuite', False))
         
         gconf_set('history', history)
     
