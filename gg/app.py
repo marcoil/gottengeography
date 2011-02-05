@@ -133,13 +133,20 @@ class NavigationController:
             ('latitude', 'longitude', 'zoom-level')]
         for x, y in zip(location[0:2], self.location[0:2]):
             if abs(x-y) > 0.25:
-                history = gconf_get("history", self.default)
-                if len(history) == 0 or history[-1] != location:
+                history = gconf_get("history") or self.default
+                if history[-1] != location:
                     history.append(self.location)
                     gconf_set("history", history[-30:len(history)])
                     self.back_button.set_sensitive(True)
                     self.location = location
                     break
+    
+    def force_remember(self):
+        """Ignore threshholds, add current location to history stack."""
+        history = gconf_get("history") or self.default
+        history.append([self.map_view.get_property(x) for x in
+            ('latitude', 'longitude', 'zoom-level')])
+        gconf_set("history", history)
     
     def go_back(self, *args):
         """Return the map view to where the user last set it."""
@@ -576,7 +583,7 @@ class GottenGeography:
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.navigator.remember_location(self.map_view, None)
+        self.navigator.force_remember()
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
