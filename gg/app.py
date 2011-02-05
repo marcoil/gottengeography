@@ -37,9 +37,8 @@ from os import environ
 
 from files import Photograph, GPXLoader
 from utils import format_coords, valid_coords, maps_link
-from utils import Struct, paint_handler, make_clutter_color
 from utils import get_file, gconf_get, gconf_set, format_list
-from utils import add_marker, marker_clicked, marker_mouse_in, marker_mouse_out
+from utils import MarkerController, Struct, paint_handler, make_clutter_color
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
@@ -144,9 +143,7 @@ class NavigationController:
     
     def go_back(self, *args):
         """Return the map view to where the user last set it."""
-        history = gconf_get("history", self.default)
-        if len(history) < 1:
-            history = self.default
+        history = gconf_get("history") or self.default
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
             self.map_view.center_on(lat, lon)
@@ -352,7 +349,7 @@ class GottenGeography:
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
-        self.update_all_marker_highlights(self.listsel)
+        self.listsel.emit("changed")
     
     def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
@@ -367,8 +364,7 @@ class GottenGeography:
         if filename not in self.photo:
             self.photo[filename] = Photograph(filename, self.modify_summary)
             self.photo[filename].iter   = self.liststore.append()
-            self.photo[filename].marker = add_marker(filename, self.map_photo_layer,
-                self.listsel, self.photo, get_obj("select_all_button"))
+            self.photo[filename].marker = self.markers.add(filename)
         else:
             self.photo[filename].read()
         photo = self.photo[filename]
@@ -472,23 +468,6 @@ class GottenGeography:
         """Toggle the selection of photos."""
         if button.get_active(): selection.select_all()
         else:                   selection.unselect_all()
-    
-    def update_all_marker_highlights(self, sel):
-        """Ensure only the selected markers are highlighted."""
-        selection_exists = sel.count_selected_rows() > 0
-        self.selected.clear()
-        for photo in self.photo.values():
-            photo.set_marker_highlight(None, selection_exists)
-            # Maintain self.selected for easy iterating.
-            if sel.iter_is_selected(photo.iter):
-                self.selected.add(photo)
-        # Highlight and center the map view over the selected photos.
-        if selection_exists:
-            area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
-            for photo in self.selected:
-                photo.set_marker_highlight(area, False)
-            if valid_coords(area[0], area[1]):
-                self.map_view.ensure_visible(*area + [False])
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
@@ -691,16 +670,18 @@ class GottenGeography:
         
         self.listsel = self.photos_view.get_selection()
         self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.listsel.connect("changed", self.update_all_marker_highlights)
-        self.listsel.connect("changed", modification_sensitivity, *objs)
-        self.listsel.connect("changed", selection_sensitivity,
-            get_obj("apply_button"), get_obj("close_button"))
         
         get_obj("photoscroller").add(self.photos_view)
         get_obj("search_and_map").pack_start(champlain, True, True, 0)
         
-        self.search = SearchController(self.map_view)
-        self.prefs  = PreferencesController(self.set_timezone)
+        self.search  = SearchController(self.map_view)
+        self.prefs   = PreferencesController(self.set_timezone)
+        self.markers = MarkerController(self.map_photo_layer, self.listsel,
+            get_obj("select_all_button"), self.selected, self.photo, self.map_view)
+        
+        self.listsel.connect("changed", modification_sensitivity, *objs)
+        self.listsel.connect("changed", selection_sensitivity,
+            get_obj("apply_button"), get_obj("close_button"))
         
         click_handlers = {
             "open_button":       [self.add_files_dialog, get_obj("open")],

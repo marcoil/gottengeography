@@ -42,10 +42,6 @@ def paint_handler(map_view):
     """
     map_view.queue_redraw()
 
-################################################################################
-# Color methods. These methods create and modify colors.
-################################################################################
-
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
@@ -124,49 +120,70 @@ def format_coords(lat, lon):
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
 
-################################################################################
-# Marker logic. These methods create and manipulate markers.
-################################################################################
 
-def add_marker(label, photo_layer, selection, photos, select_all):
-    """Create a new ChamplainMarker and add it to the map."""
-    marker = Champlain.Marker()
-    marker.set_name(label)
-    marker.set_text(basename(label))
-    marker.set_property('reactive', True)
-    marker.connect("button-press-event", marker_clicked, selection, photos, select_all)
-    marker.connect("enter-event", marker_mouse_in)
-    marker.connect("leave-event", marker_mouse_out)
-    photo_layer.add_marker(marker)
-    return marker
-
-def marker_clicked(marker, event, selection, photos, select_all):
-    """When a ChamplainMarker is clicked, select it in the GtkListStore.
+class MarkerController:
+    """Control the behavior and creation of ChamplainMarkers."""
+    def __init__(self, photo_layer, selection, select_all, selected, photos, view):
+        self.photo_layer = photo_layer
+        self.select_all  = select_all
+        self.photo       = photos
+        self.selection   = selection
+        selection.connect("changed", self.update_highlights, selected, view)
     
-    The interface defined by this method is consistent with the behavior of
-    the GtkListStore itself in the sense that a normal click will select
-    just one item, but Ctrl+clicking allows you to select multiple.
-    """
-    photo = photos[marker.get_name()]
-    if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
-        if marker.get_highlighted(): selection.unselect_iter(photo.iter)
-        else:                        selection.select_iter(photo.iter)
-    else:
-        select_all.set_active(False)
-        selection.unselect_all()
-        selection.select_iter(photo.iter)
+    def add(self, label):
+        """Create a new ChamplainMarker and add it to the map."""
+        marker = Champlain.Marker()
+        marker.set_name(label)
+        marker.set_text(basename(label))
+        marker.set_property('reactive', True)
+        marker.connect("enter-event", self.mouse_in)
+        marker.connect("leave-event", self.mouse_out)
+        marker.connect("button-press-event", self.clicked, self.selection,
+            self.select_all, self.photo)
+        self.photo_layer.add_marker(marker)
+        return marker
+    
+    def update_highlights(self, selection, selected, view):
+        """Ensure only the selected markers are highlighted."""
+        selection_exists = selection.count_selected_rows() > 0
+        selected.clear()
+        for photo in self.photo.values():
+            photo.set_marker_highlight(None, selection_exists)
+            # Maintain the 'selected' set() for easier iterating later.
+            if selection.iter_is_selected(photo.iter):
+                selected.add(photo)
+        # Highlight and center the map view over the selected photos.
+        if selection_exists:
+            area = [ float('inf') ] * 2 + [ float('-inf') ] * 2
+            for photo in selected:
+                photo.set_marker_highlight(area, False)
+            if valid_coords(area[0], area[1]):
+                view.ensure_visible(*area + [False])
+    
+    def clicked(self, marker, event, selection, select_all, photos):
+        """When a ChamplainMarker is clicked, select it in the GtkListStore.
+        
+        The interface defined by this method is consistent with the behavior of
+        the GtkListStore itself in the sense that a normal click will select
+        just one item, but Ctrl+clicking allows you to select multiple.
+        """
+        photo = photos[marker.get_name()]
+        if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
+            if marker.get_highlighted(): selection.unselect_iter(photo.iter)
+            else:                        selection.select_iter(photo.iter)
+        else:
+            select_all.set_active(False)
+            selection.unselect_all()
+            selection.select_iter(photo.iter)
+    
+    def mouse_in(self, marker, event):
+        """Enlarge a hovered-over ChamplainMarker by 5%."""
+        marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
+    
+    def mouse_out(self, marker, event):
+        """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
+        marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
 
-def marker_mouse_in(marker, event):
-    """Enlarge a hovered-over ChamplainMarker by 5%."""
-    marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
-
-def marker_mouse_out(marker, event):
-    """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-    marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
-
-################################################################################
-# Superclasses. These classes are inherited by other classes in GottenGeography.
-################################################################################
 
 class Coordinates():
     """A generic object containing latitude and longitude coordinates.

@@ -147,12 +147,12 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.longitude)
             
             self.assertEqual(photo.marker.get_scale(), (1, 1))
-            app.marker_mouse_in(photo.marker, None)
+            gui.markers.mouse_in(photo.marker, None)
             self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
-            app.marker_mouse_out(photo.marker, None)
+            gui.markers.mouse_out(photo.marker, None)
             self.assertEqual(photo.marker.get_scale(), (1, 1))
             
-            app.marker_clicked(photo.marker, Clutter.Event(), gui.listsel, gui.photo, get_obj("select_all_button"))
+            photo.marker.emit("button-press-event", Clutter.Event())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
             self.assertTrue(get_obj("apply_button").get_sensitive())
@@ -419,7 +419,7 @@ S 10.00000, W 10.00000
         lat = random_coord(90)
         lon = random_coord(180)
         
-        marker = app.add_marker("foobar", gui.map_photo_layer, gui.listsel, gui.photo, get_obj("select_all_button"))
+        marker = gui.markers.add("foobar")
         marker.set_position(lat, lon)
         
         self.assertEqual(marker.get_latitude(), lat)
