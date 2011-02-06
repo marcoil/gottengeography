@@ -668,17 +668,13 @@ class GottenGeography:
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        photos_view = Gtk.TreeView(model=self.liststore)
-        photos_view.set_enable_search(False)
-        photos_view.set_reorderable(False)
-        photos_view.set_headers_visible(False)
-        photos_view.set_rubber_banding(True)
+        photos_view = get_obj("photos_view")
+        photos_view.set_model(self.liststore)
         photos_view.append_column(column)
         
         self.listsel = photos_view.get_selection()
         self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
         
-        get_obj("photoscroller").add(photos_view)
         get_obj("search_and_map").pack_start(champlain, True, True, 0)
         
         self.search  = SearchController(self.map_view)
