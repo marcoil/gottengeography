@@ -717,8 +717,6 @@ class GottenGeography:
             spinbutton.set_value(offset.pop())
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
-        
-        self.redraw_interface()
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
