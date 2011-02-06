@@ -148,14 +148,11 @@ class MarkerController:
         selection_exists = selection.count_selected_rows() > 0
         selected.clear()
         for photo in photos():
-            photo.set_marker_highlight(False, selection_exists)
             # Maintain the 'selected' set() for easier iterating later.
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
-        # Highlight and center the map view over the selected photos.
+            photo.set_marker_highlight(photo in selected, selection_exists)
         if selection_exists:
-            for photo in selected:
-                photo.set_marker_highlight(True, False)
             view.ensure_markers_visible([p.marker for p in selected], False)
     
     def clicked(self, marker, event, selection, select_all, photos):

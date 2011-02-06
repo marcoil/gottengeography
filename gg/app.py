@@ -181,7 +181,7 @@ class SearchController:
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.results)
-        search.set_match_func(self.match_func, self.results)
+        search.set_match_func(self.match_func, self.results.get_value)
         search.connect("match-selected", self.search_completed, view)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
@@ -213,14 +213,14 @@ class SearchController:
                         location = format_list([city, state, country])
                         append([location, float(lat), float(lon)])
     
-    def match_func(self, completion, string, itr, model):
+    def match_func(self, completion, string, itr, get):
         """Determine whether or not to include a given search result.
         
         This matches the beginning of any word in the name of the city. For
         example, a search for "spring" will contain "Palm Springs" as well as
         "Springfield".
         """
-        location = model.get_value(itr, LOCATION)
+        location = get(itr, LOCATION)
         if location and search('(^|\s)' + string, location, flags=IGNORECASE):
             return True
     

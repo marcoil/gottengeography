@@ -125,9 +125,10 @@ class Photograph(Coordinates):
     def set_marker_highlight(self, highlight, transparent):
         """Set the highlightedness of the given photo's ChamplainMarker."""
         if self.marker.get_property('visible'):
-            self.marker.set_property('opacity', 64 if transparent else 255)
             self.marker.set_scale(*[1.1 if highlight else 1] * 2)
             self.marker.set_highlighted(highlight)
+            self.marker.set_property('opacity',
+                64 if transparent and not highlight else 255)
             if highlight:
                 self.marker.raise_top()
     
