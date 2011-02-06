@@ -407,6 +407,7 @@ class GottenGeography:
             photo.set_location(
                 view.get_property('latitude'),
                 view.get_property('longitude'))
+        self.listsel.emit("changed")
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -420,6 +421,7 @@ class GottenGeography:
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
         get_obj("select_all_button").set_active(False)
+        self.listsel.emit("changed")
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -436,6 +438,7 @@ class GottenGeography:
                 self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
         self.progressbar.hide()
+        self.listsel.emit("changed")
     
 ################################################################################
 # Map features section. These methods control map objects.
@@ -651,7 +654,6 @@ class GottenGeography:
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
-        self.liststore.connect("row-changed", self.modification_sensitivity)
         
         cell_string = Gtk.CellRendererText()
         cell_thumb  = Gtk.CellRendererPixbuf()
@@ -721,13 +723,6 @@ class GottenGeography:
         gpx_sensitive = len(self.tracks) > 0
         for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
             get_obj(widget).set_sensitive(gpx_sensitive)
-    
-    def modification_sensitivity(self, model, path, itr):
-        """Respond to changes in the GtkListStore.
-        
-        The purpose of this is to trigger selection_sensitivity when photos
-        are modified, so that the save and revert buttons are set properly."""
-        self.listsel.emit("changed")
     
     def selection_sensitivity(self, selection, aply, close, save, revert, left):
         """Control the sensitivity of various widgets."""
