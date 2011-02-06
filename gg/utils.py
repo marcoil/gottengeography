@@ -152,8 +152,9 @@ class MarkerController:
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
             photo.set_marker_highlight(photo in selected, selection_exists)
-        if selection_exists:
-            view.ensure_markers_visible([p.marker for p in selected], False)
+        markers = [p.marker for p in selected if p.valid_coords()]
+        if markers:
+            view.ensure_markers_visible(markers, False)
     
     def clicked(self, marker, event, selection, select_all, photos):
         """When a ChamplainMarker is clicked, select it in the GtkListStore.
