@@ -135,10 +135,10 @@ class Photograph(Coordinates):
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
         city, state, countrycode, tz      = data
-        self.exif[iptc + 'City']          = [city]
-        self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state)]
-        self.exif[iptc + 'CountryName']   = [get_country(countrycode)]
-        self.exif[iptc + 'CountryCode']   = [countrycode]
+        self.exif[iptc + 'City']          = [city or ""]
+        self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state) or ""]
+        self.exif[iptc + 'CountryName']   = [get_country(countrycode) or ""]
+        self.exif[iptc + 'CountryCode']   = [countrycode or ""]
         self.timezone                     = tz.strip()
     
     def pretty_geoname(self):
