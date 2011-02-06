@@ -380,7 +380,7 @@ S 10.00000, W 10.00000
         self.assertEqual(gui.map_view.get_max_zoom_level(),
             gui.map_view.get_zoom_level())
         
-        gui.navigator.go_back(get_obj("back_button"))
+        gui.navigator.go_back(get_obj("back_button"), gui.map_view)
         
         gui.map_view.set_zoom_level(5)
         
