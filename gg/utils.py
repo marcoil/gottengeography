@@ -221,6 +221,7 @@ class Coordinates():
         """Search cities.txt for nearest city."""
         if not self.valid_coords():
             return
+        assert self.geodata is Coordinates.geodata
         key = "%.2f,%.2f" % (self.latitude, self.longitude)
         if key in self.geodata:
             return self.set_geodata(self.geodata[key])

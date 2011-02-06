@@ -478,6 +478,7 @@ class GottenGeography:
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
+        assert self.polygons is GottenGeography.polygons
         for polygon in self.polygons:
             polygon.hide()
             # Maybe some day...
