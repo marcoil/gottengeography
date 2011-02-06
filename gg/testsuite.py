@@ -42,6 +42,7 @@ class GottenGeographyTester(TestCase):
         environ["TZ"] = "America/Edmonton"
         tzset()
         self.history = gconf_get("history")
+        self.searched = gconf_get("searched")
         self.clock_offset = gconf_get("clock_offset")
         get_obj("system_timezone").clicked()
     
@@ -49,6 +50,7 @@ class GottenGeographyTester(TestCase):
         """Restore history."""
         system("git checkout demo")
         gconf_set("history", self.history)
+        gconf_set("searched", self.searched)
         gconf_set("clock_offset", self.clock_offset)
     
     def test_gtk_window(self):
