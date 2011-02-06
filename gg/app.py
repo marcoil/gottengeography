@@ -55,7 +55,12 @@ get_obj = builder.get_object
 # This function embodies almost the entirety of my application's logic.
 # The things that come after this method are just implementation details.
 def auto_timestamp_comparison(photo, points, metadata):
-    """Use GPX data to calculate photo coordinates and elevation."""
+    """Use GPX data to calculate photo coordinates and elevation.
+    
+    photo:    A Photograph object.
+    points:   A dictionary mapping epoch seconds to ChamplainPoints.
+    metadata: A Struct object defining clock offset and first/last points.
+    """
     if photo.manual or len(points) < 2:
         return
     
@@ -97,7 +102,7 @@ class NavigationController:
         self.back_button     = get_obj("back_button")
         self.zoom_in_button  = get_obj("zoom_in_button")
         self.zoom_out_button = get_obj("zoom_out_button")
-        self.back_button.connect("clicked", self.go_back)
+        self.back_button.connect("clicked", self.go_back, view)
         self.zoom_in_button.connect("clicked", self.zoom_in, view)
         self.zoom_out_button.connect("clicked", self.zoom_out, view)
         accel = Gtk.AccelGroup()
@@ -105,7 +110,7 @@ class NavigationController:
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
-        self.go_back()
+        self.go_back(self.back_button, view)
         self.location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
         view.connect("notify::latitude", self.remember_location)
@@ -133,29 +138,28 @@ class NavigationController:
             ('latitude', 'longitude', 'zoom-level')]
         for x, y in zip(location[0:2], self.location[0:2]):
             if abs(x-y) > 0.25:
-                history = gconf_get("history") or self.default
+                history = gconf_get("history") or self.default[:]
                 if history[-1] != location:
                     history.append(self.location)
                     gconf_set("history", history[-30:len(history)])
-                    self.back_button.set_sensitive(True)
                     self.location = location
                     break
     
     def force_remember(self):
         """Ignore threshholds, add current location to history stack."""
-        history = gconf_get("history") or self.default
+        history = gconf_get("history") or self.default[:]
         history.append([self.map_view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')])
         gconf_set("history", history)
     
-    def go_back(self, *args):
+    def go_back(self, button, view):
         """Return the map view to where the user last set it."""
-        history = gconf_get("history") or self.default
+        history = gconf_get("history") or self.default[:]
+        assert history is not self.default
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
-            self.map_view.center_on(lat, lon)
-            self.map_view.set_zoom_level(zoom)
-        self.back_button.set_sensitive(len(history) > 0)
+            view.center_on(lat, lon)
+            view.set_zoom_level(zoom)
         gconf_set("history", history)
     
     def zoom_in(self, button, view):
