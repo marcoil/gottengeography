@@ -83,29 +83,31 @@ class GottenGeographyTester(TestCase):
         treeiter = gui.liststore.get_iter_first()
         self.assertTrue(treeiter)
         
-        for filename in gui.photo:
-            self.assertFalse(filename in gui.modified)
-            self.assertFalse(filename in gui.selected)
+        for photo in gui.photo.values():
+            self.assertFalse(photo in gui.modified)
+            self.assertFalse(photo in gui.selected)
             
-            self.assertIsNone(gui.photo[filename].altitude)
-            self.assertIsNone(gui.photo[filename].latitude)
-            self.assertIsNone(gui.photo[filename].longitude)
-            self.assertFalse(gui.photo[filename].manual)
-            gui.photo[filename].manual = True
-            gui.photo[filename].latitude = 10.0
-            gui.photo[filename].altitude = 650
-            gui.photo[filename].latitude = 45.0
-            gui.photo[filename].read()
-            self.assertIsNone(gui.photo[filename].altitude)
-            self.assertIsNone(gui.photo[filename].latitude)
-            self.assertIsNone(gui.photo[filename].longitude)
-            self.assertFalse(gui.photo[filename].manual)
-            self.assertEqual(filename, gui.photo[filename].marker.get_name())
-            self.assertEqual(gui.photo[filename].timestamp,
-                gui.liststore.get_value(
-                    gui.photo[filename].iter, app.TIMESTAMP
-                )
-            )
+            photo.set_geodata(["Anytown", None, "US", "timezone"])
+            self.assertEqual(photo.pretty_geoname(), "Anytown, United States")
+            self.assertEqual(photo.timezone, "timezone")
+            
+            self.assertIsNone(photo.altitude)
+            self.assertIsNone(photo.latitude)
+            self.assertIsNone(photo.longitude)
+            self.assertFalse(photo.manual)
+            photo.manual = True
+            photo.latitude = 10.0
+            photo.altitude = 650
+            photo.latitude = 45.0
+            photo.read()
+            self.assertEqual(photo.pretty_geoname(), "")
+            self.assertIsNone(photo.altitude)
+            self.assertIsNone(photo.latitude)
+            self.assertIsNone(photo.longitude)
+            self.assertFalse(photo.manual)
+            self.assertEqual(photo.filename, photo.marker.get_name())
+            self.assertEqual(photo.timestamp,
+                gui.liststore.get_value(photo.iter, app.TIMESTAMP))
         
         select_all = get_obj("select_all_button")
         self.assertEqual(len(gui.selected), 0)

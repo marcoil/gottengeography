@@ -51,6 +51,12 @@ class Photograph(Coordinates):
         self.longitude = None
         self.timezone  = None
         self.manual    = False
+        for key in ('City', 'ProvinceState', 'CountryCode', 'CountryName'):
+            try:
+                del self.exif[iptc + key]
+            except KeyError:
+                pass
+        
         try:
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
