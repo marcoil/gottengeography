@@ -58,17 +58,19 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
         self.assertEqual(get_obj("main").get_size(), (800, 600))
+        self.assertEqual(gui.listsel.count_selected_rows(), 0)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
         system("git checkout demo")
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.gpx), 0)
+        self.assertEqual(len(gui.polygons), 0)
         self.assertEqual(gui.metadata.alpha, float('inf'))
         self.assertEqual(gui.metadata.omega, float('-inf'))
         
-        self.assertFalse(get_obj("save_button").get_sensitive())
-        self.assertFalse(get_obj("revert_button").get_sensitive())
+        for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
+            self.assertFalse(btn.get_sensitive())
         
         # Load only the photos first
         for demo in listdir('./demo/'):
@@ -117,11 +119,13 @@ class GottenGeographyTester(TestCase):
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.load_gpx_from_file(gpx_filename)
         self.assertTrue(get_obj("clear_button").get_sensitive())
+        gui.listsel.emit("changed")
         
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
         self.assertEqual(len(gui.gpx), 1)
         self.assertEqual(len(gui.gpx[0].tracks), 374)
+        self.assertEqual(len(gui.polygons), 1)
         self.assertEqual(gui.gpx[0].alpha, 1287259751)
         self.assertEqual(gui.gpx[0].omega, 1287260756)
         self.assertEqual(gui.metadata.alpha, 1287259751)
@@ -132,8 +136,10 @@ class GottenGeographyTester(TestCase):
              53.537399000000001, -113.443061]
         )
         
-        self.assertFalse(get_obj("apply_button").get_sensitive())
-        self.assertFalse(get_obj("close_button").get_sensitive())
+        for btn in [get_obj(name + "_button") for name in ("save",)]:
+            self.assertTrue(btn.get_sensitive())
+        for btn in [get_obj(name + "_button") for name in ("revert", "apply", "close")]:
+            self.assertFalse(btn.get_sensitive())
         for photo in gui.photo.values():
             self.assertTrue(photo in gui.modified)
             
@@ -147,12 +153,10 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(photo.marker.get_scale(), (1, 1))
             
             photo.marker.emit("button-press-event", Clutter.Event())
-            self.assertTrue(get_obj("save_button").get_sensitive())
-            self.assertTrue(get_obj("revert_button").get_sensitive())
+            for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
+                self.assertTrue(btn.get_sensitive())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
-            self.assertTrue(get_obj("apply_button").get_sensitive())
-            self.assertTrue(get_obj("close_button").get_sensitive())
             self.assertTrue(photo in gui.selected)
             self.assertEqual(len(gui.selected), 1)
             self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
@@ -175,14 +179,23 @@ class GottenGeographyTester(TestCase):
         gui.clear_all_gpx()
         self.assertEqual(len(gui.gpx), 0)
         self.assertEqual(len(gui.tracks), 0)
+        self.assertFalse(get_obj("clear_button").get_sensitive())
         
         gui.save_all_files()
         self.assertEqual(len(gui.modified), 0)
+        for btn in [get_obj(name + "_button") for name in ("save", "revert")]:
+            self.assertFalse(btn.get_sensitive())
         
         gui.listsel.select_all()
         self.assertEqual(len(gui.selected), 6)
+        for btn in [get_obj(name + "_button") for name in ("save", "revert")]:
+            self.assertFalse(btn.get_sensitive())
+        for btn in [get_obj(name + "_button") for name in ("apply", "close")]:
+            self.assertTrue(btn.get_sensitive())
         files = [photo.filename for photo in gui.selected]
         gui.close_selected_photos()
+        for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
+            self.assertFalse(btn.get_sensitive())
         self.assertEqual(len(gui.photo), 0)
         self.assertEqual(len(gui.modified), 0)
         self.assertEqual(len(gui.selected), 0)
