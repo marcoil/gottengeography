@@ -56,17 +56,6 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
         self.assertEqual(get_obj("main").get_size(), (800, 600))
-        
-        # Button sensitivity
-        self.assertFalse(get_obj("save_button").get_sensitive())
-        self.assertFalse(get_obj("revert_button").get_sensitive())
-        gui.selected.add(True)
-        gui.modified.add(True)
-        gui.tracks["herp"] = "derp"
-        app.modification_sensitivity(get_obj("save_button"), get_obj("revert_button"),
-            get_obj("photos_with_buttons"), gui.modified, gui.selected, gui.photo)
-        self.assertTrue(get_obj("save_button").get_sensitive())
-        self.assertTrue(get_obj("revert_button").get_sensitive())
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -75,6 +64,9 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(gui.gpx), 0)
         self.assertEqual(gui.metadata.alpha, float('inf'))
         self.assertEqual(gui.metadata.omega, float('-inf'))
+        
+        self.assertFalse(get_obj("save_button").get_sensitive())
+        self.assertFalse(get_obj("revert_button").get_sensitive())
         
         # Load only the photos first
         for demo in listdir('./demo/'):
@@ -153,6 +145,8 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(photo.marker.get_scale(), (1, 1))
             
             photo.marker.emit("button-press-event", Clutter.Event())
+            self.assertTrue(get_obj("save_button").get_sensitive())
+            self.assertTrue(get_obj("revert_button").get_sensitive())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
             self.assertTrue(get_obj("apply_button").get_sensitive())

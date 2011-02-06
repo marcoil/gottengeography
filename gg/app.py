@@ -397,7 +397,7 @@ class GottenGeography:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
         self.timezone = gpx.lookup_geoname()
-        gpx_sensitivity(self.tracks)
+        self.gpx_sensitivity()
         self.set_timezone()
     
     def apply_selected_photos(self, button, selected, view):
@@ -492,7 +492,7 @@ class GottenGeography:
             'omega': float('-inf'),      # Final GPX track point
             'alpha': float('inf')        # Initial GPX track point
         })
-        gpx_sensitivity(self.tracks)
+        self.gpx_sensitivity()
     
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
@@ -647,13 +647,10 @@ class GottenGeography:
             "preview": get_obj("preview_label").get_text()
         })
         
-        objs = [get_obj("save_button"), get_obj("revert_button"),
-            get_obj("photos_with_buttons"), self.modified, self.selected,
-            self.photo]
         self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
-        self.liststore.connect("row-changed", modification_sensitivity, *objs)
+        self.liststore.connect("row-changed", self.modification_sensitivity)
         
         cell_string = Gtk.CellRendererText()
         cell_thumb  = Gtk.CellRendererPixbuf()
@@ -682,9 +679,9 @@ class GottenGeography:
         self.markers = MarkerController(self.map_photo_layer, self.listsel,
             get_obj("select_all_button"), self.selected, self.photo, self.map_view)
         
-        self.listsel.connect("changed", modification_sensitivity, *objs)
-        self.listsel.connect("changed", selection_sensitivity,
-            get_obj("apply_button"), get_obj("close_button"))
+        self.listsel.connect("changed", self.selection_sensitivity,
+            *[get_obj(name) for name in ("apply_button", "close_button",
+                "save_button", "revert_button", "photos_with_buttons")])
         
         click_handlers = {
             "open_button":       [self.add_files_dialog, get_obj("open")],
@@ -707,7 +704,7 @@ class GottenGeography:
         accel.connect(Gdk.keyval_from_name("q"),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
-        modification_sensitivity(*objs)
+        self.listsel.emit("changed")
         self.clear_all_gpx()
         
         offset = gconf_get("clock_offset", [0, 0])
@@ -717,6 +714,31 @@ class GottenGeography:
             spinbutton.set_value(offset.pop())
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
+    
+    def gpx_sensitivity(self):
+        """Control the sensitivity of GPX-related widgets."""
+        gpx_sensitive = len(self.tracks) > 0
+        for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
+            get_obj(widget).set_sensitive(gpx_sensitive)
+    
+    def modification_sensitivity(self, model, path, itr):
+        """Respond to changes in the GtkListStore.
+        
+        The purpose of this is to trigger selection_sensitivity when photos
+        are modified, so that the save and revert buttons are set properly."""
+        self.listsel.emit("changed")
+    
+    def selection_sensitivity(self, selection, aply, close, save, revert, left):
+        """Control the sensitivity of various widgets."""
+        assert self.selected is GottenGeography.selected
+        assert self.modified is GottenGeography.modified
+        sensitive = selection.count_selected_rows() > 0
+        close.set_sensitive(sensitive)
+        aply.set_sensitive(sensitive)
+        save.set_sensitive(  len(self.modified) > 0)
+        revert.set_sensitive(len(self.modified & self.selected) > 0)
+        if len(self.photo) > 0: left.show()
+        else:                   left.hide()
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
@@ -750,32 +772,4 @@ class GottenGeography:
             self.redraw_interface()
             sleep(0.002)
         Gtk.main()
-
-################################################################################
-# Sensitivity. These methods ensure proper sensitivity of various widgets.
-################################################################################
-
-def modification_sensitivity(*args):
-    """Ensure save and revert buttons are sensitive only when they need to be.
-    
-    The signature of this method is weird because it's the handler for two
-    different signals that pass a different number of irrelevant arguments.
-    """
-    save, revert, left, modified, selected, photo = args[-6:len(args)]
-    save.set_sensitive(  len(modified) > 0)
-    revert.set_sensitive(len(modified & selected) > 0)
-    if len(photo) > 0: left.show()
-    else:              left.hide()
-
-def gpx_sensitivity(tracks):
-    """Control the sensitivity of GPX-related widgets."""
-    gpx_sensitive = len(tracks) > 0
-    for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
-        get_obj(widget).set_sensitive(gpx_sensitive)
-
-def selection_sensitivity(selection, apply_button, close_button):
-    """Control the sensitivity of Apply and Close buttons."""
-    sensitive = selection.count_selected_rows() > 0
-    apply_button.set_sensitive(sensitive)
-    close_button.set_sensitive(sensitive)
 
