@@ -210,7 +210,7 @@ class SearchController(CommonAttributes):
         entry = get_obj("search")
         entry.set_completion(search)
         entry.connect("changed", self.load_results, self.results)
-        entry.connect("icon-release", self.search_bar_clicked, self.map_view)
+        entry.connect("icon-release", self.search_bar_clicked)
     
     def load_results(self, entry, results, searched=set()):
         """Load a few search results based on what's been typed.
@@ -253,12 +253,9 @@ class SearchController(CommonAttributes):
         view.center_on(lat, lon)
         view.set_zoom_level(11)
     
-    def search_bar_clicked(self, entry, icon_pos, event, view):
+    def search_bar_clicked(self, entry, icon_pos, event):
         """Go to the most recent location when the user clicks the jump icon."""
-        location, lat, lon = gconf_get("searched", [None, None, None])
-        if valid_coords(lat, lon):
-            entry.set_text(location)
-            view.center_on(lat, lon)
+        entry.set_text("")
 
 
 class PreferencesController(CommonAttributes):
