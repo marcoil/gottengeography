@@ -321,7 +321,6 @@ class PreferencesController(CommonAttributes):
         if "TZ" in environ:
             del environ["TZ"]
         if   option == "lookup_timezone" and self.timezone is not None:
-            print "called with", timezone, "but using GPX", self.timezone
             environ["TZ"] = self.timezone
         elif option == "custom_timezone":
             region, cities = get_obj("custom_timezone_combos").get_children()
@@ -366,14 +365,13 @@ class PreferencesController(CommonAttributes):
 
 class MarkerController(CommonAttributes):
     """Control the behavior and creation of ChamplainMarkers."""
-    def __init__(self, photo_layer, selection):
-        assert isinstance(photo_layer, Champlain.Layer)
-        assert isinstance(selection, Gtk.TreeSelection)
-        self.photo_layer = photo_layer
+    def __init__(self):
+        self.selection   = get_obj("photos_view").get_selection()
         self.select_all  = get_obj("select_all_button")
-        self.selection   = selection
-        selection.connect("changed", self.update_highlights, self.map_view,
-            self.selected, self.photo.viewvalues())
+        self.photo_layer = Champlain.Layer()
+        self.map_view.add_layer(self.photo_layer)
+        self.selection.connect("changed", self.update_highlights,
+            self.map_view, self.selected, self.photo.viewvalues())
     
     def add(self, label):
         """Create a new ChamplainMarker and add it to the map."""
@@ -692,8 +690,6 @@ class GottenGeography(CommonAttributes):
 ################################################################################
     
     def __init__(self):
-        self.map_photo_layer = Champlain.Layer()
-        self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         
@@ -756,7 +752,7 @@ class GottenGeography(CommonAttributes):
         
         self.search  = SearchController()
         self.prefs   = PreferencesController()
-        self.markers = MarkerController(self.map_photo_layer, self.listsel)
+        self.markers = MarkerController()
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
