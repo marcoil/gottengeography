@@ -26,11 +26,12 @@ gettext.textdomain(APPNAME.lower())
 
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from os.path import basename, abspath
 from time import tzset, sleep, clock
 from re import search, IGNORECASE
 from gettext import gettext as _
-from os.path import basename
 from os import environ
+from sys import argv
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
@@ -352,7 +353,7 @@ class GottenGeography:
         """Attempt to load all of the specified files."""
         self.progressbar.show()
         invalid_files, total = [], len(files)
-        for i, name in enumerate(files, 1):
+        for i, name in enumerate(map(abspath, files), 1):
             self.redraw_interface(i / total, basename(name))
             try:
                 try:            self.load_img_from_file(name)
@@ -762,6 +763,11 @@ class GottenGeography:
     
     def main(self):
         """Animate the crosshair and begin user interaction."""
+        if argv[1:]:
+            self.open_files(argv[1:])
+            anim_start = 2
+        else:
+            anim_start = 400
         verti = self.actors.verti
         horiz = self.actors.horiz
         label = self.actors.coords
@@ -771,7 +777,7 @@ class GottenGeography:
             actor.raise_top()
             verti.show()
         display = [self.map_view, None, get_obj("maps_link")]
-        for i in xrange(400, -1, -1):
+        for i in xrange(anim_start, -1, -1):
             j = i + 2
             horiz.set_size(j * 10, j)
             verti.set_size(j, j * 10)
