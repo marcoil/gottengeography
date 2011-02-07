@@ -764,15 +764,16 @@ class GottenGeography:
         xhair.set_parent(self.stage)
         xhair.raise_top()
         xhair.show()
+        xhair.set_anchor_point_from_gravity(Clutter.Gravity.CENTER)
         display = [self.map_view, None, get_obj("maps_link")]
         # This causes the crosshair to start off huge and invisible, and it
         # quickly shrinks, spins, and fades into existence.
         for i in range(500, 7, -1):
             xhair.set_size(i, i)
-            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.CENTER)
-            xhair.set_property('opacity', int(259-(0.5*i)))
+            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.NORTH)
+            xhair.set_opacity(int(259-(0.5*i)))
             self.display_actors(*display)
             self.redraw_interface()
-            sleep(0.002)
+            sleep(0.003)
         Gtk.main()
 
