@@ -37,9 +37,9 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from files import Photograph, GPXLoader
-from utils import format_coords, valid_coords, maps_link
-from utils import get_file, gconf_get, gconf_set, format_list
-from utils import MarkerController, Struct, paint_handler, make_clutter_color
+from utils import get_file, gconf_get, gconf_set
+from utils import Struct, paint_handler, make_clutter_color
+from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
@@ -327,6 +327,69 @@ class PreferencesController:
         for i, polygon in enumerate(polygons):
             polygon.set_stroke_color(two if i % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
+
+
+class MarkerController:
+    """Control the behavior and creation of ChamplainMarkers."""
+    def __init__(self, photo_layer, selection, view):
+        assert isinstance(photo_layer, Champlain.Layer)
+        assert isinstance(selection, Gtk.TreeSelection)
+        assert isinstance(view, Champlain.View)
+        self.photo_layer = photo_layer
+        self.select_all  = get_obj("select_all_button")
+        self.selection   = selection
+        selection.connect("changed", self.update_highlights, view,
+            GottenGeography.selected, GottenGeography.photo.viewvalues())
+    
+    def add(self, label):
+        """Create a new ChamplainMarker and add it to the map."""
+        marker = Champlain.Marker()
+        marker.set_name(label)
+        marker.set_text(basename(label))
+        marker.set_property('reactive', True)
+        marker.connect("enter-event", self.mouse_in)
+        marker.connect("leave-event", self.mouse_out)
+        marker.connect("button-press-event", self.clicked, self.selection,
+            self.select_all, GottenGeography.photo)
+        self.photo_layer.add_marker(marker)
+        return marker
+    
+    def update_highlights(self, selection, view, selected, photos):
+        """Ensure only the selected markers are highlighted."""
+        selection_exists = selection.count_selected_rows() > 0
+        selected.clear()
+        for photo in photos:
+            # Maintain the 'selected' set() for easier iterating later.
+            if selection.iter_is_selected(photo.iter):
+                selected.add(photo)
+            photo.set_marker_highlight(photo in selected, selection_exists)
+        markers = [p.marker for p in selected if p.valid_coords()]
+        if markers:
+            view.ensure_markers_visible(markers, False)
+    
+    def clicked(self, marker, event, selection, select_all, photos):
+        """When a ChamplainMarker is clicked, select it in the GtkListStore.
+        
+        The interface defined by this method is consistent with the behavior of
+        the GtkListStore itself in the sense that a normal click will select
+        just one item, but Ctrl+clicking allows you to select multiple.
+        """
+        photo = photos[marker.get_name()]
+        if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
+            if marker.get_highlighted(): selection.unselect_iter(photo.iter)
+            else:                        selection.select_iter(photo.iter)
+        else:
+            select_all.set_active(False)
+            selection.unselect_all()
+            selection.select_iter(photo.iter)
+    
+    def mouse_in(self, marker, event):
+        """Enlarge a hovered-over ChamplainMarker by 5%."""
+        marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
+    
+    def mouse_out(self, marker, event):
+        """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
+        marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
 
 
 class GottenGeography:
@@ -690,7 +753,7 @@ class GottenGeography:
         self.search  = SearchController(self.map_view)
         self.prefs   = PreferencesController(self.set_timezone)
         self.markers = MarkerController(self.map_photo_layer, self.listsel,
-            get_obj("select_all_button"), self.selected, self.photo, self.map_view)
+            self.map_view)
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
