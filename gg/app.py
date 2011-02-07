@@ -93,32 +93,47 @@ def auto_timestamp_comparison(photo, points, metadata):
     photo.set_location(lat, lon, ele)
 
 
-class NavigationController:
+class CommonAttributes:
+    """Define attributes required by all Controller classes.
+    
+    This class is never instantiated, it is only inherited by classes that
+    need to manipulate the map, or the loaded photos.
+    """
+    champlain = GtkChamplain.Embed()
+    map_view  = champlain.get_view()
+    selected  = set()
+    modified  = set()
+    timezone  = None
+    polygons  = []
+    tracks    = {}
+    photo     = {}
+    gpx       = []
+
+
+class NavigationController(CommonAttributes):
     """Controls how users navigate the map."""
     default = [[34.5,15.8,2]] # Default lat, lon, zoom for first run.
     
-    def __init__(self, view):
+    def __init__(self):
         """Start the map at the previous location, and connect signals."""
-        assert isinstance(view, Champlain.View)
-        self.map_view        = view
-        self.back_button     = get_obj("back_button")
-        self.zoom_in_button  = get_obj("zoom_in_button")
-        self.zoom_out_button = get_obj("zoom_out_button")
-        self.back_button.connect("clicked", self.go_back, view)
-        self.zoom_in_button.connect("clicked", self.zoom_in, view)
-        self.zoom_out_button.connect("clicked", self.zoom_out, view)
+        back_button     = get_obj("back_button")
+        zoom_in_button  = get_obj("zoom_in_button")
+        zoom_out_button = get_obj("zoom_out_button")
+        zoom_out_button.connect("clicked", self.zoom_out, self.map_view)
+        zoom_in_button.connect("clicked", self.zoom_in, self.map_view)
+        back_button.connect("clicked", self.go_back, self.map_view)
+        back_button.emit("clicked")
         accel = Gtk.AccelGroup()
         get_obj("main").add_accel_group(accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
-        self.go_back(self.back_button, view)
-        self.location = [view.get_property(x) for x in
+        self.location = [self.map_view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
-        view.connect("notify::latitude", self.remember_location)
-        view.connect("notify::longitude", self.remember_location)
-        view.connect("notify::zoom-level", self.zoom_button_sensitivity,
-            self.zoom_in_button, self.zoom_out_button)
+        self.map_view.connect("notify::latitude", self.remember_location)
+        self.map_view.connect("notify::longitude", self.remember_location)
+        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
+            zoom_in_button, zoom_out_button)
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -179,23 +194,22 @@ class NavigationController:
         zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
 
 
-class SearchController:
+class SearchController(CommonAttributes):
     """Controls the behavior for searching the map."""
-    def __init__(self, view):
+    def __init__(self):
         """Make the search box and insert it into the window."""
-        assert isinstance(view, Champlain.View)
         self.results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.results)
         search.set_match_func(self.match_func, self.results.get_value)
-        search.connect("match-selected", self.search_completed, view)
+        search.connect("match-selected", self.search_completed, self.map_view)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
         entry = get_obj("search")
         entry.set_completion(search)
         entry.connect("changed", self.load_results, self.results)
-        entry.connect("icon-release", self.search_bar_clicked, view)
+        entry.connect("icon-release", self.search_bar_clicked, self.map_view)
     
     def load_results(self, entry, results, searched=set()):
         """Load a few search results based on what's been typed.
@@ -246,7 +260,7 @@ class SearchController:
             view.center_on(lat, lon)
 
 
-class PreferencesController:
+class PreferencesController(CommonAttributes):
     """Controls the behavior of the preferences dialog."""
     def __init__(self, set_timezone):
         self.set_timezone = set_timezone
@@ -271,7 +285,7 @@ class PreferencesController:
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
-        self.colorpicker.connect("color-changed", self.track_color_changed, GottenGeography.polygons)
+        self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
@@ -329,17 +343,16 @@ class PreferencesController:
         gconf_set("track_color", [color.red, color.green, color.blue])
 
 
-class MarkerController:
+class MarkerController(CommonAttributes):
     """Control the behavior and creation of ChamplainMarkers."""
-    def __init__(self, photo_layer, selection, view):
+    def __init__(self, photo_layer, selection):
         assert isinstance(photo_layer, Champlain.Layer)
         assert isinstance(selection, Gtk.TreeSelection)
-        assert isinstance(view, Champlain.View)
         self.photo_layer = photo_layer
         self.select_all  = get_obj("select_all_button")
         self.selection   = selection
-        selection.connect("changed", self.update_highlights, view,
-            GottenGeography.selected, GottenGeography.photo.viewvalues())
+        selection.connect("changed", self.update_highlights, self.map_view,
+            self.selected, self.photo.viewvalues())
     
     def add(self, label):
         """Create a new ChamplainMarker and add it to the map."""
@@ -350,7 +363,7 @@ class MarkerController:
         marker.connect("enter-event", self.mouse_in)
         marker.connect("leave-event", self.mouse_out)
         marker.connect("button-press-event", self.clicked, self.selection,
-            self.select_all, GottenGeography.photo)
+            self.select_all, self.photo)
         self.photo_layer.add_marker(marker)
         return marker
     
@@ -392,21 +405,13 @@ class MarkerController:
         marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
 
 
-class GottenGeography:
+class GottenGeography(CommonAttributes):
     """Provides a graphical interface to automagically geotag photos.
     
     Just load your photos, and load a GPX file, and GottenGeography will
     automatically cross-reference the timestamps on the photos to the timestamps
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
-    
-    selected = set()
-    modified = set()
-    timezone = None
-    polygons = []
-    tracks   = {}
-    photo    = {}
-    gpx      = []
     
 ################################################################################
 # File data handling. These methods interact with files (loading, saving, etc)
@@ -554,7 +559,7 @@ class GottenGeography:
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
-        assert self.polygons is GottenGeography.polygons
+        assert self.polygons is CommonAttributes.polygons
         for polygon in self.polygons:
             polygon.hide()
             # Maybe some day...
@@ -686,14 +691,12 @@ class GottenGeography:
 ################################################################################
     
     def __init__(self):
-        champlain            = GtkChamplain.Embed()
         self.map_photo_layer = Champlain.Layer()
-        self.map_view        = champlain.get_view()
         self.map_view.add_layer(self.map_photo_layer)
         self.map_view.set_property('show-scale', True)
         self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
         
-        self.navigator = NavigationController(self.map_view)
+        self.navigator = NavigationController()
         
         self.stage  = self.map_view.get_stage()
         self.actors = Struct()
@@ -748,12 +751,11 @@ class GottenGeography:
         self.listsel = photos_view.get_selection()
         self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
         
-        get_obj("search_and_map").pack_start(champlain, True, True, 0)
+        get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
-        self.search  = SearchController(self.map_view)
+        self.search  = SearchController()
         self.prefs   = PreferencesController(self.set_timezone)
-        self.markers = MarkerController(self.map_photo_layer, self.listsel,
-            self.map_view)
+        self.markers = MarkerController(self.map_photo_layer, self.listsel)
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
@@ -799,8 +801,8 @@ class GottenGeography:
     
     def selection_sensitivity(self, selection, aply, close, save, revert, left):
         """Control the sensitivity of various widgets."""
-        assert self.selected is GottenGeography.selected
-        assert self.modified is GottenGeography.modified
+        assert self.selected is CommonAttributes.selected
+        assert self.modified is CommonAttributes.modified
         sensitive = selection.count_selected_rows() > 0
         close.set_sensitive(sensitive)
         aply.set_sensitive(sensitive)
