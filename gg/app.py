@@ -101,6 +101,7 @@ class CommonAttributes:
     """
     champlain = GtkChamplain.Embed()
     map_view  = champlain.get_view()
+    metadata  = Struct()
     selected  = set()
     modified  = set()
     timezone  = None
@@ -262,8 +263,7 @@ class SearchController(CommonAttributes):
 
 class PreferencesController(CommonAttributes):
     """Controls the behavior of the preferences dialog."""
-    def __init__(self, set_timezone):
-        self.set_timezone = set_timezone
+    def __init__(self):
         self.pref_button  = get_obj("pref_button")
         self.region       = Gtk.ComboBoxText.new()
         self.cities       = Gtk.ComboBoxText.new()
@@ -312,6 +312,27 @@ class PreferencesController(CommonAttributes):
             region.set_active(previous.region)
             cities.set_active(previous.city)
         dialog.hide()
+    
+    def set_timezone(self, timezone=None):
+        """Set the timezone to the given zone and update all photos."""
+        option = gconf_get("timezone_method")
+        if timezone is not None:
+            self.timezone = timezone
+        if "TZ" in environ:
+            del environ["TZ"]
+        if   option == "lookup_timezone" and self.timezone is not None:
+            print "called with", timezone, "but using GPX", self.timezone
+            environ["TZ"] = self.timezone
+        elif option == "custom_timezone":
+            region, cities = get_obj("custom_timezone_combos").get_children()
+            region = region.get_active_id()
+            city   = cities.get_active_id()
+            if region is not None and city is not None:
+                environ["TZ"] = "%s/%s" % (region, city)
+        tzset()
+        for photo in self.photo.values():
+            photo.calculate_timestamp()
+            auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def radio_handler(self, radio, combos):
         """Reposition photos depending on which timezone the user selected."""
@@ -471,9 +492,8 @@ class GottenGeography(CommonAttributes):
         if len(gpx.tracks) > 0:
             self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
             self.map_view.ensure_visible(*gpx.area + [False])
-        self.timezone = gpx.lookup_geoname()
         self.gpx_sensitivity()
-        self.set_timezone()
+        self.prefs.set_timezone(gpx.lookup_geoname())
     
     def apply_selected_photos(self, button, selected, view):
         """Manually apply map center coordinates to all selected photos."""
@@ -560,6 +580,7 @@ class GottenGeography(CommonAttributes):
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
         assert self.polygons is CommonAttributes.polygons
+        assert self.metadata is CommonAttributes.metadata
         for polygon in self.polygons:
             polygon.hide()
             # Maybe some day...
@@ -569,34 +590,14 @@ class GottenGeography(CommonAttributes):
         del self.gpx[:]
         del self.polygons[:]
         self.tracks.clear()
-        self.metadata = Struct({
-            'delta': 0,                  # Time offset
-            'omega': float('-inf'),      # Final GPX track point
-            'alpha': float('inf')        # Initial GPX track point
-        })
+        self.metadata.delta = 0               # Time offset
+        self.metadata.omega = float('-inf')   # Final GPX track point
+        self.metadata.alpha = float('inf')    # Initial GPX track point
         self.gpx_sensitivity()
     
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
-    
-    def set_timezone(self):
-        """Set the timezone to the given zone and update all photos."""
-        option = gconf_get("timezone_method")
-        if "TZ" in environ:
-            del environ["TZ"]
-        if   option == "lookup_timezone" and self.timezone is not None:
-            environ["TZ"] = self.timezone
-        elif option == "custom_timezone":
-            region, cities = get_obj("custom_timezone_combos").get_children()
-            region = region.get_active_id()
-            city   = cities.get_active_id()
-            if region is not None and city is not None:
-                environ["TZ"] = "%s/%s" % (region, city)
-        tzset()
-        for photo in self.photo.values():
-            photo.calculate_timestamp()
-            auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -754,7 +755,7 @@ class GottenGeography(CommonAttributes):
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
         self.search  = SearchController()
-        self.prefs   = PreferencesController(self.set_timezone)
+        self.prefs   = PreferencesController()
         self.markers = MarkerController(self.map_photo_layer, self.listsel)
         
         self.listsel.connect("changed", self.selection_sensitivity,
