@@ -142,8 +142,10 @@ class Photograph(Coordinates):
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""
-        names = [self.exif[iptc + key].values.pop() for key in ('City',
-            'ProvinceState', 'CountryName') if iptc + key in self.exif.iptc_keys]
+        names = []
+        for key in [ 'City', 'ProvinceState', 'CountryName' ]:
+            try: names.extend(self.exif[iptc + key].values)
+            except KeyError: pass
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
 
