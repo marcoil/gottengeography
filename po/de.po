@@ -200,6 +200,11 @@ msgid ""
 "along with this program.  If not, see <http://www.gnu.org/licenses/>."
 msgstr ""
 
+#: gg/ui.glade:490
+#, This is the translator credit, please replace my name with your own.
+msgid "Robert Park <rbpark@exolucere.ca>"
+msgstr "Robert Park <rbpark@exolucere.ca>"
+
 #: gg/ui.glade:521
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Save changes to your photos before "
