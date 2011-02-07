@@ -629,10 +629,11 @@ class GottenGeography:
         self.stage  = self.map_view.get_stage()
         self.actors = Struct()
         self.actors.coords_bg = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(255, 255, 255, 164))
+            Clutter.Color.new(0, 0, 0, 64))
         self.actors.coords_bg.set_position(0, 0)
         self.actors.coords = Clutter.Text()
         self.actors.coords.set_single_line_mode(True)
+        self.actors.coords.set_color(Clutter.Color.new(255, 255, 255, 255))
         self.actors.crosshair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 32))
         self.actors.crosshair.set_property('has-border', True)
