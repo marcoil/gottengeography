@@ -454,8 +454,9 @@ class GottenGeography:
         """Position and update my custom ClutterActors.
         
         label:    Map center coordinates at top of map view.
-        white:    Translucent white bar at top of map view.
-        xhair:    Black diamond at map center.
+        black:    Translucent black bar at top of map view.
+        verti:    Half of the black X at map center.
+        horiz:    Half of the black X at map center.
         mlink:    Link to google maps in status bar.
         
         This method is called whenever the size of the map view changes, and
@@ -463,20 +464,22 @@ class GottenGeography:
         always positioned and sized correctly, and displaying the correct
         coordinates.
         """
-        xhair = self.actors.crosshair
+        verti = self.actors.verti
+        horiz = self.actors.horiz
+        label = self.actors.coords
+        black = self.actors.coords_bg
         stage_width  = view.get_width()
         stage_height = view.get_height()
-        xhair.set_position(
-            (stage_width  - xhair.get_width())  / 2,
-            (stage_height - xhair.get_height()) / 2
-        )
+        verti.set_position((stage_width  - verti.get_width())  / 2,
+                           (stage_height - verti.get_height()) / 2)
+        horiz.set_position((stage_width  - horiz.get_width())  / 2,
+                           (stage_height - horiz.get_height()) / 2)
         
         if param is not None:
-            label, white = self.actors.coords, self.actors.coords_bg
             lat   = view.get_property('latitude')
             lon   = view.get_property('longitude')
             label.set_markup(format_coords(lat, lon))
-            white.set_size(stage_width, label.get_height() + 10)
+            black.set_size(stage_width, label.get_height() + 10)
             label.set_position((stage_width - label.get_width()) / 2, 5)
             mlink.set_markup(maps_link(lat, lon))
     
@@ -636,15 +639,14 @@ class GottenGeography:
         self.actors.coords = Clutter.Text()
         self.actors.coords.set_single_line_mode(True)
         self.actors.coords.set_color(Clutter.Color.new(255, 255, 255, 255))
-        self.actors.crosshair = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 32))
-        self.actors.crosshair.set_property('has-border', True)
-        self.actors.crosshair.set_border_color(Clutter.Color.new(0, 0, 0, 128))
-        self.actors.crosshair.set_border_width(1)
         for actor in [self.actors.coords_bg, self.actors.coords]:
             actor.set_parent(self.stage)
             actor.raise_top()
             actor.show()
+        self.actors.verti = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 255))
+        self.actors.horiz = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 255))
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display_actors,
                 get_obj("maps_link"))
@@ -760,20 +762,28 @@ class GottenGeography:
     
     def main(self):
         """Animate the crosshair and begin user interaction."""
-        xhair = self.actors.crosshair
-        xhair.set_parent(self.stage)
-        xhair.raise_top()
-        xhair.show()
-        xhair.set_anchor_point_from_gravity(Clutter.Gravity.CENTER)
+        verti = self.actors.verti
+        horiz = self.actors.horiz
+        label = self.actors.coords
+        black = self.actors.coords_bg
+        for actor in [verti, horiz]:
+            actor.set_parent(self.stage)
+            actor.raise_top()
+            verti.show()
         display = [self.map_view, None, get_obj("maps_link")]
-        # This causes the crosshair to start off huge and invisible, and it
-        # quickly shrinks, spins, and fades into existence.
-        for i in range(500, 7, -1):
-            xhair.set_size(i, i)
-            xhair.set_z_rotation_from_gravity(53-i, Clutter.Gravity.NORTH)
-            xhair.set_opacity(int(259-(0.5*i)))
+        for i in xrange(400, -1, -1):
+            j = i + 2
+            horiz.set_size(j * 10, j)
+            verti.set_size(j, j * 10)
+            verti.set_z_rotation_from_gravity(45-(i/4), Clutter.Gravity.CENTER)
+            horiz.set_z_rotation_from_gravity(45+(i/4), Clutter.Gravity.CENTER)
+            opacity = (255 / (i*i/10000+1))
+            verti.set_opacity(opacity)
+            horiz.set_opacity(opacity)
+            label.set_opacity(opacity)
+            black.set_opacity(opacity)
             self.display_actors(*display)
             self.redraw_interface()
-            sleep(0.003)
+            sleep(0.002)
         Gtk.main()
 
