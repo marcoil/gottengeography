@@ -836,12 +836,12 @@ class GottenGeography(CommonAttributes):
             actor.raise_top()
             verti.show()
         display = [self.map_view, None, get_obj("maps_link")]
+        verti.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
+        horiz.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
         for i in xrange(anim_start, -1, -1):
             j = i + 2
             horiz.set_size(j * 10, j)
             verti.set_size(j, j * 10)
-            verti.set_z_rotation_from_gravity(45-(i/4), Clutter.Gravity.CENTER)
-            horiz.set_z_rotation_from_gravity(45+(i/4), Clutter.Gravity.CENTER)
             opacity = (255 / (i*i/10000+1))
             verti.set_opacity(opacity)
             horiz.set_opacity(opacity)
