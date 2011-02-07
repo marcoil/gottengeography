@@ -35,7 +35,6 @@ class Photograph(Coordinates):
     
     def __init__(self, filename, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
-        self.exif     = ImageMetadata(filename)
         self.filename = filename
         self.callback = callback
         self.thm_size = thumb_size
@@ -45,18 +44,13 @@ class Photograph(Coordinates):
     
     def read(self):
         """Load exif data from disk."""
+        self.exif      = ImageMetadata(self.filename)
         self.timestamp = None
         self.altitude  = None
         self.latitude  = None
         self.longitude = None
         self.timezone  = None
         self.manual    = False
-        for key in ('City', 'ProvinceState', 'CountryCode', 'CountryName'):
-            try:
-                del self.exif[iptc + key]
-            except KeyError:
-                pass
-        
         try:
             self.exif.read()
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
