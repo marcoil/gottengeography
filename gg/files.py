@@ -127,8 +127,7 @@ class Photograph(Coordinates):
         if self.marker.get_property('visible'):
             self.marker.set_scale(*[1.1 if highlight else 1] * 2)
             self.marker.set_highlighted(highlight)
-            self.marker.set_property('opacity',
-                64 if transparent and not highlight else 255)
+            self.marker.set_opacity(64 if transparent and not highlight else 255)
             if highlight:
                 self.marker.raise_top()
     
