@@ -19,7 +19,7 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
-from gi.repository import Gtk, GConf, Champlain, Clutter
+from gi.repository import GConf, Clutter
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float

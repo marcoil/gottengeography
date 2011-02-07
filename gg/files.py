@@ -22,7 +22,7 @@ from time import mktime, clock
 from calendar import timegm
 from os import stat
 
-from utils import Coordinates, valid_coords, format_list
+from utils import Coordinates, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from territories import get_state, get_country
 
