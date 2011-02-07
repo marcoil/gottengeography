@@ -19,7 +19,7 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
-from gi.repository import GConf, Champlain, Clutter
+from gi.repository import Gtk, GConf, Champlain, Clutter
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -124,6 +124,12 @@ def format_coords(lat, lon):
 class MarkerController:
     """Control the behavior and creation of ChamplainMarkers."""
     def __init__(self, photo_layer, selection, select_all, selected, photos, view):
+        assert isinstance(photo_layer, Champlain.Layer)
+        assert isinstance(selection, Gtk.TreeSelection)
+        assert isinstance(select_all, Gtk.ToggleButton)
+        assert isinstance(selected, set)
+        assert isinstance(photos, dict)
+        assert isinstance(view, Champlain.View)
         self.photo_layer = photo_layer
         self.select_all  = select_all
         self.photo       = photos

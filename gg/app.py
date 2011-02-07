@@ -98,6 +98,7 @@ class NavigationController:
     
     def __init__(self, view):
         """Start the map at the previous location, and connect signals."""
+        assert isinstance(view, Champlain.View)
         self.map_view        = view
         self.back_button     = get_obj("back_button")
         self.zoom_in_button  = get_obj("zoom_in_button")
@@ -181,6 +182,7 @@ class SearchController:
     """Controls the behavior for searching the map."""
     def __init__(self, view):
         """Make the search box and insert it into the window."""
+        assert isinstance(view, Champlain.View)
         self.results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
