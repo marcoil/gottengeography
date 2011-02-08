@@ -258,8 +258,11 @@
                     <property name="visible">True</property>
                     <property name="spacing">2</property>
                     <child>
-                      <object class="GtkLabel" id="spacer">
+                      <object class="GtkLabel" id="maps_link">
                         <property name="visible">True</property>
+                        <property name="xalign">0.05</property>
+                        <property name="label"> </property>
+                        <property name="use_markup">True</property>
                         <property name="single_line_mode">True</property>
                       </object>
                       <packing>
@@ -386,20 +389,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="maps_link">
-                <property name="visible">True</property>
-                <property name="label"> </property>
-                <property name="use_markup">True</property>
-                <property name="justify">right</property>
-                <property name="single_line_mode">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkLabel" id="offset_label">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Clock Offset:</property>
@@ -409,7 +398,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">3</property>
+                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -426,7 +415,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">5</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -443,7 +432,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">6</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>
