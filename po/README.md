@@ -1,4 +1,4 @@
-Translating GottenGeography:
+# Translating GottenGeography
 
 1. Create a new po file with msginit:
     
