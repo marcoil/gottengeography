@@ -113,7 +113,7 @@ class CommonAttributes:
 
 class NavigationController(CommonAttributes):
     """Controls how users navigate the map."""
-    default = [[34.5,15.8,2]] # Default lat, lon, zoom for first run.
+    default = [[34.5, 15.8, 2]] # Default lat, lon, zoom for first run.
     
     def __init__(self):
         """Start the map at the previous location, and connect signals."""
@@ -124,6 +124,7 @@ class NavigationController(CommonAttributes):
         zoom_in_button.connect("clicked", self.zoom_in, self.map_view)
         back_button.connect("clicked", self.go_back, self.map_view)
         back_button.emit("clicked")
+        
         accel = Gtk.AccelGroup()
         get_obj("main").add_accel_group(accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
@@ -138,13 +139,11 @@ class NavigationController(CommonAttributes):
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
-        x   = self.map_view.get_width()  / 2
-        y   = self.map_view.get_height() / 2
         key = Gdk.keyval_name(keyval)
-        lat = self.map_view.get_property('latitude')
-        lon = self.map_view.get_property('longitude')
-        lat2, lon2 = self.map_view.get_coords_at(
-            *[i * (0.9 if key in ("Up", "Left") else 1.1) for i in (x, y)])
+        lat, lon   = [self.map_view.get_property(x) for x in ('latitude', 'longitude')]
+        lat2, lon2 =  self.map_view.get_coords_at(
+            *[ x() * (0.45 if key in ("Up", "Left") else 0.55) for x in
+                (self.map_view.get_width, self.map_view.get_height) ])
         if   key in ("Up", "Down"):    lat = lat2
         elif key in ("Left", "Right"): lon = lon2
         if valid_coords(lat, lon):
@@ -254,31 +253,31 @@ class SearchController(CommonAttributes):
         view.set_zoom_level(11)
     
     def search_bar_clicked(self, entry, icon_pos, event):
-        """Go to the most recent location when the user clicks the jump icon."""
+        """Clear the search bar when the user clicks the clear button."""
         entry.set_text("")
 
 
 class PreferencesController(CommonAttributes):
     """Controls the behavior of the preferences dialog."""
     def __init__(self):
-        self.pref_button  = get_obj("pref_button")
-        self.region       = Gtk.ComboBoxText.new()
-        self.cities       = Gtk.ComboBoxText.new()
-        tz_combos         = get_obj("custom_timezone_combos")
-        tz_combos.pack_start(self.region, False, False, 10)
-        tz_combos.pack_start(self.cities, False, False, 10)
+        pref_button = get_obj("pref_button")
+        region      = Gtk.ComboBoxText.new()
+        cities      = Gtk.ComboBoxText.new()
+        tz_combos   = get_obj("custom_timezone_combos")
+        tz_combos.pack_start(region, False, False, 10)
+        tz_combos.pack_start(cities, False, False, 10)
         tz_combos.show_all()
         
         for name in tz_regions:
-            self.region.append(name, name)
-        self.region.connect("changed", self.region_handler, self.cities)
-        self.cities.connect("changed", self.cities_handler, self.region)
+            region.append(name, name)
+        region.connect("changed", self.region_handler, cities)
+        cities.connect("changed", self.cities_handler, region)
         timezone = gconf_get("timezone", [-1, -1])
-        self.region.set_active(timezone[0])
-        self.cities.set_active(timezone[1])
+        region.set_active(timezone[0])
+        cities.set_active(timezone[1])
         
-        self.pref_button.connect("clicked", self.preferences_dialog,
-            get_obj("preferences"), self.region, self.cities)
+        pref_button.connect("clicked", self.preferences_dialog,
+            get_obj("preferences"), region, cities)
         
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
