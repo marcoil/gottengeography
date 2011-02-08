@@ -103,25 +103,13 @@ msgstr "Zurücksetzen"
 msgid "Zoom the map out one step (Ctrl -)"
 msgstr "Verkleinern (Strg -)"
 
-#: gg/ui.glade:133
-msgid "Zoom Out"
-msgstr "Verkleinern"
-
 #: gg/ui.glade:147
 msgid "Enhance! (Ctrl +)"
 msgstr "Vergrößern (Strg +)"
 
-#: gg/ui.glade:148
-msgid "Zoom In"
-msgstr "Vergrößern"
-
 #: gg/ui.glade:172
 msgid "Return to the previous location viewed on map (Ctrl Left)"
 msgstr "Zurück gehen (Strg Links)"
-
-#: gg/ui.glade:173
-msgid "Go Back"
-msgstr "Zurück"
 
 #: gg/ui.glade:196
 msgid "Preferences (Ctrl P)"

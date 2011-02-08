@@ -57,7 +57,9 @@ class GottenGeographyTester(TestCase):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
-        self.assertEqual(get_obj("main").get_size(), (800, 600))
+        size = get_obj("main").get_size()
+        self.assertEqual(size[1], 600)
+        self.assertGreater(size[0], 799)
         self.assertEqual(gui.listsel.count_selected_rows(), 0)
     
     def test_demo_data(self):
