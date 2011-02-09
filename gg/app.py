@@ -208,10 +208,10 @@ class SearchController(CommonAttributes):
         search.set_text_column(0)
         entry = get_obj("search")
         entry.set_completion(search)
-        entry.connect("changed", self.load_results, self.results)
+        entry.connect("changed", self.load_results, self.results.append)
         entry.connect("icon-release", self.search_bar_clicked)
     
-    def load_results(self, entry, results, searched=set()):
+    def load_results(self, entry, append, searched=set()):
         """Load a few search results based on what's been typed.
         
         Requires at least three letters typed, and is careful not to load
@@ -225,7 +225,6 @@ class SearchController(CommonAttributes):
         if len(text) == 3 and text not in searched:
             searched.add(text)
             with open(get_file("cities.txt")) as cities:
-                append = results.append
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
                     if search('(^|\s)' + text, city, flags=IGNORECASE):
