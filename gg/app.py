@@ -456,13 +456,12 @@ class GottenGeography(CommonAttributes):
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
+        photo = self.photo.get(filename) or Photograph(filename, self.modify_summary)
+        photo.read()
         if filename not in self.photo:
-            self.photo[filename] = Photograph(filename, self.modify_summary)
-            self.photo[filename].iter   = self.liststore.append()
-            self.photo[filename].marker = self.markers.add(filename)
-        else:
-            self.photo[filename].read()
-        photo = self.photo[filename]
+            photo.iter           = self.liststore.append()
+            photo.marker         = self.markers.add(filename)
+            self.photo[filename] = photo
         photo.position_marker()
         self.modified.discard(photo)
         self.liststore.set_row(photo.iter,
@@ -644,6 +643,7 @@ class GottenGeography(CommonAttributes):
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
             photo = Photograph(chooser.get_preview_filename(), lambda x: None, 300)
+            photo.read()
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)

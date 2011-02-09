@@ -40,7 +40,6 @@ class Photograph(Coordinates):
         self.thm_size = thumb_size
         self.marker   = None
         self.iter     = None
-        self.read()
     
     def read(self):
         """Load exif data from disk."""

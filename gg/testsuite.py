@@ -206,6 +206,7 @@ class GottenGeographyTester(TestCase):
         
         for filename in files:
             photo = Photograph(filename, gui.modify_summary)
+            photo.read()
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
             self.assertEqual(photo.pretty_geoname(), "Edmonton, Alberta, Canada")
@@ -227,6 +228,7 @@ class GottenGeographyTester(TestCase):
         marker = Struct()
         marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
         photo = Photograph(marker.get_text(), gui.modify_summary)
+        photo.read()
         photo.marker = marker
         
         photo.latitude  = None
