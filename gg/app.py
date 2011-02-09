@@ -246,8 +246,7 @@ class SearchController(CommonAttributes):
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
-        loc, lat, lon = model.get(itr, LOCATION, LATITUDE, LONGITUDE)
-        gconf_set("searched", [loc, lat, lon])
+        lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.center_on(lat, lon)
         view.set_zoom_level(11)
     

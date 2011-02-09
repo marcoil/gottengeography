@@ -504,7 +504,6 @@ S 10.00000, W 10.00000
             loc, lat, lon = data
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
-            self.assertEqual(list(data), gconf_get("searched"))
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
