@@ -462,7 +462,7 @@
 This program is written in the Python programming language, and adds geotags to your photos. The name is an anagram of "Python Geotagger."</property>
     <property name="website">http://github.com/robru/GottenGeography/wiki</property>
     <property name="website_label" translatable="yes">GottenGeography Wiki</property>
-    <property name="license" translatable="yes">Copyright (C) 2010 Robert Park &lt;rbpark@exolucere.ca&gt;
+    <property name="license">Copyright (C) 2010 Robert Park &lt;rbpark@exolucere.ca&gt;
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

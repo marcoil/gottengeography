@@ -49,7 +49,7 @@ msgstr "W"
 
 #: gg/utils.py:260
 msgid "Not geotagged"
-msgstr "Ohne Schlagwort"
+msgstr "Ohne Geo-Tag"
 
 #: gg/utils.py:271
 msgid "m above sea level"
@@ -85,7 +85,7 @@ msgstr "GPX Leeren"
 
 #: gg/ui.glade:83
 msgid "Close selected photos (Ctrl W)"
-msgstr "gewählte Bilder schließen (Strg W)"
+msgstr "Gewählte Bilder schließen (Strg W)"
 
 #: gg/ui.glade:85
 msgid "Close Photo"
@@ -93,7 +93,7 @@ msgstr "Bild schließen"
 
 #: gg/ui.glade:108
 msgid "Reload selected photos, losing all changes (Ctrl Z)"
-msgstr "gewählte Bilder neu laden, Änderungen gehen verloren (Strg Z)"
+msgstr "Gewählte Bilder neu laden, Änderungen gehen verloren (Strg Z)"
 
 #: gg/ui.glade:109
 msgid "Revert"
@@ -172,27 +172,9 @@ msgstr ""
 msgid "GottenGeography Wiki"
 msgstr "GottenGeography Wiki"
 
-#: gg/ui.glade:474
-msgid ""
-"Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>\n"
-"\n"
-"This program is free software: you can redistribute it and/or modify\n"
-"it under the terms of the GNU General Public License as published by\n"
-"the Free Software Foundation, either version 3 of the License, or\n"
-"(at your option) any later version.\n"
-"\n"
-"This program is distributed in the hope that it will be useful,\n"
-"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-"GNU General Public License for more details.\n"
-"\n"
-"You should have received a copy of the GNU General Public License\n"
-"along with this program.  If not, see <http://www.gnu.org/licenses/>."
-msgstr ""
-
 #: gg/ui.glade:490
 msgid "Robert Park <rbpark@exolucere.ca>"
-msgstr "Simon Spannagel <simonspa@kth.se>"
+msgstr "Simon Spannagel <simonspa@kth.se>\nJohannes Hanika <hanatos@gmail.com>"
 
 #: gg/ui.glade:521
 msgid ""
@@ -238,8 +220,8 @@ msgid ""
 "<b>Use the _system timezone</b> if your camera's clock is set the same as "
 "this computer."
 msgstr ""
-"<b>Die _System-Zeitzone</b> verwenden, wenn Ihre Kamera-Uhrzeit ist die "
-"selbe ist wie die dieses Computers."
+"<b>Die _System-Zeitzone</b> verwenden, wenn Ihre Kamera-Uhrzeit die selbe ist "
+"wie die dieses Computers."
 
 #: gg/ui.glade:789
 msgid ""
@@ -267,9 +249,10 @@ msgid ""
 "here will be used for odd numbered tracks, and even numbered tracks will be "
 "a lighter shade of this color."
 msgstr ""
-"Wenn Sie eine GPX-Datei, die mehr als einen Titel hat Last, wird die Farbe "
-"wählen Sie hier für ungerade Anzahl Spuren verwendet werden, und "
-"geradzahligen Titel werden in einem helleren Farbton dieser Farbe sein."
+"Wenn Sie eine GPX-Datei laden, die mehr als einen Pfad hat, wird die Farbe, "
+"die Sie hier wählen, für die Pfade mit ungeraden Nummern benutzt. Die "
+"geradzahligen werden einen helleren Farbton haben."
+
 
 #: gg/ui.glade:887
 msgid "Track Color"

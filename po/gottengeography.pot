@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography 0.5\n"
 "Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"
-"POT-Creation-Date: 2011-02-07 18:47-0700\n"
+"POT-Creation-Date: 2011-02-08 19:33-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: gg/app.py:448
+#: gg/app.py:445
 msgid "Could not open: "
 msgstr ""
 
-#: gg/app.py:480
+#: gg/app.py:476
 #, python-format
 msgid "%d points loaded in %.2fs."
 msgstr ""
@@ -164,24 +164,6 @@ msgstr ""
 
 #: gg/ui.glade:464
 msgid "GottenGeography Wiki"
-msgstr ""
-
-#: gg/ui.glade:465
-msgid ""
-"Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>\n"
-"\n"
-"This program is free software: you can redistribute it and/or modify\n"
-"it under the terms of the GNU General Public License as published by\n"
-"the Free Software Foundation, either version 3 of the License, or\n"
-"(at your option) any later version.\n"
-"\n"
-"This program is distributed in the hope that it will be useful,\n"
-"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-"GNU General Public License for more details.\n"
-"\n"
-"You should have received a copy of the GNU General Public License\n"
-"along with this program.  If not, see <http://www.gnu.org/licenses/>."
 msgstr ""
 
 #: gg/ui.glade:481
