@@ -581,7 +581,6 @@ class GottenGeography(CommonAttributes):
         del self.gpx[:]
         del self.polygons[:]
         self.tracks.clear()
-        self.metadata.delta = 0               # Time offset
         self.metadata.omega = float('-inf')   # Final GPX track point
         self.metadata.alpha = float('inf')    # Initial GPX track point
         self.gpx_sensitivity()
@@ -776,6 +775,7 @@ class GottenGeography(CommonAttributes):
         self.listsel.emit("changed")
         self.clear_all_gpx()
         
+        self.metadata.delta = 0
         offset = gconf_get("clock_offset", [0, 0])
         for name in [ "seconds", "minutes" ]:
             spinbutton = get_obj(name)
