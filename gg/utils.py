@@ -111,7 +111,7 @@ def format_list(strings, joiner=", "):
 
 def maps_link(lat, lon, anchor=_("View in Google Maps")):
     """Create a Pango link to Google Maps."""
-    return '<a href="http://maps.google.com/maps?q=%s,%s">%s</a>' % (lat, lon, anchor)
+    return '<a title="%s" href="http://maps.google.com/maps?q=%s,%s">Google</a>' % (anchor, lat, lon)
 
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
