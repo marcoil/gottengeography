@@ -281,7 +281,7 @@
                           <object class="GtkImage" id="back_icon">
                             <property name="visible">True</property>
                             <property name="stock">gtk-go-back</property>
-                            <property name="icon-size">1</property>
+                            <property name="icon-size">2</property>
                           </object>
                         </child>
                       </object>
@@ -320,7 +320,7 @@
                           <object class="GtkImage" id="zoom_out_icon">
                             <property name="visible">True</property>
                             <property name="stock">gtk-zoom-out</property>
-                            <property name="icon-size">1</property>
+                            <property name="icon-size">2</property>
                           </object>
                         </child>
                       </object>
@@ -342,7 +342,7 @@
                           <object class="GtkImage" id="zoom_in_icon">
                             <property name="visible">True</property>
                             <property name="stock">gtk-zoom-in</property>
-                            <property name="icon-size">1</property>
+                            <property name="icon-size">2</property>
                           </object>
                         </child>
                       </object>
