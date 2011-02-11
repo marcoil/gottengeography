@@ -274,14 +274,14 @@ class PreferencesController(CommonAttributes):
         region.set_active(timezone[0])
         cities.set_active(timezone[1])
         
-        pref_button.connect("clicked", self.preferences_dialog,
-            get_obj("preferences"), region, cities)
-        
         colors = gconf_get("track_color", [32768, 0, 65535])
         self.colorpicker = get_obj("colorselection")
         self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
+        
+        pref_button.connect("clicked", self.preferences_dialog,
+            get_obj("preferences"), region, cities, self.colorpicker)
         
         for option in ["system", "lookup", "custom"]:
             option += "_timezone"
@@ -291,17 +291,17 @@ class PreferencesController(CommonAttributes):
         timezone_method = gconf_get("timezone_method", "system_timezone")
         get_obj(timezone_method).clicked()
     
-    def preferences_dialog(self, button, dialog, region, cities):
+    def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
         previous = Struct({
             'method': gconf_get("timezone_method"),
             'region': region.get_active(),
             'city':   cities.get_active(),
-            'color':  self.colorpicker.get_current_color()
+            'color':  colorpicker.get_current_color()
         })
         if not dialog.run():
-            self.colorpicker.set_current_color(previous.color)
-            self.colorpicker.set_previous_color(previous.color)
+            colorpicker.set_current_color(previous.color)
+            colorpicker.set_previous_color(previous.color)
             get_obj(previous.method).set_active(True)
             region.set_active(previous.region)
             cities.set_active(previous.city)
