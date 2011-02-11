@@ -71,24 +71,27 @@ def auto_timestamp_comparison(photo, points, metadata):
     stamp = min(max(stamp, lo), hi)          # Keep timestamp within range.
     
     try:
-        lat = points[stamp]['point'].lat     # Try to use an exact match,
-        lon = points[stamp]['point'].lon     # if such a thing were to exist.
-        ele = points[stamp]['elevation']     # It's more likely than you think.
+        point = points[stamp] # Try to use an exact match,
+        lat   = point.lat     # if such a thing were to exist.
+        lon   = point.lon     # It's more likely than you think. 50%
+        ele   = point.ele     # of the included demo data matches here.
     
     except KeyError:
         # Find the two points that are nearest (in time) to the photo.
         hi = min([point for point in points if point > stamp])
         lo = max([point for point in points if point < stamp])
+        hi_point = points[hi]
+        lo_point = points[lo]
         hi_ratio = (stamp - lo) / (hi - lo)  # Proportional amount of time
         lo_ratio = (hi - stamp) / (hi - lo)  # between each point & the photo.
         
         # Find intermediate values using the proportional ratios.
-        lat = ((points[lo]['point'].lat * lo_ratio)  +
-               (points[hi]['point'].lat * hi_ratio))
-        lon = ((points[lo]['point'].lon * lo_ratio)  +
-               (points[hi]['point'].lon * hi_ratio))
-        ele = ((points[lo]['elevation'] * lo_ratio)  +
-               (points[hi]['elevation'] * hi_ratio))
+        lat = ((lo_point.lat * lo_ratio)  +
+               (hi_point.lat * hi_ratio))
+        lon = ((lo_point.lon * lo_ratio)  +
+               (hi_point.lon * hi_ratio))
+        ele = ((lo_point.ele * lo_ratio)  +
+               (hi_point.ele * hi_ratio))
     
     photo.set_location(lat, lon, ele)
 

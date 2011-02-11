@@ -182,8 +182,8 @@ class GPXLoader(Coordinates):
         self.omega = max(keys)
         
         points = self.tracks.values()
-        lats   = [p["point"].lat for p in points]
-        lons   = [p["point"].lon for p in points]
+        lats   = [point.lat for point in points]
+        lons   = [point.lon for point in points]
         self.area.append(min(lats))
         self.area.append(min(lons))
         self.area.append(max(lats))
@@ -255,10 +255,14 @@ class GPXLoader(Coordinates):
             # If any of lat, lon, or time is missing, we cannot continue.
             # Better to just give up on this track point and go to the next.
             return
-        self.tracks[timestamp] = {
-            'elevation': float(self.state.get('ele', 0.0)),
-            'point':     self.append(lat, lon)
-        }
+        
+        # 'point' is a ChamplainPoint as returned by ChamplainPolygon.append.
+        # Champlain doesn't know anything about elevations, but python allows
+        # me to just slap an 'ele' attribute onto the ChamplainPoint so that
+        # I can access it later.
+        point                  = self.append(lat, lon)
+        point.ele              = float(self.state.get('ele', 0.0))
+        self.tracks[timestamp] = point
         
         self.state.clear()
         if clock() - self.clock > .2:
