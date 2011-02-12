@@ -142,15 +142,15 @@ class NavigationController(CommonAttributes):
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
-        key = Gdk.keyval_name(keyval)
-        lat, lon   = [self.map_view.get_property(x) for x in ('latitude', 'longitude')]
-        lat2, lon2 =  self.map_view.get_coords_at(
-            *[ x() * (0.45 if key in ("Up", "Left") else 0.55) for x in
-                (self.map_view.get_width, self.map_view.get_height) ])
-        if   key in ("Up", "Down"):    lat = lat2
-        elif key in ("Left", "Right"): lon = lon2
+        key, view = Gdk.keyval_name(keyval), self.map_view
+        factor    = (0.45 if key in ("Up", "Left") else 0.55)
+        lat, lon  = [view.get_property(x) for x in ('latitude', 'longitude')]
+        if key in ("Up", "Down"):
+            lat = view.y_to_latitude(view.get_height() * factor)
+        elif key in ("Left", "Right"):
+            lon = view.x_to_longitude(view.get_width() * factor)
         if valid_coords(lat, lon):
-            self.map_view.center_on(lat, lon)
+            view.center_on(lat, lon)
     
     def remember_location(self, view, param):
         """Add the current location to the history stack."""
@@ -193,8 +193,8 @@ class NavigationController(CommonAttributes):
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
         """Ensure zoom buttons are only sensitive when they need to be."""
         zoom = view.get_zoom_level()
-        zoom_out.set_sensitive(view.get_min_zoom_level() is not zoom)
-        zoom_in.set_sensitive( view.get_max_zoom_level() is not zoom)
+        zoom_out.set_sensitive(view.get_min_zoom_level() != zoom)
+        zoom_in.set_sensitive( view.get_max_zoom_level() != zoom)
 
 
 class SearchController(CommonAttributes):
@@ -356,69 +356,79 @@ class PreferencesController(CommonAttributes):
         one   = make_clutter_color(color)
         two   = one.lighten().lighten()
         for i, polygon in enumerate(polygons):
-            polygon.set_stroke_color(two if i % 2 else one)
+            polygon.set_path_stroke_color(two if i % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
 
 
-class MarkerController(CommonAttributes):
-    """Control the behavior and creation of ChamplainMarkers."""
+class LabelController(CommonAttributes):
+    """Control the behavior and creation of ChamplainLabels."""
     def __init__(self):
         self.selection   = get_obj("photos_view").get_selection()
         self.select_all  = get_obj("select_all_button")
-        self.photo_layer = Champlain.Layer()
+        self.photo_layer = Champlain.MarkerLayer()
         self.map_view.add_layer(self.photo_layer)
         self.selection.connect("changed", self.update_highlights,
             self.map_view, self.selected, self.photo.viewvalues())
     
-    def add(self, label):
-        """Create a new ChamplainMarker and add it to the map."""
-        marker = Champlain.Marker()
-        marker.set_name(label)
-        marker.set_text(basename(label))
-        marker.set_property('reactive', True)
-        marker.connect("enter-event", self.mouse_in)
-        marker.connect("leave-event", self.mouse_out)
-        marker.connect("button-press-event", self.clicked, self.selection,
+    def add(self, name):
+        """Create a new ChamplainLabel and add it to the map."""
+        label = Champlain.Label()
+        label.set_name(name)
+        label.set_text(basename(name))
+        label.set_selectable(True)
+        label.set_draggable(True)
+        label.set_property('reactive', True)
+        label.connect("enter-event", self.mouse_in)
+        label.connect("leave-event", self.mouse_out)
+        label.connect("drag-finish", self.drag_finish, self.photo)
+        label.connect("button-press-event", self.clicked, self.selection,
             self.select_all, self.photo)
-        self.photo_layer.add_marker(marker)
-        return marker
+        self.photo_layer.add_marker(label)
+        return label
     
     def update_highlights(self, selection, view, selected, photos):
-        """Ensure only the selected markers are highlighted."""
+        """Ensure only the selected labels are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
         selected.clear()
         for photo in photos:
             # Maintain the 'selected' set() for easier iterating later.
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
-            photo.set_marker_highlight(photo in selected, selection_exists)
-        markers = [p.marker for p in selected if p.valid_coords()]
-        if markers:
-            view.ensure_markers_visible(markers, False)
+            photo.set_label_highlight(photo in selected, selection_exists)
+        labels = [p.label for p in selected if p.valid_coords()]
+        if labels:
+            pass
+            #view.ensure_markers_visible(labels, False)
     
-    def clicked(self, marker, event, selection, select_all, photos):
-        """When a ChamplainMarker is clicked, select it in the GtkListStore.
+    def clicked(self, label, event, selection, select_all, photos):
+        """When a ChamplainLabel is clicked, select it in the GtkListStore.
         
         The interface defined by this method is consistent with the behavior of
         the GtkListStore itself in the sense that a normal click will select
         just one item, but Ctrl+clicking allows you to select multiple.
         """
-        photo = photos[marker.get_name()]
+        photo = photos[label.get_name()]
+        assert photo.filename == label.get_name()
         if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
-            if marker.get_highlighted(): selection.unselect_iter(photo.iter)
-            else:                        selection.select_iter(photo.iter)
+            if label.get_selected(): selection.unselect_iter(photo.iter)
+            else:                    selection.select_iter(photo.iter)
         else:
             select_all.set_active(False)
             selection.unselect_all()
             selection.select_iter(photo.iter)
     
-    def mouse_in(self, marker, event):
-        """Enlarge a hovered-over ChamplainMarker by 5%."""
-        marker.set_scale(*[scale * 1.05 for scale in marker.get_scale()])
+    def drag_finish(self, label, photos):
+        photo = photos[label.get_name()]
+        photo.set_location(label.get_latitude(), label.get_longitude())
+        photo.manual = True
     
-    def mouse_out(self, marker, event):
-        """Reduce a no-longer-hovered ChamplainMarker to it's original size."""
-        marker.set_scale(*[scale / 1.05 for scale in marker.get_scale()])
+    def mouse_in(self, label, event):
+        """Enlarge a hovered-over ChamplainLabel by 5%."""
+        label.set_scale(*[scale * 1.05 for scale in label.get_scale()])
+    
+    def mouse_out(self, label, event):
+        """Reduce a no-longer-hovered ChamplainLabel to it's original size."""
+        label.set_scale(*[scale / 1.05 for scale in label.get_scale()])
 
 
 class GottenGeography(CommonAttributes):
@@ -463,9 +473,9 @@ class GottenGeography(CommonAttributes):
         photo.read()
         if filename not in self.photo:
             photo.iter           = self.liststore.append()
-            photo.marker         = self.markers.add(filename)
+            photo.label          = self.labels.add(filename)
             self.photo[filename] = photo
-        photo.position_marker()
+        photo.position_label()
         self.modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
@@ -483,9 +493,9 @@ class GottenGeography(CommonAttributes):
         self.gpx.append(gpx)
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
-        if len(gpx.tracks) > 0:
-            self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-            self.map_view.ensure_visible(*gpx.area + [False])
+        #if len(gpx.tracks) > 0:
+            #self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+            #self.map_view.ensure_visible(*gpx.area + [False])
         self.gpx_sensitivity()
         self.prefs.set_timezone(gpx.lookup_geoname())
     
@@ -505,7 +515,7 @@ class GottenGeography(CommonAttributes):
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         for photo in self.selected.copy():
-            photo.marker.destroy()
+            photo.label.destroy()
             del self.photo[photo.filename]
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
@@ -624,16 +634,26 @@ class GottenGeography(CommonAttributes):
             Gtk.main_iteration()
     
     def create_polygon(self):
-        """Get a newly created Champlain.Polygon and decorate it."""
-        color = make_clutter_color(self.prefs.colorpicker.get_current_color())
-        polygon = Champlain.Polygon()
+        """Get a newly created Champlain.MarkerLayer and decorate it."""
+        color   = make_clutter_color(self.prefs.colorpicker.get_current_color())
+        polygon = Champlain.MarkerLayer()
         self.polygons.append(polygon)
-        polygon.set_stroke_width(5)
-        polygon.set_stroke_color(
+        self.map_view.add_layer(polygon)
+        polygon.set_path_visible(True)
+        polygon.set_path_stroke_width(5)
+        polygon.set_path_stroke_color(
             color if len(self.polygons) % 2 else color.lighten().lighten())
-        polygon.show()
-        self.map_view.add_polygon(polygon)
-        return polygon.append_point
+        return self.append_point
+    
+    def append_point(self, latitude, longitude, elevation):
+        """Append a point onto the polygon."""
+        marker = Champlain.Marker()
+        marker.set_position(latitude, longitude)
+        marker.lat = latitude
+        marker.lon = longitude
+        marker.ele = elevation
+        self.polygons[-1].add_marker(marker)
+        return marker
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
@@ -686,11 +706,6 @@ class GottenGeography(CommonAttributes):
 ################################################################################
     
     def __init__(self):
-        self.map_view.set_property('show-scale', True)
-        self.map_view.set_scroll_mode(Champlain.ScrollMode.KINETIC)
-        
-        self.navigator = NavigationController()
-        
         self.stage  = self.map_view.get_stage()
         self.actors = Struct()
         self.actors.coords_bg = Clutter.Rectangle.new_with_color(
@@ -745,9 +760,10 @@ class GottenGeography(CommonAttributes):
         
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
-        self.search  = SearchController()
-        self.prefs   = PreferencesController()
-        self.markers = MarkerController()
+        self.navigator = NavigationController()
+        self.search    = SearchController()
+        self.prefs     = PreferencesController()
+        self.labels    = LabelController()
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
@@ -818,11 +834,13 @@ class GottenGeography(CommonAttributes):
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
+        print message
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files(argv[1:])
+            return
             anim_start = 2
         verti, horiz = self.actors.verti,  self.actors.horiz
         label, black = self.actors.coords, self.actors.coords_bg

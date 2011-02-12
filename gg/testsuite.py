@@ -107,7 +107,7 @@ class GottenGeographyTester(TestCase):
             self.assertIsNone(photo.latitude)
             self.assertIsNone(photo.longitude)
             self.assertFalse(photo.manual)
-            self.assertEqual(photo.filename, photo.marker.get_name())
+            self.assertEqual(photo.filename, photo.label.get_name())
             self.assertEqual(photo.timestamp,
                 gui.liststore.get_value(photo.iter, app.TIMESTAMP))
         
@@ -150,35 +150,35 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
             
-            self.assertEqual(photo.marker.get_scale(), (1, 1))
-            gui.markers.mouse_in(photo.marker, None)
-            self.assertEqual(photo.marker.get_scale(), (1.05, 1.05))
-            gui.markers.mouse_out(photo.marker, None)
-            self.assertEqual(photo.marker.get_scale(), (1, 1))
+            self.assertEqual(photo.label.get_scale(), (1, 1))
+            gui.labels.mouse_in(photo.label, None)
+            self.assertEqual(photo.label.get_scale(), (1.05, 1.05))
+            gui.labels.mouse_out(photo.label, None)
+            self.assertEqual(photo.label.get_scale(), (1, 1))
             
-            photo.marker.emit("button-press-event", Clutter.Event())
+            photo.label.emit("button-press-event", Clutter.Event())
             for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
                 self.assertTrue(btn.get_sensitive())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
             self.assertTrue(photo in gui.selected)
             self.assertEqual(len(gui.selected), 1)
-            self.assertEqual(photo.marker.get_scale(), (1.1, 1.1))
-            self.assertTrue(photo.marker.get_highlighted())
+            self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
+            self.assertTrue(photo.label.get_selected())
             
             for other in gui.photo.values():
                 if other.filename == photo.filename: continue
                 self.assertFalse(gui.listsel.iter_is_selected(other.iter))
                 self.assertFalse(other in gui.selected)
-                self.assertEqual(other.marker.get_scale(), (1, 1))
-                self.assertFalse(other.marker.get_highlighted())
+                self.assertEqual(other.label.get_scale(), (1, 1))
+                self.assertFalse(other.label.get_selected())
             
-            photo.set_marker_highlight(None, True)
-            self.assertEqual(photo.marker.get_property('opacity'), 64)
-            self.assertFalse(photo.marker.get_highlighted())
-            photo.set_marker_highlight([0,0,0,0,False], False)
-            self.assertEqual(photo.marker.get_property('opacity'), 255)
-            self.assertTrue(photo.marker.get_highlighted())
+            photo.set_label_highlight(None, True)
+            self.assertEqual(photo.label.get_property('opacity'), 64)
+            self.assertFalse(photo.label.get_selected())
+            photo.set_label_highlight([0,0,0,0,False], False)
+            self.assertEqual(photo.label.get_property('opacity'), 255)
+            self.assertTrue(photo.label.get_selected())
         
         gui.clear_all_gpx()
         self.assertEqual(len(gui.gpx), 0)
@@ -225,11 +225,11 @@ class GottenGeographyTester(TestCase):
         environ["TZ"] = "America/Edmonton"
         tzset()
         
-        marker = Struct()
-        marker.get_text = lambda: get_file('../demo/IMG_2411.JPG')
-        photo = Photograph(marker.get_text(), gui.modify_summary)
+        label = Struct()
+        label.get_text = lambda: get_file('../demo/IMG_2411.JPG')
+        photo = Photograph(label.get_text(), gui.modify_summary)
         photo.read()
-        photo.marker = marker
+        photo.label = label
         
         photo.latitude  = None
         photo.longitude = None
@@ -431,17 +431,17 @@ S 10.00000, W 10.00000
         lat = random_coord(90)
         lon = random_coord(180)
         
-        marker = gui.markers.add("foobar")
-        marker.set_position(lat, lon)
+        label = gui.labels.add("foobar")
+        label.set_position(lat, lon)
         
-        self.assertEqual(marker.get_latitude(), lat)
-        self.assertEqual(marker.get_longitude(), lon)
+        self.assertEqual(label.get_latitude(), lat)
+        self.assertEqual(label.get_longitude(), lon)
         
-        self.assertTrue(marker.get_parent())
+        self.assertTrue(label.get_parent())
         
-        marker.destroy()
+        label.destroy()
         
-        self.assertFalse(marker.get_parent())
+        self.assertFalse(label.get_parent())
     
     def test_gconf(self):
         history = gconf_get("history")

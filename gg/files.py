@@ -38,7 +38,7 @@ class Photograph(Coordinates):
         self.filename = filename
         self.callback = callback
         self.thm_size = thumb_size
-        self.marker   = None
+        self.label    = None
         self.iter     = None
     
     def read(self):
@@ -107,28 +107,28 @@ class Photograph(Coordinates):
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
-        self.position_marker()
+        self.position_label()
         self.lookup_geoname()
         self.callback(self)
     
-    def position_marker(self):
-        """Maintain correct position and visibility of ChamplainMarker."""
+    def position_label(self):
+        """Maintain correct position and visibility of ChamplainLabel."""
         if self.valid_coords():
-            self.marker.set_position(self.latitude, self.longitude)
-            self.marker.show()
-            if self.marker.get_highlighted():
-                self.marker.raise_top()
+            self.label.set_position(self.latitude, self.longitude)
+            self.label.show()
+            if self.label.get_selected():
+                self.label.raise_top()
         else:
-            self.marker.hide()
+            self.label.hide()
     
-    def set_marker_highlight(self, highlight, transparent):
-        """Set the highlightedness of the given photo's ChamplainMarker."""
-        if self.marker.get_property('visible'):
-            self.marker.set_scale(*[1.1 if highlight else 1] * 2)
-            self.marker.set_highlighted(highlight)
-            self.marker.set_opacity(64 if transparent and not highlight else 255)
+    def set_label_highlight(self, highlight, transparent):
+        """Set the highlightedness of the given photo's ChamplainLabel."""
+        if self.label.get_property('visible'):
+            self.label.set_scale(*[1.1 if highlight else 1] * 2)
+            self.label.set_selected(highlight)
+            self.label.set_opacity(64 if transparent and not highlight else 255)
             if highlight:
-                self.marker.raise_top()
+                self.label.raise_top()
     
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
@@ -164,7 +164,8 @@ class GPXLoader(Coordinates):
         self.clock    = clock()
         self.tracks   = {}
         self.state    = {}
-        self.area     = []
+        # TODO get this from the new API
+        self.area     = [53.522496, -113.453148, 53.537399, -113.443061]
         
         self.parser = ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -181,16 +182,9 @@ class GPXLoader(Coordinates):
         self.alpha = min(keys)
         self.omega = max(keys)
         
-        points = self.tracks.values()
-        lats   = [point.lat for point in points]
-        lons   = [point.lon for point in points]
-        self.area.append(min(lats))
-        self.area.append(min(lons))
-        self.area.append(max(lats))
-        self.area.append(max(lons))
-        
-        self.latitude  = (self.area[0] + self.area[2]) / 2
-        self.longitude = (self.area[1] + self.area[3]) / 2
+        # TODO get bounding box from new API
+        self.latitude = 53.5
+        self.longitude = -113.5
     
     def element_root(self, name, attributes):
         """Expat StartElementHandler.
@@ -204,7 +198,7 @@ class GPXLoader(Coordinates):
     def element_start(self, name, attributes):
         """Expat StartElementHandler.
         
-        This method creates new ChamplainPolygons when necessary and initializes
+        This method creates new ChamplainMarkerLayers when necessary and initializes
         variables for the CharacterDataHandler. It also extracts latitude and
         longitude from GPX element attributes. For example:
         
@@ -236,7 +230,7 @@ class GPXLoader(Coordinates):
         """Expat EndElementHandler.
         
         This method does most of the heavy lifting, including parsing time
-        strings into UTC epoch seconds, appending to the ChamplainPolygons,
+        strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
         keeping track of the first and last points loaded, as well as the
         entire area covered by the polygon, and occaisionally redrawing the
         screen so that the user can see what's going on while stuff is
@@ -256,13 +250,7 @@ class GPXLoader(Coordinates):
             # Better to just give up on this track point and go to the next.
             return
         
-        # 'point' is a ChamplainPoint as returned by ChamplainPolygon.append.
-        # Champlain doesn't know anything about elevations, but python allows
-        # me to just slap an 'ele' attribute onto the ChamplainPoint so that
-        # I can access it later.
-        point                  = self.append(lat, lon)
-        point.ele              = float(self.state.get('ele', 0.0))
-        self.tracks[timestamp] = point
+        self.tracks[timestamp] = self.append(lat, lon, float(self.state.get('ele', 0.0)))
         
         self.state.clear()
         if clock() - self.clock > .2:
