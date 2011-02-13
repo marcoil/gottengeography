@@ -59,7 +59,7 @@ def auto_timestamp_comparison(photo, points, metadata):
     """Use GPX data to calculate photo coordinates and elevation.
     
     photo:    A Photograph object.
-    points:   A dictionary mapping epoch seconds to ChamplainPoints.
+    points:   A dictionary mapping epoch seconds to ChamplainMarkers.
     metadata: A Struct object defining clock offset and first/last points.
     """
     if photo.manual or len(points) < 2:
@@ -287,13 +287,18 @@ class PreferencesController(CommonAttributes):
         pref_button.connect("clicked", self.preferences_dialog,
             get_obj("preferences"), region, cities, self.colorpicker)
         
+        self.region = region
+        self.cities = cities
+        
+        self.radios = {}
         for option in ["system", "lookup", "custom"]:
             option += "_timezone"
             radio = get_obj(option)
+            self.radios[option] = radio
             radio.connect("clicked", self.radio_handler, tz_combos)
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method", "system_timezone")
-        get_obj(timezone_method).clicked()
+        self.radios[timezone_method].clicked()
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
@@ -306,7 +311,7 @@ class PreferencesController(CommonAttributes):
         if not dialog.run():
             colorpicker.set_current_color(previous.color)
             colorpicker.set_previous_color(previous.color)
-            get_obj(previous.method).set_active(True)
+            self.radios[previous.method].set_active(True)
             region.set_active(previous.region)
             cities.set_active(previous.city)
         dialog.hide()
@@ -321,9 +326,8 @@ class PreferencesController(CommonAttributes):
         if   option == "lookup_timezone" and self.timezone is not None:
             environ["TZ"] = self.timezone
         elif option == "custom_timezone":
-            region, cities = get_obj("custom_timezone_combos").get_children()
-            region = region.get_active_id()
-            city   = cities.get_active_id()
+            region = self.region.get_active_id()
+            city   = self.cities.get_active_id()
             if region is not None and city is not None:
                 environ["TZ"] = "%s/%s" % (region, city)
         tzset()
@@ -530,7 +534,7 @@ class GottenGeography(CommonAttributes):
             del self.photo[photo.filename]
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
-        get_obj("select_all_button").set_active(False)
+        self.labels.select_all.set_active(False)
         self.listsel.emit("changed")
     
     def save_all_files(self, widget=None):
@@ -615,16 +619,16 @@ class GottenGeography(CommonAttributes):
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
-        seconds = get_obj("seconds").get_value()
-        minutes = get_obj("minutes").get_value()
+        seconds = self.secbutton.get_value()
+        minutes = self.minbutton.get_value()
         offset  = int((minutes * 60) + seconds)
         gconf_set("clock_offset", [minutes, seconds])
         if offset != self.metadata.delta:
             self.metadata.delta = offset
             if abs(seconds) == 60 and abs(minutes) != 60:
                 minutes += seconds / 60
-                get_obj("seconds").set_value(0)
-                get_obj("minutes").set_value(minutes)
+                self.secbutton.set_value(0)
+                self.minbutton.set_value(minutes)
             for photo in self.photo.values():
                 auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
@@ -806,8 +810,8 @@ class GottenGeography(CommonAttributes):
         
         self.metadata.delta = 0
         offset = gconf_get("clock_offset", [0, 0])
-        for name in [ "seconds", "minutes" ]:
-            spinbutton = get_obj(name)
+        self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
+        for spinbutton in [ self.secbutton, self.minbutton ]:
             spinbutton.connect("value-changed", self.time_offset_changed)
             spinbutton.set_value(offset.pop())
         get_obj("open").connect("update-preview", self.update_preview,
