@@ -164,8 +164,6 @@ class GPXLoader(Coordinates):
         self.clock    = clock()
         self.tracks   = {}
         self.state    = {}
-        # TODO get this from the new API
-        self.area     = [53.522496, -113.453148, 53.537399, -113.443061]
         
         self.parser = ParserCreate()
         self.parser.StartElementHandler  = self.element_root
@@ -181,10 +179,6 @@ class GPXLoader(Coordinates):
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
-        
-        # TODO get bounding box from new API
-        self.latitude = 53.5
-        self.longitude = -113.5
     
     def element_root(self, name, attributes):
         """Expat StartElementHandler.
@@ -231,10 +225,9 @@ class GPXLoader(Coordinates):
         
         This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
-        keeping track of the first and last points loaded, as well as the
-        entire area covered by the polygon, and occaisionally redrawing the
-        screen so that the user can see what's going on while stuff is
-        loading.
+        keeping track of the first and last points loaded, and occaisionally
+        redrawing the screen so that the user can see what's going on while
+        stuff is loading.
         """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.

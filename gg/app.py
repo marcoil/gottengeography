@@ -490,15 +490,24 @@ class GottenGeography(CommonAttributes):
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
         
+        if len(gpx.tracks) < 2:
+            return
+        
         self.tracks.update(gpx.tracks)
         self.gpx.append(gpx)
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
-        #if len(gpx.tracks) > 0:
-            #self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-            #self.map_view.ensure_visible(*gpx.area + [False])
-        self.gpx_sensitivity()
+        
+        layers = self.polygons[:]
+        bounds = layers.pop().get_bounding_box()
+        while layers:
+            bounds.compose(layers.pop().get_bounding_box())
+        self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+        self.map_view.ensure_visible(bounds, False)
+        gpx.latitude, gpx.longitude = bounds.get_center()
         self.prefs.set_timezone(gpx.lookup_geoname())
+        
+        self.gpx_sensitivity()
     
     def apply_selected_photos(self, button, selected, view):
         """Manually apply map center coordinates to all selected photos."""
