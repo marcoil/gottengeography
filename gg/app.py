@@ -458,6 +458,7 @@ class GottenGeography(CommonAttributes):
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
+        self.labels.photo_layer.animate_in_all_markers()
         self.listsel.emit("changed")
     
     def load_img_from_file(self, filename):
