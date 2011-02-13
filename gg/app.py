@@ -525,7 +525,7 @@ class GottenGeography(CommonAttributes):
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         for photo in self.selected.copy():
-            photo.label.destroy()
+            self.labels.photo_layer.remove_marker(photo.label)
             del self.photo[photo.filename]
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
@@ -844,13 +844,11 @@ class GottenGeography(CommonAttributes):
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
-        print message
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files(argv[1:])
-            return
             anim_start = 2
         verti, horiz = self.actors.verti,  self.actors.horiz
         label, black = self.actors.coords, self.actors.coords_bg

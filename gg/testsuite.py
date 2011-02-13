@@ -134,11 +134,6 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.gpx[0].omega, 1287260756)
         self.assertEqual(gui.metadata.alpha, 1287259751)
         self.assertEqual(gui.metadata.omega, 1287260756)
-        self.assertEqual(
-            gui.gpx[0].area,
-            [53.522495999999997, -113.453148,
-             53.537399000000001, -113.443061]
-        )
         
         for btn in [get_obj(name + "_button") for name in ("save",)]:
             self.assertTrue(btn.get_sensitive())
@@ -183,6 +178,7 @@ class GottenGeographyTester(TestCase):
         gui.clear_all_gpx()
         self.assertEqual(len(gui.gpx), 0)
         self.assertEqual(len(gui.tracks), 0)
+        self.assertEqual(len(gui.polygons), 0)
         self.assertFalse(get_obj("clear_button").get_sensitive())
         
         gui.save_all_files()
@@ -436,12 +432,6 @@ S 10.00000, W 10.00000
         
         self.assertEqual(label.get_latitude(), lat)
         self.assertEqual(label.get_longitude(), lon)
-        
-        self.assertTrue(label.get_parent())
-        
-        label.destroy()
-        
-        self.assertFalse(label.get_parent())
     
     def test_gconf(self):
         history = gconf_get("history")
