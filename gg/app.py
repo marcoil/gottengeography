@@ -24,11 +24,11 @@ import gettext
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
+from re import search, compile as re_compile, IGNORECASE
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from os.path import basename, abspath
 from time import tzset, sleep, clock
-from re import search, IGNORECASE
 from gettext import gettext as _
 from os import environ
 from sys import argv
@@ -227,10 +227,11 @@ class SearchController(CommonAttributes):
         text = entry.get_text().lower()[0:3]
         if len(text) == 3 and text not in searched:
             searched.add(text)
+            search = re_compile('(^|\s)' + text, flags=IGNORECASE).search
             with open(get_file("cities.txt")) as cities:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
-                    if search('(^|\s)' + text, city, flags=IGNORECASE):
+                    if search(city):
                         state    = get_state(country, state)
                         country  = get_country(country)
                         location = format_list([city, state, country])
