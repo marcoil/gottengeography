@@ -38,7 +38,7 @@ from sys import argv
 
 from files import Photograph, GPXLoader
 from utils import get_file, gconf_get, gconf_set
-from utils import Struct, paint_handler, make_clutter_color
+from utils import Polygon, Struct, paint_handler, make_clutter_color
 from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -651,24 +651,10 @@ class GottenGeography(CommonAttributes):
     def create_polygon(self):
         """Get a newly created Champlain.MarkerLayer and decorate it."""
         color   = make_clutter_color(self.prefs.colorpicker.get_current_color())
-        polygon = Champlain.MarkerLayer()
+        polygon = Polygon(color if len(self.polygons) % 2 else color.lighten().lighten())
         self.polygons.append(polygon)
         self.map_view.add_layer(polygon)
-        polygon.set_path_visible(True)
-        polygon.set_path_stroke_width(5)
-        polygon.set_path_stroke_color(
-            color if len(self.polygons) % 2 else color.lighten().lighten())
-        return self.append_point
-    
-    def append_point(self, latitude, longitude, elevation):
-        """Append a point onto the polygon."""
-        marker = Champlain.Marker()
-        marker.set_position(latitude, longitude)
-        marker.lat = latitude
-        marker.lon = longitude
-        marker.ele = elevation
-        self.polygons[-1].add_marker(marker)
-        return marker
+        return polygon.append_point
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.

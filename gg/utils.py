@@ -19,7 +19,7 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
-from gi.repository import GConf, Clutter
+from gi.repository import GConf, Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -119,6 +119,25 @@ def format_coords(lat, lon):
         _("N") if lat >= 0 else _("S"), abs(lat),
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
+
+
+class Polygon(Champlain.MarkerLayer):
+    """Subclass Champlain.MarkerLayer to make it easier to append points to a polygon."""
+    def __init__(self, color):
+        super(Champlain.MarkerLayer, self).__init__()
+        self.set_path_visible(True)
+        self.set_path_stroke_width(5)
+        self.set_path_stroke_color(color)
+    
+    def append_point(self, latitude, longitude, elevation):
+        """Append a point onto the polygon."""
+        marker = Champlain.Marker()
+        marker.set_position(latitude, longitude)
+        marker.lat = latitude
+        marker.lon = longitude
+        marker.ele = elevation
+        self.add_marker(marker)
+        return marker
 
 
 class Coordinates():
