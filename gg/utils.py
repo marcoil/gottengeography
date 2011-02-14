@@ -125,7 +125,7 @@ class Polygon(Champlain.MarkerLayer):
     """Subclass Champlain.MarkerLayer to make it easier to append points to a polygon."""
     def __init__(self, color):
         super(Champlain.MarkerLayer, self).__init__()
-        self.set_path_visible(True)
+        #self.set_path_visible(True)
         self.set_path_stroke_width(5)
         self.set_path_stroke_color(color)
     

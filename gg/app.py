@@ -504,6 +504,8 @@ class GottenGeography(CommonAttributes):
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
         layers = self.polygons[:]
+        for layer in layers:
+            layer.set_path_visible(True)
         bounds = layers.pop().get_bounding_box()
         while layers:
             bounds.compose(layers.pop().get_bounding_box())
