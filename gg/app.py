@@ -503,15 +503,10 @@ class GottenGeography(CommonAttributes):
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
-        layers = self.polygons[:]
-        for layer in layers:
-            layer.set_path_visible(True)
-        bounds = layers.pop().get_bounding_box()
-        while layers:
-            bounds.compose(layers.pop().get_bounding_box())
+        for layer in self.polygons:
+            layer.set_visible(True)
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-        self.map_view.ensure_visible(bounds, False)
-        gpx.latitude, gpx.longitude = bounds.get_center()
+        self.map_view.ensure_layers_visible(False)
         self.prefs.set_timezone(gpx.lookup_geoname())
         
         self.gpx_sensitivity()

@@ -121,23 +121,22 @@ def format_coords(lat, lon):
     )
 
 
-class Polygon(Champlain.MarkerLayer):
+class Polygon(Champlain.PathLayer):
     """Subclass Champlain.MarkerLayer to make it easier to append points to a polygon."""
     def __init__(self, color):
-        super(Champlain.MarkerLayer, self).__init__()
-        #self.set_path_visible(True)
-        self.set_path_stroke_width(5)
-        self.set_path_stroke_color(color)
+        super(Champlain.PathLayer, self).__init__()
+        self.set_visible(False)
+        self.set_stroke_width(5)
+        self.set_stroke_color(color)
     
     def append_point(self, latitude, longitude, elevation):
         """Append a point onto the polygon."""
-        marker = Champlain.Marker()
-        marker.set_position(latitude, longitude)
-        marker.lat = latitude
-        marker.lon = longitude
-        marker.ele = elevation
-        self.add_marker(marker)
-        return marker
+        coord = Champlain.Coordinate.new_full(latitude, longitude)
+        coord.lat = latitude
+        coord.lon = longitude
+        coord.ele = elevation
+        self.add_node(coord)
+        return coord
 
 
 class Coordinates():
