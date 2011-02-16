@@ -848,7 +848,10 @@ class GottenGeography(CommonAttributes):
             horiz.set_size(i * 10, i)
             verti.set_size(i, i * 10)
             opacity = 0.6407035175879398 * (400 - i) # don't ask
-            [actor.set_opacity(opacity) for actor in (verti, horiz, label, black)]
+            verti.set_opacity(opacity / 5)
+            horiz.set_opacity(opacity / 5)
+            label.set_opacity(opacity)
+            black.set_opacity(opacity)
             self.display_actors(*display)
             self.redraw_interface()
             sleep(0.002)
