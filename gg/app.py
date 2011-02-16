@@ -133,10 +133,6 @@ class NavigationController(CommonAttributes):
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
-        self.location = [self.map_view.get_property(x) for x in
-            ('latitude', 'longitude', 'zoom-level')]
-        self.map_view.connect("notify::latitude", self.remember_location)
-        self.map_view.connect("notify::longitude", self.remember_location)
         self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             zoom_in_button, zoom_out_button)
     
@@ -153,25 +149,14 @@ class NavigationController(CommonAttributes):
         if valid_coords(lat, lon):
             view.center_on(lat, lon)
     
-    def remember_location(self, view, param):
-        """Add the current location to the history stack."""
-        location = [view.get_property(x) for x in
-            ('latitude', 'longitude', 'zoom-level')]
-        for x, y in zip(location[0:2], self.location[0:2]):
-            if abs(x-y) > 0.25:
-                history = gconf_get("history") or self.default[:]
-                if history[-1] != location:
-                    history.append(self.location)
-                    gconf_set("history", history[-30:len(history)])
-                    self.location = location
-                    break
-    
-    def force_remember(self):
-        """Ignore threshholds, add current location to history stack."""
+    def remember_location(self):
+        """Add current location to history stack."""
         history = gconf_get("history") or self.default[:]
-        history.append([self.map_view.get_property(x) for x in
-            ('latitude', 'longitude', 'zoom-level')])
-        gconf_set("history", history)
+        location = [self.map_view.get_property(x) for x in
+            ('latitude', 'longitude', 'zoom-level')]
+        if history[-1] != location:
+            history.append(location)
+        gconf_set("history", history[-30:])
     
     def go_back(self, button, view):
         """Return the map view to where the user last set it."""
@@ -200,8 +185,9 @@ class NavigationController(CommonAttributes):
 
 class SearchController(CommonAttributes):
     """Controls the behavior for searching the map."""
-    def __init__(self):
+    def __init__(self, remember):
         """Make the search box and insert it into the window."""
+        self.remember_location = remember
         self.results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
@@ -251,6 +237,7 @@ class SearchController(CommonAttributes):
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
+        self.remember_location()
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.center_on(lat, lon)
         view.set_zoom_level(11)
@@ -368,7 +355,8 @@ class PreferencesController(CommonAttributes):
 
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
-    def __init__(self):
+    def __init__(self, remember):
+        self.remember_location = remember
         self.selection   = get_obj("photos_view").get_selection()
         self.select_all  = get_obj("select_all_button")
         self.photo_layer = Champlain.MarkerLayer()
@@ -401,6 +389,7 @@ class LabelController(CommonAttributes):
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
+        self.remember_location()
         view.ensure_layers_visible(False)
     
     def clicked(self, label, event, selection, select_all, photos):
@@ -503,6 +492,7 @@ class GottenGeography(CommonAttributes):
         
         for layer in self.polygons:
             layer.set_visible(True)
+        self.navigator.remember_location()
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
         self.map_view.ensure_layers_visible(False)
         self.prefs.set_timezone(gpx.lookup_geoname())
@@ -677,7 +667,7 @@ class GottenGeography(CommonAttributes):
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.navigator.force_remember()
+        self.navigator.remember_location()
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
@@ -758,9 +748,9 @@ class GottenGeography(CommonAttributes):
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
         self.navigator = NavigationController()
-        self.search    = SearchController()
+        self.search    = SearchController(self.navigator.remember_location)
         self.prefs     = PreferencesController()
-        self.labels    = LabelController()
+        self.labels    = LabelController(self.navigator.remember_location)
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",

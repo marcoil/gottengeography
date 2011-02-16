@@ -331,16 +331,15 @@ S 10.00000, W 10.00000
     def test_map_navigation(self):
         """Ensure that it's possible to navigate the map."""
         
-        coords = []
-        
-        coords.append([
+        coords = [[
             gui.map_view.get_property('latitude'),
             gui.map_view.get_property('longitude')
-        ])
+        ]]
         
         lat = round(random_coord(90),  6)
         lon = round(random_coord(180), 6)
         
+        gui.navigator.remember_location()
         gui.map_view.center_on(lat, lon)
         
         coords.append([lat, lon])
