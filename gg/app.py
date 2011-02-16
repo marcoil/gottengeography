@@ -144,10 +144,11 @@ class NavigationController(CommonAttributes):
         """Move the map view by 5% of its length in the given direction."""
         key, view = Gdk.keyval_name(keyval), self.map_view
         factor    = (0.45 if key in ("Up", "Left") else 0.55)
-        lat, lon  = [view.get_property(x) for x in ('latitude', 'longitude')]
         if key in ("Up", "Down"):
             lat = view.y_to_latitude(view.get_height() * factor)
-        elif key in ("Left", "Right"):
+            lon = view.get_property('longitude')
+        else:
+            lat = view.get_property('latitude')
             lon = view.x_to_longitude(view.get_width() * factor)
         if valid_coords(lat, lon):
             view.center_on(lat, lon)
