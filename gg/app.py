@@ -361,7 +361,7 @@ class PreferencesController(CommonAttributes):
         one   = make_clutter_color(color)
         two   = one.lighten().lighten()
         for i, polygon in enumerate(polygons):
-            polygon.set_path_stroke_color(two if i % 2 else one)
+            polygon.set_stroke_color(two if i % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
 
 
