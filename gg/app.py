@@ -400,10 +400,7 @@ class LabelController(CommonAttributes):
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
-        labels = [p.label for p in selected if p.valid_coords()]
-        if labels:
-            pass
-            #view.ensure_markers_visible(labels, False)
+        view.ensure_layers_visible(False)
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
