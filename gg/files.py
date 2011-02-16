@@ -157,11 +157,11 @@ class GPXLoader(Coordinates):
     
     def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
-        self.filename = filename
-        self.append   = None
         self.add_poly = add_polygon
+        self.filename = filename
         self.pulse    = callback
         self.clock    = clock()
+        self.append   = None
         self.tracks   = {}
         self.state    = {}
         

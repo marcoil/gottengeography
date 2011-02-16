@@ -59,7 +59,7 @@ def auto_timestamp_comparison(photo, points, metadata):
     """Use GPX data to calculate photo coordinates and elevation.
     
     photo:    A Photograph object.
-    points:   A dictionary mapping epoch seconds to ChamplainMarkers.
+    points:   A dictionary mapping epoch seconds to ChamplainCoordinates.
     metadata: A Struct object defining clock offset and first/last points.
     """
     if photo.manual or len(points) < 2:
