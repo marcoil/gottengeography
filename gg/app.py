@@ -490,8 +490,6 @@ class GottenGeography(CommonAttributes):
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
-        for layer in self.polygons:
-            layer.set_visible(True)
         self.navigator.remember_location()
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
         self.map_view.ensure_layers_visible(False)

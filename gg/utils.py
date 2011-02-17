@@ -124,7 +124,6 @@ def format_coords(lat, lon):
 class Polygon(Champlain.PathLayer):
     def __init__(self, color):
         super(Champlain.PathLayer, self).__init__()
-        self.set_visible(False)
         self.set_stroke_width(5)
         self.set_stroke_color(color)
     
