@@ -165,7 +165,7 @@ class NavigationController(CommonAttributes):
         assert history is not self.default
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
-            view.center_on(lat, lon)
+            view.go_to(lat, lon)
             view.set_zoom_level(zoom)
         gconf_set("history", history)
     
@@ -239,8 +239,8 @@ class SearchController(CommonAttributes):
         """Go to the selected location."""
         self.map_view.emit("realize")
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
-        view.center_on(lat, lon)
         view.set_zoom_level(11)
+        view.go_to(lat, lon)
     
     def search_bar_clicked(self, entry, icon_pos, event):
         """Clear the search bar when the user clicks the clear button."""
@@ -389,7 +389,7 @@ class LabelController(CommonAttributes):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
         self.map_view.emit("realize")
-        view.ensure_layers_visible(False)
+        view.ensure_layers_visible(True)
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -491,7 +491,7 @@ class GottenGeography(CommonAttributes):
         
         self.map_view.emit("realize")
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-        self.map_view.ensure_layers_visible(False)
+        self.map_view.ensure_layers_visible(True)
         self.prefs.set_timezone(gpx.lookup_geoname())
         
         self.gpx_sensitivity()
