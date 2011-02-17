@@ -135,6 +135,7 @@ class NavigationController(CommonAttributes):
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
         self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             zoom_in_button, zoom_out_button)
+        self.map_view.connect("realize", self.remember_location)
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -149,10 +150,10 @@ class NavigationController(CommonAttributes):
         if valid_coords(lat, lon):
             view.center_on(lat, lon)
     
-    def remember_location(self):
+    def remember_location(self, view):
         """Add current location to history stack."""
         history = gconf_get("history") or self.default[:]
-        location = [self.map_view.get_property(x) for x in
+        location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
         if history[-1] != location:
             history.append(location)
@@ -185,9 +186,8 @@ class NavigationController(CommonAttributes):
 
 class SearchController(CommonAttributes):
     """Controls the behavior for searching the map."""
-    def __init__(self, remember):
+    def __init__(self):
         """Make the search box and insert it into the window."""
-        self.remember_location = remember
         self.results = Gtk.ListStore(GObject.TYPE_STRING,
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
@@ -237,7 +237,7 @@ class SearchController(CommonAttributes):
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
-        self.remember_location()
+        self.map_view.emit("realize")
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.center_on(lat, lon)
         view.set_zoom_level(11)
@@ -355,8 +355,7 @@ class PreferencesController(CommonAttributes):
 
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
-    def __init__(self, remember):
-        self.remember_location = remember
+    def __init__(self):
         self.selection   = get_obj("photos_view").get_selection()
         self.select_all  = get_obj("select_all_button")
         self.photo_layer = Champlain.MarkerLayer()
@@ -389,7 +388,7 @@ class LabelController(CommonAttributes):
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
-        self.remember_location()
+        self.map_view.emit("realize")
         view.ensure_layers_visible(False)
     
     def clicked(self, label, event, selection, select_all, photos):
@@ -490,7 +489,7 @@ class GottenGeography(CommonAttributes):
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
-        self.navigator.remember_location()
+        self.map_view.emit("realize")
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
         self.map_view.ensure_layers_visible(False)
         self.prefs.set_timezone(gpx.lookup_geoname())
@@ -665,7 +664,7 @@ class GottenGeography(CommonAttributes):
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.navigator.remember_location()
+        self.map_view.emit("realize")
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
@@ -746,9 +745,9 @@ class GottenGeography(CommonAttributes):
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
         self.navigator = NavigationController()
-        self.search    = SearchController(self.navigator.remember_location)
+        self.search    = SearchController()
         self.prefs     = PreferencesController()
-        self.labels    = LabelController(self.navigator.remember_location)
+        self.labels    = LabelController()
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",

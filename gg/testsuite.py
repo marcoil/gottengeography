@@ -339,7 +339,7 @@ S 10.00000, W 10.00000
         lat = round(random_coord(90),  6)
         lon = round(random_coord(180), 6)
         
-        gui.navigator.remember_location()
+        gui.map_view.emit("realize")
         gui.map_view.center_on(lat, lon)
         
         coords.append([lat, lon])
