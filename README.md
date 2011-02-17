@@ -11,7 +11,7 @@ It is currently able to:
 
 * Read pre-existing geotags inside photo EXIF data using [pyexiv2](http://tilloy.net/dev/pyexiv2/) and display markers on the map indicating where those photos were taken.
 
-* Manually geotag images (upon clicking the 'apply' button, the selected photos are placed onto the center of the map).
+* Manually geotag images, using either of two methods: by clicking the 'apply' button, the selected photos are placed onto the center of the map, or by directly dragging map markers across the map, they will remember where you place them.
 
 * Automatically geotag images using timestamp comparison between photos and GPX data, proportionally calculating photo coordinates that fall in-between gpx track points. No clicking necessary! Simply load a GPX file along with your images, and they will automatically be placed along the track based on their timestamp.
 
@@ -23,7 +23,7 @@ It is currently able to:
 
 * Save EXIF/IPTC data into your photos using pyexiv2.
 
-You may be interested in hacking on GottenGeography if you enjoy writing Python code, have some experience with the [GObject Introspection](http://live.gnome.org/GObjectIntrospection), or are a huge GPS nerd like myself. GottenGeography is currently developed for Fedora 14, and depends only upon packages available for that distribution (an older version is available for Ubuntu Maverick).
+You may be interested in hacking on GottenGeography if you enjoy writing Python code, have some experience with the [GObject Introspection](http://live.gnome.org/GObjectIntrospection), or are a huge GPS nerd like myself. You are viewing the jhbuild branch of GottenGeography, which is developed in the [jhbuild development environment](http://library.gnome.org/devel/jhbuild/stable/). If you want to test this version, you'll need to install and configure jhbuild. Older versions are available for Fedora 14 and Ubuntu Maverick, but they are unmaintained and lacking in features.
 
 GottenGeography is heavily inspired by the OSX application [PhotoLinker.app](http://www.earlyinnovations.com/photolinker/), however I am not affiliated in any way with EarlyInnovations. Please don't sue me, etc.
 
