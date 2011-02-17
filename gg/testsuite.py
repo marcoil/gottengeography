@@ -151,7 +151,7 @@ class GottenGeographyTester(TestCase):
             gui.labels.mouse_out(photo.label, None)
             self.assertEqual(photo.label.get_scale(), (1, 1))
             
-            photo.label.emit("button-press-event", Clutter.Event())
+            photo.label.emit("button-press", Clutter.Event())
             for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
                 self.assertTrue(btn.get_sensitive())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
