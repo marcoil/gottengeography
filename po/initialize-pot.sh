@@ -8,17 +8,21 @@
 # have any need for this script, just follow the instructions in the README.md
 # file. Thanks for stopping by!
 
-cd ..
+intltool-update -r *.po -g gottengeography
 
-xgettext gg/*.{py,glade} --package-name gottengeography --package-version 0.5 \
-                         --msgid-bugs-address="Robert Park <rbpark@exolucere.ca>" \
-                         -o po/temp.pot
+mv gottengeography.pot temp.pot
 
 echo '# GottenGeography translation template.
 # Copyright (C) 2010 Robert Park
 # This file is distributed under the same license as the GottenGeography package.
-# Robert Park <rbpark@exolucere.ca>, 2010' > po/gottengeography.pot
+# Robert Park <rbpark@exolucere.ca>, 2010
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: gottengeography 0.5\n"
+"Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"' > gottengeography.pot
 
-tail -n +5 po/temp.pot >> po/gottengeography.pot
+tail -n +11 temp.pot >> gottengeography.pot
 
-rm po/temp.pot
+rm temp.pot
