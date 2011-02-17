@@ -375,7 +375,7 @@ class LabelController(CommonAttributes):
         label.connect("enter-event", self.mouse_in)
         label.connect("leave-event", self.mouse_out)
         label.connect("drag-finish", self.drag_finish, self.photo)
-        label.connect("button-press-event", self.clicked, self.selection,
+        label.connect("button-press", self.clicked, self.selection,
             self.select_all, self.photo)
         self.photo_layer.add_marker(label)
         return label
@@ -409,7 +409,7 @@ class LabelController(CommonAttributes):
             selection.unselect_all()
             selection.select_iter(photo.iter)
     
-    def drag_finish(self, label, photos):
+    def drag_finish(self, label, event, photos):
         photo = photos[label.get_name()]
         photo.set_location(label.get_latitude(), label.get_longitude())
         photo.manual = True
