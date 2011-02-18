@@ -410,6 +410,7 @@ class LabelController(CommonAttributes):
             selection.select_iter(photo.iter)
     
     def drag_finish(self, label, event, photos):
+        """Update photos with new locations after photos have been dragged."""
         photo = photos[label.get_name()]
         photo.set_location(label.get_latitude(), label.get_longitude())
         photo.manual = True
