@@ -390,7 +390,7 @@ class LabelController(CommonAttributes):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
         self.map_view.emit("realize")
-        view.ensure_layers_visible(True)
+        view.ensure_visible(self.photo_layer.get_bounding_box(), True)
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
