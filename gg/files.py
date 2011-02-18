@@ -16,7 +16,7 @@
 
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import GdkPixbuf, GObject
-from re import sub, compile as re_compile
+from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
 from calendar import timegm

@@ -26,7 +26,6 @@ from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
-from re import match
 
 from territories import get_state, get_country
 
@@ -72,9 +71,9 @@ def gconf_get(key, default=None):
 # GPS math functions. These methods convert numbers into other numbers.
 ################################################################################
 
-def dms_to_decimal(degrees, minutes, seconds, sign=""):
+def dms_to_decimal(degrees, minutes, seconds, sign=" "):
     """Convert degrees, minutes, seconds into decimal degrees."""
-    return (-1 if match(r'[SWsw]', sign) else 1) * (
+    return (-1 if sign[0] in 'SWsw' else 1) * (
         degrees.to_float()        +
         minutes.to_float() / 60   +
         seconds.to_float() / 3600
