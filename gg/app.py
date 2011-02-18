@@ -421,7 +421,7 @@ class LabelController(CommonAttributes):
 
 class ActorController(CommonAttributes):
     def __init__(self):
-        self.stage  = self.map_view.get_stage()
+        self.stage = self.map_view.get_stage()
         self.black = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 64))
         self.black.set_position(0, 0)
@@ -439,6 +439,11 @@ class ActorController(CommonAttributes):
             self.map_view.connect('notify::' + signal, self.display,
                 get_obj("maps_link"))
         self.map_view.connect("paint", paint_handler)
+        
+        scale = Champlain.Scale.new()
+        scale.connect_view(self.map_view)
+        self.map_view.bin_layout_add(scale,
+            Clutter.BinAlignment.START, Clutter.BinAlignment.END)
     
     def display(self, view, param, mlink):
         """Position and update my custom ClutterActors.
