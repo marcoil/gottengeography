@@ -419,6 +419,70 @@ class LabelController(CommonAttributes):
         """Scale a ChamplainLabel by the given factor."""
         label.set_scale(*[scale * factor for scale in label.get_scale()])
 
+class ActorController(CommonAttributes):
+    def __init__(self):
+        self.stage  = self.map_view.get_stage()
+        self.black = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 64))
+        self.black.set_position(0, 0)
+        self.label = Clutter.Text()
+        self.label.set_single_line_mode(True)
+        self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
+        for actor in [self.black, self.label]:
+            self.stage.add_actor(actor)
+            actor.raise_top()
+        self.verti = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 255))
+        self.horiz = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 255))
+        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+            self.map_view.connect('notify::' + signal, self.display,
+                get_obj("maps_link"))
+        self.map_view.connect("paint", paint_handler)
+    
+    def display(self, view, param, mlink):
+        """Position and update my custom ClutterActors.
+        
+        This method is called whenever the size of the map view changes, and
+        whenever the map center coordinates change, so that everything is
+        always positioned and sized correctly, and displaying the correct
+        coordinates.
+        """
+        stage_width  = view.get_width()
+        stage_height = view.get_height()
+        self.verti.set_position((stage_width  - self.verti.get_width())  / 2,
+                                (stage_height - self.verti.get_height()) / 2)
+        self.horiz.set_position((stage_width  - self.horiz.get_width())  / 2,
+                                (stage_height - self.horiz.get_height()) / 2)
+        
+        if param is not None:
+            lat = view.get_property('latitude')
+            lon = view.get_property('longitude')
+            mlink.set_markup(maps_link(lat, lon))
+            self.label.set_markup(format_coords(lat, lon))
+            self.black.set_size(stage_width, self.label.get_height() + 10)
+            self.label.set_position((stage_width - self.label.get_width()) / 2, 5)
+    
+    def animate_in(self, start=400):
+        """Animate the crosshair."""
+        for actor in [self.verti, self.horiz]:
+            self.stage.add_actor(actor)
+            actor.raise_top()
+        display = [self.map_view, None, get_obj("maps_link")]
+        self.verti.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
+        self.horiz.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
+        for i in xrange(start, 1, -1):
+            self.horiz.set_size(i * 10, i)
+            self.verti.set_size(i, i * 10)
+            opacity = 0.6407035175879398 * (400 - i) # don't ask
+            self.verti.set_opacity(opacity / 5)
+            self.horiz.set_opacity(opacity / 5)
+            self.label.set_opacity(opacity)
+            self.black.set_opacity(opacity)
+            self.display(*display)
+            while Gtk.events_pending():
+                Gtk.main_iteration()
+            sleep(0.002)
 
 class GottenGeography(CommonAttributes):
     """Provides a graphical interface to automagically geotag photos.
@@ -515,6 +579,19 @@ class GottenGeography(CommonAttributes):
             self.liststore.remove(photo.iter)
         self.labels.select_all.set_active(False)
     
+    def clear_all_gpx(self, widget=None):
+        """Forget all GPX data, start over with a clean slate."""
+        assert self.polygons is CommonAttributes.polygons
+        assert self.metadata is CommonAttributes.metadata
+        for polygon in self.polygons:
+            self.map_view.remove_layer(polygon)
+        
+        del self.polygons[:]
+        self.tracks.clear()
+        self.metadata.omega = float('-inf')   # Final GPX track point
+        self.metadata.alpha = float('inf')    # Initial GPX track point
+        self.gpx_sensitivity()
+    
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
@@ -531,61 +608,6 @@ class GottenGeography(CommonAttributes):
                     photo.long_summary())
         self.progressbar.hide()
         self.listsel.emit("changed")
-    
-################################################################################
-# Map features section. These methods control map objects.
-################################################################################
-    
-    def display_actors(self, view, param, mlink):
-        """Position and update my custom ClutterActors.
-        
-        label:    Map center coordinates at top of map view.
-        black:    Translucent black bar at top of map view.
-        verti:    Half of the black X at map center.
-        horiz:    Half of the black X at map center.
-        mlink:    Link to google maps in status bar.
-        
-        This method is called whenever the size of the map view changes, and
-        whenever the map center coordinates change, so that everything is
-        always positioned and sized correctly, and displaying the correct
-        coordinates.
-        """
-        verti = self.actors.verti
-        horiz = self.actors.horiz
-        label = self.actors.coords
-        black = self.actors.coords_bg
-        stage_width  = view.get_width()
-        stage_height = view.get_height()
-        verti.set_position((stage_width  - verti.get_width())  / 2,
-                           (stage_height - verti.get_height()) / 2)
-        horiz.set_position((stage_width  - horiz.get_width())  / 2,
-                           (stage_height - horiz.get_height()) / 2)
-        
-        if param is not None:
-            lat   = view.get_property('latitude')
-            lon   = view.get_property('longitude')
-            label.set_markup(format_coords(lat, lon))
-            black.set_size(stage_width, label.get_height() + 10)
-            label.set_position((stage_width - label.get_width()) / 2, 5)
-            mlink.set_markup(maps_link(lat, lon))
-    
-    def toggle_selected_photos(self, button, selection):
-        """Toggle the selection of photos."""
-        if button.get_active(): selection.select_all()
-        else:                   selection.unselect_all()
-    
-    def clear_all_gpx(self, widget=None):
-        """Forget all GPX data, start over with a clean slate."""
-        assert self.polygons is CommonAttributes.polygons
-        assert self.metadata is CommonAttributes.metadata
-        for polygon in self.polygons:
-            self.map_view.remove_layer(polygon)
-        
-        del self.polygons[:]
-        self.tracks.clear()
-        self.metadata.omega = float('-inf')   # Final GPX track point
-        self.metadata.alpha = float('inf')    # Initial GPX track point
-        self.gpx_sensitivity()
     
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
@@ -611,6 +633,11 @@ class GottenGeography(CommonAttributes):
         self.modified.add(photo)
         self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
+    
+    def toggle_selected_photos(self, button, selection):
+        """Toggle the selection of photos."""
+        if button.get_active(): selection.select_all()
+        else:                   selection.unselect_all()
     
     def gpx_pulse(self, gpx):
         """Update the display during GPX parsing.
@@ -682,26 +709,6 @@ class GottenGeography(CommonAttributes):
 ################################################################################
     
     def __init__(self):
-        self.stage  = self.map_view.get_stage()
-        self.actors = Struct()
-        self.actors.coords_bg = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 64))
-        self.actors.coords_bg.set_position(0, 0)
-        self.actors.coords = Clutter.Text()
-        self.actors.coords.set_single_line_mode(True)
-        self.actors.coords.set_color(Clutter.Color.new(255, 255, 255, 255))
-        for actor in [self.actors.coords_bg, self.actors.coords]:
-            self.stage.add_actor(actor)
-            actor.raise_top()
-        self.actors.verti = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 255))
-        self.actors.horiz = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 255))
-        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::' + signal, self.display_actors,
-                get_obj("maps_link"))
-        self.map_view.connect("paint", paint_handler)
-        
         self.progressbar = get_obj("progressbar")
         self.status      = get_obj("status")
         
@@ -740,6 +747,7 @@ class GottenGeography(CommonAttributes):
         self.search    = SearchController()
         self.prefs     = PreferencesController()
         self.labels    = LabelController()
+        self.actors    = ActorController()
         
         self.listsel.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
@@ -816,24 +824,6 @@ class GottenGeography(CommonAttributes):
         if argv[1:]:
             self.open_files(argv[1:])
             anim_start = 2
-        verti, horiz = self.actors.verti,  self.actors.horiz
-        label, black = self.actors.coords, self.actors.coords_bg
-        for actor in [verti, horiz]:
-            self.stage.add_actor(actor)
-            actor.raise_top()
-        display = [self.map_view, None, get_obj("maps_link")]
-        verti.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        horiz.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        for i in xrange(anim_start, 1, -1):
-            horiz.set_size(i * 10, i)
-            verti.set_size(i, i * 10)
-            opacity = 0.6407035175879398 * (400 - i) # don't ask
-            verti.set_opacity(opacity / 5)
-            horiz.set_opacity(opacity / 5)
-            label.set_opacity(opacity)
-            black.set_opacity(opacity)
-            self.display_actors(*display)
-            self.redraw_interface()
-            sleep(0.002)
+        self.actors.animate_in(anim_start)
         Gtk.main()
 
