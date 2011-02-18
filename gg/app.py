@@ -580,10 +580,7 @@ class GottenGeography(CommonAttributes):
         assert self.polygons is CommonAttributes.polygons
         assert self.metadata is CommonAttributes.metadata
         for polygon in self.polygons:
-            polygon.hide()
-            # Maybe some day...
-            #polygon.clear_points()
-            #self.map_view.remove_polygon(polygon)
+            self.map_view.remove_layer(polygon)
         
         del self.gpx[:]
         del self.polygons[:]
