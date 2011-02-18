@@ -66,7 +66,6 @@ class GottenGeographyTester(TestCase):
         """Load the demo data and ensure that we're reading it in properly."""
         system("git checkout demo")
         self.assertEqual(len(gui.tracks), 0)
-        self.assertEqual(len(gui.gpx), 0)
         self.assertEqual(len(gui.polygons), 0)
         self.assertEqual(gui.metadata.alpha, float('inf'))
         self.assertEqual(gui.metadata.omega, float('-inf'))
@@ -127,11 +126,7 @@ class GottenGeographyTester(TestCase):
         
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
-        self.assertEqual(len(gui.gpx), 1)
-        self.assertEqual(len(gui.gpx[0].tracks), 374)
         self.assertEqual(len(gui.polygons), 1)
-        self.assertEqual(gui.gpx[0].alpha, 1287259751)
-        self.assertEqual(gui.gpx[0].omega, 1287260756)
         self.assertEqual(gui.metadata.alpha, 1287259751)
         self.assertEqual(gui.metadata.omega, 1287260756)
         
@@ -176,7 +171,6 @@ class GottenGeographyTester(TestCase):
             self.assertTrue(photo.label.get_selected())
         
         gui.clear_all_gpx()
-        self.assertEqual(len(gui.gpx), 0)
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.polygons), 0)
         self.assertFalse(get_obj("clear_button").get_sensitive())

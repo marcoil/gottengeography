@@ -108,11 +108,9 @@ class CommonAttributes:
     metadata  = Struct()
     selected  = set()
     modified  = set()
-    timezone  = None
     polygons  = []
     tracks    = {}
     photo     = {}
-    gpx       = []
 
 
 class NavigationController(CommonAttributes):
@@ -250,6 +248,8 @@ class SearchController(CommonAttributes):
 
 class PreferencesController(CommonAttributes):
     """Controls the behavior of the preferences dialog."""
+    timezone = None
+    
     def __init__(self):
         pref_button = get_obj("pref_button")
         region      = Gtk.ComboBoxText.new()
@@ -483,7 +483,6 @@ class GottenGeography(CommonAttributes):
             return
         
         self.tracks.update(gpx.tracks)
-        self.gpx.append(gpx)
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
@@ -582,7 +581,6 @@ class GottenGeography(CommonAttributes):
         for polygon in self.polygons:
             self.map_view.remove_layer(polygon)
         
-        del self.gpx[:]
         del self.polygons[:]
         self.tracks.clear()
         self.metadata.omega = float('-inf')   # Final GPX track point
