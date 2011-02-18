@@ -372,8 +372,8 @@ class LabelController(CommonAttributes):
         label.set_selectable(True)
         label.set_draggable(True)
         label.set_property('reactive', True)
-        label.connect("enter-event", self.mouse_in)
-        label.connect("leave-event", self.mouse_out)
+        label.connect("enter-event", self.hover, 1.05)
+        label.connect("leave-event", self.hover, 1/1.05)
         label.connect("drag-finish", self.drag_finish, self.photo)
         label.connect("button-press", self.clicked, self.selection,
             self.select_all, self.photo)
@@ -415,13 +415,9 @@ class LabelController(CommonAttributes):
         photo.set_location(label.get_latitude(), label.get_longitude())
         photo.manual = True
     
-    def mouse_in(self, label, event):
-        """Enlarge a hovered-over ChamplainLabel by 5%."""
-        label.set_scale(*[scale * 1.05 for scale in label.get_scale()])
-    
-    def mouse_out(self, label, event):
-        """Reduce a no-longer-hovered ChamplainLabel to it's original size."""
-        label.set_scale(*[scale / 1.05 for scale in label.get_scale()])
+    def hover(self, label, event, factor):
+        """Scale a ChamplainLabel by the given factor."""
+        label.set_scale(*[scale * factor for scale in label.get_scale()])
 
 
 class GottenGeography(CommonAttributes):
