@@ -114,8 +114,7 @@ class Photograph(Coordinates):
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""
         if self.valid_coords():
-            self.label.set_property('latitude', self.latitude)
-            self.label.set_property('longitude', self.longitude)
+            self.label.set_location(self.latitude, self.longitude)
             self.label.show()
             if self.label.get_selected():
                 self.label.raise_top()
