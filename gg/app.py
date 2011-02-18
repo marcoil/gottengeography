@@ -515,7 +515,6 @@ class GottenGeography(CommonAttributes):
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
         self.labels.select_all.set_active(False)
-        self.listsel.emit("changed")
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
