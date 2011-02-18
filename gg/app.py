@@ -701,7 +701,7 @@ class GottenGeography(CommonAttributes):
         self.actors.coords.set_single_line_mode(True)
         self.actors.coords.set_color(Clutter.Color.new(255, 255, 255, 255))
         for actor in [self.actors.coords_bg, self.actors.coords]:
-            actor.set_parent(self.stage)
+            self.stage.add_actor(actor)
             actor.raise_top()
         self.actors.verti = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 255))
@@ -829,7 +829,7 @@ class GottenGeography(CommonAttributes):
         verti, horiz = self.actors.verti,  self.actors.horiz
         label, black = self.actors.coords, self.actors.coords_bg
         for actor in [verti, horiz]:
-            actor.set_parent(self.stage)
+            self.stage.add_actor(actor)
             actor.raise_top()
         display = [self.map_view, None, get_obj("maps_link")]
         verti.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
