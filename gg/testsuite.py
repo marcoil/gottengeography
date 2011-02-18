@@ -146,9 +146,9 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.longitude)
             
             self.assertEqual(photo.label.get_scale(), (1, 1))
-            gui.labels.mouse_in(photo.label, None)
+            photo.label.emit("enter-event", Clutter.Event())
             self.assertEqual(photo.label.get_scale(), (1.05, 1.05))
-            gui.labels.mouse_out(photo.label, None)
+            photo.label.emit("leave-event", Clutter.Event())
             self.assertEqual(photo.label.get_scale(), (1, 1))
             
             photo.label.emit("button-press", Clutter.Event())
