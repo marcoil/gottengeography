@@ -427,7 +427,9 @@ S 10.00000, W 10.00000
         lon = random_coord(180)
         
         label = gui.labels.add("foobar")
-        label.set_position(lat, lon)
+        #label.set_position(lat, lon)
+        label.set_property('latitude', lat)
+        label.set_property('longitude', lon)
         
         self.assertEqual(label.get_latitude(), lat)
         self.assertEqual(label.get_longitude(), lon)

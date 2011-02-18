@@ -46,6 +46,7 @@ from territories import tz_regions, get_timezone, get_state, get_country
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 LOCATION, LATITUDE, LONGITUDE = range(3)
 
+GObject.threads_init()
 GtkClutter.init([])
 
 builder = Gtk.Builder()
