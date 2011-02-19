@@ -242,7 +242,7 @@ class SearchController(CommonAttributes):
         self.map_view.emit("realize")
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.set_zoom_level(11)
-        view.go_to(lat, lon)
+        view.center_on(lat, lon)
     
     def search_bar_clicked(self, entry, icon_pos, event):
         """Clear the search bar when the user clicks the clear button."""
@@ -421,6 +421,7 @@ class LabelController(CommonAttributes):
     def hover(self, label, event, factor):
         """Scale a ChamplainLabel by the given factor."""
         label.set_scale(*[scale * factor for scale in label.get_scale()])
+
 
 class ActorController(CommonAttributes):
     def __init__(self):

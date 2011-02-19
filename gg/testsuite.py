@@ -18,7 +18,7 @@ from __future__ import division
 
 from unittest import TestCase, TextTestRunner, TestLoader
 from os import listdir, getcwd, system, environ
-from gi.repository import Gdk, Clutter
+from gi.repository import Gdk, Clutter, GObject
 from random import random
 from os.path import join
 from math import floor
@@ -38,17 +38,17 @@ class GottenGeographyTester(TestCase):
     def setUp(self):
         """Start the GottenGeography application."""
         # Make the tests work for people outside my time zone.
-        system("git checkout demo")
-        environ["TZ"] = "America/Edmonton"
+        system('git checkout demo')
+        environ['TZ'] = 'America/Edmonton'
         tzset()
         self.restore = {}
         for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color'):
             self.restore[key] = gconf_get(key)
-        get_obj("system_timezone").clicked()
+        get_obj('system_timezone').clicked()
     
     def tearDown(self):
         """Restore history."""
-        system("git checkout demo")
+        system('git checkout demo')
         for key in self.restore:
             gconf_set(key, self.restore[key])
     
@@ -56,72 +56,92 @@ class GottenGeographyTester(TestCase):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
-        size = get_obj("main").get_size()
+        size = get_obj('main').get_size()
         self.assertEqual(size[1], 600)
         self.assertGreater(size[0], 799)
         self.assertEqual(gui.listsel.count_selected_rows(), 0)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
-        system("git checkout demo")
+        
+        # Start with a fresh state.
+        system('git checkout demo')
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.polygons), 0)
         self.assertEqual(gui.metadata.alpha, float('inf'))
         self.assertEqual(gui.metadata.omega, float('-inf'))
         
-        for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
-            self.assertFalse(btn.get_sensitive())
+        # No buttons should be sensitive yet because nothing's loaded.
+        buttons = {}
+        for button in ('save', 'revert', 'apply', 'close', 'clear'):
+            buttons[button] = get_obj(button + '_button')
+            self.assertFalse(buttons[button].get_sensitive())
         
-        # Load only the photos first
+        # Load only the photos first.
         for demo in listdir('./demo/'):
-            filename = join(getcwd(), "demo", demo)
-            if not search(r'gpx$', demo):
+            filename = join(getcwd(), 'demo', demo)
+            if demo[-3:] != 'gpx':
                 self.assertRaises(IOError, gui.load_gpx_from_file, filename)
                 gui.load_img_from_file(filename)
         
-        self.assertFalse(get_obj("clear_button").get_sensitive())
-        treeiter = gui.liststore.get_iter_first()
-        self.assertTrue(treeiter)
+        # Nothing is yet selected or modified, so buttons still insensitive.
+        for button in buttons.values():
+            self.assertFalse(button.get_sensitive())
+        
+        # Something loaded in the liststore?
+        self.assertEqual(len(gui.liststore), 6)
+        self.assertTrue(gui.liststore.get_iter_first())
         
         for photo in gui.photo.values():
             self.assertFalse(photo in gui.modified)
             self.assertFalse(photo in gui.selected)
             
-            photo.set_geodata(["Anytown", None, "US", "timezone"])
-            self.assertEqual(photo.pretty_geoname(), "Anytown, United States")
-            self.assertEqual(photo.timezone, "timezone")
+            # Test that missing the provincestate doesn't break the geoname.
+            photo.set_geodata(['Anytown', None, 'US', 'timezone'])
+            self.assertEqual(photo.pretty_geoname(), 'Anytown, United States')
+            self.assertEqual(photo.timezone, 'timezone')
             
+            # Pristine demo data shouldn't have any tags.
             self.assertIsNone(photo.altitude)
             self.assertIsNone(photo.latitude)
             self.assertIsNone(photo.longitude)
             self.assertFalse(photo.manual)
-            photo.manual = True
-            photo.latitude = 10.0
-            photo.altitude = 650
-            photo.latitude = 45.0
+            
+            # Add some crap
+            photo.manual    = True
+            photo.latitude  = 10.0
+            photo.altitude  = 650
+            photo.longitude = 45.0
+            self.assertTrue(photo.valid_coords())
+            
+            # photo.read() should discard all the crap we added above.
+            # This is in response to a bug where I was using pyexiv2 wrongly
+            # and it would load data from disk without discarding old data.
             photo.read()
-            self.assertEqual(photo.pretty_geoname(), "")
+            self.assertEqual(photo.pretty_geoname(), '')
             self.assertIsNone(photo.altitude)
             self.assertIsNone(photo.latitude)
             self.assertIsNone(photo.longitude)
+            self.assertFalse(photo.valid_coords())
             self.assertFalse(photo.manual)
             self.assertEqual(photo.filename, photo.label.get_name())
             self.assertEqual(photo.timestamp,
                 gui.liststore.get_value(photo.iter, app.TIMESTAMP))
         
-        select_all = get_obj("select_all_button")
+        # Test the select-all button.
+        select_all = get_obj('select_all_button')
         self.assertEqual(len(gui.selected), 0)
         select_all.set_active(True)
-        self.assertEqual(len(gui.selected), 6)
+        self.assertEqual(len(gui.selected), len(gui.liststore))
         select_all.set_active(False)
         self.assertEqual(len(gui.selected), 0)
         
         # Load the GPX
-        gpx_filename=join(getcwd(), "demo", "20101016.gpx")
+        gpx_filename=join(getcwd(), 'demo', '20101016.gpx')
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.load_gpx_from_file(gpx_filename)
-        self.assertTrue(get_obj("clear_button").get_sensitive())
-        gui.listsel.emit("changed")
+        self.assertTrue(buttons['clear'].get_sensitive())
+        gui.listsel.emit('changed')
         
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
@@ -129,118 +149,126 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.metadata.alpha, 1287259751)
         self.assertEqual(gui.metadata.omega, 1287260756)
         
-        for btn in [get_obj(name + "_button") for name in ("save",)]:
-            self.assertTrue(btn.get_sensitive())
-        for btn in [get_obj(name + "_button") for name in ("revert", "apply", "close")]:
-            self.assertFalse(btn.get_sensitive())
+        # The save button should be sensitive because loading GPX modifies
+        # photos, but nothing is selected so the others are insensitive.
+        self.assertTrue(buttons['save'].get_sensitive())
+        for button in ('revert', 'apply', 'close'):
+            self.assertFalse(buttons[button].get_sensitive())
+        
         for photo in gui.photo.values():
             self.assertTrue(photo in gui.modified)
             
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
+            self.assertTrue(photo.valid_coords())
             
+            # Play with ChamplainLabels for a bit.
             self.assertEqual(photo.label.get_scale(), (1, 1))
             photo.label.emit("enter-event", Clutter.Event())
             self.assertEqual(photo.label.get_scale(), (1.05, 1.05))
             photo.label.emit("leave-event", Clutter.Event())
             self.assertEqual(photo.label.get_scale(), (1, 1))
             
+            # Are Labels clickable?
             photo.label.emit("button-press", Clutter.Event())
-            for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
-                self.assertTrue(btn.get_sensitive())
+            for button in ('save', 'revert', 'apply', 'close'):
+                self.assertTrue(buttons[button].get_sensitive())
             self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
             self.assertEqual(gui.listsel.count_selected_rows(), 1)
             self.assertTrue(photo in gui.selected)
             self.assertEqual(len(gui.selected), 1)
             self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
             self.assertTrue(photo.label.get_selected())
+            self.assertEqual(photo.label.get_property('opacity'), 255)
             
+            # Make sure the Labels that we didn't click on are deselected.
             for other in gui.photo.values():
                 if other.filename == photo.filename: continue
                 self.assertFalse(gui.listsel.iter_is_selected(other.iter))
                 self.assertFalse(other in gui.selected)
                 self.assertEqual(other.label.get_scale(), (1, 1))
                 self.assertFalse(other.label.get_selected())
-            
-            photo.set_label_highlight(None, True)
-            self.assertEqual(photo.label.get_property('opacity'), 64)
-            self.assertFalse(photo.label.get_selected())
-            photo.set_label_highlight([0,0,0,0,False], False)
-            self.assertEqual(photo.label.get_property('opacity'), 255)
-            self.assertTrue(photo.label.get_selected())
+                self.assertEqual(other.label.get_property('opacity'), 64)
         
-        gui.clear_all_gpx()
+        # Unload the GPX data.
+        buttons['clear'].emit('clicked')
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.polygons), 0)
-        self.assertFalse(get_obj("clear_button").get_sensitive())
+        self.assertFalse(buttons['clear'].get_sensitive())
         
-        gui.save_all_files()
+        # Save all photos
+        buttons['save'].emit('clicked')
         self.assertEqual(len(gui.modified), 0)
-        for btn in [get_obj(name + "_button") for name in ("save", "revert")]:
-            self.assertFalse(btn.get_sensitive())
+        for button in ('save', 'revert'):
+            self.assertFalse(buttons[button].get_sensitive())
         
         gui.listsel.select_all()
         self.assertEqual(len(gui.selected), 6)
-        for btn in [get_obj(name + "_button") for name in ("save", "revert")]:
-            self.assertFalse(btn.get_sensitive())
-        for btn in [get_obj(name + "_button") for name in ("apply", "close")]:
-            self.assertTrue(btn.get_sensitive())
+        for button in ('save', 'revert'):
+            self.assertFalse(buttons[button].get_sensitive())
+        for button in ('apply', 'close'):
+            self.assertTrue(buttons[button].get_sensitive())
+        
+        # Close all the photos.
         files = [photo.filename for photo in gui.selected]
-        gui.close_selected_photos()
-        for btn in [get_obj(name + "_button") for name in ("save", "revert", "apply", "close")]:
-            self.assertFalse(btn.get_sensitive())
+        buttons['close'].emit('clicked')
+        for button in ('save', 'revert', 'apply', 'close'):
+            self.assertFalse(buttons[button].get_sensitive())
         self.assertEqual(len(gui.photo), 0)
         self.assertEqual(len(gui.modified), 0)
         self.assertEqual(len(gui.selected), 0)
         
+        # Re-read the photos back from disk to make sure that the saving
+        # was successful.
         for filename in files:
-            photo = Photograph(filename, gui.modify_summary)
+            photo = Photograph(filename, lambda x: None)
             photo.read()
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
-            self.assertEqual(photo.pretty_geoname(), "Edmonton, Alberta, Canada")
+            self.assertEqual(photo.pretty_geoname(), 'Edmonton, Alberta, Canada')
     
     def test_auto_timestamp(self):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
-        environ["TZ"] = "Europe/Paris"
+        environ['TZ'] = 'Europe/Paris'
         tzset()
-        get_obj("lookup_timezone").clicked()
+        get_obj('lookup_timezone').clicked()
         self.test_demo_data()
-        environ["TZ"] = "America/Edmonton"
+        environ['TZ'] = 'America/Edmonton'
         tzset()
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
-        environ["TZ"] = "America/Edmonton"
+        environ['TZ'] = 'America/Edmonton'
         tzset()
         
+        # Make a photo with a dummy ChamplainLabel.
         label = Struct()
         label.get_text = lambda: get_file('../demo/IMG_2411.JPG')
-        photo = Photograph(label.get_text(), gui.modify_summary)
+        photo = Photograph(label.get_text(), lambda x: None)
         photo.read()
         photo.label = label
         
         photo.latitude  = None
         photo.longitude = None
-        self.assertEqual(photo.pretty_coords(), "Not geotagged")
+        self.assertEqual(photo.pretty_coords(), 'Not geotagged')
         photo.latitude  = 10.0
         photo.longitude = 10.0
-        self.assertEqual(photo.pretty_coords(), "N 10.00000, E 10.00000")
+        self.assertEqual(photo.pretty_coords(), 'N 10.00000, E 10.00000')
         photo.latitude  = -10.0
         photo.longitude = -10.0
-        self.assertEqual(photo.pretty_coords(), "S 10.00000, W 10.00000")
+        self.assertEqual(photo.pretty_coords(), 'S 10.00000, W 10.00000')
         
         photo.timestamp = None
         self.assertIsNone(photo.pretty_time())
         photo.timestamp = 999999999
-        self.assertEqual(photo.pretty_time(), "2001-09-08 07:46:39 PM")
+        self.assertEqual(photo.pretty_time(), '2001-09-08 07:46:39 PM')
         
         photo.altitude = None
         self.assertIsNone(photo.pretty_elevation())
         photo.altitude = -10.20005
-        self.assertEqual(photo.pretty_elevation(), "10.2m below sea level")
+        self.assertEqual(photo.pretty_elevation(), '10.2m below sea level')
         photo.altitude = 600.71
-        self.assertEqual(photo.pretty_elevation(), "600.7m above sea level")
+        self.assertEqual(photo.pretty_elevation(), '600.7m above sea level')
         
         self.assertEqual(photo.short_summary(),
 """2001-09-08 07:46:39 PM
@@ -253,14 +281,7 @@ S 10.00000, W 10.00000
 600.7m above sea level</span>""")
         
         self.assertRegexpMatches(
-            maps_link(10.0, 10.0),
-            r'href="http://maps.google.com'
-        )
-        
-        mlink = get_obj("maps_link")
-        gui.actors.display(gui.map_view, None, mlink)
-        self.assertRegexpMatches(
-            mlink.get_label(),
+            get_obj('maps_link').get_label(),
             r'href="http://maps.google.com'
         )
     
@@ -269,13 +290,15 @@ S 10.00000, W 10.00000
         
         # Really important that this method is bulletproof
         self.assertFalse(valid_coords(None, None))
-        self.assertFalse(valid_coords("", ""))
+        self.assertFalse(valid_coords('', ''))
         self.assertFalse(valid_coords(True, True))
         self.assertFalse(valid_coords(False, False))
         self.assertFalse(valid_coords(45, 270))
         self.assertFalse(valid_coords(100, 50))
         self.assertFalse(valid_coords([], 50))
         self.assertFalse(valid_coords(45, {'grunt':42}))
+        self.assertFalse(valid_coords(self, 50))
+        self.assertFalse(valid_coords(45, valid_coords))
         self.assertFalse(valid_coords("ya", "dun goofed"))
         
         # Pick 100 random coordinates on the globe, convert them from decimal
@@ -312,12 +335,12 @@ S 10.00000, W 10.00000
             
             self.assertAlmostEqual(
                 decimal_lat,
-                dms_to_decimal(*dms_lat + ["N" if decimal_lat >= 0 else "S"]),
+                dms_to_decimal(*dms_lat + ['N' if decimal_lat >= 0 else 'S']),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
                 decimal_lon,
-                dms_to_decimal(*dms_lon + ["E" if decimal_lon >= 0 else "W"]),
+                dms_to_decimal(*dms_lon + ['E' if decimal_lon >= 0 else 'W']),
                 10 # equal to 10 places
             )
     
@@ -328,51 +351,46 @@ S 10.00000, W 10.00000
             gui.map_view.get_property('latitude'),
             gui.map_view.get_property('longitude')
         ]]
+        gui.map_view.emit('realize')
         
         lat = round(random_coord(90),  6)
         lon = round(random_coord(180), 6)
-        
-        gui.map_view.emit("realize")
         gui.map_view.center_on(lat, lon)
-        
         coords.append([lat, lon])
-        zoom = gui.map_view.get_zoom_level()
         
-        self.assertAlmostEqual(coords[0][0], gconf_get("history")[-1][0], 1)
-        self.assertAlmostEqual(coords[0][1], gconf_get("history")[-1][1], 1)
+        self.assertAlmostEqual(coords[0][0], gconf_get('history')[-1][0], 5)
+        self.assertAlmostEqual(coords[0][1], gconf_get('history')[-1][1], 5)
         
         lat = round(random_coord(80),  6)
         lon = round(random_coord(170), 6)
-        
         gui.map_view.center_on(lat, lon)
         
-        zoom_in  = get_obj("zoom_in_button")
-        zoom_out = get_obj("zoom_out_button")
+        zoom_in  = get_obj('zoom_in_button')
+        zoom_out = get_obj('zoom_out_button')
         gui.map_view.set_zoom_level(0)
-        gui.navigator.zoom_button_sensitivity(gui.map_view, None, zoom_in, zoom_out)
         self.assertFalse(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
-        gui.navigator.zoom_in(None, gui.map_view)
+        zoom_in.emit('clicked')
         self.assertTrue(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
         self.assertEqual(1, gui.map_view.get_zoom_level())
-        gui.navigator.zoom_in(None, gui.map_view)
+        zoom_in.emit('clicked')
         self.assertEqual(2, gui.map_view.get_zoom_level())
-        gui.navigator.zoom_in(None, gui.map_view)
+        zoom_in.emit('clicked')
         self.assertEqual(3, gui.map_view.get_zoom_level())
-        gui.navigator.zoom_out(None, gui.map_view)
+        zoom_out.emit('clicked')
         self.assertEqual(2, gui.map_view.get_zoom_level())
         gui.map_view.set_zoom_level(gui.map_view.get_max_zoom_level()-1)
         self.assertTrue(zoom_out.get_sensitive())
         self.assertTrue(zoom_in.get_sensitive())
         zoom = gui.map_view.get_zoom_level()
-        gui.navigator.zoom_in(None, gui.map_view)
+        zoom_in.emit('clicked')
         self.assertTrue(zoom_out.get_sensitive())
         self.assertFalse(zoom_in.get_sensitive())
         self.assertEqual(gui.map_view.get_max_zoom_level(),
             gui.map_view.get_zoom_level())
         
-        gui.navigator.go_back(get_obj("back_button"), gui.map_view)
+        get_obj("back_button").emit('clicked')
         
         gui.map_view.set_zoom_level(5)
         
@@ -420,9 +438,7 @@ S 10.00000, W 10.00000
         lon = random_coord(180)
         
         label = gui.labels.add("foobar")
-        #label.set_position(lat, lon)
-        label.set_property('latitude', lat)
-        label.set_property('longitude', lon)
+        label.set_location(lat, lon)
         
         self.assertEqual(label.get_latitude(), lat)
         self.assertEqual(label.get_longitude(), lon)
@@ -464,52 +480,40 @@ S 10.00000, W 10.00000
     
     def test_search(self):
         """Make sure the search box functions."""
-        entry   = get_obj("search")
-        results = []
-        foreach = lambda model,path,itr,itrs: itrs.append(
-            [itr.copy(), model.get(itr, app.LOCATION, app.LATITUDE, app.LONGITUDE)])
+        entry = get_obj('search')
         
-        gui.search.results.foreach(foreach, results)
-        self.assertEqual(len(results), 0)
+        self.assertEqual(len(gui.search.results), 0)
         
-        entry.set_text("jo")
-        gui.search.results.foreach(foreach, results)
-        self.assertEqual(len(results), 0)
+        entry.set_text('jo')
+        self.assertEqual(len(gui.search.results), 0)
         
-        entry.set_text("edm")
-        gui.search.results.foreach(foreach, results)
-        self.assertEqual(len(results), 8)
+        entry.set_text('edm')
+        self.assertEqual(len(gui.search.results), 8)
         
-        entry.set_text("calg")
-        results = []
-        gui.search.results.foreach(foreach, results)
-        self.assertEqual(len(results), 339)
+        entry.set_text('calg')
+        self.assertEqual(len(gui.search.results), 339)
         
-        for itr, data in results:
-            gui.search.search_completed(entry, gui.search.results, itr, gui.map_view)
-            loc, lat, lon = data
+        for results in gui.search.results:
+            gui.search.search_completed(entry, gui.search.results, results.iter, gui.map_view)
+            loc, lat, lon = results
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
-        orig = gui.prefs.colorpicker.get_current_color()
-        
         gui.prefs.colorpicker.set_current_color(Gdk.Color(0, 0, 0))
         new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 0)
         self.assertEqual(new.green, 0)
         self.assertEqual(new.blue, 0)
-        self.assertEqual(gconf_get("track_color"), [0, 0, 0])
+        self.assertEqual(gconf_get('track_color'), [0, 0, 0])
         
         gui.prefs.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
         new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 32768)
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
-        self.assertEqual(gconf_get("track_color"), [32768, 32768, 32768])
-        
-        gui.prefs.colorpicker.set_current_color(orig)
+        self.assertEqual(gconf_get('track_color'), [32768, 32768, 32768])
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
