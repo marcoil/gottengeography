@@ -66,10 +66,13 @@ def auto_timestamp_comparison(photo, points, metadata):
     if photo.manual or len(points) < 2:
         return
     
-    stamp = metadata.delta + photo.timestamp # in epoch seconds
-    hi    = metadata.omega                   # Latest timestamp in GPX file.
-    lo    = metadata.alpha                   # Earliest timestamp in GPX file.
-    stamp = min(max(stamp, lo), hi)          # Keep timestamp within range.
+    # Add the user-specified clock offset (metadata.delta) to the photo
+    # timestamp, and then keep it within the range of available GPX points.
+    # The result is in epoch seconds, just like the keys of the 'points' dict.
+    stamp = min(max(
+        metadata.delta + photo.timestamp,
+        metadata.alpha),
+        metadata.omega)
     
     try:
         point = points[stamp] # Try to use an exact match,
