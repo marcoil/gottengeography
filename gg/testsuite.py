@@ -16,9 +16,9 @@
 
 from __future__ import division
 
+from gi.repository import Gdk, Clutter, GObject, Champlain
 from unittest import TestCase, TextTestRunner, TestLoader
 from os import listdir, getcwd, system, environ
-from gi.repository import Gdk, Clutter, GObject
 from random import random
 from os.path import join
 from math import floor
@@ -27,6 +27,7 @@ from re import search
 
 import app
 from files import Photograph
+from utils import Polygon, make_clutter_color
 from utils import get_file, gconf_get, gconf_set
 from utils import maps_link, valid_coords, Struct
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
@@ -433,7 +434,6 @@ S 10.00000, W 10.00000
     
     def test_map_objects(self):
         """Test ChamplainMarkers."""
-        
         lat = random_coord(90)
         lon = random_coord(180)
         
@@ -442,8 +442,28 @@ S 10.00000, W 10.00000
         
         self.assertEqual(label.get_latitude(), lat)
         self.assertEqual(label.get_longitude(), lon)
+        
+        color   = make_clutter_color(gui.prefs.colorpicker.get_current_color())
+        polygon = Polygon(color)
+        self.assertTrue(isinstance(polygon, Champlain.PathLayer))
+        self.assertEqual(color.to_string(), polygon.get_stroke_color().to_string())
+        
+        point = polygon.append_point(0,0,0)
+        self.assertTrue(isinstance(point, Champlain.Coordinate))
+        self.assertEqual(point.lat, 0)
+        self.assertEqual(point.lon, 0)
+        self.assertEqual(point.ele, 0)
+        
+        point = polygon.append_point(45,90,1000)
+        self.assertTrue(isinstance(point, Champlain.Coordinate))
+        self.assertEqual(point.lat, 45)
+        self.assertEqual(point.lon, 90)
+        self.assertEqual(point.ele, 1000)
+        
+        self.assertEqual(len(polygon.get_nodes()), 2)
     
     def test_gconf(self):
+        """Read and write some stuff from GConf."""
         history = gconf_get("history")
         
         gconf_set('history', [[0,0,0]])
@@ -493,9 +513,9 @@ S 10.00000, W 10.00000
         entry.set_text('calg')
         self.assertEqual(len(gui.search.results), 339)
         
-        for results in gui.search.results:
-            gui.search.search_completed(entry, gui.search.results, results.iter, gui.map_view)
-            loc, lat, lon = results
+        for result in gui.search.results:
+            gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
+            loc, lat, lon = result
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
     
