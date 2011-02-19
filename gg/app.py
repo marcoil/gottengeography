@@ -262,6 +262,9 @@ class PreferencesController(CommonAttributes):
         tz_combos.pack_start(cities, False, False, 10)
         tz_combos.show_all()
         
+        self.region = region
+        self.cities = cities
+        
         for name in tz_regions:
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
@@ -278,9 +281,6 @@ class PreferencesController(CommonAttributes):
         
         pref_button.connect("clicked", self.preferences_dialog,
             get_obj("preferences"), region, cities, self.colorpicker)
-        
-        self.region = region
-        self.cities = cities
         
         self.radios = {}
         for option in ["system", "lookup", "custom"]:
@@ -786,7 +786,7 @@ class GottenGeography(CommonAttributes):
         self.clear_all_gpx()
         
         self.metadata.delta = 0
-        offset = gconf_get("clock_offset", [0, 0])
+        offset = gconf_get("clock_offset") or [0, 0]
         self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
         for spinbutton in [ self.secbutton, self.minbutton ]:
             spinbutton.connect("value-changed", self.time_offset_changed)
