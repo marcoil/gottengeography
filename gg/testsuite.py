@@ -41,17 +41,16 @@ class GottenGeographyTester(TestCase):
         system("git checkout demo")
         environ["TZ"] = "America/Edmonton"
         tzset()
-        self.history = gconf_get("history")
-        self.searched = gconf_get("searched")
-        self.clock_offset = gconf_get("clock_offset")
+        self.restore = {}
+        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color'):
+            self.restore[key] = gconf_get(key)
         get_obj("system_timezone").clicked()
     
     def tearDown(self):
         """Restore history."""
         system("git checkout demo")
-        gconf_set("history", self.history)
-        gconf_set("searched", self.searched)
-        gconf_set("clock_offset", self.clock_offset)
+        for key in self.restore:
+            gconf_set(key, self.restore[key])
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
