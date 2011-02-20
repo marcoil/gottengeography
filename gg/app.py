@@ -108,6 +108,7 @@ class CommonAttributes:
     """
     champlain = GtkChamplain.Embed()
     map_view  = champlain.get_view()
+    slide_to  = map_view.go_to
     metadata  = Struct()
     selected  = set()
     modified  = set()
@@ -167,8 +168,8 @@ class NavigationController(CommonAttributes):
         assert history is not self.default
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
-            view.go_to(lat, lon)
             view.set_zoom_level(zoom)
+            self.slide_to(lat, lon)
         gconf_set("history", history)
     
     def zoom_in(self, button, view):
@@ -242,7 +243,7 @@ class SearchController(CommonAttributes):
         self.map_view.emit("realize")
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.set_zoom_level(11)
-        view.center_on(lat, lon)
+        self.slide_to(lat, lon)
     
     def search_bar_clicked(self, entry, icon_pos, event):
         """Clear the search bar when the user clicks the clear button."""

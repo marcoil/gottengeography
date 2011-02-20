@@ -32,6 +32,9 @@ from utils import get_file, gconf_get, gconf_set
 from utils import maps_link, valid_coords, Struct
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
+# Disable animations so tests pass more quickly.
+app.CommonAttributes.slide_to = app.CommonAttributes.map_view.center_on
+
 gui = app.GottenGeography()
 get_obj = app.get_obj
 
