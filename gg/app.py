@@ -126,8 +126,8 @@ class NavigationController(CommonAttributes):
         back_button     = get_obj("back_button")
         zoom_in_button  = get_obj("zoom_in_button")
         zoom_out_button = get_obj("zoom_out_button")
-        zoom_out_button.connect("clicked", self.zoom_out, self.map_view)
-        zoom_in_button.connect("clicked", self.zoom_in, self.map_view)
+        zoom_out_button.connect("clicked", self.zoom, self.map_view.zoom_out)
+        zoom_in_button.connect("clicked", self.zoom, self.map_view.zoom_in)
         back_button.connect("clicked", self.go_back, self.map_view)
         back_button.emit("clicked")
         
@@ -172,13 +172,9 @@ class NavigationController(CommonAttributes):
             self.slide_to(lat, lon)
         gconf_set("history", history)
     
-    def zoom_in(self, button, view):
-        """Zoom the map in by one level."""
-        view.zoom_in()
-    
-    def zoom_out(self, button, view):
-        """Zoom the map out by one level."""
-        view.zoom_out()
+    def zoom(self, button, zoom):
+        """Zoom the map by one level, either in or out."""
+        zoom()
     
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
         """Ensure zoom buttons are only sensitive when they need to be."""
