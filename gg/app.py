@@ -185,6 +185,8 @@ class NavigationController(CommonAttributes):
 
 class SearchController(CommonAttributes):
     """Controls the behavior for searching the map."""
+    last_search = None
+    
     def __init__(self):
         """Make the search box and insert it into the window."""
         self.results = Gtk.ListStore(GObject.TYPE_STRING,
@@ -199,6 +201,7 @@ class SearchController(CommonAttributes):
         entry.set_completion(search)
         entry.connect("changed", self.load_results, self.results.append)
         entry.connect("icon-release", self.search_bar_clicked)
+        entry.connect("activate", self.repeat_last_search, self.results, self.map_view)
     
     def load_results(self, entry, append, searched=set()):
         """Load a few search results based on what's been typed.
@@ -236,10 +239,16 @@ class SearchController(CommonAttributes):
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
+        self.last_search = itr.copy()
         self.map_view.emit("realize")
         lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.set_zoom_level(11)
         self.slide_to(lat, lon)
+    
+    def repeat_last_search(self, entry, model, view):
+        """Snap back to the last-searched location when user hits enter key."""
+        if self.last_search is not None:
+            self.search_completed(entry, model, self.last_search, view)
     
     def search_bar_clicked(self, entry, icon_pos, event):
         """Clear the search bar when the user clicks the clear button."""
