@@ -568,10 +568,10 @@ class GottenGeography(CommonAttributes):
         
         self.map_view.emit("realize")
         self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
-        #self.map_view.ensure_layers_visible(True)
         bounds = Champlain.BoundingBox.new()
         for poly in self.polygons:
             bounds.compose(poly.get_bounding_box())
+        gpx.latitude, gpx.longitude = bounds.get_center()
         self.map_view.ensure_visible(bounds, False)
         
         self.prefs.set_timezone(gpx.lookup_geoname())

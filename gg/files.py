@@ -179,8 +179,6 @@ class GPXLoader(Coordinates):
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
-        self.latitude  = self.tracks[self.alpha].lat
-        self.longitude = self.tracks[self.alpha].lon
     
     def element_root(self, name, attributes):
         """Expat StartElementHandler.
