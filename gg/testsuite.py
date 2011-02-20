@@ -63,7 +63,7 @@ class GottenGeographyTester(TestCase):
         size = get_obj('main').get_size()
         self.assertEqual(size[1], 600)
         self.assertGreater(size[0], 799)
-        self.assertEqual(gui.listsel.count_selected_rows(), 0)
+        self.assertEqual(gui.labels.selection.count_selected_rows(), 0)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -145,7 +145,7 @@ class GottenGeographyTester(TestCase):
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.load_gpx_from_file(gpx_filename)
         self.assertTrue(buttons['clear'].get_sensitive())
-        gui.listsel.emit('changed')
+        gui.labels.selection.emit('changed')
         
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
@@ -177,8 +177,8 @@ class GottenGeographyTester(TestCase):
             photo.label.emit("button-press", Clutter.Event())
             for button in ('save', 'revert', 'apply', 'close'):
                 self.assertTrue(buttons[button].get_sensitive())
-            self.assertTrue(gui.listsel.iter_is_selected(photo.iter))
-            self.assertEqual(gui.listsel.count_selected_rows(), 1)
+            self.assertTrue(gui.labels.selection.iter_is_selected(photo.iter))
+            self.assertEqual(gui.labels.selection.count_selected_rows(), 1)
             self.assertTrue(photo in gui.selected)
             self.assertEqual(len(gui.selected), 1)
             self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
@@ -188,7 +188,7 @@ class GottenGeographyTester(TestCase):
             # Make sure the Labels that we didn't click on are deselected.
             for other in gui.photo.values():
                 if other.filename == photo.filename: continue
-                self.assertFalse(gui.listsel.iter_is_selected(other.iter))
+                self.assertFalse(gui.labels.selection.iter_is_selected(other.iter))
                 self.assertFalse(other in gui.selected)
                 self.assertEqual(other.label.get_scale(), (1, 1))
                 self.assertFalse(other.label.get_selected())
@@ -206,7 +206,7 @@ class GottenGeographyTester(TestCase):
         for button in ('save', 'revert'):
             self.assertFalse(buttons[button].get_sensitive())
         
-        gui.listsel.select_all()
+        gui.labels.selection.select_all()
         self.assertEqual(len(gui.selected), 6)
         for button in ('save', 'revert'):
             self.assertFalse(buttons[button].get_sensitive())

@@ -366,8 +366,9 @@ class PreferencesController(CommonAttributes):
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
     def __init__(self):
-        self.selection   = get_obj("photos_view").get_selection()
-        self.select_all  = get_obj("select_all_button")
+        self.select_all = get_obj("select_all_button")
+        self.selection  = get_obj("photos_view").get_selection()
+        self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.photo_layer = Champlain.MarkerLayer()
         self.map_view.add_layer(self.photo_layer)
         self.selection.connect("changed", self.update_highlights,
@@ -526,7 +527,7 @@ class GottenGeography(CommonAttributes):
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.labels.photo_layer.animate_in_all_markers()
-        self.listsel.emit("changed")
+        self.labels.selection.emit("changed")
     
     def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
@@ -583,7 +584,7 @@ class GottenGeography(CommonAttributes):
             photo.set_location(
                 view.get_property('latitude'),
                 view.get_property('longitude'))
-        self.listsel.emit("changed")
+        self.labels.selection.emit("changed")
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -626,7 +627,7 @@ class GottenGeography(CommonAttributes):
                 self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
         self.progressbar.hide()
-        self.listsel.emit("changed")
+        self.labels.selection.emit("changed")
     
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
@@ -757,9 +758,6 @@ class GottenGeography(CommonAttributes):
         photos_view.set_model(self.liststore)
         photos_view.append_column(column)
         
-        self.listsel = photos_view.get_selection()
-        self.listsel.set_mode(Gtk.SelectionMode.MULTIPLE)
-        
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
         self.navigator = NavigationController()
@@ -768,7 +766,7 @@ class GottenGeography(CommonAttributes):
         self.labels    = LabelController()
         self.actors    = ActorController()
         
-        self.listsel.connect("changed", self.selection_sensitivity,
+        self.labels.selection.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
                 "save_button", "revert_button", "photos_with_buttons")])
         
@@ -780,7 +778,7 @@ class GottenGeography(CommonAttributes):
             "revert_button":     [self.revert_selected_photos],
             "about_button":      [self.about_dialog, get_obj("about")],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
-            "select_all_button": [self.toggle_selected_photos, self.listsel]
+            "select_all_button": [self.toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect("clicked", *handler)
@@ -793,7 +791,7 @@ class GottenGeography(CommonAttributes):
         accel.connect(Gdk.keyval_from_name("q"),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
-        self.listsel.emit("changed")
+        self.labels.selection.emit("changed")
         self.clear_all_gpx()
         
         self.metadata.delta = 0
