@@ -23,7 +23,6 @@ from random import random
 from os.path import join
 from math import floor
 from time import tzset
-from re import search
 
 import app
 from files import Photograph
