@@ -213,7 +213,9 @@ class SearchController(CommonAttributes):
         not be passed as an argument unless your intention is to trigger the
         loading of duplicate results.
         """
-        text = entry.get_text().lower()[0:3]
+        text = entry.get_text().lower()
+        self.search = re_compile('(^|\s)' + text, flags=IGNORECASE).search
+        text = text[0:3]
         if len(text) == 3 and text not in searched:
             searched.add(text)
             search = re_compile('(^|\s)' + text, flags=IGNORECASE).search
@@ -233,8 +235,7 @@ class SearchController(CommonAttributes):
         example, a search for "spring" will contain "Palm Springs" as well as
         "Springfield".
         """
-        location = get(itr, LOCATION)
-        if location and search('(^|\s)' + string, location, flags=IGNORECASE):
+        if self.search(get(itr, LOCATION) or ""):
             return True
     
     def search_completed(self, entry, model, itr, view):
