@@ -370,8 +370,8 @@ class LabelController(CommonAttributes):
         self.select_all = get_obj("select_all_button")
         self.selection  = get_obj("photos_view").get_selection()
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.photo_layer = Champlain.MarkerLayer()
-        self.map_view.add_layer(self.photo_layer)
+        self.layer = Champlain.MarkerLayer()
+        self.map_view.add_layer(self.layer)
         self.selection.connect("changed", self.update_highlights,
             self.map_view, self.selected, self.photo.viewvalues())
     
@@ -388,7 +388,7 @@ class LabelController(CommonAttributes):
         label.connect("drag-finish", self.drag_finish, self.photo)
         label.connect("button-press", self.clicked, self.selection,
             self.select_all, self.photo)
-        self.photo_layer.add_marker(label)
+        self.layer.add_marker(label)
         return label
     
     def update_highlights(self, selection, view, selected, photos):
@@ -401,7 +401,7 @@ class LabelController(CommonAttributes):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
         self.map_view.emit("realize")
-        view.ensure_visible(self.photo_layer.get_bounding_box(), True)
+        view.ensure_visible(self.layer.get_bounding_box(), True)
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -527,7 +527,7 @@ class GottenGeography(CommonAttributes):
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
-        self.labels.photo_layer.animate_in_all_markers()
+        self.labels.layer.animate_in_all_markers()
         self.labels.selection.emit("changed")
     
     def load_img_from_file(self, filename):
@@ -594,7 +594,7 @@ class GottenGeography(CommonAttributes):
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
         for photo in self.selected.copy():
-            self.labels.photo_layer.remove_marker(photo.label)
+            self.labels.layer.remove_marker(photo.label)
             del self.photo[photo.filename]
             self.modified.discard(photo)
             self.liststore.remove(photo.iter)
