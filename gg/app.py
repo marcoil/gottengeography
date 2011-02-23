@@ -24,7 +24,7 @@ import gettext
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from re import search, compile as re_compile, IGNORECASE
+from re import compile as re_compile, IGNORECASE
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
 from os.path import basename, abspath
