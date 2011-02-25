@@ -455,8 +455,6 @@
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">main</property>
-    <property name="program_name">GottenGeography</property>
-    <property name="version">0.5a</property>
     <property name="copyright">&#xA9; Robert Park, 2010, 2011</property>
     <property name="comments" translatable="yes">GottenGeography: Go open thy tagger!
 

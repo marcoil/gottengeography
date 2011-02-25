@@ -16,8 +16,7 @@
 
 from __future__ import division
 
-APPNAME = "GottenGeography"
-VERSION = "0.5a"
+from version import APPNAME, VERSION
 
 import gettext
 
@@ -771,13 +770,17 @@ class GottenGeography(CommonAttributes):
             *[get_obj(name) for name in ("apply_button", "close_button",
                 "save_button", "revert_button", "photos_with_buttons")])
         
+        about_dialog = get_obj("about")
+        about_dialog.set_version(VERSION)
+        about_dialog.set_program_name(APPNAME)
+        
         click_handlers = {
             "open_button":       [self.add_files_dialog, get_obj("open")],
             "save_button":       [self.save_all_files],
             "clear_button":      [self.clear_all_gpx],
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
-            "about_button":      [self.about_dialog, get_obj("about")],
+            "about_button":      [self.about_dialog, about_dialog],
             "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
             "select_all_button": [self.toggle_selected_photos, self.labels.selection]
         }

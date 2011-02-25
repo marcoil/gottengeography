@@ -7,7 +7,7 @@ from distutils.log import info
 import glob
 import os
 
-name = 'gottengeography'
+from gg.version import *
 
 class InstallData(install_data):
     """This class is copied from setup.py in Rapid Photo Downloader 0.3.4
@@ -24,7 +24,7 @@ class InstallData(install_data):
         for po in glob.glob(os.path.join(PO_DIR, '*.po')):
             print po
             lang = os.path.basename(po[:-3])
-            mo = os.path.join('build', 'mo', lang, '%s.mo' % name)
+            mo = os.path.join('build', 'mo', lang, '%s.mo' % PACKAGE)
             
             directory = os.path.dirname(mo)
             if not os.path.exists(directory):
@@ -38,14 +38,14 @@ class InstallData(install_data):
                 if os.system(cmd) != 0:
                     raise SystemExit('Error while running msgfmt')
                 
-                dest = os.path.dirname(os.path.join('share', 'locale', lang, 'LC_MESSAGES', '%s.mo' % name))
+                dest = os.path.dirname(os.path.join('share', 'locale', lang, 'LC_MESSAGES', '%s.mo' % PACKAGE))
                 data_files.append((dest, [mo]))
         
         return data_files
 
 setup(
-    name='GottenGeography',
-    version='0.5',
+    name=APPNAME,
+    version=VERSION,
     description="Automagically geotag photos with GPX data.",
     long_description=
 """GottenGeography is a GNOME application that aims to make it easy to record
@@ -55,9 +55,9 @@ photos, automatically determining where each photo was taken. If you do not have
 a GPS device, GottenGeography allows you to manually place photos onto a map,
 and then record those locations into the photos.
 """,
-    author="Robert Park",
-    author_email="rbpark@exolucere.ca",
-    url="https://github.com/robru/GottenGeography/wiki",
+    author=AUTHOR,
+    author_email=EMAIL,
+    url="http://exolucere.ca/gottengeography",
     download_url="https://github.com/robru/GottenGeography/downloads",
     license="GPLv3",
     packages=['gg'],
