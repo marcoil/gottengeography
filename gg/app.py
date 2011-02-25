@@ -452,10 +452,10 @@ class ActorController(CommonAttributes):
                 get_obj("maps_link"))
         self.map_view.connect("paint", paint_handler)
         
-        scale = Champlain.Scale.new()
-        scale.connect_view(self.map_view)
-        self.map_view.bin_layout_add(scale,
-            Clutter.BinAlignment.START, Clutter.BinAlignment.END)
+        #scale = Champlain.Scale.new()
+        #scale.connect_view(self.map_view)
+        #self.map_view.bin_layout_add(scale,
+        #    Clutter.BinAlignment.START, Clutter.BinAlignment.END)
     
     def display(self, view, param, mlink):
         """Position and update my custom ClutterActors.
