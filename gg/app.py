@@ -24,9 +24,9 @@ import gettext
 gettext.bindtextdomain(APPNAME.lower())
 gettext.textdomain(APPNAME.lower())
 
-from re import compile as re_compile, IGNORECASE
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
 from time import tzset, sleep, clock
 from gettext import gettext as _
