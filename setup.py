@@ -63,6 +63,7 @@ and then record those locations into the photos.
     packages=['gg'],
     package_data={'gg': ['ui.glade', 'cities.txt']},
     scripts=['gottengeography'],
-    data_files=[('share/applications', ['data/gottengeography.desktop'])],
+    data_files=[('share/applications', ['data/gottengeography.desktop']),
+                ('share/doc', ['README.md'])],
     cmdclass={'install_data': InstallData}
 )
