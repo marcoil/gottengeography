@@ -438,11 +438,10 @@ class ActorController(CommonAttributes):
             self.map_view.connect('notify::' + signal, self.display,
                 get_obj("maps_link"))
         
-        # This is disabled because it causes infinite loops for some reason.
-        #scale = Champlain.Scale.new()
-        #scale.connect_view(self.map_view)
-        #self.map_view.bin_layout_add(scale,
-        #    Clutter.BinAlignment.START, Clutter.BinAlignment.END)
+        scale = Champlain.Scale.new()
+        scale.connect_view(self.map_view)
+        self.map_view.bin_layout_add(scale,
+            Clutter.BinAlignment.START, Clutter.BinAlignment.END)
         self.map_view.bin_layout_add(self.black,
             Clutter.BinAlignment.START, Clutter.BinAlignment.START)
         self.map_view.bin_layout_add(self.label,
