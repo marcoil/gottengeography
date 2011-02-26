@@ -167,7 +167,7 @@ class NavigationController(CommonAttributes):
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
             view.set_zoom_level(zoom)
-            self.slide_to(lat, lon)
+            view.center_on(lat, lon)
         gconf_set("history", history)
     
     def zoom(self, button, zoom):
