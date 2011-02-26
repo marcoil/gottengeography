@@ -241,9 +241,8 @@ class SearchController(CommonAttributes):
         """Go to the selected location."""
         self.last_search = itr.copy()
         self.map_view.emit("realize")
-        lat, lon = model.get(itr, LATITUDE, LONGITUDE)
         view.set_zoom_level(11)
-        self.slide_to(lat, lon)
+        self.slide_to(*model.get(itr, LATITUDE, LONGITUDE))
     
     def repeat_last_search(self, entry, model, view):
         """Snap back to the last-searched location when user hits enter key."""
