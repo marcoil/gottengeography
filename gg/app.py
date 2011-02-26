@@ -430,26 +430,24 @@ class ActorController(CommonAttributes):
         self.stage = self.map_view.get_stage()
         self.black = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 64))
-        self.black.set_position(0, 0)
         self.label = Clutter.Text()
-        self.label.set_single_line_mode(True)
         self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
-        for actor in [self.black, self.label]:
-            self.stage.add_actor(actor)
-            actor.raise_top()
-        self.verti = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 255))
-        self.horiz = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 255))
+        self.xhair = Clutter.Rectangle.new_with_color(
+            Clutter.Color.new(0, 0, 0, 64))
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display,
                 get_obj("maps_link"))
         self.map_view.connect("paint", paint_handler)
         
+        # This is disabled because it causes infinite loops for some reason.
         #scale = Champlain.Scale.new()
         #scale.connect_view(self.map_view)
         #self.map_view.bin_layout_add(scale,
         #    Clutter.BinAlignment.START, Clutter.BinAlignment.END)
+        self.map_view.bin_layout_add(self.black,
+            Clutter.BinAlignment.START, Clutter.BinAlignment.START)
+        self.map_view.bin_layout_add(self.label,
+            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.START)
     
     def display(self, view, param, mlink):
         """Position and update my custom ClutterActors.
@@ -459,38 +457,22 @@ class ActorController(CommonAttributes):
         always positioned and sized correctly, and displaying the correct
         coordinates.
         """
-        stage_width  = view.get_width()
-        stage_height = view.get_height()
-        self.verti.set_position((stage_width  - self.verti.get_width())  / 2,
-                                (stage_height - self.verti.get_height()) / 2)
-        self.horiz.set_position((stage_width  - self.horiz.get_width())  / 2,
-                                (stage_height - self.horiz.get_height()) / 2)
-        
-        if param is not None:
-            lat = view.get_property('latitude')
-            lon = view.get_property('longitude')
-            mlink.set_markup(maps_link(lat, lon))
-            self.label.set_markup(format_coords(lat, lon))
-            self.black.set_size(stage_width, self.label.get_height() + 10)
-            self.label.set_position((stage_width - self.label.get_width()) / 2, 5)
+        lat = view.get_property('latitude')
+        lon = view.get_property('longitude')
+        mlink.set_markup(maps_link(lat, lon))
+        self.label.set_markup("\n%s\n" % format_coords(lat, lon))
+        self.black.set_size(view.get_width(), self.label.get_height())
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
-        for actor in [self.verti, self.horiz]:
-            self.stage.add_actor(actor)
-            actor.raise_top()
-        display = [self.map_view, None, get_obj("maps_link")]
-        self.verti.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        self.horiz.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        for i in xrange(start, 1, -1):
-            self.horiz.set_size(i * 10, i)
-            self.verti.set_size(i, i * 10)
+        self.map_view.bin_layout_add(self.xhair,
+            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
+        self.xhair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
+        for i in xrange(start, 7, -1):
+            self.xhair.set_size(i, i)
             opacity = 0.6407035175879398 * (400 - i) # don't ask
-            self.verti.set_opacity(opacity / 5)
-            self.horiz.set_opacity(opacity / 5)
-            self.label.set_opacity(opacity)
-            self.black.set_opacity(opacity)
-            self.display(*display)
+            for actor in [self.xhair, self.label, self.black]:
+                actor.set_opacity(opacity)
             while Gtk.events_pending():
                 Gtk.main_iteration()
             sleep(0.002)
