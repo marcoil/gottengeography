@@ -37,7 +37,7 @@ from sys import argv
 
 from files import Photograph, GPXLoader
 from utils import get_file, gconf_get, gconf_set
-from utils import Polygon, Struct, paint_handler, make_clutter_color
+from utils import Polygon, Struct, make_clutter_color
 from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -437,7 +437,6 @@ class ActorController(CommonAttributes):
         for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display,
                 get_obj("maps_link"))
-        self.map_view.connect("paint", paint_handler)
         
         # This is disabled because it causes infinite loops for some reason.
         #scale = Champlain.Scale.new()

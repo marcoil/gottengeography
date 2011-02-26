@@ -33,14 +33,6 @@ def get_file(filename):
     """Find a file that's in the same directory as this program."""
     return join(dirname(__file__), filename)
 
-def paint_handler(map_view):
-    """Force the map to redraw.
-    
-    This is a workaround for this libchamplain bug:
-    https://bugzilla.gnome.org/show_bug.cgi?id=638652
-    """
-    map_view.queue_redraw()
-
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
