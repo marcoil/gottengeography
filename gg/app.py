@@ -118,7 +118,7 @@ class CommonAttributes:
 
 class NavigationController(CommonAttributes):
     """Controls how users navigate the map."""
-    default = [[34.5, 15.8, 2]] # Default lat, lon, zoom for first run.
+    default = ([34.5, 15.8, 2],) # Default lat, lon, zoom for first run.
     
     def __init__(self):
         """Start the map at the previous location, and connect signals."""
@@ -154,7 +154,7 @@ class NavigationController(CommonAttributes):
     
     def remember_location(self, view):
         """Add current location to history stack."""
-        history = gconf_get("history") or self.default[:]
+        history = gconf_get("history") or list(self.default)
         location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
         if history[-1] != location:
@@ -163,8 +163,7 @@ class NavigationController(CommonAttributes):
     
     def go_back(self, button, view):
         """Return the map view to where the user last set it."""
-        history = gconf_get("history") or self.default[:]
-        assert history is not self.default
+        history = gconf_get("history") or list(self.default)
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
             view.set_zoom_level(zoom)
