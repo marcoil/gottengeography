@@ -259,16 +259,13 @@ class PreferencesController(CommonAttributes):
     timezone = None
     
     def __init__(self):
+        self.region = region = Gtk.ComboBoxText.new()
+        self.cities = cities = Gtk.ComboBoxText.new()
         pref_button = get_obj("pref_button")
-        region      = Gtk.ComboBoxText.new()
-        cities      = Gtk.ComboBoxText.new()
         tz_combos   = get_obj("custom_timezone_combos")
         tz_combos.pack_start(region, False, False, 10)
         tz_combos.pack_start(cities, False, False, 10)
         tz_combos.show_all()
-        
-        self.region = region
-        self.cities = cities
         
         for name in tz_regions:
             region.append(name, name)
