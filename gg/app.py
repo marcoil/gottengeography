@@ -667,10 +667,10 @@ class GottenGeography(CommonAttributes):
     
     def create_polygon(self):
         """Get a newly created Champlain.MarkerLayer and decorate it."""
-        color   = make_clutter_color(self.prefs.colorpicker.get_current_color())
-        polygon = Polygon(color.lighten().lighten()
-            if len(self.polygons) % 2 else color)
+        polygon = Polygon()
         self.polygons.append(polygon)
+        # Emitting this signal ensures the new polygon gets the correct color.
+        self.prefs.colorpicker.emit("color-changed")
         self.map_view.add_layer(polygon)
         return polygon.append_point
     

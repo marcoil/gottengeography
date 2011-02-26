@@ -121,10 +121,9 @@ def format_coords(lat, lon):
 
 
 class Polygon(Champlain.PathLayer):
-    def __init__(self, color):
+    def __init__(self):
         super(Champlain.PathLayer, self).__init__()
-        self.set_stroke_width(5)
-        self.set_stroke_color(color)
+        self.set_stroke_width(4)
     
     def append_point(self, latitude, longitude, elevation):
         """Simplify appending a point onto a polygon."""

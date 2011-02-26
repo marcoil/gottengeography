@@ -446,7 +446,8 @@ S 10.00000, W 10.00000
         self.assertEqual(label.get_longitude(), lon)
         
         color   = make_clutter_color(gui.prefs.colorpicker.get_current_color())
-        polygon = Polygon(color)
+        polygon = Polygon()
+        polygon.set_stroke_color(color)
         self.assertTrue(isinstance(polygon, Champlain.PathLayer))
         self.assertEqual(color.to_string(), polygon.get_stroke_color().to_string())
         
