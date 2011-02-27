@@ -196,7 +196,7 @@ class SearchController(CommonAttributes):
         entry = get_obj("search")
         entry.set_completion(search)
         entry.connect("changed", self.load_results, self.results.append)
-        entry.connect("icon-release", self.search_bar_clicked)
+        entry.connect("icon-release", lambda entry, i, e: entry.set_text(''))
         entry.connect("activate", self.repeat_last_search, self.results, self.map_view)
     
     def load_results(self, entry, append, searched=set()):
@@ -235,10 +235,6 @@ class SearchController(CommonAttributes):
         """Snap back to the last-searched location when user hits enter key."""
         if self.last_search is not None:
             self.search_completed(entry, model, self.last_search, view)
-    
-    def search_bar_clicked(self, entry, icon_pos, event):
-        """Clear the search bar when the user clicks the clear button."""
-        entry.set_text("")
 
 
 class PreferencesController(CommonAttributes):
