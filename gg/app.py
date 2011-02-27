@@ -418,9 +418,13 @@ class ActorController(CommonAttributes):
         self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
         self.xhair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 64))
-        for signal in [ 'height', 'width', 'latitude', 'longitude' ]:
+        for signal in [ 'latitude', 'longitude' ]:
             self.map_view.connect('notify::' + signal, self.display,
-                get_obj("maps_link"))
+                get_obj("maps_link"), self.label)
+        self.map_view.connect('notify::width',
+            lambda view, param, black:
+                black.set_size(view.get_width(), 30),
+            self.black)
         
         scale = Champlain.Scale.new()
         scale.connect_view(self.map_view)
@@ -431,19 +435,11 @@ class ActorController(CommonAttributes):
         self.black.get_layout_manager().add(self.label,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
     
-    def display(self, view, param, mlink):
-        """Position and update my custom ClutterActors.
-        
-        This method is called whenever the size of the map view changes, and
-        whenever the map center coordinates change, so that everything is
-        always positioned and sized correctly, and displaying the correct
-        coordinates.
-        """
-        lat = view.get_property('latitude')
-        lon = view.get_property('longitude')
+    def display(self, view, param, mlink, label):
+        """Display map center coordinates when they change."""
+        lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
         mlink.set_markup(maps_link(lat, lon))
-        self.label.set_markup(format_coords(lat, lon))
-        self.black.set_size(view.get_width(), 30)
+        label.set_markup(format_coords(lat, lon))
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
