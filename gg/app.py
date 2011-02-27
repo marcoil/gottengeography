@@ -16,12 +16,11 @@
 
 from __future__ import division
 
-from version import APPNAME, VERSION
+from version import APPNAME, PACKAGE, VERSION
 
 import gettext
-
-gettext.bindtextdomain(APPNAME.lower())
-gettext.textdomain(APPNAME.lower())
+gettext.bindtextdomain(PACKAGE)
+gettext.textdomain(PACKAGE)
 
 from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
 from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
@@ -49,7 +48,7 @@ GObject.threads_init()
 GtkClutter.init([])
 
 builder = Gtk.Builder()
-builder.set_translation_domain(APPNAME.lower())
+builder.set_translation_domain(PACKAGE)
 builder.add_from_file(get_file("ui.glade"))
 get_obj = builder.get_object
 
