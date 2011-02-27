@@ -412,8 +412,8 @@ class LabelController(CommonAttributes):
 class ActorController(CommonAttributes):
     def __init__(self):
         self.stage = self.map_view.get_stage()
-        self.black = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 64))
+        self.black = Clutter.Box.new(Clutter.BinLayout())
+        self.black.set_color(Clutter.Color.new(0, 0, 0, 64))
         self.label = Clutter.Text()
         self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
         self.xhair = Clutter.Rectangle.new_with_color(
@@ -428,8 +428,8 @@ class ActorController(CommonAttributes):
             Clutter.BinAlignment.START, Clutter.BinAlignment.END)
         self.map_view.bin_layout_add(self.black,
             Clutter.BinAlignment.START, Clutter.BinAlignment.START)
-        self.map_view.bin_layout_add(self.label,
-            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.START)
+        self.black.get_layout_manager().add(self.label,
+            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
     
     def display(self, view, param, mlink):
         """Position and update my custom ClutterActors.
@@ -442,10 +442,8 @@ class ActorController(CommonAttributes):
         lat = view.get_property('latitude')
         lon = view.get_property('longitude')
         mlink.set_markup(maps_link(lat, lon))
-        self.label.set_markup(
-            '<span size="3000"> \n</span>%s<span size="3000">\n </span>'
-            % format_coords(lat, lon))
-        self.black.set_size(view.get_width(), self.label.get_height())
+        self.label.set_markup(format_coords(lat, lon))
+        self.black.set_size(view.get_width(), 30)
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
