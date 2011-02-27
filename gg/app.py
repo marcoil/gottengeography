@@ -803,7 +803,7 @@ class GottenGeography(CommonAttributes):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files(argv[1:])
-            anim_start = 2
+            anim_start = 10
         self.actors.animate_in(anim_start)
         Gtk.main()
 
