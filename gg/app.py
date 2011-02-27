@@ -442,7 +442,9 @@ class ActorController(CommonAttributes):
         lat = view.get_property('latitude')
         lon = view.get_property('longitude')
         mlink.set_markup(maps_link(lat, lon))
-        self.label.set_markup("\n%s\n" % format_coords(lat, lon))
+        self.label.set_markup(
+            '<span size="3000"> \n</span>%s<span size="3000">\n </span>'
+            % format_coords(lat, lon))
         self.black.set_size(view.get_width(), self.label.get_height())
     
     def animate_in(self, start=400):
