@@ -187,7 +187,9 @@ class SearchController(CommonAttributes):
             GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
         search = Gtk.EntryCompletion.new()
         search.set_model(self.results)
-        search.set_match_func(self.match_func, self.results.get_value)
+        search.set_match_func(
+            lambda c, s, itr, get: self.search(get(itr, LOCATION) or ""),
+            self.results.get_value)
         search.connect("match-selected", self.search_completed, self.map_view)
         search.set_minimum_key_length(3)
         search.set_text_column(0)
@@ -207,12 +209,12 @@ class SearchController(CommonAttributes):
         not be passed as an argument unless your intention is to trigger the
         loading of duplicate results.
         """
-        text = entry.get_text().lower()
-        self.search = re_compile('(^|\s)' + text, flags=IGNORECASE).search
-        text = text[0:3]
-        if len(text) == 3 and text not in searched:
-            searched.add(text)
-            search = re_compile('(^|\s)' + text, flags=IGNORECASE).search
+        text  = entry.get_text().lower()
+        three = text[0:3]
+        self.search, search = [ re_compile('(^|\s)' + string,
+            flags=IGNORECASE).search for string in (text, three) ]
+        if len(three) == 3 and three not in searched:
+            searched.add(three)
             with open(get_file("cities.txt")) as cities:
                 for line in cities:
                     city, lat, lon, country, state, tz = line.split("\t")
@@ -221,16 +223,6 @@ class SearchController(CommonAttributes):
                         country  = get_country(country)
                         location = format_list([city, state, country])
                         append([location, float(lat), float(lon)])
-    
-    def match_func(self, completion, string, itr, get):
-        """Determine whether or not to include a given search result.
-        
-        This matches the beginning of any word in the name of the city. For
-        example, a search for "spring" will contain "Palm Springs" as well as
-        "Springfield".
-        """
-        if self.search(get(itr, LOCATION) or ""):
-            return True
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
