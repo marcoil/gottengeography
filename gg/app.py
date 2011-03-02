@@ -254,11 +254,11 @@ class PreferencesController(CommonAttributes):
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
         cities.connect("changed", self.cities_handler, region)
-        timezone = gconf_get("timezone", [-1, -1])
+        timezone = gconf_get("timezone") or [-1, -1]
         region.set_active(timezone[0])
         cities.set_active(timezone[1])
         
-        colors = gconf_get("track_color", [32768, 0, 65535])
+        colors = gconf_get("track_color") or [32768, 0, 65535]
         self.colorpicker = get_obj("colorselection")
         self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
         self.colorpicker.set_current_color(Gdk.Color(*colors))
@@ -274,7 +274,7 @@ class PreferencesController(CommonAttributes):
             self.radios[option] = radio
             radio.connect("clicked", self.radio_handler, tz_combos)
             radio.set_name(option)
-        timezone_method = gconf_get("timezone_method", "system_timezone")
+        timezone_method = gconf_get("timezone_method") or "system_timezone"
         self.radios[timezone_method].clicked()
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
