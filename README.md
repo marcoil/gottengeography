@@ -1,3 +1,8 @@
+Warning
+=======
+
+GottenGeography is currently *crippled* by [bgo#643510](https://bugzilla.gnome.org/show_bug.cgi?id=643510) which has effectively halted all development for many weeks now (as of March 2011). I can only hope that somebody much more skilled than myself fixes this problem soon, otherwise I will not be able to make a release in time for GNOME3. Outside of this bug (which is far beyond my control), I'm essentially ready for a 1.0 release _right now_, but there's little point when nobody can actually use it anyway. 
+
 GottenGeography
 ===============
 
