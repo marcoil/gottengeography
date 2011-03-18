@@ -24,16 +24,16 @@ try:
     # I rely on the fractions module heavily. It was introduced in 2.6, but was
     # unfortunately crippled in that release, so 2.7 is the minimum version.
     from fractions import Fraction
-    if Fraction(0.5) != Fraction(1, 2):
-        raise ImportError
+    Fraction(0.5).numerator
 except:
     need('Python 2.7')
 
 try:
-    from gi.repository import Gtk
-    Gtk.ComboBoxText
+    import gi
+    # Throws AttributeError with pygobject 2.21
+    gi.require_version('Gtk', '3.0')
 except:
-    need('GTK 3.0')
+    need('Gtk 3.0 (via pygobject 2.28)')
 
 try:
     from gi.repository import Champlain
