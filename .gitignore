@@ -1,2 +1,6 @@
-gottengeography.pyc
+build
+dist
+MANIFEST
+*.pyc
 *~
+

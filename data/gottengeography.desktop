@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=GottenGeography
+GenericName=GottenGeography
+Comment=Tag your photographs with geolocation data easily.
+Exec=gottengeography
+Icon=gottengeography
+MimeType=x-content/image-dcf;
+Terminal=false
+Type=Application
+Categories=Graphics;Photography;

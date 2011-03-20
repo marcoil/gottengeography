@@ -1,7 +1,3 @@
 #!/bin/bash
 
-git checkout demo/
-
-python ggtester.py
-
-git checkout demo/
+jhbuild run python2.7 gg/testsuite.py
