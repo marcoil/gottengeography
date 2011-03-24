@@ -22,8 +22,13 @@ import gettext
 gettext.bindtextdomain(PACKAGE)
 gettext.textdomain(PACKAGE)
 
-from gi.repository import GtkClutter, Clutter, GtkChamplain, Champlain
-from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+from gi.repository import GObject, GtkClutter, Clutter
+
+GObject.threads_init()
+GtkClutter.init([])
+
+from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
 from time import tzset, sleep, clock
@@ -43,9 +48,6 @@ from territories import tz_regions, get_timezone, get_state, get_country
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 LOCATION, LATITUDE, LONGITUDE = range(3)
-
-GObject.threads_init()
-GtkClutter.init([])
 
 builder = Gtk.Builder()
 builder.set_translation_domain(PACKAGE)
