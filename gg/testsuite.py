@@ -98,6 +98,7 @@ class GottenGeographyTester(TestCase):
         for photo in gui.photo.values():
             self.assertFalse(photo in gui.modified)
             self.assertFalse(photo in gui.selected)
+            self.assertFalse(photo.label.get_property('visible'))
             
             # Test that missing the provincestate doesn't break the geoname.
             photo.set_geodata(['Anytown', None, 'US', 'timezone'])
@@ -164,6 +165,7 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
             self.assertTrue(photo.valid_coords())
+            self.assertTrue(photo.label.get_property('visible'))
             
             # Play with ChamplainLabels for a bit.
             self.assertEqual(photo.label.get_scale(), (1, 1))
