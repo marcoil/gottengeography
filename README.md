@@ -1,7 +1,9 @@
-Warning
-=======
+Status
+======
 
-GottenGeography is currently *crippled* by [bgo#643510](https://bugzilla.gnome.org/show_bug.cgi?id=643510) which has effectively halted all development for many weeks now (as of March 2011). I can only hope that somebody much more skilled than myself fixes this problem soon, otherwise I will not be able to make a release in time for GNOME3. Outside of this bug (which is far beyond my control), I'm essentially ready for a 1.0 release _right now_, but there's little point when nobody can actually use it anyway. 
+With thanks to J5's workaround, GottenGeography is now no longer crippled by [bgo#643510](https://bugzilla.gnome.org/show_bug.cgi?id=643510), which means I'm considering the possibility of potentially forming a committee to explore the likelihood of making a 1.0 release. 
+
+What's going on is that the code is currently written to use the as-yet-unreleased libchamplain 0.10, a decision which I'd made on the assumption that 0.10 would be done in time to be included in the next major Fedora release. With each passing day it seems increasingly likely that Fedora 15 will ship with libchamplain 0.8 instead of 0.10 (in fact it may already be too late for libchamplain 0.10's inclusion, I'm not quite clear on this point), which means that if I want to have any hope of my app being usable by any Fedora 15 users, I'll have to backport my app from 0.10 to 0.8 (libchamplain underwent a fairly extensive API overhaul between those versions, so it's actually a bit of work). Seeing as Fedora 15 was my primary release target, it seems like I have no choice here. Naturally I won't discard the work I did for the 0.10 API, so I guess I'll have to do some kind of simultaneous 0.8/0.10 launch... or write a bunch of glue code so that the app can use either API regardless of what's installed on the user's system... hmmmmmm...
 
 GottenGeography
 ===============
