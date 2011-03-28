@@ -381,7 +381,6 @@ class LabelController(CommonAttributes):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
         self.map_view.emit("realize")
-        view.ensure_visible(self.layer.get_bounding_box(), True)
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -483,7 +482,6 @@ class GottenGeography(CommonAttributes):
         if len(invalid_files) > 0:
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
-        self.labels.layer.animate_in_all_markers()
         self.labels.selection.emit("changed")
     
     def load_img_from_file(self, filename):
