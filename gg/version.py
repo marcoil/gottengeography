@@ -16,7 +16,7 @@
 
 APPNAME = 'GottenGeography'
 PACKAGE = APPNAME.lower()
-VERSION = '1.0b'
+VERSION = '1.0'
 
 AUTHOR  = 'Robert Park'
 EMAIL   = 'rbpark@exolucere.ca'
