@@ -19,6 +19,7 @@ from __future__ import division
 from gi.repository import Gdk, Clutter, GObject, Champlain
 from unittest import TestCase, TextTestRunner, TestLoader
 from os import listdir, getcwd, system, environ
+from fractions import Fraction
 from random import random
 from os.path import join
 from math import floor
@@ -292,6 +293,7 @@ S 10.00000, W 10.00000
     
     def test_gps_math(self):
         """Test coordinate conversion functions."""
+        rats_to_fracs = lambda rats: [Fraction(rat.to_float()) for rat in rats]
         
         # Really important that this method is bulletproof
         self.assertFalse(valid_coords(None, None))
@@ -340,12 +342,12 @@ S 10.00000, W 10.00000
             
             self.assertAlmostEqual(
                 decimal_lat,
-                dms_to_decimal(*dms_lat + ['N' if decimal_lat >= 0 else 'S']),
+                dms_to_decimal(*rats_to_fracs(dms_lat) + ['N' if decimal_lat >= 0 else 'S']),
                 10 # equal to 10 places
             )
             self.assertAlmostEqual(
                 decimal_lon,
-                dms_to_decimal(*dms_lon + ['E' if decimal_lon >= 0 else 'W']),
+                dms_to_decimal(*rats_to_fracs(dms_lon) + ['E' if decimal_lon >= 0 else 'W']),
                 10 # equal to 10 places
             )
     

@@ -69,7 +69,7 @@ class Photograph(Coordinates):
         except KeyError:
             pass
         try:
-            self.altitude = self.exif[gps + 'Altitude'].value.to_float()
+            self.altitude = float(self.exif[gps + 'Altitude'].value)
             if int(self.exif[gps + 'AltitudeRef'].value) > 0:
                 self.altitude *= -1
         except KeyError:

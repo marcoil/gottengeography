@@ -66,9 +66,9 @@ def gconf_get(key, default=None):
 def dms_to_decimal(degrees, minutes, seconds, sign=" "):
     """Convert degrees, minutes, seconds into decimal degrees."""
     return (-1 if sign[0] in 'SWsw' else 1) * (
-        degrees.to_float()        +
-        minutes.to_float() / 60   +
-        seconds.to_float() / 3600
+        float(degrees)        +
+        float(minutes) / 60   +
+        float(seconds) / 3600
     )
 
 def decimal_to_dms(decimal):

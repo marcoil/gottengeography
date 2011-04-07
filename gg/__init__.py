@@ -43,7 +43,7 @@ except:
 
 try:
     import pyexiv2
-    if pyexiv2.version_info < (0, 2):
+    if pyexiv2.version_info < (0, 3):
         raise ImportError
 except:
-    need('pyexiv2 0.2')
+    need('pyexiv2 0.3')
