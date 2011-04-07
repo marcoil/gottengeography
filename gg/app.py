@@ -25,6 +25,7 @@ gettext.textdomain(PACKAGE)
 from gi.repository import GObject, GtkClutter, Clutter
 
 GObject.threads_init()
+GObject.set_prgname('gottengeography')
 GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
