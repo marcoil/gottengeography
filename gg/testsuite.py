@@ -60,7 +60,7 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
         size = get_obj('main').get_size()
-        self.assertEqual(size[1], 600)
+        self.assertGreater(size[1], 500)
         self.assertGreater(size[0], 799)
         self.assertEqual(gui.labels.selection.count_selected_rows(), 0)
     
