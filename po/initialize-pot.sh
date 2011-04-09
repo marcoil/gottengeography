@@ -15,12 +15,12 @@ mv gottengeography.pot temp.pot
 echo '# GottenGeography translation template.
 # Copyright (C) 2010 Robert Park
 # This file is distributed under the same license as the GottenGeography package.
-# Robert Park <rbpark@exolucere.ca>, 2010
+# Robert Park <rbpark@exolucere.ca>, 2010, 2011
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gottengeography 0.5\n"
+"Project-Id-Version: gottengeography 1.0\n"
 "Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"' > gottengeography.pot
 
 tail -n +11 temp.pot >> gottengeography.pot
