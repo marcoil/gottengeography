@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-APPNAME = 'GottenGeography'
-PACKAGE = APPNAME.lower()
-VERSION = '1.0'
+# Please note that this file is equally valid as Python as it is Bash
+APPNAME='GottenGeography'
+PACKAGE='gottengeography'
+VERSION='1.0'
 
-AUTHOR  = 'Robert Park'
-EMAIL   = 'rbpark@exolucere.ca'
+AUTHOR='Robert Park'
+EMAIL='rbpark@exolucere.ca'
 
