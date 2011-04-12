@@ -10,11 +10,12 @@
 
 . ../gg/version.py
 
-intltool-update -r *.po -g gottengeography
+intltool-update -r *.po -g $PACKAGE
 
-mv gottengeography.pot temp.pot
+mv $PACKAGE.pot temp.pot
 
-echo -n '# GottenGeography translation template.
+cat <<EOF > $PACKAGE.pot
+# GottenGeography translation template.
 # Copyright (C) 2010 Robert Park
 # This file is distributed under the same license as the GottenGeography package.
 # Robert Park <rbpark@exolucere.ca>, 2010, 2011
@@ -22,11 +23,10 @@ echo -n '# GottenGeography translation template.
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gottengeography ' > gottengeography.pot
-echo -n $VERSION >> gottengeography.pot
-echo '\n"
-"Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"' >> gottengeography.pot
+"Project-Id-Version: $PACKAGE $VERSION\n"
+"Report-Msgid-Bugs-To: $AUTHOR <$EMAIL>\n"
+EOF
 
-tail -n +11 temp.pot >> gottengeography.pot
+tail -n +11 temp.pot >> $PACKAGE.pot
 
 rm temp.pot
