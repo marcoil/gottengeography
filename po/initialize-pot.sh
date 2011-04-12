@@ -8,6 +8,8 @@
 # have any need for this script, just follow the instructions in the README.md
 # file. Thanks for stopping by!
 
+DATES=$(echo $(seq 2010 $(date +%Y)))
+
 . ../gg/version.py
 
 intltool-update -r *.po -g $PACKAGE
@@ -15,10 +17,10 @@ intltool-update -r *.po -g $PACKAGE
 mv $PACKAGE.pot temp.pot
 
 cat <<EOF > $PACKAGE.pot
-# GottenGeography translation template.
-# Copyright (C) 2010 Robert Park
-# This file is distributed under the same license as the GottenGeography package.
-# Robert Park <rbpark@exolucere.ca>, 2010, 2011
+# $APPNAME translation template.
+# Copyright (C) $DATES $AUTHOR
+# This file is distributed under the same license as the $APPNAME package.
+# $AUTHOR <$EMAIL>, $DATES
 #
 #, fuzzy
 msgid ""
