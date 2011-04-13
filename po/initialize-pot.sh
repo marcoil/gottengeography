@@ -8,21 +8,27 @@
 # have any need for this script, just follow the instructions in the README.md
 # file. Thanks for stopping by!
 
-intltool-update -r *.po -g gottengeography
+DATES=$(echo $(seq 2010 $(date +%Y)))
 
-mv gottengeography.pot temp.pot
+. ../gg/version.py
 
-echo '# GottenGeography translation template.
-# Copyright (C) 2010 Robert Park
-# This file is distributed under the same license as the GottenGeography package.
-# Robert Park <rbpark@exolucere.ca>, 2010, 2011
+intltool-update -r *.po -g $PACKAGE
+
+mv $PACKAGE.pot temp.pot
+
+cat <<EOF > $PACKAGE.pot
+# $APPNAME translation template.
+# Copyright (C) $DATES $AUTHOR
+# This file is distributed under the same license as the $APPNAME package.
+# $AUTHOR <$EMAIL>, $DATES
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gottengeography 1.0\n"
-"Report-Msgid-Bugs-To: Robert Park <rbpark@exolucere.ca>\n"' > gottengeography.pot
+"Project-Id-Version: $PACKAGE $VERSION\n"
+"Report-Msgid-Bugs-To: $AUTHOR <$EMAIL>\n"
+EOF
 
-tail -n +11 temp.pot >> gottengeography.pot
+tail -n +11 temp.pot >> $PACKAGE.pot
 
 rm temp.pot
