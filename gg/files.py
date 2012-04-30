@@ -20,6 +20,8 @@ from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
 from calendar import timegm
+from datetime import datetime
+import dateutil.parser
 from os import stat
 
 from utils import Coordinates, format_list
@@ -246,6 +248,99 @@ class GPXLoader(Coordinates):
         self.tracks[timestamp] = self.append(lat, lon, float(self.state.get('ele', 0.0)))
         
         self.state.clear()
+        if clock() - self.clock > .2:
+            self.pulse(self)
+            self.clock = clock()
+            
+class KMLLoader(Coordinates):
+    """Use expat to parse KML data quickly."""
+    
+    def __init__(self, filename, callback, add_polygon):
+        """Create the parser and begin parsing."""
+        self.add_poly = add_polygon
+        self.append   = None
+        self.filename = filename
+        self.pulse    = callback
+        self.clock    = clock()
+        self.tracks   = {}
+        self.element  = ""
+        self.data     = ""
+        self.whens    = []
+        self.coords   = []
+        
+        self.parser = ParserCreate()
+        self.parser.StartElementHandler  = self.element_start
+        self.parser.CharacterDataHandler = self.element_data
+        self.parser.EndElementHandler    = self.element_end
+        
+        try:
+            with open(filename) as kml:
+                self.parser.ParseFile(kml)
+        except ExpatError:
+            raise IOError
+        
+        keys = self.tracks.keys()
+        self.alpha = min(keys)
+        self.omega = max(keys)
+    
+    def element_start(self, name, attributes):
+        """Expat StartElementHandler.
+        
+        This method creates new ChamplainMarkerLayers when necessary and initializes
+        variables for the CharacterDataHandler. It also extracts latitude and
+        longitude from KML element attributes.
+        """
+        self.element = name
+        self.data    = ""
+        if name == 'gx:Track':
+            self.append = self.add_poly()
+    
+    def element_data(self, data):
+        """Expat CharacterDataHandler.
+        
+        This method extracts coordinates and time data from KML elements.
+        For example:
+        <when>2012-04-20T15:07:32.000-07:00</when>
+        <gx:coord>3.2639787 39.4274099 37</gx:coord>
+        """
+        if not data:
+            return
+        # Sometimes expat calls this handler multiple times each with just
+        # a chunk of the whole data, so += is necessary to collect all of it.
+        self.data += data
+    
+    def element_end(self, name):
+        """Expat EndElementHandler.
+        
+        This method does most of the heavy lifting, including parsing time
+        strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
+        keeping track of the first and last points loaded, and occaisionally
+        redrawing the screen so that the user can see what's going on while
+        stuff is loading.
+        """
+        if name != "when" and name != "gx:coord":
+            return
+        
+        if name == "when":
+            try:
+                timestamp = dateutil.parser.parse(self.data)
+            except Exception as error:
+                print error
+                return
+            self.whens.append(mktime(timestamp.timetuple()))
+        if name == "gx:coord":
+            self.coords.append(self.data.split())
+        
+        complete = min(len(self.whens), len(self.coords))
+        if complete > 0:
+            for i in range(0, complete):
+                self.tracks[self.whens[i]] = \
+                    self.append(float(self.coords[i][1]), \
+                                float(self.coords[i][0]), \
+                                float(self.coords[i][2]))
+            self.whens = self.whens[complete:]
+            self.coords = self.coords[complete:]
+        
         if clock() - self.clock > .2:
             self.pulse(self)
             self.clock = clock()
