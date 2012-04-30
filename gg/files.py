@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import GdkPixbuf, GObject
+from gi.repository import GdkPixbuf, Gio, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
@@ -29,6 +29,12 @@ from territories import get_state, get_country
 # Prefixes for common EXIF keys.
 gps  = 'Exif.GPSInfo.GPS'
 iptc = 'Iptc.Application2.'
+
+def pixbuf_from_data(data, size):
+    input_str = Gio.MemoryInputStream.new_from_data(data, None)
+    pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
+        input_str, size, size, True, None)
+    return pixbuf
 
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
@@ -50,10 +56,18 @@ class Photograph(Coordinates):
         self.longitude = None
         self.timezone  = None
         self.manual    = False
+        """Load the metadata and try to get a thumbnail."""
         try:
             self.exif.read()
-            self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                self.filename, self.thm_size, self.thm_size)
+            if len(self.exif.previews) > 0:
+                self.thumb = pixbuf_from_data(self.exif.previews[-1].data,
+                    self.thm_size)
+            elif len(self.exif.exif_thumbnail.data) > 0:
+                self.thumb = pixbuf_from_data(self.exif.exif_thumbnail.data,
+                    self.thm_size)
+            else:
+                self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    self.filename, self.thm_size, self.thm_size)                
         except (GObject.GError, TypeError):
             raise IOError
         self.calculate_timestamp()
