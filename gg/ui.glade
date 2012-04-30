@@ -403,6 +403,23 @@
               </packing>
             </child>
             <child>
+              <object class="GtkSpinButton" id="hours">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip_text" translatable="yes">Add or subtract hours from your camera's clock.</property>
+                <property name="adjustment">offset_hours</property>
+                <property name="snap_to_ticks">True</property>
+                <property name="numeric">True</property>
+                <property name="update_policy">if-valid</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkSpinButton" id="minutes">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -416,7 +433,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
@@ -433,7 +450,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">4</property>
+                <property name="position">5</property>
               </packing>
             </child>
           </object>
@@ -686,19 +703,19 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</pro
     <property name="lower">-24</property>
     <property name="upper">24</property>
     <property name="step_increment">1</property>
-    <property name="page_increment">4</property>
+    <property name="page_increment">1</property>
   </object>
   <object class="GtkAdjustment" id="offset_minutes">
     <property name="lower">-60</property>
     <property name="upper">60</property>
     <property name="step_increment">1</property>
-    <property name="page_increment">4</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="offset_seconds">
     <property name="lower">-60</property>
     <property name="upper">60</property>
     <property name="step_increment">1</property>
-    <property name="page_increment">4</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkDialog" id="preferences">
     <property name="border_width">5</property>

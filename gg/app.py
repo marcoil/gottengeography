@@ -592,15 +592,18 @@ class GottenGeography(CommonAttributes):
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         seconds = self.secbutton.get_value()
+        if abs(seconds) >= 60:
+            self.secbutton.set_value(seconds % 60)
+            self.minbutton.set_value(self.minbutton.get_value() + (seconds / 60))
         minutes = self.minbutton.get_value()
-        offset  = int((minutes * 60) + seconds)
-        gconf_set("clock_offset", [minutes, seconds])
+        if abs(minutes) >= 60 :
+            self.minbutton.set_value(minutes % 60)
+            self.hourbutton.set_value(self.hourbutton.get_value() + (minutes / 60))
+        hours = self.hourbutton.get_value()
+        offset  = int((hours * 3600) + (minutes * 60) + seconds)
+        gconf_set("clock_offset", offset)
         if offset != self.metadata.delta:
             self.metadata.delta = offset
-            if abs(seconds) == 60 and abs(minutes) != 60:
-                minutes += seconds / 60
-                self.secbutton.set_value(0)
-                self.minbutton.set_value(minutes)
             for photo in self.photo.values():
                 auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
@@ -758,11 +761,20 @@ class GottenGeography(CommonAttributes):
         self.clear_all_gpx()
         
         self.metadata.delta = 0
-        offset = gconf_get("clock_offset") or [0, 0]
-        self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
-        for spinbutton in [ self.secbutton, self.minbutton ]:
+        offset = gconf_get("clock_offset") or 0
+        """If the offset was kept as minutes and seconds, calculate it now."""
+        if type(offset) == type(list()):
+            offset = (offset[0] * 60) + offset[1]
+        self.secbutton, self.minbutton, self.hourbutton = \
+                get_obj("seconds"), get_obj("minutes"), get_obj("hours")
+        for spinbutton in [ self.secbutton, self.minbutton, self.hourbutton ]:
             spinbutton.connect("value-changed", self.time_offset_changed)
-            spinbutton.set_value(offset.pop())
+        self.hourbutton.set_value(offset / 3600)
+        offset = offset % 3600
+        self.minbutton.set_value(offset / 60)
+        offset = offset % 60
+        self.secbutton.set_value(offset)
+        
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
     
