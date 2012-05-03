@@ -455,7 +455,7 @@
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">main</property>
-    <property name="copyright">&#xA9; Robert Park, 2010, 2011</property>
+    <property name="copyright">&#xA9; Robert Park, 2010 - 2012</property>
     <property name="comments" translatable="yes">GottenGeography: Go open thy tagger!
 
 This program is written in the Python programming language, and adds geotags to your photos. The name is an anagram of "Python Geotagger."</property>
@@ -475,7 +475,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
-    <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
+    <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;
+Marc Ordinas i Llopis</property>
     <property name="documenters">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
     <property name="translator_credits" translatable="yes">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
     <child internal-child="vbox">
