@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import GdkPixbuf, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
@@ -26,6 +25,7 @@ from os import stat
 
 from utils import Coordinates, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from utils import XMLSimpleParser
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
@@ -155,77 +155,31 @@ class Photograph(Coordinates):
 split = re_compile(r'[:TZ-]').split
 
 class GPXLoader(Coordinates):
-    """Use expat to parse GPX data quickly."""
-    
     def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
         self.add_poly = add_polygon
-        self.filename = filename
         self.pulse    = callback
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
-        self.state    = {}
         
-        self.parser = ParserCreate()
-        self.parser.StartElementHandler  = self.element_root
-        self.parser.CharacterDataHandler = self.element_data
-        self.parser.EndElementHandler    = self.element_end
-        
-        try:
-            with open(filename) as gpx:
-                self.parser.ParseFile(gpx)
-        except ExpatError:
-            raise IOError
+        parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'], \
+                                 self.element_start, self.element_end)
+        parser.parse(filename)
         
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
     
-    def element_root(self, name, attributes):
-        """Expat StartElementHandler.
-        
-        This is only called on the top level element in the given XML file.
-        """
-        if name != 'gpx':
-            raise IOError
-        self.parser.StartElementHandler = self.element_start
-    
     def element_start(self, name, attributes):
-        """Expat StartElementHandler.
-        
-        This method creates new ChamplainMarkerLayers when necessary and initializes
-        variables for the CharacterDataHandler. It also extracts latitude and
-        longitude from GPX element attributes. For example:
-        
-        <trkpt lat="45.147445" lon="-81.469507">
-        """
-        self.element     = name
-        self.state[name] = ""
-        self.state.update(attributes)
         if name == "trkseg":
             self.append = self.add_poly()
+        if name == 'trkpt':
+            return True
+        return False
     
-    def element_data(self, data):
-        """Expat CharacterDataHandler.
-        
-        This method extracts elevation and time data from GPX elements.
-        For example:
-        
-        <ele>671.092</ele>
-        <time>2010-10-16T20:09:13Z</time>
-        """
-        data = data.strip()
-        if not data:
-            return
-        # Sometimes expat calls this handler multiple times each with just
-        # a chunk of the whole data, so += is necessary to collect all of it.
-        self.state[self.element] += data
-    
-    def element_end(self, name):
-        """Expat EndElementHandler.
-        
-        This method does most of the heavy lifting, including parsing time
+    def element_end(self, name, state):
+        """This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
         keeping track of the first and last points loaded, and occaisionally
         redrawing the screen so that the user can see what's going on while
@@ -236,100 +190,63 @@ class GPXLoader(Coordinates):
         if name != "trkpt":
             return
         try:
-            timestamp = timegm(map(int, split(self.state['time'])[0:6]))
-            lat = float(self.state['lat'])
-            lon = float(self.state['lon'])
+            timestamp = timegm(map(int, split(state['time'])[0:6]))
+            lat = float(state['lat'])
+            lon = float(state['lon'])
         except Exception as error:
             print error
             # If any of lat, lon, or time is missing, we cannot continue.
             # Better to just give up on this track point and go to the next.
             return
         
-        self.tracks[timestamp] = self.append(lat, lon, float(self.state.get('ele', 0.0)))
+        self.tracks[timestamp] = self.append(lat, lon, float(state.get('ele', 0.0)))
         
-        self.state.clear()
         if clock() - self.clock > .2:
             self.pulse(self)
             self.clock = clock()
             
 class KMLLoader(Coordinates):
-    """Use expat to parse KML data quickly."""
-    
     def __init__(self, filename, callback, add_polygon):
         """Create the parser and begin parsing."""
         self.add_poly = add_polygon
         self.append   = None
-        self.filename = filename
         self.pulse    = callback
         self.clock    = clock()
         self.tracks   = {}
-        self.element  = ""
-        self.data     = ""
         self.whens    = []
         self.coords   = []
         
-        self.parser = ParserCreate()
-        self.parser.StartElementHandler  = self.element_start
-        self.parser.CharacterDataHandler = self.element_data
-        self.parser.EndElementHandler    = self.element_end
-        
-        try:
-            with open(filename) as kml:
-                self.parser.ParseFile(kml)
-        except ExpatError:
-            raise IOError
-        
+        parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'], \
+                                 self.element_start, self.element_end)
+        parser.parse(filename)
+                
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
     
     def element_start(self, name, attributes):
-        """Expat StartElementHandler.
-        
-        This method creates new ChamplainMarkerLayers when necessary and initializes
-        variables for the CharacterDataHandler. It also extracts latitude and
-        longitude from KML element attributes.
-        """
-        self.element = name
-        self.data    = ""
+        """Create new ChamplainMarkerLayers when necessary."""
         if name == 'gx:Track':
             self.append = self.add_poly()
+            return False
+        return True
     
-    def element_data(self, data):
-        """Expat CharacterDataHandler.
-        
-        This method extracts coordinates and time data from KML elements.
-        For example:
-        <when>2012-04-20T15:07:32.000-07:00</when>
-        <gx:coord>3.2639787 39.4274099 37</gx:coord>
-        """
-        if not data:
-            return
-        # Sometimes expat calls this handler multiple times each with just
-        # a chunk of the whole data, so += is necessary to collect all of it.
-        self.data += data
-    
-    def element_end(self, name):
-        """Expat EndElementHandler.
-        
-        This method does most of the heavy lifting, including parsing time
+    def element_end(self, name, state):
+        """This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
         keeping track of the first and last points loaded, and occaisionally
         redrawing the screen so that the user can see what's going on while
         stuff is loading.
         """
-        if name != "when" and name != "gx:coord":
-            return
-        
         if name == "when":
             try:
-                timestamp = dateutil.parser.parse(self.data)
+                timestamp = dateutil.parser.parse(state['when'])
             except Exception as error:
                 print error
                 return
             self.whens.append(mktime(timestamp.timetuple()))
         if name == "gx:coord":
-            self.coords.append(self.data.split())
+            self.coords.append(state['gx:coord'].split())
         
         complete = min(len(self.whens), len(self.coords))
         if complete > 0:
