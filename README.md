@@ -1,7 +1,7 @@
 Status
 ======
 
-1.0 is released, and it's targetted for Fedora 15, meaning that Fedora 15 more or less ships with everything needed to run my program (if not in the default install, available through yum at least with a minimum of hassle). Users of other distros who want to run GottenGeography 1.0 will need to make sure they have libchamplain 0.9 or later, pyexiv2 0.3 or later, pygobject 2.28 or later, Gtk 3.0, and Python 2.7 (no other version of Python will work, it MUST be 2.7).
+1.0 is released, and it's targetted for Fedora 15/16, meaning that Fedora 15 and 16 ship with everything needed to run my program (if not in the default install, available through yum with a minimum of hassle). Users of other distros who want to run GottenGeography 1.0 will need to make sure they have libchamplain 0.9 or later, pyexiv2 0.3 or later, pygobject 2.28 or later, Gtk 3.0, and Python 2.7 (no other version of Python will work, it MUST be 2.7).
 
 GottenGeography
 ===============
@@ -28,7 +28,7 @@ It is currently able to:
 
 * Save EXIF/IPTC data into your photos using pyexiv2.
 
-You may be interested in hacking on GottenGeography if you enjoy writing Python code, have some experience with the [GObject Introspection](http://live.gnome.org/GObjectIntrospection), or are a huge GPS nerd like myself. You are viewing the jhbuild branch of GottenGeography, which is developed in the [jhbuild development environment](http://library.gnome.org/devel/jhbuild/stable/). If you want to test this version, you'll need to install and configure jhbuild. Older versions are available for Fedora 14 and Ubuntu Maverick, but they are unmaintained and lacking in features.
+You may be interested in hacking on GottenGeography if you enjoy writing Python code, have some experience with the [GObject Introspection](http://live.gnome.org/GObjectIntrospection), or are a huge GPS nerd like myself.
 
 GottenGeography is heavily inspired by the OSX application [PhotoLinker.app](http://www.earlyinnovations.com/photolinker/), however I am not affiliated in any way with EarlyInnovations. Please don't sue me, etc.
 
