@@ -238,7 +238,7 @@ class Struct:
 
 class XMLSimpleParser:
     """This class parses an XML file, keeps track of the data in some (selected)
-    attributes or elements and passes it to a callback function."""
+    attributes or elements and passes it back."""
     
     def __init__(self, rootname, watchlist):
         self.rootname = rootname
@@ -269,7 +269,7 @@ class XMLSimpleParser:
     
     def element_start(self, name, attributes):
         """If the element is in the watch list, call the driver. If the call
-        return True, start tracking the data."""
+        returns True, start tracking the data."""
         if not self.tracking:
             if name not in self.watchlist:
                 return
@@ -285,8 +285,8 @@ class XMLSimpleParser:
             self.state.update(attributes)
     
     def element_data(self, data):
-        """Accumulate data for an element, as expat calls this handler multiple
-        times."""
+        """Accumulate data for an element, as expat can call this handler
+        multiple times with data chunks."""
         if not data or data.strip() == '':
             return
         self.state[self.element] += data
