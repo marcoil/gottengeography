@@ -240,11 +240,11 @@ class XMLSimpleParser:
     """This class parses an XML file, keeps track of the data in some (selected)
     attributes or elements and passes it to a callback function."""
     
-    def __init__(self, rootname, watchlist, call_start, call_end):
+    def __init__(self, rootname, watchlist):
         self.rootname = rootname
         self.watchlist = watchlist
-        self.call_start = call_start
-        self.call_end = call_end
+        self.call_start = None
+        self.call_end = None
         self.element = None
         self.tracking = None
         self.state = {}
@@ -252,7 +252,9 @@ class XMLSimpleParser:
         self.parser = ParserCreate()
         self.parser.StartElementHandler = self.element_root
     
-    def parse(self, filename):
+    def parse(self, filename, call_start, call_end):
+        self.call_start = call_start
+        self.call_end = call_end
         try:
             with open(filename) as xml:
                 self.parser.ParseFile(xml)

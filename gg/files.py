@@ -150,28 +150,51 @@ class Photograph(Coordinates):
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
 
-# GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
-# This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-split = re_compile(r'[:TZ-]').split
-
-class GPXLoader(Coordinates):
+class TrackFile(Coordinates):
+    """Parent class for all track files.
+    Subclasses must implement element_start and element_end, and call them in
+    the base class."""
     def __init__(self, filename, callback, add_polygon):
-        """Create the parser and begin parsing."""
         self.add_poly = add_polygon
         self.pulse    = callback
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
         
-        parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'], \
-                                 self.element_start, self.element_end)
-        parser.parse(filename)
+        self.__class__.parser.parse(filename, self.element_start, self.element_end)
         
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
     
     def element_start(self, name, attributes):
+        return False
+    
+    def element_end(self, name, state):
+        """Occasionally redraw the screen so that the user can see what's going
+        on while stuff is loading."""
+        if clock() - self.clock > .2:
+            self.pulse(self)
+            self.clock = clock()
+
+# GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
+# This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
+split = re_compile(r'[:TZ-]').split
+
+class GPXFile(TrackFile):
+    parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
+    
+    def __init__(self, filename, callback, add_polygon):
+        """Parse a GPX file."""
+        
+        TrackFile.__init__(self, filename, callback, add_polygon)
+    
+    def element_start(self, name, attributes):
+        """If the element is the start of a new track segment, create a new
+        polygon to keep its points. If it's a track point, start accumulating
+        its data."""
+        TrackFile.element_start(self, name, attributes)
+        
         if name == "trkseg":
             self.append = self.add_poly()
         if name == 'trkpt':
@@ -181,9 +204,7 @@ class GPXLoader(Coordinates):
     def element_end(self, name, state):
         """This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
-        keeping track of the first and last points loaded, and occaisionally
-        redrawing the screen so that the user can see what's going on while
-        stuff is loading.
+        keeping track of the first and last points loaded.
         """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
@@ -201,42 +222,31 @@ class GPXLoader(Coordinates):
         
         self.tracks[timestamp] = self.append(lat, lon, float(state.get('ele', 0.0)))
         
-        if clock() - self.clock > .2:
-            self.pulse(self)
-            self.clock = clock()
-            
-class KMLLoader(Coordinates):
+        TrackFile.element_end(self, name, state)
+
+class KMLFile(TrackFile):
+    parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
+    
     def __init__(self, filename, callback, add_polygon):
-        """Create the parser and begin parsing."""
-        self.add_poly = add_polygon
-        self.append   = None
-        self.pulse    = callback
-        self.clock    = clock()
-        self.tracks   = {}
+        """Parse a KML file."""
         self.whens    = []
         self.coords   = []
         
-        parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'], \
-                                 self.element_start, self.element_end)
-        parser.parse(filename)
-                
-        keys = self.tracks.keys()
-        self.alpha = min(keys)
-        self.omega = max(keys)
+        TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
-        """Create new ChamplainMarkerLayers when necessary."""
+        """Create new ChamplainMarkerLayers for each gx:Track element.
+        If it's another element, start keeping its data."""
+        TrackFile.element_start(self, name, attributes)
+        
         if name == 'gx:Track':
             self.append = self.add_poly()
             return False
         return True
     
     def element_end(self, name, state):
-        """This method does most of the heavy lifting, including parsing time
-        strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
-        keeping track of the first and last points loaded, and occaisionally
-        redrawing the screen so that the user can see what's going on while
-        stuff is loading.
+        """Keep parallel arrays of whens and gx:coords. When we have a complete
+        pair, add it to out tracks.
         """
         if name == "when":
             try:
@@ -258,7 +268,5 @@ class KMLLoader(Coordinates):
             self.whens = self.whens[complete:]
             self.coords = self.coords[complete:]
         
-        if clock() - self.clock > .2:
-            self.pulse(self)
-            self.clock = clock()
+        TrackFile.element_end(self, name, state)
 
