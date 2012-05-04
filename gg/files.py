@@ -14,16 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import GdkPixbuf, Gio, GObject
+from gi.repository import GdkPixbuf, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
 from calendar import timegm
+from datetime import datetime
+import dateutil.parser
 from os import stat
 
 from utils import Coordinates, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from utils import XMLSimpleParser
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
@@ -168,105 +170,123 @@ class Photograph(Coordinates):
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
 
-# GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
-# This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-split = re_compile(r'[:TZ-]').split
-
-class GPXLoader(Coordinates):
-    """Use expat to parse GPX data quickly."""
-    
+class TrackFile(Coordinates):
+    """Parent class for all track files.
+    Subclasses must implement element_start and element_end, and call them in
+    the base class."""
     def __init__(self, filename, callback, add_polygon):
-        """Create the parser and begin parsing."""
         self.add_poly = add_polygon
-        self.filename = filename
         self.pulse    = callback
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
-        self.state    = {}
         
-        self.parser = ParserCreate()
-        self.parser.StartElementHandler  = self.element_root
-        self.parser.CharacterDataHandler = self.element_data
-        self.parser.EndElementHandler    = self.element_end
-        
-        try:
-            with open(filename) as gpx:
-                self.parser.ParseFile(gpx)
-        except ExpatError:
-            raise IOError
+        self.__class__.parser.parse(filename, self.element_start, self.element_end)
         
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
     
-    def element_root(self, name, attributes):
-        """Expat StartElementHandler.
+    def element_start(self, name, attributes):
+        return False
+    
+    def element_end(self, name, state):
+        """Occasionally redraw the screen so that the user can see what's going
+        on while stuff is loading."""
+        if clock() - self.clock > .2:
+            self.pulse(self)
+            self.clock = clock()
+
+# GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
+# This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
+split = re_compile(r'[:TZ-]').split
+
+class GPXFile(TrackFile):
+    parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
+    
+    def __init__(self, filename, callback, add_polygon):
+        """Parse a GPX file."""
         
-        This is only called on the top level element in the given XML file.
-        """
-        if name != 'gpx':
-            raise IOError
-        self.parser.StartElementHandler = self.element_start
+        TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
-        """Expat StartElementHandler.
+        """If the element is the start of a new track segment, create a new
+        polygon to keep its points. If it's a track point, start accumulating
+        its data."""
+        TrackFile.element_start(self, name, attributes)
         
-        This method creates new ChamplainMarkerLayers when necessary and initializes
-        variables for the CharacterDataHandler. It also extracts latitude and
-        longitude from GPX element attributes. For example:
-        
-        <trkpt lat="45.147445" lon="-81.469507">
-        """
-        self.element     = name
-        self.state[name] = ""
-        self.state.update(attributes)
         if name == "trkseg":
             self.append = self.add_poly()
+        if name == 'trkpt':
+            return True
+        return False
     
-    def element_data(self, data):
-        """Expat CharacterDataHandler.
-        
-        This method extracts elevation and time data from GPX elements.
-        For example:
-        
-        <ele>671.092</ele>
-        <time>2010-10-16T20:09:13Z</time>
-        """
-        data = data.strip()
-        if not data:
-            return
-        # Sometimes expat calls this handler multiple times each with just
-        # a chunk of the whole data, so += is necessary to collect all of it.
-        self.state[self.element] += data
-    
-    def element_end(self, name):
-        """Expat EndElementHandler.
-        
-        This method does most of the heavy lifting, including parsing time
+    def element_end(self, name, state):
+        """This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
-        keeping track of the first and last points loaded, and occaisionally
-        redrawing the screen so that the user can see what's going on while
-        stuff is loading.
+        keeping track of the first and last points loaded.
         """
         # We only care about the trkpt element closing, because that means
         # there is a new, fully-loaded GPX point to play with.
         if name != "trkpt":
             return
         try:
-            timestamp = timegm(map(int, split(self.state['time'])[0:6]))
-            lat = float(self.state['lat'])
-            lon = float(self.state['lon'])
+            timestamp = timegm(map(int, split(state['time'])[0:6]))
+            lat = float(state['lat'])
+            lon = float(state['lon'])
         except Exception as error:
             print error
             # If any of lat, lon, or time is missing, we cannot continue.
             # Better to just give up on this track point and go to the next.
             return
         
-        self.tracks[timestamp] = self.append(lat, lon, float(self.state.get('ele', 0.0)))
+        self.tracks[timestamp] = self.append(lat, lon, float(state.get('ele', 0.0)))
         
-        self.state.clear()
-        if clock() - self.clock > .2:
-            self.pulse(self)
-            self.clock = clock()
+        TrackFile.element_end(self, name, state)
+
+class KMLFile(TrackFile):
+    parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
+    
+    def __init__(self, filename, callback, add_polygon):
+        """Parse a KML file."""
+        self.whens    = []
+        self.coords   = []
+        
+        TrackFile.__init__(self, filename, callback, add_polygon)
+    
+    def element_start(self, name, attributes):
+        """Create new ChamplainMarkerLayers for each gx:Track element.
+        If it's another element, start keeping its data."""
+        TrackFile.element_start(self, name, attributes)
+        
+        if name == 'gx:Track':
+            self.append = self.add_poly()
+            return False
+        return True
+    
+    def element_end(self, name, state):
+        """Keep parallel arrays of whens and gx:coords. When we have a complete
+        pair, add it to out tracks.
+        """
+        if name == "when":
+            try:
+                timestamp = dateutil.parser.parse(state['when'])
+            except Exception as error:
+                print error
+                return
+            self.whens.append(mktime(timestamp.timetuple()))
+        if name == "gx:coord":
+            self.coords.append(state['gx:coord'].split())
+        
+        complete = min(len(self.whens), len(self.coords))
+        if complete > 0:
+            for i in range(0, complete):
+                self.tracks[self.whens[i]] = \
+                    self.append(float(self.coords[i][1]), \
+                                float(self.coords[i][0]), \
+                                float(self.coords[i][2]))
+            self.whens = self.whens[complete:]
+            self.coords = self.coords[complete:]
+        
+        TrackFile.element_end(self, name, state)
 

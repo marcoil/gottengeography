@@ -26,6 +26,7 @@ from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
+from xml.parsers.expat import ParserCreate, ExpatError
 
 from territories import get_state, get_country
 
@@ -234,4 +235,71 @@ class Struct:
     """This is a generic object which can be assigned arbitrary attributes."""
     def __init__(self, attributes={}):
         self.__dict__.update(attributes)
+
+class XMLSimpleParser:
+    """This class parses an XML file, keeps track of the data in some (selected)
+    attributes or elements and passes it back."""
+    
+    def __init__(self, rootname, watchlist):
+        self.rootname = rootname
+        self.watchlist = watchlist
+        self.call_start = None
+        self.call_end = None
+        self.element = None
+        self.tracking = None
+        self.state = {}
+        
+        self.parser = ParserCreate()
+        self.parser.StartElementHandler = self.element_root
+    
+    def parse(self, filename, call_start, call_end):
+        self.call_start = call_start
+        self.call_end = call_end
+        try:
+            with open(filename) as xml:
+                self.parser.ParseFile(xml)
+        except ExpatError:
+            raise IOError
+   
+    def element_root(self, name, attributes):
+        """Called on the root XML element, we check if it's the one we want."""
+        if self.rootname != None and name != self.rootname:
+            raise IOError
+        self.parser.StartElementHandler = self.element_start
+    
+    def element_start(self, name, attributes):
+        """If the element is in the watch list, call the driver. If the call
+        returns True, start tracking the data."""
+        if not self.tracking:
+            if name not in self.watchlist:
+                return
+            if self.call_start(name, attributes):
+                # Start tracking this element, accumulate everything under it.
+                self.tracking = name
+                self.parser.CharacterDataHandler = self.element_data
+                self.parser.EndElementHandler = self.element_end
+        
+        if self.tracking is not None:
+            self.element = name
+            self.state[name] = ""
+            self.state.update(attributes)
+    
+    def element_data(self, data):
+        """Accumulate data for an element, as expat can call this handler
+        multiple times with data chunks."""
+        if not data or data.strip() == '':
+            return
+        self.state[self.element] += data
+    
+    def element_end(self, name):
+        """If this is the end of the element we're tracking, pass everything to
+        the end callback and reset."""
+        if name != self.tracking:
+            return
+        
+        self.call_end(name, self.state)
+        self.tracking = None
+        self.state.clear()
+        self.parser.CharacterDataHandler = None
+        self.parser.EndElementHandler = None
 
