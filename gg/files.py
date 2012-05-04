@@ -19,7 +19,6 @@ from gi.repository import GdkPixbuf, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
-from datetime import datetime
 from calendar import timegm
 from os import stat
 
@@ -212,7 +211,6 @@ class GPXFile(TrackFile):
         """If the element is the start of a new track segment, create a new
         polygon to keep its points. If it's a track point, start accumulating
         its data."""
-        TrackFile.element_start(self, name, attributes)
         
         if name == "trkseg":
             self.append = self.add_poly()
@@ -255,7 +253,6 @@ class KMLFile(TrackFile):
     def element_start(self, name, attributes):
         """Create new ChamplainMarkerLayers for each gx:Track element.
         If it's another element, start keeping its data."""
-        TrackFile.element_start(self, name, attributes)
         
         if name == 'gx:Track':
             self.append = self.add_poly()
