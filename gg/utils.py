@@ -19,6 +19,7 @@ from __future__ import division
 from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
+from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import GConf, Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
@@ -26,7 +27,6 @@ from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
-from xml.parsers.expat import ParserCreate, ExpatError
 
 from territories import get_state, get_country
 
@@ -112,8 +112,13 @@ def format_coords(lat, lon):
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
 
+################################################################################
+# Class definitions.
+################################################################################
 
 class Polygon(Champlain.PathLayer):
+    """Extend a Champlain.PathLayer to do things more the way I like them."""
+    
     def __init__(self):
         super(Champlain.PathLayer, self).__init__()
         self.set_stroke_width(4)
@@ -131,7 +136,7 @@ class Polygon(Champlain.PathLayer):
 class Coordinates():
     """A generic object containing latitude and longitude coordinates.
     
-    This class is inherited by Photograph and GPXLoader and contains methods
+    This class is inherited by Photograph and TrackFile and contains methods
     required by both of those classes.
     
     The geodata attribute of this class is shared across all instances of
@@ -231,14 +236,8 @@ class Coordinates():
         )
 
 
-class Struct:
-    """This is a generic object which can be assigned arbitrary attributes."""
-    def __init__(self, attributes={}):
-        self.__dict__.update(attributes)
-
 class XMLSimpleParser:
-    """This class parses an XML file, keeps track of the data in some (selected)
-    attributes or elements and passes it back."""
+    """A simple wrapper for the Expat XML parser."""
     
     def __init__(self, rootname, watchlist):
         self.rootname = rootname
@@ -253,6 +252,7 @@ class XMLSimpleParser:
         self.parser.StartElementHandler = self.element_root
     
     def parse(self, filename, call_start, call_end):
+        """Begin the loading and parsing of the XML file."""
         self.call_start = call_start
         self.call_end = call_end
         try:
@@ -268,8 +268,7 @@ class XMLSimpleParser:
         self.parser.StartElementHandler = self.element_start
     
     def element_start(self, name, attributes):
-        """If the element is in the watch list, call the driver. If the call
-        returns True, start tracking the data."""
+        """Only collect the attributes from XML elements that we care about."""
         if not self.tracking:
             if name not in self.watchlist:
                 return
@@ -285,15 +284,16 @@ class XMLSimpleParser:
             self.state.update(attributes)
     
     def element_data(self, data):
-        """Accumulate data for an element, as expat can call this handler
-        multiple times with data chunks."""
+        """Accumulate all data for an element.
+        
+        Expat can call this handler multiple times with data chunks.
+        """
         if not data or data.strip() == '':
             return
         self.state[self.element] += data
     
     def element_end(self, name):
-        """If this is the end of the element we're tracking, pass everything to
-        the end callback and reset."""
+        """When the tag closes, pass it's data to the end callback and reset."""
         if name != self.tracking:
             return
         
@@ -302,4 +302,11 @@ class XMLSimpleParser:
         self.state.clear()
         self.parser.CharacterDataHandler = None
         self.parser.EndElementHandler = None
+
+
+class Struct:
+    """This is a generic object which can be assigned arbitrary attributes."""
+    
+    def __init__(self, attributes={}):
+        self.__dict__.update(attributes)
 

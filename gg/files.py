@@ -22,9 +22,8 @@ from time import mktime, clock
 from calendar import timegm
 from os import stat
 
-from utils import Coordinates, format_list
+from utils import Coordinates, XMLSimpleParser, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
-from utils import XMLSimpleParser
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
@@ -170,9 +169,12 @@ class Photograph(Coordinates):
         return format_list(names, ',\n' if length > 35 else ', ')
 
 class TrackFile(Coordinates):
-    """Parent class for all track files.
+    """Parent class for all types of GPS track files.
+    
     Subclasses must implement element_start and element_end, and call them in
-    the base class."""
+    the base class.
+    """
+    
     def __init__(self, filename, callback, add_polygon):
         self.add_poly = add_polygon
         self.pulse    = callback
@@ -187,11 +189,11 @@ class TrackFile(Coordinates):
         self.omega = max(keys)
     
     def element_start(self, name, attributes):
+        """Placeholder for a method that might do something in the future."""
         return False
     
     def element_end(self, name, state):
-        """Occasionally redraw the screen so that the user can see what's going
-        on while stuff is loading."""
+        """Occasionally redraw the screen so the user can see what's happening."""
         if clock() - self.clock > .2:
             self.pulse(self)
             self.clock = clock()
@@ -201,17 +203,14 @@ class TrackFile(Coordinates):
 split = re_compile(r'[:TZ-]').split
 
 class GPXFile(TrackFile):
+    """Parse a GPX file."""
+    
     def __init__(self, filename, callback, add_polygon):
-        """Parse a GPX file."""
-        
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
         TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
-        """If the element is the start of a new track segment, create a new
-        polygon to keep its points. If it's a track point, start accumulating
-        its data."""
-        
+        """Adds a new polygon for each new segment, and watches for track points."""
         if name == "trkseg":
             self.append = self.add_poly()
         if name == 'trkpt':
@@ -219,7 +218,9 @@ class GPXFile(TrackFile):
         return False
     
     def element_end(self, name, state):
-        """This method does most of the heavy lifting, including parsing time
+        """Collect and use all the parsed data.
+        
+        This method does most of the heavy lifting, including parsing time
         strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
         keeping track of the first and last points loaded.
         """
@@ -242,8 +243,9 @@ class GPXFile(TrackFile):
         TrackFile.element_end(self, name, state)
 
 class KMLFile(TrackFile):
+    """Parse a KML file."""
+    
     def __init__(self, filename, callback, add_polygon):
-        """Parse a KML file."""
         self.whens    = []
         self.coords   = []
         
@@ -251,25 +253,24 @@ class KMLFile(TrackFile):
         TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
-        """Create new ChamplainMarkerLayers for each gx:Track element.
-        If it's another element, start keeping its data."""
-        
+        """Adds a new polygon for each new gx:Track, and watches for location data."""
         if name == 'gx:Track':
             self.append = self.add_poly()
             return False
         return True
     
     def element_end(self, name, state):
-        """Keep parallel arrays of whens and gx:coords. When we have a complete
-        pair, add it to out tracks.
+        """Watch for complete pairs of when and gx:coord tags.
+        
+        This is accomplished by maintaining parallel arrays of each tag.
         """
         if name == "when":
             try:
-                timestamp = parse_date(state['when'])
+                timestamp = mktime(parse_date(state['when']).timetuple())
             except Exception as error:
                 print error
                 return
-            self.whens.append(mktime(timestamp.timetuple()))
+            self.whens.append(timestamp)
         if name == "gx:coord":
             self.coords.append(state['gx:coord'].split())
         

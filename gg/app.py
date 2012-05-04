@@ -347,6 +347,7 @@ class PreferencesController(CommonAttributes):
 
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
+    
     def __init__(self):
         self.select_all = get_obj("select_all_button")
         self.selection  = get_obj("photos_view").get_selection()
@@ -412,6 +413,8 @@ class LabelController(CommonAttributes):
 
 
 class ActorController(CommonAttributes):
+    """Controls the behavior of the custom actors I have placed over the map."""
+    
     def __init__(self):
         self.stage = self.map_view.get_stage()
         self.black = Clutter.Box.new(Clutter.BinLayout())
