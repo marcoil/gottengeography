@@ -476,7 +476,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;
-Marc Ordinas i Llopis</property>
+Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
     <property name="documenters">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
     <property name="translator_credits" translatable="yes">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
     <child internal-child="vbox">
