@@ -28,6 +28,11 @@ except:
     need('Python 2.7')
 
 try:
+    from dateutil.parser import parse
+except:
+    need('python-dateutil 1.5')
+
+try:
     import gi
     # Raises AttributeError with pygobject 2.21.
     gi.require_version('Gtk', '3.0')
