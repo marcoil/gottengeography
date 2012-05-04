@@ -31,7 +31,7 @@ GtkClutter.init([])
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
-from os.path import basename, abspath, splitext
+from os.path import basename, abspath
 from time import tzset, sleep, clock
 from gettext import gettext as _
 from os import environ
@@ -511,12 +511,8 @@ class GottenGeography(CommonAttributes):
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        extension = splitext(filename)[1]
-        gpx = None
-        if extension.lower() == '.kml':
-            gpx = KMLFile(filename, self.gpx_pulse, self.create_polygon)
-        else:
-            gpx = GPXFile(filename, self.gpx_pulse, self.create_polygon)
+        open_file = KMLFile if filename[-3:].lower() == 'kml' else GPXFile
+        gpx = open_file(filename, self.gpx_pulse, self.create_polygon)
         
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
