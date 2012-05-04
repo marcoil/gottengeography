@@ -181,7 +181,7 @@ class TrackFile(Coordinates):
         self.append   = None
         self.tracks   = {}
         
-        self.__class__.parser.parse(filename, self.element_start, self.element_end)
+        self.parser.parse(filename, self.element_start, self.element_end)
         
         keys = self.tracks.keys()
         self.alpha = min(keys)
@@ -202,11 +202,10 @@ class TrackFile(Coordinates):
 split = re_compile(r'[:TZ-]').split
 
 class GPXFile(TrackFile):
-    parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-    
     def __init__(self, filename, callback, add_polygon):
         """Parse a GPX file."""
         
+        self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
         TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
@@ -245,13 +244,12 @@ class GPXFile(TrackFile):
         TrackFile.element_end(self, name, state)
 
 class KMLFile(TrackFile):
-    parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
-    
     def __init__(self, filename, callback, add_polygon):
         """Parse a KML file."""
         self.whens    = []
         self.coords   = []
         
+        self.parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
         TrackFile.__init__(self, filename, callback, add_polygon)
     
     def element_start(self, name, attributes):
