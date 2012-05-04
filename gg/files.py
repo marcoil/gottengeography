@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dateutil.parser import parse as parse_date
-from gi.repository import GdkPixbuf, GObject
+from gi.repository import GdkPixbuf, Gio, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
@@ -266,7 +266,7 @@ class KMLFile(TrackFile):
         """
         if name == "when":
             try:
-                timestamp = mktime(parse_date(state['when']).timetuple())
+                timestamp = timegm(parse_date(state['when']).utctimetuple())
             except Exception as error:
                 print error
                 return
