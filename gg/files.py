@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from dateutil.parser import parse as parse_date
 from gi.repository import GdkPixbuf, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
-from calendar import timegm
 from datetime import datetime
-import dateutil.parser
+from calendar import timegm
 from os import stat
 
 from utils import Coordinates, format_list
@@ -268,7 +268,7 @@ class KMLFile(TrackFile):
         """
         if name == "when":
             try:
-                timestamp = dateutil.parser.parse(state['when'])
+                timestamp = parse_date(state['when'])
             except Exception as error:
                 print error
                 return
