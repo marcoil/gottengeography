@@ -32,7 +32,9 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
-from time import tzset, sleep, clock
+from time import sleep, clock
+from datetime import datetime, timedelta
+from dateutil import tz
 from gettext import gettext as _
 from urlparse import urlparse
 from os import environ
@@ -88,8 +90,9 @@ def auto_timestamp_comparison(photo, points, metadata):
         lo = max([point for point in points if point < stamp])
         hi_point = points[hi]
         lo_point = points[lo]
-        hi_ratio = (stamp - lo) / (hi - lo)  # Proportional amount of time
-        lo_ratio = (hi - stamp) / (hi - lo)  # between each point & the photo.
+        hi_lo_diff = (hi - lo).total_seconds()
+        hi_ratio = (stamp - lo).total_seconds() / hi_lo_diff  # Proportional amount of time
+        lo_ratio = (hi - stamp).total_seconds() / hi_lo_diff  # between each point & the photo.
         
         # Find intermediate values using the proportional ratios.
         lat = ((lo_point.lat * lo_ratio)  +
@@ -238,9 +241,10 @@ class SearchController(CommonAttributes):
 
 class PreferencesController(CommonAttributes):
     """Controls the behavior of the preferences dialog."""
-    timezone = None
     
     def __init__(self):
+        self.timezone = tz.gettz()
+        self.tzname = None
         self.region = region = get_obj("timezone_region")
         self.cities = cities = get_obj("timezone_cities")
         pref_button = get_obj("pref_button")
@@ -249,9 +253,9 @@ class PreferencesController(CommonAttributes):
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
         cities.connect("changed", self.cities_handler, region)
-        timezone = gconf_get("timezone") or [-1, -1]
-        region.set_active(timezone[0])
-        cities.set_active(timezone[1])
+        tzlist = gconf_get("timezone") or [-1, -1]
+        region.set_active(tzlist[0])
+        cities.set_active(tzlist[1])
         
         colors = gconf_get("track_color") or [32768, 0, 65535]
         self.colorpicker = get_obj("colorselection")
@@ -271,6 +275,8 @@ class PreferencesController(CommonAttributes):
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method") or "system_timezone"
         self.radios[timezone_method].clicked()
+        
+        self.set_timezone()
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
@@ -288,23 +294,25 @@ class PreferencesController(CommonAttributes):
             cities.set_active(previous.city)
         dialog.hide()
     
-    def set_timezone(self, timezone=None):
+    def set_timezone(self, tzname=None):
         """Set the timezone to the given zone and update all photos."""
         option = gconf_get("timezone_method")
-        if timezone is not None:
-            self.timezone = timezone
-        if "TZ" in environ:
-            del environ["TZ"]
-        if   option == "lookup_timezone" and self.timezone is not None:
-            environ["TZ"] = self.timezone
+        if tzname is not None:
+            self.tzname = tzname
+        if option == "system_timezone":
+            self.timezone = tz.gettz()
+        elif option == "lookup_timezone" and self.tzname is not None:
+            self.timezone = tz.gettz(self.tzname)
+            if self.timezone == None:
+                self.timezone = tz.gettz()
         elif option == "custom_timezone":
             region = self.region.get_active_id()
             city   = self.cities.get_active_id()
             if region is not None and city is not None:
-                environ["TZ"] = "%s/%s" % (region, city)
-        tzset()
+                self.timezone = tz.gettz("%s/%s" % (region, city))
+        
         for photo in self.photo.values():
-            photo.calculate_timestamp()
+            photo.calculate_timestamp(self.timezone)
             auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def radio_handler(self, radio, combos):
@@ -497,7 +505,7 @@ class GottenGeography(CommonAttributes):
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = self.photo.get(filename) or Photograph(filename, self.modify_summary)
-        photo.read()
+        photo.read(self.prefs.timezone)
         if filename not in self.photo:
             photo.iter           = self.liststore.append()
             photo.label          = self.labels.add(filename)
@@ -505,7 +513,7 @@ class GottenGeography(CommonAttributes):
         photo.position_label()
         self.modified.discard(photo)
         self.liststore.set_row(photo.iter,
-            [filename, photo.long_summary(), photo.thumb, photo.timestamp])
+            [filename, photo.long_summary(), photo.thumb, photo.unix_timestamp()])
         auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
     def load_gpx_from_file(self, filename):
@@ -567,8 +575,8 @@ class GottenGeography(CommonAttributes):
         
         del self.polygons[:]
         self.tracks.clear()
-        self.metadata.omega = float('-inf')   # Final GPX track point
-        self.metadata.alpha = float('inf')    # Initial GPX track point
+        self.metadata.omega = datetime.min.replace(tzinfo = tz.tzutc()) # Final GPX track point
+        self.metadata.alpha = datetime.max.replace(tzinfo = tz.tzutc()) # Initial GPX track point
         self.gpx_sensitivity()
     
     def save_all_files(self, widget=None):
@@ -608,7 +616,7 @@ class GottenGeography(CommonAttributes):
         """Update all photos each time the camera's clock is corrected."""
         seconds = self.secbutton.get_value()
         minutes = self.minbutton.get_value()
-        offset  = int((minutes * 60) + seconds)
+        offset  = timedelta(minutes = minutes, seconds = seconds)
         gconf_set("clock_offset", [minutes, seconds])
         if offset != self.metadata.delta:
             self.metadata.delta = offset
@@ -787,7 +795,7 @@ class GottenGeography(CommonAttributes):
         self.labels.selection.emit("changed")
         self.clear_all_gpx()
         
-        self.metadata.delta = 0
+        self.metadata.delta = timedelta()
         offset = gconf_get("clock_offset") or [0, 0]
         self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
         for spinbutton in [ self.secbutton, self.minbutton ]:

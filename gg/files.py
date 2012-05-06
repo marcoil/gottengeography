@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dateutil.parser import parse as parse_date
+from dateutil import tz
+from datetime import datetime
 from gi.repository import GdkPixbuf, Gio, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
@@ -47,7 +49,7 @@ class Photograph(Coordinates):
         self.label    = None
         self.iter     = None
     
-    def read(self):
+    def read(self, tz = tz.tzutc()):
         """Load exif data from disk."""
         self.exif      = ImageMetadata(self.filename)
         self.timestamp = None
@@ -76,7 +78,7 @@ class Photograph(Coordinates):
             else:
                 raise IOError
         
-        self.calculate_timestamp()
+        self.calculate_timestamp(tz)
         try:
             self.latitude = dms_to_decimal(
                 *self.exif[gps + 'Latitude'].value +
@@ -95,19 +97,14 @@ class Photograph(Coordinates):
         except KeyError:
             pass
     
-    def calculate_timestamp(self):
-        """Determine the timestamp based on the currently selected timezone.
-        
-        This method relies on the TZ environment variable to be set before
-        it is called. If you don't set TZ before calling this method, then it
-        implicitely assumes that the camera and the computer are set to the
-        same timezone.
+    def calculate_timestamp(self, tz = tz.tzutc()):
+        """Determine the timestamp based on the passed timezone.
         """
         try:
-            self.timestamp = int(mktime(
-                self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
+            self.timestamp = \
+                self.exif['Exif.Photo.DateTimeOriginal'].value.replace(tzinfo = tz)
         except KeyError:
-            self.timestamp = int(stat(self.filename).st_mtime)
+            self.timestamp = datetime.fromtimestamp(stat(self.filename).st_mtime, tz)
     
     def write(self):
         """Save exif data to photo file on disk."""
@@ -152,12 +149,12 @@ class Photograph(Coordinates):
     
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
-        city, state, countrycode, tz      = data
+        city, state, countrycode, tzname  = data
         self.exif[iptc + 'City']          = [city or ""]
         self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state) or ""]
         self.exif[iptc + 'CountryName']   = [get_country(countrycode) or ""]
         self.exif[iptc + 'CountryCode']   = [countrycode or ""]
-        self.timezone                     = tz.strip()
+        self.timezone                     = tzname
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""
@@ -205,6 +202,8 @@ split = re_compile(r'[:TZ-]').split
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
+    iso_format = "%Y-%m-%dT%H:%M:%SZ"
+    
     def __init__(self, filename, callback, add_polygon):
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
         TrackFile.__init__(self, filename, callback, add_polygon)
@@ -229,7 +228,9 @@ class GPXFile(TrackFile):
         if name != "trkpt":
             return
         try:
-            timestamp = timegm(map(int, split(state['time'])[0:6]))
+            # GPX files always keep datetimes in ISO format and UTC timezone.
+            timestamp = datetime.strptime(state['time'],
+                            GPXFile.iso_format).replace(tzinfo = tz.tzutc())
             lat = float(state['lat'])
             lon = float(state['lon'])
         except Exception as error:
@@ -266,7 +267,7 @@ class KMLFile(TrackFile):
         """
         if name == "when":
             try:
-                timestamp = timegm(parse_date(state['when']).utctimetuple())
+                timestamp = parse_date(state['when'])
             except Exception as error:
                 print error
                 return

@@ -22,7 +22,8 @@ from os.path import join, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import GConf, Clutter, Champlain
 from math import acos, sin, cos, radians
-from time import strftime, localtime
+from dateutil import tz
+from time import mktime
 from math import modf as split_float
 from gettext import gettext as _
 from fractions import Fraction
@@ -158,7 +159,7 @@ class Coordinates():
     latitude  = None
     longitude = None
     timestamp = None
-    timezone  = None
+    timezone  = ""
     geodata   = {}
     
     def valid_coords(self):
@@ -173,7 +174,7 @@ class Coordinates():
     def lookup_geoname(self):
         """Search cities.txt for nearest city."""
         if not self.valid_coords():
-            return
+            return ""
         assert self.geodata is Coordinates.geodata
         key = "%.2f,%.2f" % (self.latitude, self.longitude)
         if key in self.geodata:
@@ -182,29 +183,28 @@ class Coordinates():
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(get_file("cities.txt")) as cities:
             for city in cities:
-                name, lat, lon, country, state, tz = city.split("\t")
+                name, lat, lon, country, state, tzname = city.split("\t")
                 lat2, lon2 = radians(float(lat)), radians(float(lon))
                 delta = acos(sin(lat1) * sin(lat2) +
                              cos(lat1) * cos(lat2) *
                              cos(lon2  - lon1))    * 6371 # earth's radius in km
                 if delta < dist:
                     dist = delta
-                    near = [name, state, country, tz]
+                    near = [name, state, country, tzname]
         self.geodata[key] = near
         return self.set_geodata(near)
     
     def set_geodata(self, data):
         """Apply geodata to internal attributes."""
-        self.city, state, self.countrycode, tz = data
+        self.city, state, self.countrycode, tzname = data
         self.provincestate = get_state(self.countrycode, state)
         self.countryname   = get_country(self.countrycode)
-        self.timezone      = tz.strip()
+        self.timezone      = tzname
         return self.timezone
     
     def pretty_time(self):
-        """Convert epoch seconds to a human-readable date."""
-        if type(self.timestamp) is int:
-            return strftime("%Y-%m-%d %X", localtime(self.timestamp))
+        """Convert epoch seconds to a human-readable date, in local timezone."""
+        return self.timestamp.astimezone(tz.gettz()).strftime("%Y-%m-%d %X")
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
@@ -234,6 +234,9 @@ class Coordinates():
             'size="larger"', basename(self.filename),
             'style="italic" size="smaller"', self.short_summary()
         )
+    
+    def unix_timestamp(self):
+        return int(mktime(self.timestamp.timetuple()))
 
 
 class XMLSimpleParser:
