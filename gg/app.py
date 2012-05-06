@@ -820,9 +820,11 @@ class GottenGeography(CommonAttributes):
         iter = combo.get_active_iter()
         id = model.get_value(iter, 0)
         map_source_factory = Champlain.MapSourceFactory.dup_default()
+        if id not in [i.get_id() for i in map_source_factory.get_registered()]:
+            return
         source = map_source_factory.create_cached_source(id)
-        
-        self.champlain.get_view().set_property("map-source", source)
+        if source is not None and source.get_id() != '':
+            self.champlain.get_view().set_map_source(source)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
