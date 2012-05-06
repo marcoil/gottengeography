@@ -824,7 +824,13 @@ class GottenGeography(CommonAttributes):
             return
         source = map_source_factory.create_cached_source(id)
         if source is not None and source.get_id() != '':
-            self.champlain.get_view().set_map_source(source)
+            try:
+                self.champlain.get_view().set_map_source(source)
+            except TypeError:
+                # If it doesn't accept a cached source, give it a normal one
+                source = map_source_factory.create(id)
+                if source is not None and source.get_id() != '':
+                    self.champlain.get_view().set_map_source(source)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
