@@ -34,6 +34,7 @@ from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
 from time import tzset, sleep, clock
 from gettext import gettext as _
+from urlparse import urlparse
 from os import environ
 from sys import argv
 
@@ -472,11 +473,17 @@ class GottenGeography(CommonAttributes):
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
+    def file_dragged_in(self, widget, context, x, y, data, info, time):
+        """Load files that have been dragged in."""
+        self.open_files(data.get_uris())
+    
     def open_files(self, files):
         """Attempt to load all of the specified files."""
         self.progressbar.show()
         invalid_files, total = [], len(files)
-        for i, name in enumerate(map(abspath, files), 1):
+        # abspath is used to correct relative paths entered on the commandline,
+        # urlparse is used to correct URIs given from drag&drop operations.
+        for i, name in enumerate([abspath(urlparse(f).path) for f in files], 1):
             self.redraw_interface(i / total, basename(name))
             try:
                 try:            self.load_img_from_file(name)
@@ -770,6 +777,11 @@ class GottenGeography(CommonAttributes):
             spinbutton.set_value(offset.pop())
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
+        
+        drop_target = get_obj("photos_and_map")
+        drop_target.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
+        drop_target.connect("drag-data-received", self.file_dragged_in)
+        drop_target.drag_dest_add_uri_targets()
     
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
