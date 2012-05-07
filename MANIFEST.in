@@ -1,6 +1,0 @@
-include gottengeography README.md
-include AUTHORS COPYING
-recursive-include data *.desktop
-recursive-include gg *.glade *.txt
-include po/gottengeography.pot
-include po/*.po
