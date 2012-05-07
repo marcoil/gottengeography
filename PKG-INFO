@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: GottenGeography
+Version: 1.1
+Summary: Automagically geotag photos with GPX data.
+Home-page: http://exolucere.ca/gottengeography
+Author: Robert Park
+Author-email: rbpark@exolucere.ca
+License: GPLv3
+Download-URL: https://github.com/robru/GottenGeography/downloads
+Description: GottenGeography is a GNOME application that aims to make it easy to record
+        geotags into your photographs. If you have a GPS device, GottenGeography can
+        load it's GPX data and directly compare timestamps between the GPX data and the
+        photos, automatically determining where each photo was taken. If you do not have
+        a GPS device, GottenGeography allows you to manually place photos onto a map,
+        and then record those locations into the photos.
+        
+Platform: UNKNOWN
