@@ -37,7 +37,7 @@ try:
     # Raises AttributeError with pygobject 2.21.
     gi.require_version('Gtk', '3.0')
 except:
-    need('Gtk 3.0 (via pygobject 2.28)')
+    need('Gtk 3.0 (via pygobject3 3.0.3)')
 
 try:
     from gi.repository import Champlain

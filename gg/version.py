@@ -17,7 +17,7 @@
 # Please note that this file is equally valid as Python as it is Bash
 APPNAME='GottenGeography'
 PACKAGE='gottengeography'
-VERSION='1.0.1'
+VERSION='1.1'
 
 AUTHOR='Robert Park'
 EMAIL='rbpark@exolucere.ca'
