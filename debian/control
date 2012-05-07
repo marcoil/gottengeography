@@ -1,0 +1,23 @@
+Source: gottengeography
+Section: graphics
+Priority: extra
+Maintainer: Marc Ordinas i Llopis <mail@marcoil.org>
+Build-Depends: debhelper (>= 8.0.0), python-support (>= 0.8.4), intltool
+XS-Python-Version: >= 2.7
+Standards-Version: 3.9.3
+Homepage: http://exolucere.ca/gottengeography
+Vcs-Git: git://github.com/robru/gottengeography.git
+Vcs-Browser: https://github.com/robru/gottengeography
+
+Package: gottengeography
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-pyexiv2, python-dateutil,
+ python-gi, gir1.2-gtkchamplain-0.12
+XB-Python-Version: ${python:Versions}
+Description: Automagically geotag photos with GPX data.
+ GottenGeography is a GNOME application that aims to make it easy to record
+ geotags into your photographs. If you have a GPS device, GottenGeography can
+ load it's GPX data and directly compare timestamps between the GPX data and the
+ photos, automatically determining where each photo was taken. If you do not
+ have a GPS device, GottenGeography allows you to manually place photos onto a
+ map, and then record those locations into the photos.
