@@ -1,6 +1,6 @@
 include gottengeography README.md
-include gg/AUTHORS gg/COPYING
-recursive-include data/ *.desktop
-recursive-include gg/ *.glade *.txt
+include AUTHORS COPYING
+recursive-include data *.desktop
+recursive-include gg *.glade *.txt
 include po/gottengeography.pot
 include po/*.po
