@@ -1,3 +1,9 @@
+gottengeography (1.1-precise3) precise; urgency=low
+
+  * Small changes for source distribution.
+
+ -- Marc Ordinas i Llopis (marcoil) <mail@marcoil.org>  Tue, 08 May 2012 13:34:25 +0200
+
 gottengeography (1.1-precise2) precise; urgency=low
 
   * Added missing dependency to gir1.2-gtkclutter-1.0.

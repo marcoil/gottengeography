@@ -4,3 +4,4 @@ extend-diff-ignore = "(^|/)testsuite.sh$"
 extend-diff-ignore = "(^|/)po/POTFILES.in$"
 extend-diff-ignore = "(^|/)po/README.md$"
 extend-diff-ignore = "(^|/)po/initialize-pot.sh$"
+single-debian-patch
