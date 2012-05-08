@@ -61,8 +61,9 @@ and then record those locations into the photos.
     download_url="https://github.com/robru/GottenGeography/downloads",
     license="GPLv3",
     packages=['gg'],
-    package_data={'gg': ['ui.glade', 'cities.txt', 'AUTHORS', 'COPYING']},
+    package_data={'gg': ['ui.glade', 'cities.txt']},
     scripts=['gottengeography'],
-    data_files=[('share/applications', ['data/gottengeography.desktop'])],
+    data_files=[('share/applications', ['data/gottengeography.desktop']),
+                ('share/doc/gottengeography', ['README.md', 'AUTHORS', 'COPYING'])],
     cmdclass={'install_data': InstallData}
 )

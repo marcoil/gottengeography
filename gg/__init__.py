@@ -20,35 +20,37 @@ def need(dependency):
     """Exit the program and tell the user what dependency was missing."""
     exit('GottenGeography requires at least ' + dependency)
 
-try:
-    from fractions import Fraction
-    # Raises TypeError with Python 2.6, so 2.7 is required.
-    Fraction(0.5).numerator
-except:
-    need('Python 2.7')
+def check_dependencies():
+    try:
+        from fractions import Fraction
+        # Raises TypeError with Python 2.6, so 2.7 is required.
+        Fraction(0.5).numerator
+    except:
+        need('Python 2.7')
 
-try:
-    from dateutil.parser import parse
-except:
-    need('python-dateutil 1.5')
+    try:
+        from dateutil.parser import parse
+    except:
+        need('python-dateutil 1.5')
 
-try:
-    import gi
-    # Raises AttributeError with pygobject 2.21.
-    gi.require_version('Gtk', '3.0')
-except:
-    need('Gtk 3.0 (via pygobject3 3.0.3)')
+    try:
+        import gi
+        # Raises AttributeError with pygobject 2.21.
+        gi.require_version('Gtk', '3.0')
+    except:
+        need('Gtk 3.0 (via pygobject3 3.0.3)')
 
-try:
-    from gi.repository import Champlain
-    # Raises AttributeError with libchamplain 0.8 or earlier.
-    Champlain.PathLayer
-except:
-    need('libchamplain 0.9')
+    try:
+        from gi.repository import Champlain
+        # Raises AttributeError with libchamplain 0.8 or earlier.
+        Champlain.PathLayer
+    except:
+        need('libchamplain 0.9')
 
-try:
-    import pyexiv2
-    if pyexiv2.version_info < (0, 3):
-        raise ImportError
-except:
-    need('pyexiv2 0.3')
+    try:
+        import pyexiv2
+        if pyexiv2.version_info < (0, 3):
+            raise ImportError
+    except:
+        need('pyexiv2 0.3')
+
