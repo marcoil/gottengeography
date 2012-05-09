@@ -729,6 +729,17 @@ class GottenGeography(CommonAttributes):
         photos_view.set_model(self.liststore)
         photos_view.append_column(column)
         
+        combo = get_obj("map_source_combo")
+        map_source_store = get_obj("map_source_store")
+        map_source_factory = Champlain.MapSourceFactory.dup_default()
+        cell = Gtk.CellRendererText()
+        combo.pack_start(cell, False)
+        combo.add_attribute(cell, 'text', 1)
+        for source in map_source_factory.get_registered():
+            map_source_store.append([source.get_id(), source.get_name()])
+        combo.connect("changed", self.map_source_changed)
+        combo.set_active_iter(map_source_store.get_iter_first())
+        
         get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
         
         self.navigator = NavigationController()
@@ -815,6 +826,17 @@ class GottenGeography(CommonAttributes):
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
+    
+    def map_source_changed(self, combo):
+        model = combo.get_model()
+        iter = combo.get_active_iter()
+        id = model.get_value(iter, 0)
+        map_source_factory = Champlain.MapSourceFactory.dup_default()
+        if id not in [i.get_id() for i in map_source_factory.get_registered()]:
+            return
+        source = map_source_factory.create_cached_source(id)
+        if source is not None and source.get_id() != '':
+            self.champlain.get_view().set_map_source(source)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
