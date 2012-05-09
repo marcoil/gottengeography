@@ -736,7 +736,7 @@ class GottenGeography(CommonAttributes):
         combo.connect("changed", self.map_source_changed)
         combo.set_active_iter(map_source_store.get_iter_first())
         
-        get_obj("map_container").add(self.champlain)
+        get_obj("map_container").add_with_viewport(self.champlain)
         
         self.navigator = NavigationController()
         self.search    = SearchController()

@@ -79,6 +79,7 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <object class="GtkVBox" id="app_container">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="spacing">5</property>
         <child>
           <object class="GtkToolbar" id="toolbar">
             <property name="visible">True</property>
@@ -262,6 +263,7 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
               <object class="GtkVBox" id="photos_with_buttons">
                 <property name="can_focus">False</property>
                 <property name="border_width">1</property>
+                <property name="spacing">5</property>
                 <child>
                   <object class="GtkScrolledWindow" id="photoscroller">
                     <property name="visible">True</property>
@@ -294,7 +296,6 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                   <object class="GtkHButtonBox" id="photo_btn_bar">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="border_width">2</property>
                     <property name="spacing">12</property>
                     <property name="homogeneous">True</property>
                     <property name="layout_style">end</property>
