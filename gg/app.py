@@ -246,13 +246,9 @@ class PreferencesController(CommonAttributes):
     timezone = None
     
     def __init__(self):
-        self.region = region = Gtk.ComboBoxText.new()
-        self.cities = cities = Gtk.ComboBoxText.new()
+        self.region = region = get_obj("timezone_region")
+        self.cities = cities = get_obj("timezone_cities")
         pref_button = get_obj("pref_button")
-        tz_combos   = get_obj("custom_timezone_combos")
-        tz_combos.pack_start(region, False, False, 10)
-        tz_combos.pack_start(cities, False, False, 10)
-        tz_combos.show_all()
         
         for name in tz_regions:
             region.append(name, name)
@@ -276,7 +272,7 @@ class PreferencesController(CommonAttributes):
             option += "_timezone"
             radio = get_obj(option)
             self.radios[option] = radio
-            radio.connect("clicked", self.radio_handler, tz_combos)
+            radio.connect("clicked", self.radio_handler, get_obj("custom_timezone_combos"))
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method") or "system_timezone"
         self.radios[timezone_method].clicked()
@@ -740,7 +736,7 @@ class GottenGeography(CommonAttributes):
         combo.connect("changed", self.map_source_changed)
         combo.set_active_iter(map_source_store.get_iter_first())
         
-        get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
+        get_obj("map_container").add(self.champlain)
         
         self.navigator = NavigationController()
         self.search    = SearchController()
