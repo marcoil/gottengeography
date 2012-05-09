@@ -1,5 +1,7 @@
 #!/usr/bin/python2.7
 
-from gg.app import GottenGeography
+import gg
+gg.check_dependencies()
 
+from gg.app import GottenGeography
 GottenGeography().main()
