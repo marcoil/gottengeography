@@ -46,9 +46,8 @@ try:
     # Raises AttributeError with libchamplain 0.8 or earlier.
     Champlain.PathLayer
     
-    factory = Champlain.MapSourceFactory.dup_default()
-    for source in factory.get_registered():
-        source.get_id() # Raises TypeError with libchamplain 0.12.0
+    # Raises TypeError with libchamplain 0.12.0
+    [ source.get_id() for source in Champlain.MapSourceFactory.dup_default().get_registered() ]
 except:
     need('libchamplain 0.12.2')
 
