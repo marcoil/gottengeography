@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from os import makedirs, system
+from os.path import join, basename, dirname, exists
 from distutils.command.install_data import install_data
 from distutils.dep_util import newer
+from distutils.core import setup
 from distutils.log import info
-import glob
-import os
+from glob import glob
 
 from gg.version import *
 
@@ -21,24 +22,23 @@ class InstallData(install_data):
         data_files = []
         
         PO_DIR = 'po'
-        for po in glob.glob(os.path.join(PO_DIR, '*.po')):
-            print po
-            lang = os.path.basename(po[:-3])
-            mo = os.path.join('build', 'mo', lang, '%s.mo' % PACKAGE)
+        for po in glob(join(PO_DIR, '*.po')):
+            lang = basename(po[:-3])
+            mo = join('build', 'mo', lang, '%s.mo' % PACKAGE)
             
-            directory = os.path.dirname(mo)
-            if not os.path.exists(directory):
+            directory = dirname(mo)
+            if not exists(directory):
                 info('creating %s' % directory)
-                os.makedirs(directory)
+                makedirs(directory)
             
             if newer(po, mo):
                 # True if mo doesn't exist
                 cmd = 'msgfmt -o %s %s' % (mo, po)
                 info('compiling %s -> %s' % (po, mo))
-                if os.system(cmd) != 0:
+                if system(cmd) != 0:
                     raise SystemExit('Error while running msgfmt')
                 
-                dest = os.path.dirname(os.path.join('share', 'locale', lang, 'LC_MESSAGES', '%s.mo' % PACKAGE))
+                dest = dirname(join('share', 'locale', lang, 'LC_MESSAGES', '%s.mo' % PACKAGE))
                 data_files.append((dest, [mo]))
         
         return data_files
