@@ -416,7 +416,7 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="search">
+                      <object class="GtkEntry" id="search_box">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="has_tooltip">True</property>
@@ -424,6 +424,7 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                         <property name="width_chars">30</property>
                         <property name="caps_lock_warning">False</property>
                         <property name="secondary_icon_stock">gtk-clear</property>
+                        <property name="completion">search_completion</property>
                         <accelerator key="l" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
@@ -1098,5 +1099,21 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <action-widget response="-6">quit_cancel</action-widget>
       <action-widget response="-3">quit_save</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkListStore" id="search_results">
+    <columns>
+      <!-- column-name city -->
+      <column type="gchararray"/>
+      <!-- column-name lat -->
+      <column type="gdouble"/>
+      <!-- column-name lon -->
+      <column type="gdouble"/>
+    </columns>
+  </object>
+  <object class="GtkEntryCompletion" id="search_completion">
+    <property name="model">search_results</property>
+    <property name="minimum_key_length">3</property>
+    <property name="text_column">0</property>
+    <property name="inline_completion">True</property>
   </object>
 </interface>

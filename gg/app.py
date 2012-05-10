@@ -187,18 +187,13 @@ class SearchController(CommonAttributes):
     
     def __init__(self):
         """Make the search box and insert it into the window."""
-        self.results = Gtk.ListStore(GObject.TYPE_STRING,
-            GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
-        search = Gtk.EntryCompletion.new()
-        search.set_model(self.results)
+        self.results = get_obj("search_results")
+        search = get_obj("search_completion")
         search.set_match_func(
             lambda c, s, itr, get: self.search(get(itr, LOCATION) or ""),
             self.results.get_value)
         search.connect("match-selected", self.search_completed, self.map_view)
-        search.set_minimum_key_length(3)
-        search.set_text_column(0)
-        entry = get_obj("search")
-        entry.set_completion(search)
+        entry = get_obj("search_box")
         entry.connect("changed", self.load_results, self.results.append)
         entry.connect("icon-release", lambda entry, i, e: entry.set_text(''))
         entry.connect("activate", self.repeat_last_search, self.results, self.map_view)
