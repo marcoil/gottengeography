@@ -699,8 +699,7 @@ class GottenGeography(CommonAttributes):
             "preview": get_obj("preview_label").get_text()
         })
         
-        self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
-            GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
+        self.liststore = get_obj("loaded_photos")
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
         
         cell_string = Gtk.CellRendererText()
@@ -716,9 +715,7 @@ class GottenGeography(CommonAttributes):
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        photos_view = get_obj("photos_view")
-        photos_view.set_model(self.liststore)
-        photos_view.append_column(column)
+        get_obj("photos_view").append_column(column)
         
         combo = get_obj("map_source_combo")
         map_source_store = get_obj("map_source_store")
