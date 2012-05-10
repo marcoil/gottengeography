@@ -58,7 +58,7 @@ and then record those locations into the photos.
     author=AUTHOR,
     author_email=EMAIL,
     url="http://exolucere.ca/gottengeography",
-    download_url="https://github.com/robru/GottenGeography/downloads",
+    download_url="https://github.com/robru/GottenGeography/tags",
     license="GPLv3",
     packages=['gg'],
     package_data={'gg': ['ui.glade', 'cities.txt']},
