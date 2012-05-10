@@ -1,71 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkAboutDialog" id="about">
-    <property name="can_focus">False</property>
-    <property name="border_width">5</property>
-    <property name="title" translatable="yes">About GottenGeography</property>
-    <property name="window_position">center-always</property>
-    <property name="destroy_with_parent">True</property>
-    <property name="icon_name">gtk-about</property>
-    <property name="type_hint">dialog</property>
-    <property name="skip_taskbar_hint">True</property>
-    <property name="skip_pager_hint">True</property>
-    <property name="transient_for">main</property>
-    <property name="copyright">© Robert Park, 2010 - 2012</property>
-    <property name="comments" translatable="yes">GottenGeography: Go open thy tagger!
-
-This program is written in the Python programming language, and adds geotags to your photos. The name is an anagram of "Python Geotagger."</property>
-    <property name="website">http://github.com/robru/GottenGeography/wiki</property>
-    <property name="website_label" translatable="yes">GottenGeography Wiki</property>
-    <property name="license">Copyright (C) 2010 Robert Park &lt;rbpark@exolucere.ca&gt;
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
-    <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;
-Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
-    <property name="documenters">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
-    <property name="translator_credits" translatable="yes">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox1">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area1">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkListStore" id="map_source_store">
-    <columns>
-      <!-- column-name id -->
-      <column type="gchararray"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
   <object class="GtkWindow" id="main">
     <property name="width_request">620</property>
     <property name="height_request">400</property>
@@ -1004,6 +939,63 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       </packing>
     </child>
   </object>
+  <object class="GtkAboutDialog" id="about">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">About GottenGeography</property>
+    <property name="window_position">center-always</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="icon_name">gtk-about</property>
+    <property name="type_hint">dialog</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
+    <property name="transient_for">main</property>
+    <property name="copyright">© Robert Park, 2010 - 2012</property>
+    <property name="comments" translatable="yes">GottenGeography: Go open thy tagger!
+
+This program is written in the Python programming language, and adds geotags to your photos. The name is an anagram of "Python Geotagger."</property>
+    <property name="website">http://github.com/robru/GottenGeography/wiki</property>
+    <property name="website_label" translatable="yes">GottenGeography Wiki</property>
+    <property name="license">Copyright (C) 2010 Robert Park &lt;rbpark@exolucere.ca&gt;
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
+    <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;
+Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
+    <property name="documenters">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
+    <property name="translator_credits" translatable="yes">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkMessageDialog" id="quit">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
@@ -1100,6 +1092,14 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <action-widget response="-6">quit_cancel</action-widget>
       <action-widget response="-3">quit_save</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkListStore" id="map_source_store">
+    <columns>
+      <!-- column-name id -->
+      <column type="gchararray"/>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+    </columns>
   </object>
   <object class="GtkListStore" id="loaded_photos">
     <columns>
