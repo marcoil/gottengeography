@@ -1,9 +1,9 @@
 Status
 ======
 
-1.1 is released, and it's targetted for Fedora 16, meaning that Fedora 16 ships with everything needed to run my program (if not in the default install, available through yum with a minimum of hassle). Users of other distros who want to run GottenGeography will need to make sure they have libchamplain 0.9 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0, and Python 2.7 (no other version of Python will work, it MUST be 2.7).
+1.2 is released, and it's targetted for Fedora 17, meaning that Fedora 17 ships with everything needed to run GottenGeography. Users of other distros who want to run it will need to make sure they have libchamplain 0.12.2 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0, and Python 2.7.
 
-Git master branch has introduced a dependency on libchamplain 0.12.1 due to a bug in the way mapsources were handled in 0.12.0.
+Unfortunately Fedora 16 does not provide the necessary dependencies to run v1.2 and so users of Fedora 16 should be using v1.1.
 
 GottenGeography
 ===============
