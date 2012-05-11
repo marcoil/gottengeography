@@ -507,7 +507,7 @@ S 10.00000, W 10.00000
     
     def test_search(self):
         """Make sure the search box functions."""
-        entry = get_obj('search')
+        entry = get_obj('search_box')
         
         self.assertEqual(len(gui.search.results), 0)
         
@@ -518,7 +518,7 @@ S 10.00000, W 10.00000
         self.assertEqual(len(gui.search.results), 8)
         
         entry.set_text('calg')
-        self.assertEqual(len(gui.search.results), 339)
+        self.assertEqual(len(gui.search.results), 411)
         
         for result in gui.search.results:
             gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
