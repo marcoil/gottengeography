@@ -592,6 +592,18 @@ class GottenGeography(CommonAttributes):
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
     
+    def photo_drag_start(self, widget, drag_context, data, info, time):
+        """Acknowledge that a drag has initiated."""
+        for photo in self.selected:
+            data.set_text(photo.filename, -1)
+    
+    def photo_drag_end(self, widget, drag_context, x, y, data, info, time):
+        """Accept photo drops on the map and set the location accordingly."""
+        lat = self.map_view.y_to_latitude(y)
+        lon = self.map_view.x_to_longitude(x)
+        for photo in self.selected:
+            photo.set_location(lat, lon)
+    
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         seconds = self.secbutton.get_value()
@@ -715,7 +727,18 @@ class GottenGeography(CommonAttributes):
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        get_obj("photos_view").append_column(column)
+        photos_view = get_obj("photos_view")
+        photos_view.append_column(column)
+        photos_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
+            [], Gdk.DragAction.COPY)
+        photos_view.connect("drag-data-get", self.photo_drag_start)
+        photos_view.drag_source_add_text_targets()
+        
+        map_container = get_obj("map_container")
+        map_container.add_with_viewport(self.champlain)
+        map_container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        map_container.connect("drag-data-received", self.photo_drag_end)
+        map_container.drag_dest_add_text_targets()
         
         map_menu = get_obj("map_source_menu")
         factory = Champlain.MapSourceFactory.dup_default()
@@ -725,8 +748,6 @@ class GottenGeography(CommonAttributes):
                 source.get_id(), factory)
             map_menu.attach(menu_item, 0, 1, i, i+1)
         map_menu.show_all()
-        
-        get_obj("map_container").add_with_viewport(self.champlain)
         
         self.navigator = NavigationController()
         self.search    = SearchController()
