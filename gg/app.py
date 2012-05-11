@@ -781,6 +781,11 @@ class GottenGeography(CommonAttributes):
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
+        
+        map_source_button = get_obj("map_source_label").get_parent()
+        if map_source_button:
+            map_source_button.set_property("visible", False)
+        
         accel.connect(Gdk.keyval_from_name("q"),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
