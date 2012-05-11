@@ -299,10 +299,9 @@
                     <property name="can_focus">False</property>
                     <property name="spacing">2</property>
                     <child>
-                      <object class="GtkComboBox" id="map_source_combo">
+                      <object class="GtkMenuToolButton" id="map_source_menu_button">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="model">map_source_store</property>
+                        <property name="menu">map_source_menu</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1093,13 +1092,9 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <action-widget response="-3">quit_save</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkListStore" id="map_source_store">
-    <columns>
-      <!-- column-name id -->
-      <column type="gchararray"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-    </columns>
+  <object class="GtkMenu" id="map_source_menu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
   </object>
   <object class="GtkListStore" id="loaded_photos">
     <columns>
