@@ -187,18 +187,13 @@ class SearchController(CommonAttributes):
     
     def __init__(self):
         """Make the search box and insert it into the window."""
-        self.results = Gtk.ListStore(GObject.TYPE_STRING,
-            GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE)
-        search = Gtk.EntryCompletion.new()
-        search.set_model(self.results)
+        self.results = get_obj("search_results")
+        search = get_obj("search_completion")
         search.set_match_func(
             lambda c, s, itr, get: self.search(get(itr, LOCATION) or ""),
             self.results.get_value)
         search.connect("match-selected", self.search_completed, self.map_view)
-        search.set_minimum_key_length(3)
-        search.set_text_column(0)
-        entry = get_obj("search")
-        entry.set_completion(search)
+        entry = get_obj("search_box")
         entry.connect("changed", self.load_results, self.results.append)
         entry.connect("icon-release", lambda entry, i, e: entry.set_text(''))
         entry.connect("activate", self.repeat_last_search, self.results, self.map_view)
@@ -246,13 +241,9 @@ class PreferencesController(CommonAttributes):
     timezone = None
     
     def __init__(self):
-        self.region = region = Gtk.ComboBoxText.new()
-        self.cities = cities = Gtk.ComboBoxText.new()
+        self.region = region = get_obj("timezone_region")
+        self.cities = cities = get_obj("timezone_cities")
         pref_button = get_obj("pref_button")
-        tz_combos   = get_obj("custom_timezone_combos")
-        tz_combos.pack_start(region, False, False, 10)
-        tz_combos.pack_start(cities, False, False, 10)
-        tz_combos.show_all()
         
         for name in tz_regions:
             region.append(name, name)
@@ -276,7 +267,7 @@ class PreferencesController(CommonAttributes):
             option += "_timezone"
             radio = get_obj(option)
             self.radios[option] = radio
-            radio.connect("clicked", self.radio_handler, tz_combos)
+            radio.connect("clicked", self.radio_handler, get_obj("custom_timezone_combos"))
             radio.set_name(option)
         timezone_method = gconf_get("timezone_method") or "system_timezone"
         self.radios[timezone_method].clicked()
@@ -601,6 +592,18 @@ class GottenGeography(CommonAttributes):
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
     
+    def photo_drag_start(self, widget, drag_context, data, info, time):
+        """Acknowledge that a drag has initiated."""
+        for photo in self.selected:
+            data.set_text(photo.filename, -1)
+    
+    def photo_drag_end(self, widget, drag_context, x, y, data, info, time):
+        """Accept photo drops on the map and set the location accordingly."""
+        lat = self.map_view.y_to_latitude(y)
+        lon = self.map_view.x_to_longitude(x)
+        for photo in self.selected:
+            photo.set_location(lat, lon)
+    
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
         seconds = self.secbutton.get_value()
@@ -708,8 +711,7 @@ class GottenGeography(CommonAttributes):
             "preview": get_obj("preview_label").get_text()
         })
         
-        self.liststore = Gtk.ListStore(GObject.TYPE_STRING,
-            GObject.TYPE_STRING, GdkPixbuf.Pixbuf, GObject.TYPE_INT)
+        self.liststore = get_obj("loaded_photos")
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
         
         cell_string = Gtk.CellRendererText()
@@ -726,10 +728,26 @@ class GottenGeography(CommonAttributes):
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         photos_view = get_obj("photos_view")
-        photos_view.set_model(self.liststore)
         photos_view.append_column(column)
+        photos_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
+            [], Gdk.DragAction.COPY)
+        photos_view.connect("drag-data-get", self.photo_drag_start)
+        photos_view.drag_source_add_text_targets()
         
-        get_obj("search_and_map").pack_start(self.champlain, True, True, 0)
+        map_container = get_obj("map_container")
+        map_container.add_with_viewport(self.champlain)
+        map_container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        map_container.connect("drag-data-received", self.photo_drag_end)
+        map_container.drag_dest_add_text_targets()
+        
+        map_menu = get_obj("map_source_menu")
+        factory = Champlain.MapSourceFactory.dup_default()
+        for i, source in enumerate(factory.get_registered()):
+            menu_item = Gtk.MenuItem.new_with_label(source.get_name())
+            menu_item.connect("activate", self.map_menu_clicked,
+                source.get_id(), factory)
+            map_menu.attach(menu_item, 0, 1, i, i+1)
+        map_menu.show_all()
         
         self.navigator = NavigationController()
         self.search    = SearchController()
@@ -815,6 +833,11 @@ class GottenGeography(CommonAttributes):
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
+    
+    def map_menu_clicked(self, menu, mapid, factory):
+        source = factory.create_cached_source(mapid)
+        if source is not None and source.get_id() != '':
+            self.map_view.set_map_source(source)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
