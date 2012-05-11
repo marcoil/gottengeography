@@ -1,3 +1,23 @@
+gottengeography (1.2-precise1) precise; urgency=low
+
+  [ Marc Ordinas i Llopis ]
+  * Add a combobox to select which map source to use.
+  * Imported Upstream version 1.2
+  * Moved GtkChamplain requirement to 0.12.2.
+
+  [ Robert Bruce Park ]
+  * Use glade better.
+  * Update README.
+  * Change the way dependencies are checked.
+  * UI tweaks.
+  * Update download URL.
+  * Long overdue refresh of the geonames.org DB dump.
+  * Change map source selector from ComboBox to GtkMenu.
+  * Complete drag & drop support. Closes #3.
+  * Version 1.2!
+
+ -- Marc Ordinas i Llopis (marcoil) <mail@marcoil.org>  Fri, 11 May 2012 21:36:52 +0200
+
 gottengeography (1.1-precise3) precise; urgency=low
 
   * Small changes for source distribution.
