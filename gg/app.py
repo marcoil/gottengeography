@@ -43,6 +43,7 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from sources import Camera
 from files import Photograph, GPXFile, KMLFile
 from utils import get_file, gconf_get, gconf_set
 from utils import Polygon, Struct, make_clutter_color
@@ -505,7 +506,9 @@ class GottenGeography(CommonAttributes):
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = self.photo.get(filename) or Photograph(filename, self.modify_summary)
-        photo.read(self.prefs.timezone)
+        photo.read()
+        camera = self.get_camera(photo.sourcename)
+        camera.add_photo(photo)
         if filename not in self.photo:
             photo.iter           = self.liststore.append()
             photo.label          = self.labels.add(filename)
@@ -529,6 +532,11 @@ class GottenGeography(CommonAttributes):
         if len(gpx.tracks) < 2:
             return
         
+        self.sources[gpx.name] = gpx
+        box = get_obj("sources_box")
+        label = Gtk.Label(gpx.name)
+        box.pack_start(label, False, False, 1)
+        box.show_all()
         self.tracks.update(gpx.tracks)
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
@@ -541,7 +549,6 @@ class GottenGeography(CommonAttributes):
         gpx.latitude, gpx.longitude = bounds.get_center()
         self.map_view.ensure_visible(bounds, False)
         
-        self.prefs.set_timezone(gpx.lookup_geoname())
         self.gpx_sensitivity()
     
     def apply_selected_photos(self, button, selected, view):
@@ -708,6 +715,8 @@ class GottenGeography(CommonAttributes):
 ################################################################################
     
     def __init__(self):
+        self.sources = {}
+        
         get_obj("toolbar").get_style_context().add_class(
             Gtk.STYLE_CLASS_PRIMARY_TOOLBAR)
         
@@ -765,7 +774,7 @@ class GottenGeography(CommonAttributes):
         
         self.labels.selection.connect("changed", self.selection_sensitivity,
             *[get_obj(name) for name in ("apply_button", "close_button",
-                "save_button", "revert_button", "photos_with_buttons")])
+                "save_button", "revert_button", "left_notebook")])
         
         about_dialog = get_obj("about")
         about_dialog.set_version(VERSION)
@@ -824,7 +833,9 @@ class GottenGeography(CommonAttributes):
         aply.set_sensitive(sensitive)
         save.set_sensitive(  len(self.modified) > 0)
         revert.set_sensitive(len(self.modified & self.selected) > 0)
-        if len(self.photo) > 0: left.show()
+        if len(self.photo) > 0:
+            left.set_property('page', 0)
+            left.show()
         else:                   left.hide()
     
     def redraw_interface(self, fraction=None, text=None):
@@ -846,6 +857,15 @@ class GottenGeography(CommonAttributes):
         source = factory.create_cached_source(mapid)
         if source is not None and source.get_id() != '':
             self.map_view.set_map_source(source)
+    
+    def get_camera(self, name):
+        if name not in self.sources:
+            self.sources[name] = Camera(name, self.create_polygon)
+            label = Gtk.Label(name)
+            get_obj("sources_box").pack_start(label, False, False, 1)
+            get_obj("sources_box").show_all()
+        
+        return self.sources[name]
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""

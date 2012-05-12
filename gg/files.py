@@ -23,9 +23,11 @@ from pyexiv2 import ImageMetadata
 from time import mktime, clock
 from calendar import timegm
 from os import stat
+from os.path import basename
 
-from utils import Coordinates, XMLSimpleParser, format_list
-from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from sources import Coordinates, Source
+from utils import XMLSimpleParser
+from utils import decimal_to_dms, dms_to_decimal, float_to_rational, format_list
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
@@ -43,11 +45,13 @@ class Photograph(Coordinates):
     
     def __init__(self, filename, callback, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
+        super(Photograph, self).__init__()
         self.filename = filename
         self.callback = callback
         self.thm_size = thumb_size
         self.label    = None
         self.iter     = None
+        self.has_embedded_coordinates = False
     
     def read(self, tz = tz.tzutc()):
         """Load exif data from disk."""
@@ -56,7 +60,6 @@ class Photograph(Coordinates):
         self.altitude  = None
         self.latitude  = None
         self.longitude = None
-        self.timezone  = None
         self.manual    = False
         """Load the metadata."""
         try:
@@ -64,6 +67,7 @@ class Photograph(Coordinates):
         except TypeError:
             raise IOError
         
+        self.sourcename = self.exif['Exif.Image.Model'].value
         """Try to get a thumbnail."""
         try:
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -78,7 +82,9 @@ class Photograph(Coordinates):
             else:
                 raise IOError
         
-        self.calculate_timestamp(tz)
+        # We first read the timestamp as if it was UTC, when we get assigned
+        # a source it will be changed for us.
+        self.calculate_timestamp()
         try:
             self.latitude = dms_to_decimal(
                 *self.exif[gps + 'Latitude'].value +
@@ -88,6 +94,8 @@ class Photograph(Coordinates):
                 *self.exif[gps + 'Longitude'].value +
                 [self.exif[gps + 'LongitudeRef'].value]
             )
+            # Mark it as having original coordinates
+            self.has_embedded_coordinates = True
         except KeyError:
             pass
         try:
@@ -154,7 +162,6 @@ class Photograph(Coordinates):
         self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state) or ""]
         self.exif[iptc + 'CountryName']   = [get_country(countrycode) or ""]
         self.exif[iptc + 'CountryCode']   = [countrycode or ""]
-        self.timezone                     = tzname
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""
@@ -165,25 +172,22 @@ class Photograph(Coordinates):
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
 
-class TrackFile(Coordinates):
-    """Parent class for all types of GPS track files.
+
+class TrackFile(Source):
+    """Parent class for all types of track files.
     
     Subclasses must implement element_start and element_end, and call them in
     the base class.
     """
     
+    # By default, track it
+    track = True
+    
     def __init__(self, filename, callback, add_polygon):
-        self.add_poly = add_polygon
+        super(TrackFile, self).__init__(basename(filename), add_polygon)
         self.pulse    = callback
         self.clock    = clock()
         self.append   = None
-        self.tracks   = {}
-        
-        self.parser.parse(filename, self.element_start, self.element_end)
-        
-        keys = self.tracks.keys()
-        self.alpha = min(keys)
-        self.omega = max(keys)
     
     def element_start(self, name, attributes):
         """Placeholder for a method that might do something in the future."""
@@ -205,8 +209,10 @@ class GPXFile(TrackFile):
     iso_format = "%Y-%m-%dT%H:%M:%SZ"
     
     def __init__(self, filename, callback, add_polygon):
+        super(GPXFile, self).__init__(filename, callback, add_polygon)
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-        TrackFile.__init__(self, filename, callback, add_polygon)
+        self.parser.parse(filename, self.element_start, self.element_end)
+        self.load_done()
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
@@ -247,11 +253,13 @@ class KMLFile(TrackFile):
     """Parse a KML file."""
     
     def __init__(self, filename, callback, add_polygon):
+        super(KMLFile, self).__init__(filename, callback, add_polygon)
         self.whens    = []
         self.coords   = []
         
         self.parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
-        TrackFile.__init__(self, filename, callback, add_polygon)
+        self.parser.parse(filename, self.element_start, self.element_end)
+        self.load_done()
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""

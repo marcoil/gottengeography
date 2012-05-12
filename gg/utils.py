@@ -21,11 +21,8 @@ from cPickle import loads as unpickle
 from os.path import join, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import GConf, Clutter, Champlain
-from math import acos, sin, cos, radians
-from dateutil import tz
-from time import mktime
-from math import modf as split_float
 from gettext import gettext as _
+from math import modf as split_float
 from fractions import Fraction
 from pyexiv2 import Rational
 
@@ -132,111 +129,6 @@ class Polygon(Champlain.PathLayer):
         coord.ele = elevation
         self.add_node(coord)
         return coord
-
-
-class Coordinates():
-    """A generic object containing latitude and longitude coordinates.
-    
-    This class is inherited by Photograph and TrackFile and contains methods
-    required by both of those classes.
-    
-    The geodata attribute of this class is shared across all instances of
-    all subclasses of this class. When it is modified by any instance, the
-    changes are immediately available to all other instances. It serves as
-    a cache for data read from cities.txt, which contains geocoding data
-    provided by geonames.org. All subclasses of this class can call
-    self.lookup_geoname() and receive cached data if it was already
-    looked up by another instance of any subclass.
-    """
-    
-    provincestate = None
-    countrycode   = None
-    countryname   = None
-    city          = None
-    
-    filename  = ""
-    altitude  = None
-    latitude  = None
-    longitude = None
-    timestamp = None
-    timezone  = ""
-    geodata   = {}
-    
-    def valid_coords(self):
-        """Check if this object contains valid coordinates."""
-        return valid_coords(self.latitude, self.longitude)
-    
-    def maps_link(self):
-        """Return a link to Google Maps if this object has valid coordinates."""
-        if self.valid_coords():
-            return maps_link(self.latitude, self.longitude)
-    
-    def lookup_geoname(self):
-        """Search cities.txt for nearest city."""
-        if not self.valid_coords():
-            return ""
-        assert self.geodata is Coordinates.geodata
-        key = "%.2f,%.2f" % (self.latitude, self.longitude)
-        if key in self.geodata:
-            return self.set_geodata(self.geodata[key])
-        near, dist = None, float('inf')
-        lat1, lon1 = radians(self.latitude), radians(self.longitude)
-        with open(get_file("cities.txt")) as cities:
-            for city in cities:
-                name, lat, lon, country, state, tzname = city.split("\t")
-                lat2, lon2 = radians(float(lat)), radians(float(lon))
-                delta = acos(sin(lat1) * sin(lat2) +
-                             cos(lat1) * cos(lat2) *
-                             cos(lon2  - lon1))    * 6371 # earth's radius in km
-                if delta < dist:
-                    dist = delta
-                    near = [name, state, country, tzname]
-        self.geodata[key] = near
-        return self.set_geodata(near)
-    
-    def set_geodata(self, data):
-        """Apply geodata to internal attributes."""
-        self.city, state, self.countrycode, tzname = data
-        self.provincestate = get_state(self.countrycode, state)
-        self.countryname   = get_country(self.countrycode)
-        self.timezone      = tzname
-        return self.timezone
-    
-    def pretty_time(self):
-        """Convert epoch seconds to a human-readable date, in local timezone."""
-        return self.timestamp.astimezone(tz.gettz()).strftime("%Y-%m-%d %X")
-    
-    def pretty_coords(self):
-        """Add cardinal directions to decimal coordinates."""
-        return format_coords(self.latitude, self.longitude) \
-            if self.valid_coords() else _("Not geotagged")
-    
-    def pretty_geoname(self):
-        """Display city, state, and country, if present."""
-        names = [self.city, self.provincestate, self.countryname]
-        length = sum(map(len, names))
-        return format_list(names, ',\n' if length > 35 else ', ')
-    
-    def pretty_elevation(self):
-        """Convert elevation into a human readable format."""
-        if type(self.altitude) in (float, int):
-            return "%.1f%s" % (abs(self.altitude), _("m above sea level")
-                        if self.altitude >= 0 else _("m below sea level"))
-    
-    def short_summary(self):
-        """Plaintext summary of photo metadata."""
-        return format_list([self.pretty_time(), self.pretty_coords(),
-            self.pretty_geoname(), self.pretty_elevation()], "\n")
-    
-    def long_summary(self):
-        """Longer summary with Pango markup."""
-        return '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'size="larger"', basename(self.filename),
-            'style="italic" size="smaller"', self.short_summary()
-        )
-    
-    def unix_timestamp(self):
-        return int(mktime(self.timestamp.timetuple()))
 
 
 class XMLSimpleParser:
