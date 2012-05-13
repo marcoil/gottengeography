@@ -740,14 +740,18 @@ class GottenGeography(CommonAttributes):
         map_container.connect("drag-data-received", self.photo_drag_end)
         map_container.drag_dest_add_text_targets()
         
+        radio_group = []
         map_menu = get_obj("map_source_menu")
+        last_source = gconf_get("map-source")
         factory = Champlain.MapSourceFactory.dup_default()
         for i, source in enumerate(factory.get_registered()):
-            menu_item = Gtk.MenuItem.new_with_label(source.get_name())
+            menu_item = Gtk.RadioMenuItem.new_with_label(radio_group, source.get_name())
+            radio_group.append(menu_item)
             menu_item.connect("activate", self.map_menu_clicked,
                 source.get_id(), factory)
             map_menu.attach(menu_item, 0, 1, i, i+1)
-        self.map_menu_clicked(None, gconf_get("map-source"), factory)
+            if last_source == source.get_id():
+                menu_item.set_active(True)
         map_menu.show_all()
         
         self.navigator = NavigationController()
@@ -840,8 +844,8 @@ class GottenGeography(CommonAttributes):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
     
-    def map_menu_clicked(self, menu, mapid, factory):
-        if mapid is not None:
+    def map_menu_clicked(self, menu_item, mapid, factory):
+        if mapid is not None and menu_item.get_active():
             self.map_view.set_map_source(factory.create_cached_source(mapid))
             gconf_set("map-source", mapid)
     
