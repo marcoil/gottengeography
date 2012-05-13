@@ -747,6 +747,7 @@ class GottenGeography(CommonAttributes):
             menu_item.connect("activate", self.map_menu_clicked,
                 source.get_id(), factory)
             map_menu.attach(menu_item, 0, 1, i, i+1)
+        self.map_menu_clicked(None, gconf_get("map-source"), factory)
         map_menu.show_all()
         
         self.navigator = NavigationController()
@@ -840,9 +841,9 @@ class GottenGeography(CommonAttributes):
         self.status.push(self.status.get_context_id("msg"), message)
     
     def map_menu_clicked(self, menu, mapid, factory):
-        source = factory.create_cached_source(mapid)
-        if source is not None and source.get_id() != '':
-            self.map_view.set_map_source(source)
+        if mapid is not None:
+            self.map_view.set_map_source(factory.create_cached_source(mapid))
+            gconf_set("map-source", mapid)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
