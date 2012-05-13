@@ -184,9 +184,12 @@ class Coordinates():
             for city in cities:
                 name, lat, lon, country, state, tz = city.split("\t")
                 lat2, lon2 = radians(float(lat)), radians(float(lon))
-                delta = acos(sin(lat1) * sin(lat2) +
-                             cos(lat1) * cos(lat2) *
-                             cos(lon2  - lon1))    * 6371 # earth's radius in km
+                try:
+                    delta = acos(sin(lat1) * sin(lat2) +
+                                 cos(lat1) * cos(lat2) *
+                                 cos(lon2  - lon1))    * 6371 # earth's radius in km
+                except ValueError:
+                    delta = 0
                 if delta < dist:
                     dist = delta
                     near = [name, state, country, tz]
