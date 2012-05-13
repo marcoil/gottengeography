@@ -214,11 +214,11 @@ class Coordinates():
         return format_coords(self.latitude, self.longitude) \
             if self.valid_coords() else _("Not geotagged")
     
-    def pretty_geoname(self):
+    def pretty_geoname(self, multiline=True):
         """Display city, state, and country, if present."""
-        names = [self.city, self.provincestate, self.countryname]
-        length = sum(map(len, names))
-        return format_list(names, ',\n' if length > 35 else ', ')
+        n = [self.city, self.provincestate, self.countryname]
+        one = format_list(n, ', ')
+        return format_list(n, ',\n') if len(one) > 40 and multiline else one
     
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""
