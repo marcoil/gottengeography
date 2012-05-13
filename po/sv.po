@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-13 03:06-0500\n"
+"POT-Creation-Date: 2012-05-13 12:58-0500\n"
 "PO-Revision-Date: 2011-04-09 16:40+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Language: Swedish\n"
 
-#: ../gg/app.py:485
+#: ../gg/app.py:505
 msgid "Could not open: "
 msgstr "Kunde inte öppna: "
 
-#: ../gg/app.py:518
+#: ../gg/app.py:538
 #, python-format
 msgid "%d points loaded in %.2fs."
 msgstr "%d punkter inlästa på %.2f s."

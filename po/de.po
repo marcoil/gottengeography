@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography 0.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-13 03:06-0500\n"
+"POT-Creation-Date: 2012-05-13 12:58-0500\n"
 "PO-Revision-Date: 2011-02-08 00:00+0100\n"
 "Last-Translator: Simon Spannagel <simonspa@kth.se>\n"
 "Language-Team: German\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../gg/app.py:485
+#: ../gg/app.py:505
 msgid "Could not open: "
 msgstr "Konnte nicht geöffnet werden: "
 
-#: ../gg/app.py:518
+#: ../gg/app.py:538
 #, python-format
 msgid "%d points loaded in %.2fs."
 msgstr "%d Punkte in %.2f Sekunden geladen."
