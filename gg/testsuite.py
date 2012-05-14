@@ -520,11 +520,17 @@ S 10.00000, W 10.00000
         entry.set_text('calg')
         self.assertEqual(len(gui.search.results), 411)
         
-        for result in gui.search.results:
+        get_title = get_obj("main").get_title
+        for i, result in enumerate(gui.search.results):
             gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
             loc, lat, lon = result
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+            
+            if i < 20:
+                # This bit is really slow so let's not bother testing it all 411 times
+                gui.map_view.emit("animation-completed")
+                self.assertEqual(get_title(), "GottenGeography - " + loc)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
