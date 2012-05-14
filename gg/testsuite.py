@@ -27,6 +27,7 @@ from time import tzset
 
 import app
 from files import Photograph
+from utils import Coordinates
 from utils import Polygon, make_clutter_color
 from utils import get_file, gconf_get, gconf_set
 from utils import maps_link, valid_coords, Struct
@@ -307,6 +308,14 @@ S 10.00000, W 10.00000
         self.assertFalse(valid_coords(self, 50))
         self.assertFalse(valid_coords(45, valid_coords))
         self.assertFalse(valid_coords("ya", "dun goofed"))
+        
+        # St. John's broke the math. I'm not sure why.
+        # Seriously. Revert commit 362dd6eb and watch this explode.
+        stjohns = Coordinates()
+        stjohns.latitude = 47.56494
+        stjohns.longitude = -52.70931
+        stjohns.lookup_geoname()
+        self.assertEqual(stjohns.city, "St. John's")
         
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
