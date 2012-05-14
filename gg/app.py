@@ -649,7 +649,6 @@ class GottenGeography(CommonAttributes):
         seconds = self.secbutton.get_value()
         minutes = self.minbutton.get_value()
         offset  = int((minutes * 60) + seconds)
-        gconf_set("clock_offset", [minutes, seconds])
         if offset != self.metadata.delta:
             self.metadata.delta = offset
             if abs(seconds) == 60 and abs(minutes) != 60:
@@ -824,11 +823,12 @@ class GottenGeography(CommonAttributes):
         self.clear_all_gpx()
         
         self.metadata.delta = 0
-        offset = gconf_get("clock_offset") or [0, 0]
         self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
+        bind("offset-minutes", self.minbutton, "value")
+        bind("offset-seconds", self.secbutton, "value")
         for spinbutton in [ self.secbutton, self.minbutton ]:
             spinbutton.connect("value-changed", self.time_offset_changed)
-            spinbutton.set_value(offset.pop())
+        
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
         

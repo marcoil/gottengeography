@@ -5,6 +5,16 @@
       <default>(32768, 0, 65535)</default>
       <summary>Use this color for the GPS traces on the map.</summary>
     </key>
+    <key type="i" name="offset-minutes">
+      <range min="-60" max="60"/>
+      <default>0</default>
+      <summary>The number of minutes that the camera's clock is wrong by.</summary>
+    </key>
+    <key type="i" name="offset-seconds">
+      <range min="-60" max="60"/>
+      <default>0</default>
+      <summary>The number of seconds that the camera's clock is wrong by.</summary>
+    </key>
     <key type="d" name="latitude">
       <default>34.5</default>
       <summary>Current latitude that the map is centered on.</summary>
