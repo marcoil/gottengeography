@@ -29,7 +29,7 @@ import app
 from files import Photograph
 from utils import Coordinates
 from utils import Polygon, make_clutter_color
-from utils import get_file, gconf_get, gconf_set
+from utils import get_file
 from utils import maps_link, valid_coords, Struct
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
@@ -38,6 +38,7 @@ app.CommonAttributes.slide_to = app.CommonAttributes.map_view.center_on
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
+gst_get = app.gst_get
 
 class GottenGeographyTester(TestCase):
     def setUp(self):
@@ -46,16 +47,16 @@ class GottenGeographyTester(TestCase):
         system('git checkout demo')
         environ['TZ'] = 'America/Edmonton'
         tzset()
-        self.restore = {}
-        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color', 'map-source'):
-            self.restore[key] = gconf_get(key)
-        get_obj('system_timezone').clicked()
+        get_obj('system-timezone').clicked()
     
     def tearDown(self):
-        """Restore history."""
+        """Undo whatever mess the testsuite created."""
         system('git checkout demo')
-        for key in self.restore:
-            gconf_set(key, self.restore[key])
+        for key in [ 'custom-timezone', 'history', 'latitude', 'longitude',
+        'lookup-timezone', 'map-source-id', 'offset-minutes', 'offset-seconds',
+        'system-timezone', 'timezone-cities', 'timezone-region', 'track-color',
+        'zoom-level' ]:
+            app.gsettings.reset(key)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -238,7 +239,7 @@ class GottenGeographyTester(TestCase):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
         environ['TZ'] = 'Europe/Paris'
         tzset()
-        get_obj('lookup_timezone').clicked()
+        get_obj('lookup-timezone').clicked()
         self.test_demo_data()
         environ['TZ'] = 'America/Edmonton'
         tzset()
@@ -379,8 +380,8 @@ S 10.00000, W 10.00000
         gui.map_view.center_on(lat, lon)
         coords.append([lat, lon])
         
-        self.assertAlmostEqual(coords[0][0], gconf_get('history')[-1][0], 5)
-        self.assertAlmostEqual(coords[0][1], gconf_get('history')[-1][1], 5)
+        self.assertAlmostEqual(coords[0][0], gst_get('history')[-1][0], 5)
+        self.assertAlmostEqual(coords[0][1], gst_get('history')[-1][1], 5)
         
         lat = round(random_coord(80),  6)
         lon = round(random_coord(170), 6)
@@ -483,20 +484,6 @@ S 10.00000, W 10.00000
         
         self.assertEqual(len(polygon.get_nodes()), 2)
     
-    def test_gconf(self):
-        """Read and write some stuff from GConf."""
-        history = gconf_get("history")
-        
-        gconf_set('history', [[0,0,0]])
-        self.assertEqual(gconf_get('history'), [[0,0,0]])
-        gconf_set('history', [[50,-113,11]])
-        self.assertEqual(gconf_get('history'), [[50,-113,11]])
-        
-        gconf_set('ran_testsuite', True)
-        self.assertTrue(gconf_get('ran_testsuite', False))
-        
-        gconf_set('history', history)
-    
     def test_time_offset(self):
         """Fiddle with the time offset setting."""
         minutes = get_obj("minutes")
@@ -553,16 +540,17 @@ S 10.00000, W 10.00000
         self.assertEqual(new.red, 0)
         self.assertEqual(new.green, 0)
         self.assertEqual(new.blue, 0)
-        self.assertEqual(gconf_get('track_color'), [0, 0, 0])
+        self.assertEqual(list(gst_get('track-color')), [0, 0, 0])
         
         gui.prefs.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
         new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 32768)
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
-        self.assertEqual(gconf_get('track_color'), [32768, 32768, 32768])
+        self.assertEqual(list(gst_get('track-color')), [32768, 32768, 32768])
         
-        self.assertEqual(gconf_get('map-source'), gui.map_view.get_property('map-source').get_id())
+        self.assertEqual(str(gst_get('map-source-id')), "<GLib.Variant('%s')>" %
+            gui.map_view.get_property('map-source').get_id())
         for menu_item in get_obj("map_source_menu").get_active().get_group():
             menu_item.set_active(True)
             self.assertEqual(gui.map_view.get_property('map-source').get_name(), menu_item.get_label())
