@@ -1,3 +1,31 @@
+gottengeography (1.2.1-precise1) precise; urgency=low
+
+  [ Robert Bruce Park ]
+  * Remember map sources in gconf. Closes #52
+  * Use GtkRadioMenuItems for the map source menu.
+  * String cleanup.
+  * Version 1.2.1!
+  * Move map source logic into PreferencesController.
+
+  [ Marc Ordinas i Llopis ]
+  * Use python-distutils-extra to manage i18n.
+
+  [ Robert Bruce Park ]
+  * Fix bug where lookup_geoname() sometimes fails.
+  * Allow provincestate to be None in pretty_geoname()
+  * Add geolocation to window titlebar. Closes #44.
+  * Drop bdist_rpm.
+  * Expand test suite to test the new window title feature.
+  * Add new test to cover the recent bugfix in lookup_geoname().
+  * Reduce redundancy in pretty_geoname() and test it better.
+  * Test for ability to change map sources.
+
+  [ Marc Ordinas i Llopis ]
+  * Imported Upstream version 1.2.1
+  * Added python-distutils-extra to Build-Depends.
+
+ -- Marc Ordinas i Llopis (marcoil) <mail@marcoil.org>  Mon, 14 May 2012 11:04:01 +0200
+
 gottengeography (1.2-precise2) precise; urgency=low
 
   [ Robert Bruce Park ]
