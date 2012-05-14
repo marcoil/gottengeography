@@ -13,5 +13,25 @@
       <default>2</default>
       <summary>Current level to which the map is zoomed.</summary>
     </key>
+    <key type="i" name="timezone-region">
+      <default>-1</default>
+      <summary>The custom timezone region that is selected.</summary>
+    </key>
+    <key type="i" name="timezone-cities">
+      <default>-1</default>
+      <summary>The custom timezone city that is selected.</summary>
+    </key>
+    <key type="b" name="system-timezone">
+      <default>true</default>
+      <summary>Use the system's timezone.</summary>
+    </key>
+    <key type="b" name="lookup-timezone">
+      <default>false</default>
+      <summary>Use the photo location's timezone.</summary>
+    </key>
+    <key type="b" name="custom-timezone">
+      <default>false</default>
+      <summary>Specify a manual timezone.</summary>
+    </key>
   </schema>
 </schemalist>

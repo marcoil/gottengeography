@@ -264,9 +264,8 @@ class PreferencesController(CommonAttributes):
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
         cities.connect("changed", self.cities_handler, region)
-        timezone = gconf_get("timezone") or [-1, -1]
-        region.set_active(timezone[0])
-        cities.set_active(timezone[1])
+        self.gsettings.bind("timezone-region", region, 'active', Gio.SettingsBindFlags.DEFAULT)
+        self.gsettings.bind("timezone-cities", cities, 'active', Gio.SettingsBindFlags.DEFAULT)
         
         colors = gconf_get("track_color") or [32768, 0, 65535]
         self.colorpicker = get_obj("colorselection")
@@ -293,18 +292,20 @@ class PreferencesController(CommonAttributes):
         
         self.radios = {}
         for option in ["system", "lookup", "custom"]:
-            option += "_timezone"
+            option += "-timezone"
             radio = get_obj(option)
-            self.radios[option] = radio
-            radio.connect("clicked", self.radio_handler, get_obj("custom_timezone_combos"))
             radio.set_name(option)
-        timezone_method = gconf_get("timezone_method") or "system_timezone"
-        self.radios[timezone_method].clicked()
+            self.gsettings.bind(option, radio, 'active', Gio.SettingsBindFlags.DEFAULT)
+            self.radios[option] = radio
+            radio.connect("clicked", self.radio_handler)
+        self.gsettings.bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive', Gio.SettingsBindFlags.DEFAULT)
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
         previous = Struct({
-            'method': gconf_get("timezone_method"),
+            'system': self.gsettings.get_boolean('system-timezone'),
+            'lookup': self.gsettings.get_boolean('lookup-timezone'),
+            'custom': self.gsettings.get_boolean('custom-timezone'),
             'region': region.get_active(),
             'city':   cities.get_active(),
             'color':  colorpicker.get_current_color()
@@ -312,21 +313,25 @@ class PreferencesController(CommonAttributes):
         if not dialog.run():
             colorpicker.set_current_color(previous.color)
             colorpicker.set_previous_color(previous.color)
-            self.radios[previous.method].set_active(True)
+            self.gsettings.set_boolean('system-timezone', previous.system)
+            self.gsettings.set_boolean('lookup-timezone', previous.lookup)
+            self.gsettings.set_boolean('custom-timezone', previous.custom)
             region.set_active(previous.region)
             cities.set_active(previous.city)
         dialog.hide()
     
     def set_timezone(self, timezone=None):
         """Set the timezone to the given zone and update all photos."""
-        option = gconf_get("timezone_method")
+        for radio in get_obj("system-timezone").get_group():
+            if radio.get_active():
+                option = radio.get_name()
         if timezone is not None:
             self.timezone = timezone
         if "TZ" in environ:
             del environ["TZ"]
-        if   option == "lookup_timezone" and self.timezone is not None:
+        if   option == "lookup-timezone" and self.timezone is not None:
             environ["TZ"] = self.timezone
-        elif option == "custom_timezone":
+        elif option == "custom-timezone":
             region = self.region.get_active_id()
             city   = self.cities.get_active_id()
             if region is not None and city is not None:
@@ -336,11 +341,9 @@ class PreferencesController(CommonAttributes):
             photo.calculate_timestamp()
             auto_timestamp_comparison(photo, self.tracks, self.metadata)
     
-    def radio_handler(self, radio, combos):
+    def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""
         if radio.get_active():
-            gconf_set("timezone_method", radio.get_name())
-            combos.set_sensitive(radio.get_name() == "custom_timezone")
             self.set_timezone()
     
     def region_handler(self, regions, cities):
@@ -351,8 +354,6 @@ class PreferencesController(CommonAttributes):
     
     def cities_handler(self, cities, regions):
         """When a city is selected, update the chosen timezone."""
-        gconf_set("timezone",
-            [regions.get_active(), cities.get_active()])
         if cities.get_active_id() is not None:
             self.set_timezone()
     
