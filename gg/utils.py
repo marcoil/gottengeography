@@ -20,7 +20,7 @@ from cPickle import dumps as pickle
 from cPickle import loads as unpickle
 from os.path import join, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import GConf, Clutter, Champlain
+from gi.repository import Gio, GConf, Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -42,6 +42,51 @@ def make_clutter_color(color):
 ################################################################################
 # GConf methods. These methods interact with GConf.
 ################################################################################
+
+class GSettingsSetting(Gio.Settings):
+    def __init__(self, schema_name):
+        Gio.Settings.__init__(self, schema_name)
+        
+        # These are used to avoid infinite looping.
+        self._ignore_key_changed = False
+        self._ignore_prop_changed = True
+    
+    def bind(self, key, widget, prop, flags=Gio.SettingsBindFlags.DEFAULT):
+        """Don't make me specify the default flags every time."""
+        Gio.Settings.bind(self, key, widget, prop, flags)
+    
+    def bind_with_convert(self, key, widget, prop, key_to_prop_converter, prop_to_key_converter):
+        """Recreate g_settings_bind_with_mapping from scratch.
+        
+        This method was shamelessly stolen from John Stowers'
+        gnome-tweak-tool on May 14, 2012.
+        """
+        def key_changed(settings, key):
+            if self._ignore_key_changed: return
+            orig_value = self[key]
+            converted_value = key_to_prop_converter(orig_value)
+            self._ignore_prop_changed = True
+            try:
+                widget.set_property(prop, converted_value)
+            except TypeError:
+                print "TypeError: %s not a valid %s." % (converted_value, key)
+            self._ignore_prop_changed = False
+        
+        def prop_changed(widget, param):
+            if self._ignore_prop_changed: return
+            orig_value = widget.get_property(prop)
+            converted_value = prop_to_key_converter(orig_value)
+            self._ignore_key_changed = True
+            try:
+                self[key] = converted_value
+            except TypeError:
+                print "TypeError: %s not a valid %s." % (converted_value, prop)
+            self._ignore_key_changed = False
+        
+        self.connect("changed::" + key, key_changed)
+        widget.connect("notify::" + prop, prop_changed)
+        key_changed(self,key) # init default state
+
 
 gconf = GConf.Client.get_default()
 

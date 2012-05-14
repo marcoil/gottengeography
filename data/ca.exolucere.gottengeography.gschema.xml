@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
+    <key type="(iii)" name="track-color">
+      <default>(32768, 0, 65535)</default>
+      <summary>Use this color for the GPS traces on the map.</summary>
+    </key>
     <key type="d" name="latitude">
       <default>34.5</default>
       <summary>Current latitude that the map is centered on.</summary>

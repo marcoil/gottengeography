@@ -42,7 +42,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from files import Photograph, GPXFile, KMLFile
-from utils import get_file, gconf_get, gconf_set
+from utils import get_file, gconf_get, gconf_set, GSettingsSetting
 from utils import Coordinates, Polygon, Struct, make_clutter_color
 from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
@@ -55,6 +55,10 @@ builder = Gtk.Builder()
 builder.set_translation_domain(PACKAGE)
 builder.add_from_file(get_file("ui.glade"))
 get_obj = builder.get_object
+
+gsettings = GSettingsSetting('ca.exolucere.gottengeography')
+bind_with_convert = gsettings.bind_with_convert
+bind = gsettings.bind
 
 # This function embodies almost the entirety of my application's logic.
 # The things that come after this method are just implementation details.
@@ -108,7 +112,6 @@ class CommonAttributes:
     This class is never instantiated, it is only inherited by classes that
     need to manipulate the map, or the loaded photos.
     """
-    gsettings = Gio.Settings.new('ca.exolucere.gottengeography')
     champlain = GtkChamplain.Embed()
     map_view  = champlain.get_view()
     slide_to  = map_view.go_to
@@ -135,7 +138,7 @@ class NavigationController(CommonAttributes):
         back_button.connect("clicked", self.go_back, self.map_view)
         
         for key in ['latitude', 'longitude', 'zoom-level']:
-            self.gsettings.bind(key, self.map_view, key, Gio.SettingsBindFlags.DEFAULT)
+            bind(key, self.map_view, key)
         
         accel = Gtk.AccelGroup()
         window = get_obj("main")
@@ -264,14 +267,13 @@ class PreferencesController(CommonAttributes):
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
         cities.connect("changed", self.cities_handler, region)
-        self.gsettings.bind("timezone-region", region, 'active', Gio.SettingsBindFlags.DEFAULT)
-        self.gsettings.bind("timezone-cities", cities, 'active', Gio.SettingsBindFlags.DEFAULT)
+        bind("timezone-region", region, 'active')
+        bind("timezone-cities", cities, 'active')
         
-        colors = gconf_get("track_color") or [32768, 0, 65535]
         self.colorpicker = get_obj("colorselection")
+        bind_with_convert("track-color", self.colorpicker, "current-color",
+            lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
         self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
-        self.colorpicker.set_current_color(Gdk.Color(*colors))
-        self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
         radio_group = []
         map_menu = get_obj("map_source_menu")
@@ -295,17 +297,17 @@ class PreferencesController(CommonAttributes):
             option += "-timezone"
             radio = get_obj(option)
             radio.set_name(option)
-            self.gsettings.bind(option, radio, 'active', Gio.SettingsBindFlags.DEFAULT)
+            bind(option, radio, 'active')
             self.radios[option] = radio
             radio.connect("clicked", self.radio_handler)
-        self.gsettings.bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive', Gio.SettingsBindFlags.DEFAULT)
+        bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive')
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
         previous = Struct({
-            'system': self.gsettings.get_boolean('system-timezone'),
-            'lookup': self.gsettings.get_boolean('lookup-timezone'),
-            'custom': self.gsettings.get_boolean('custom-timezone'),
+            'system': gsettings.get_boolean('system-timezone'),
+            'lookup': gsettings.get_boolean('lookup-timezone'),
+            'custom': gsettings.get_boolean('custom-timezone'),
             'region': region.get_active(),
             'city':   cities.get_active(),
             'color':  colorpicker.get_current_color()
@@ -313,9 +315,9 @@ class PreferencesController(CommonAttributes):
         if not dialog.run():
             colorpicker.set_current_color(previous.color)
             colorpicker.set_previous_color(previous.color)
-            self.gsettings.set_boolean('system-timezone', previous.system)
-            self.gsettings.set_boolean('lookup-timezone', previous.lookup)
-            self.gsettings.set_boolean('custom-timezone', previous.custom)
+            gsettings.set_boolean('system-timezone', previous.system)
+            gsettings.set_boolean('lookup-timezone', previous.lookup)
+            gsettings.set_boolean('custom-timezone', previous.custom)
             region.set_active(previous.region)
             cities.set_active(previous.city)
         dialog.hide()
@@ -364,7 +366,6 @@ class PreferencesController(CommonAttributes):
         two   = one.lighten().lighten()
         for i, polygon in enumerate(polygons):
             polygon.set_stroke_color(two if i % 2 else one)
-        gconf_set("track_color", [color.red, color.green, color.blue])
     
     def map_menu_clicked(self, menu_item, mapid, factory):
         """Change the map source when the user selects a different one."""
