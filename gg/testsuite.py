@@ -317,6 +317,11 @@ S 10.00000, W 10.00000
         stjohns.lookup_geoname()
         self.assertEqual(stjohns.city, "St. John's")
         
+        # Also test this bug fixed in commit 47efbeba.
+        self.assertEqual(stjohns.pretty_geoname(), "St. John's,\nNewfoundland and Labrador,\nCanada")
+        stjohns.provincestate = None
+        self.assertEqual(stjohns.pretty_geoname(), "St. John's, Canada")
+        
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
         for i in range(100):

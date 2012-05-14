@@ -216,9 +216,9 @@ class Coordinates():
     
     def pretty_geoname(self, multiline=True):
         """Display city, state, and country, if present."""
-        n = [self.city, self.provincestate, self.countryname]
-        one = format_list(n, ', ')
-        return format_list(n, ',\n') if len(one) > 40 and multiline else one
+        names = [self.city, self.provincestate, self.countryname]
+        length = sum([len(name) for name in names if name])
+        return format_list(names, ',\n' if length > 35 and multiline else ', ')
     
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""
