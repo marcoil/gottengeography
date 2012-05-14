@@ -5,6 +5,10 @@
       <default>(32768, 0, 65535)</default>
       <summary>Use this color for the GPS traces on the map.</summary>
     </key>
+    <key type="s" name="map-source-id">
+      <default>"osm-mapnik"</default>
+      <summary>The id of the map to display to the user.</summary>
+    </key>
     <key type="i" name="offset-minutes">
       <range min="-60" max="60"/>
       <default>0</default>

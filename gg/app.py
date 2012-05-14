@@ -277,16 +277,18 @@ class PreferencesController(CommonAttributes):
         
         radio_group = []
         map_menu = get_obj("map_source_menu")
-        last_source = gconf_get("map-source")
         factory = Champlain.MapSourceFactory.dup_default()
+        bind_with_convert("map-source-id", self.map_view, "map-source",
+            lambda x: factory.create_cached_source(x), lambda x: x.get_id())
+        last_source = self.map_view.get_map_source().get_id()
         for i, source in enumerate(factory.get_registered()):
             menu_item = Gtk.RadioMenuItem.new_with_label(radio_group, source.get_name())
             radio_group.append(menu_item)
+            if last_source == source.get_id():
+                menu_item.set_active(True)
             menu_item.connect("activate", self.map_menu_clicked,
                 source.get_id(), factory)
             map_menu.attach(menu_item, 0, 1, i, i+1)
-            if last_source == source.get_id():
-                menu_item.set_active(True)
         map_menu.show_all()
         
         pref_button.connect("clicked", self.preferences_dialog,
@@ -369,9 +371,8 @@ class PreferencesController(CommonAttributes):
     
     def map_menu_clicked(self, menu_item, mapid, factory):
         """Change the map source when the user selects a different one."""
-        if mapid is not None and menu_item.get_active():
+        if menu_item.get_active():
             self.map_view.set_map_source(factory.create_cached_source(mapid))
-            gconf_set("map-source", mapid)
 
 
 class LabelController(CommonAttributes):
