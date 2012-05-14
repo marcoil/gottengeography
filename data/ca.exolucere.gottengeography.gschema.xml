@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
+    <key type="aad" name="history">
+      <default>[[34.5, 15.8, 2]]</default>
+      <summary>A short history of the places the user has visited.</summary>
+    </key>
     <key type="(iii)" name="track-color">
       <default>(32768, 0, 65535)</default>
       <summary>Use this color for the GPS traces on the map.</summary>

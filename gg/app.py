@@ -28,7 +28,7 @@ GObject.threads_init()
 GObject.set_prgname('gottengeography')
 GtkClutter.init([])
 
-from gi.repository import Gio, Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
@@ -42,7 +42,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from files import Photograph, GPXFile, KMLFile
-from utils import get_file, gconf_get, gconf_set, GSettingsSetting
+from utils import get_file, GSettingsSetting
 from utils import Coordinates, Polygon, Struct, make_clutter_color
 from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
@@ -57,6 +57,8 @@ builder.add_from_file(get_file("ui.glade"))
 get_obj = builder.get_object
 
 gsettings = GSettingsSetting('ca.exolucere.gottengeography')
+gst_get = gsettings.get_value
+gst_set = gsettings.set_value
 bind_with_convert = gsettings.bind_with_convert
 bind = gsettings.bind
 
@@ -125,7 +127,6 @@ class CommonAttributes:
 
 class NavigationController(CommonAttributes):
     """Controls how users navigate the map."""
-    default = ([34.5, 15.8, 2],) # Default lat, lon, zoom for first run.
     
     def __init__(self):
         """Start the map at the previous location, and connect signals."""
@@ -175,21 +176,24 @@ class NavigationController(CommonAttributes):
     
     def remember_location(self, view):
         """Add current location to history stack."""
-        history = gconf_get("history") or list(self.default)
+        history = list(gst_get('history'))
         location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
         if history[-1] != location:
             history.append(location)
-        gconf_set("history", history[-30:])
+        gst_set('history', history[-30:])
     
     def go_back(self, button, view):
         """Return the map view to where the user last set it."""
-        history = gconf_get("history") or list(self.default)
+        history = list(gst_get('history'))
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
             view.set_zoom_level(zoom)
             view.center_on(lat, lon)
-        gconf_set("history", history)
+        if len(history) > 1:
+            gst_set('history', history)
+        else:
+            gsettings.reset('history')
         self.map_view.emit("animation-completed")
     
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
@@ -412,7 +416,6 @@ class LabelController(CommonAttributes):
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
             photo.set_label_highlight(photo in selected, selection_exists)
-        self.map_view.emit("realize")
     
     def clicked(self, label, event, selection, select_all, photos):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -714,7 +717,6 @@ class GottenGeography(CommonAttributes):
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        self.map_view.emit("realize")
         if len(self.modified) == 0:
             Gtk.main_quit()
             return True
