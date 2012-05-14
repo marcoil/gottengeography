@@ -1,0 +1,2 @@
+include testsuite.sh
+recursive-include po *
