@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
+    <key type="d" name="latitude">
+      <default>34.5</default>
+      <summary>Current latitude that the map is centered on.</summary>
+    </key>
+    <key type="d" name="longitude">
+      <default>15.8</default>
+      <summary>Current longitude that the map is centered on.</summary>
+    </key>
+    <key type="i" name="zoom-level">
+      <default>2</default>
+      <summary>Current level to which the map is zoomed.</summary>
+    </key>
+  </schema>
+</schemalist>

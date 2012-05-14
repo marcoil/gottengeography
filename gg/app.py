@@ -28,7 +28,7 @@ GObject.threads_init()
 GObject.set_prgname('gottengeography')
 GtkClutter.init([])
 
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gio, Gtk, Gdk, GdkPixbuf
 from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
@@ -108,6 +108,7 @@ class CommonAttributes:
     This class is never instantiated, it is only inherited by classes that
     need to manipulate the map, or the loaded photos.
     """
+    gsettings = Gio.Settings.new('ca.exolucere.gottengeography')
     champlain = GtkChamplain.Embed()
     map_view  = champlain.get_view()
     slide_to  = map_view.go_to
@@ -132,7 +133,9 @@ class NavigationController(CommonAttributes):
         zoom_out_button.connect("clicked", perform_zoom, self.map_view.zoom_out)
         zoom_in_button.connect("clicked", perform_zoom, self.map_view.zoom_in)
         back_button.connect("clicked", self.go_back, self.map_view)
-        back_button.emit("clicked")
+        
+        for key in ['latitude', 'longitude', 'zoom-level']:
+            self.gsettings.bind(key, self.map_view, key, Gio.SettingsBindFlags.DEFAULT)
         
         accel = Gtk.AccelGroup()
         window = get_obj("main")
