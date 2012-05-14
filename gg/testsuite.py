@@ -47,7 +47,7 @@ class GottenGeographyTester(TestCase):
         environ['TZ'] = 'America/Edmonton'
         tzset()
         self.restore = {}
-        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color'):
+        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color', 'map-source'):
             self.restore[key] = gconf_get(key)
         get_obj('system_timezone').clicked()
     
@@ -561,6 +561,11 @@ S 10.00000, W 10.00000
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
         self.assertEqual(gconf_get('track_color'), [32768, 32768, 32768])
+        
+        self.assertEqual(gconf_get('map-source'), gui.map_view.get_property('map-source').get_id())
+        for menu_item in get_obj("map_source_menu").get_active().get_group():
+            menu_item.set_active(True)
+            self.assertEqual(gui.map_view.get_property('map-source').get_name(), menu_item.get_label())
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
