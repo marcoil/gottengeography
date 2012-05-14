@@ -7,6 +7,7 @@ from gg.version import *
 
 data_files = [
     ('share/applications', ['data/gottengeography.desktop']),
+    ('share/glib-2.0/schemas', ['data/ca.exolucere.gottengeography.gschema.xml']),
     ('share/doc/%s' % PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
 ]
 

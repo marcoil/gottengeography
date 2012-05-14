@@ -2,6 +2,7 @@ build
 dist
 locale
 MANIFEST
+gschemas.compiled
 *.pyc
 *~
 
