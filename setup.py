@@ -11,7 +11,7 @@ data_files = [
 ]
 
 setup(
-    name=APPNAME,
+    name=PACKAGE,
     version=VERSION,
     description="Automagically geotag photos with GPX data.",
     long_description=
