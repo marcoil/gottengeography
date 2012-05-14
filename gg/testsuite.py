@@ -27,6 +27,7 @@ from time import tzset
 
 import app
 from files import Photograph
+from utils import Coordinates
 from utils import Polygon, make_clutter_color
 from utils import get_file, gconf_get, gconf_set
 from utils import maps_link, valid_coords, Struct
@@ -46,7 +47,7 @@ class GottenGeographyTester(TestCase):
         environ['TZ'] = 'America/Edmonton'
         tzset()
         self.restore = {}
-        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color'):
+        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color', 'map-source'):
             self.restore[key] = gconf_get(key)
         get_obj('system_timezone').clicked()
     
@@ -308,6 +309,19 @@ S 10.00000, W 10.00000
         self.assertFalse(valid_coords(45, valid_coords))
         self.assertFalse(valid_coords("ya", "dun goofed"))
         
+        # St. John's broke the math. I'm not sure why.
+        # Seriously. Revert commit 362dd6eb and watch this explode.
+        stjohns = Coordinates()
+        stjohns.latitude = 47.56494
+        stjohns.longitude = -52.70931
+        stjohns.lookup_geoname()
+        self.assertEqual(stjohns.city, "St. John's")
+        
+        # Also test this bug fixed in commit 47efbeba.
+        self.assertEqual(stjohns.pretty_geoname(), "St. John's,\nNewfoundland and Labrador,\nCanada")
+        stjohns.provincestate = None
+        self.assertEqual(stjohns.pretty_geoname(), "St. John's, Canada")
+        
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
         for i in range(100):
@@ -520,11 +534,17 @@ S 10.00000, W 10.00000
         entry.set_text('calg')
         self.assertEqual(len(gui.search.results), 411)
         
-        for result in gui.search.results:
+        get_title = get_obj("main").get_title
+        for i, result in enumerate(gui.search.results):
             gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
             loc, lat, lon = result
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
+            
+            if i < 20:
+                # This bit is really slow so let's not bother testing it all 411 times
+                gui.map_view.emit("animation-completed")
+                self.assertEqual(get_title(), "GottenGeography - " + loc)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
@@ -541,6 +561,11 @@ S 10.00000, W 10.00000
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
         self.assertEqual(gconf_get('track_color'), [32768, 32768, 32768])
+        
+        self.assertEqual(gconf_get('map-source'), gui.map_view.get_property('map-source').get_id())
+        for menu_item in get_obj("map_source_menu").get_active().get_group():
+            menu_item.set_active(True)
+            self.assertEqual(gui.map_view.get_property('map-source').get_name(), menu_item.get_label())
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""

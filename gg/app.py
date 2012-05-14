@@ -43,7 +43,7 @@ from sys import argv
 
 from files import Photograph, GPXFile, KMLFile
 from utils import get_file, gconf_get, gconf_set
-from utils import Polygon, Struct, make_clutter_color
+from utils import Coordinates, Polygon, Struct, make_clutter_color
 from utils import format_list, format_coords, valid_coords, maps_link
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -135,13 +135,24 @@ class NavigationController(CommonAttributes):
         back_button.emit("clicked")
         
         accel = Gtk.AccelGroup()
-        get_obj("main").add_accel_group(accel)
+        window = get_obj("main")
+        window.add_accel_group(accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
         self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
             zoom_in_button, zoom_out_button)
         self.map_view.connect("realize", self.remember_location)
+        self.map_view.connect("animation-completed", self.set_window_title,
+            window.set_title, Coordinates())
+        self.map_view.emit("animation-completed")
+    
+    def set_window_title(self, map_view, set_title, center):
+        """Add the current location we are looking at into the titlebar."""
+        center.latitude  = map_view.get_center_latitude()
+        center.longitude = map_view.get_center_longitude()
+        center.lookup_geoname()
+        set_title("%s - %s" % (APPNAME, center.pretty_geoname(False)))
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
@@ -173,6 +184,7 @@ class NavigationController(CommonAttributes):
             view.set_zoom_level(zoom)
             view.center_on(lat, lon)
         gconf_set("history", history)
+        self.map_view.emit("animation-completed")
     
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
         """Ensure zoom buttons are only sensitive when they need to be."""
@@ -259,6 +271,20 @@ class PreferencesController(CommonAttributes):
         self.colorpicker.set_current_color(Gdk.Color(*colors))
         self.colorpicker.set_previous_color(Gdk.Color(*colors))
         
+        radio_group = []
+        map_menu = get_obj("map_source_menu")
+        last_source = gconf_get("map-source")
+        factory = Champlain.MapSourceFactory.dup_default()
+        for i, source in enumerate(factory.get_registered()):
+            menu_item = Gtk.RadioMenuItem.new_with_label(radio_group, source.get_name())
+            radio_group.append(menu_item)
+            menu_item.connect("activate", self.map_menu_clicked,
+                source.get_id(), factory)
+            map_menu.attach(menu_item, 0, 1, i, i+1)
+            if last_source == source.get_id():
+                menu_item.set_active(True)
+        map_menu.show_all()
+        
         pref_button.connect("clicked", self.preferences_dialog,
             get_obj("preferences"), region, cities, self.colorpicker)
         
@@ -335,6 +361,12 @@ class PreferencesController(CommonAttributes):
         for i, polygon in enumerate(polygons):
             polygon.set_stroke_color(two if i % 2 else one)
         gconf_set("track_color", [color.red, color.green, color.blue])
+    
+    def map_menu_clicked(self, menu_item, mapid, factory):
+        """Change the map source when the user selects a different one."""
+        if mapid is not None and menu_item.get_active():
+            self.map_view.set_map_source(factory.create_cached_source(mapid))
+            gconf_set("map-source", mapid)
 
 
 class LabelController(CommonAttributes):
@@ -398,6 +430,7 @@ class LabelController(CommonAttributes):
         photo = photos[label.get_name()]
         photo.set_location(label.get_latitude(), label.get_longitude())
         photo.manual = True
+        self.map_view.emit("animation-completed")
     
     def hover(self, label, event, factor):
         """Scale a ChamplainLabel by the given factor."""
@@ -485,6 +518,7 @@ class GottenGeography(CommonAttributes):
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.labels.selection.emit("changed")
+        self.map_view.emit("animation-completed")
     
     def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
@@ -603,6 +637,7 @@ class GottenGeography(CommonAttributes):
         lon = self.map_view.x_to_longitude(x)
         for photo in self.selected:
             photo.set_location(lat, lon)
+        self.map_view.emit("animation-completed")
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -740,15 +775,6 @@ class GottenGeography(CommonAttributes):
         map_container.connect("drag-data-received", self.photo_drag_end)
         map_container.drag_dest_add_text_targets()
         
-        map_menu = get_obj("map_source_menu")
-        factory = Champlain.MapSourceFactory.dup_default()
-        for i, source in enumerate(factory.get_registered()):
-            menu_item = Gtk.MenuItem.new_with_label(source.get_name())
-            menu_item.connect("activate", self.map_menu_clicked,
-                source.get_id(), factory)
-            map_menu.attach(menu_item, 0, 1, i, i+1)
-        map_menu.show_all()
-        
         self.navigator = NavigationController()
         self.search    = SearchController()
         self.prefs     = PreferencesController()
@@ -838,11 +864,6 @@ class GottenGeography(CommonAttributes):
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id("msg"), message)
-    
-    def map_menu_clicked(self, menu, mapid, factory):
-        source = factory.create_cached_source(mapid)
-        if source is not None and source.get_id() != '':
-            self.map_view.set_map_source(source)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
