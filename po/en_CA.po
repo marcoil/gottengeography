@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gottengeography 0.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-13 12:58-0500\n"
+"POT-Creation-Date: 2012-05-14 23:14-0500\n"
 "PO-Revision-Date: 2011-02-07 18:51-0700\n"
 "Last-Translator: Robert Park <rbpark@exolucere.ca>\n"
 "Language-Team: English\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../gg/app.py:505
+#: ../gg/app.py:527
 msgid "Could not open: "
 msgstr "Could not open: "
 
-#: ../gg/app.py:538
+#: ../gg/app.py:561
 #, python-format
 msgid "%d points loaded in %.2fs."
 msgstr "%d points loaded in %.2fs."
@@ -227,34 +227,34 @@ msgstr ""
 msgid "Close _without Saving"
 msgstr "Close _without Saving"
 
-#: ../gg/utils.py:104
+#: ../gg/utils.py:139
 msgid "View in Google Maps"
 msgstr "View in Google Maps"
 
-#: ../gg/utils.py:111
+#: ../gg/utils.py:146
 msgid "N"
 msgstr "N"
 
-#: ../gg/utils.py:111
+#: ../gg/utils.py:146
 msgid "S"
 msgstr "S"
 
-#: ../gg/utils.py:112
+#: ../gg/utils.py:147
 msgid "E"
 msgstr "E"
 
-#: ../gg/utils.py:112
+#: ../gg/utils.py:147
 msgid "W"
 msgstr "W"
 
-#: ../gg/utils.py:212
+#: ../gg/utils.py:250
 msgid "Not geotagged"
 msgstr "Not geotagged"
 
-#: ../gg/utils.py:223
+#: ../gg/utils.py:261
 msgid "m above sea level"
 msgstr "m above sea level"
 
-#: ../gg/utils.py:224
+#: ../gg/utils.py:262
 msgid "m below sea level"
 msgstr "m below sea level"

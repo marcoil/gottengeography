@@ -1,8 +1,9 @@
+gschemas.compiled
+gottengeography.pot
 build
 dist
 locale
 MANIFEST
-gschemas.compiled
 *.pyc
 *~
 
