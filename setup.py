@@ -6,9 +6,10 @@ from DistUtilsExtra.command import *
 from gg.version import *
 
 data_files = [
-    ('share/applications', ['data/gottengeography.desktop']),
-    ('share/glib-2.0/schemas', ['data/ca.exolucere.gottengeography.gschema.xml']),
-    ('share/doc/%s' % PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
+    ('share/' + PACKAGE, ['data/cities.txt', 'data/%s.ui' % PACKAGE]),
+    ('share/applications', ['data/%s.desktop' % PACKAGE]),
+    ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
+    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
 ]
 
 setup(

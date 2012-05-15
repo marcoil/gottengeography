@@ -25,7 +25,7 @@ gettext.textdomain(PACKAGE)
 from gi.repository import GObject, GtkClutter, Clutter
 
 GObject.threads_init()
-GObject.set_prgname('gottengeography')
+GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
@@ -53,10 +53,10 @@ LOCATION, LATITUDE, LONGITUDE = range(3)
 
 builder = Gtk.Builder()
 builder.set_translation_domain(PACKAGE)
-builder.add_from_file(get_file("ui.glade"))
+builder.add_from_file(get_file(PACKAGE + '.ui'))
 get_obj = builder.get_object
 
-gsettings = GSettingsSetting('ca.exolucere.gottengeography')
+gsettings = GSettingsSetting('ca.exolucere.' + PACKAGE)
 gst_get = gsettings.get_value
 gst_set = gsettings.set_value
 bind_with_convert = gsettings.bind_with_convert

@@ -16,7 +16,8 @@
 
 from __future__ import division
 
-from os.path import join, dirname, basename
+from os import sep as os_sep
+from os.path import join, isdir, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Gio, GLib, Clutter, Champlain
 from math import acos, sin, cos, radians
@@ -28,9 +29,27 @@ from pyexiv2 import Rational
 
 from territories import get_state, get_country
 
+def find_pkg_data_dir():
+    """Use some hacks to figure out where the data files got installed to.
+    
+    This is a bit ugly but at least it allows me to run and test from my source
+    tree and also works after installation. I'm working on improving this but
+    at least for now this was good enough to get my data files out of module dir.
+    """
+    if __file__[:5] == "/home":
+        return join(dirname(dirname(__file__)), 'data')
+    prefix = os_sep
+    for d in __file__.split(os_sep):
+        prefix = join(prefix, d)
+        data_dir = join(prefix, 'share', 'gottengeography')
+        if isdir(data_dir):
+            return data_dir
+
+PKG_DATA_DIR = find_pkg_data_dir()
+
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
-    return join(dirname(__file__), filename)
+    return join(PKG_DATA_DIR, filename)
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""

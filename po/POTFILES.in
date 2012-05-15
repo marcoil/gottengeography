@@ -1,4 +1,4 @@
 gg/app.py
 gg/files.py
-gg/ui.glade
 gg/utils.py
+data/gottengeography.ui
