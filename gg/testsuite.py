@@ -116,6 +116,14 @@ class GottenGeographyTester(TestCase):
             photo.longitude = 45.0
             self.assertTrue(photo.valid_coords())
             
+            # Move the ChamplainLabel to a random point on earth and then
+            # indicate it was a drag action, ensure that photo gets correct
+            # location from the simulated drag-drop.
+            photo.label.set_location(random_coord(80), random_coord(180))
+            photo.label.emit('drag-finish', Clutter.Event())
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            
             # photo.read() should discard all the crap we added above.
             # This is in response to a bug where I was using pyexiv2 wrongly
             # and it would load data from disk without discarding old data.
