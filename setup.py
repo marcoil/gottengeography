@@ -30,7 +30,6 @@ and then record those locations into the photos.
     download_url="https://github.com/robru/GottenGeography/tags",
     license="GPLv3",
     packages=['gg'],
-    package_data={'gg': ['ui.glade', 'cities.txt']},
     scripts=['gottengeography'],
     data_files=data_files,
     cmdclass = { "build" : build_extra.build_extra,
