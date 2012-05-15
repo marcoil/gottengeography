@@ -27,10 +27,8 @@ from time import tzset
 
 import app
 from files import Photograph
-from utils import Coordinates
-from utils import Polygon, make_clutter_color
-from utils import get_file
-from utils import maps_link, valid_coords, Struct
+from utils import Coordinates, Polygon, Struct
+from utils import get_file, make_clutter_color, maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
 # Disable animations so tests pass more quickly.
@@ -52,10 +50,7 @@ class GottenGeographyTester(TestCase):
     def tearDown(self):
         """Undo whatever mess the testsuite created."""
         system('git checkout demo')
-        for key in [ 'custom-timezone', 'history', 'latitude', 'longitude',
-        'lookup-timezone', 'map-source-id', 'offset-minutes', 'offset-seconds',
-        'system-timezone', 'timezone-cities', 'timezone-region', 'track-color',
-        'zoom-level' ]:
+        for key in app.gsettings.list_keys():
             app.gsettings.reset(key)
     
     def test_gtk_window(self):
@@ -518,20 +513,18 @@ S 10.00000, W 10.00000
         entry.set_text('edm')
         self.assertEqual(len(gui.search.results), 8)
         
-        entry.set_text('calg')
-        self.assertEqual(len(gui.search.results), 411)
-        
         get_title = get_obj("main").get_title
-        for i, result in enumerate(gui.search.results):
+        for result in gui.search.results:
             gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
             loc, lat, lon = result
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
             
-            if i < 20:
-                # This bit is really slow so let's not bother testing it all 411 times
-                gui.map_view.emit("animation-completed")
-                self.assertEqual(get_title(), "GottenGeography - " + loc)
+            gui.map_view.emit("animation-completed")
+            self.assertEqual(get_title(), "GottenGeography - " + loc)
+        
+        entry.set_text('calg')
+        self.assertEqual(len(gui.search.results), 411)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
