@@ -116,13 +116,23 @@ class GottenGeographyTester(TestCase):
             photo.longitude = 45.0
             self.assertTrue(photo.valid_coords())
             
-            # Move the ChamplainLabel to a random point on earth and then
-            # indicate it was a drag action, ensure that photo gets correct
-            # location from the simulated drag-drop.
+            # 'Drag' a ChamplainLabel and make sure the photo gets the same location.
             photo.label.set_location(random_coord(80), random_coord(180))
             photo.label.emit('drag-finish', Clutter.Event())
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
             self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
+            
+            # 'Drag' a photo onto the map and make sure that also works.
+            gui.selected.add(photo)
+            gui.photo_drag_end(None, None, 20, 20, None, None, None)
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            self.assertNotEqual(photo.latitude, old[0])
+            self.assertNotEqual(photo.longitude, old[1])
+            self.assertNotEqual(photo.pretty_geoname(), old[2])
             
             # photo.read() should discard all the crap we added above.
             # This is in response to a bug where I was using pyexiv2 wrongly
@@ -140,7 +150,6 @@ class GottenGeographyTester(TestCase):
         
         # Test the select-all button.
         select_all = get_obj('select_all_button')
-        self.assertEqual(len(gui.selected), 0)
         select_all.set_active(True)
         self.assertEqual(len(gui.selected), len(gui.liststore))
         select_all.set_active(False)
