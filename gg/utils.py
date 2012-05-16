@@ -47,6 +47,10 @@ class GSettingsSetting(Gio.Settings):
     def __init__(self, schema_name):
         Gio.Settings.__init__(self, schema_name)
         
+        # Some common data types I use
+        self._history_matrix = GLib.VariantType.new('aad')
+        self._window_size = GLib.VariantType.new('(ii)')
+        
         # These are used to avoid infinite looping.
         self._ignore_key_changed = False
         self._ignore_prop_changed = True
@@ -58,12 +62,13 @@ class GSettingsSetting(Gio.Settings):
     def set_value(self, key, value):
         """Convert arrays to GVariants.
         
-        This allows me to set the back-button history directly.
+        This makes it easier to set the back button history and the window size.
         """
-        if type(value) is list:
-            value = GLib.Variant.parse(GLib.VariantType.new('aad'),
-                str(value), None, None)
-        Gio.Settings.set_value(self, key, value)
+        use_matrix = type(value) is list
+        do_override = type(value) is tuple or use_matrix
+        Gio.Settings.set_value(self, key, GLib.Variant.parse(
+            self._history_matrix if use_matrix else self._window_size,
+            str(value), None, None) if do_override else value)
     
     def bind_with_convert(self, key, widget, prop, key_to_prop_converter, prop_to_key_converter):
         """Recreate g_settings_bind_with_mapping from scratch.
