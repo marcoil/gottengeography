@@ -28,24 +28,7 @@ from fractions import Fraction
 from pyexiv2 import Rational
 
 from territories import get_state, get_country
-
-def find_pkg_data_dir():
-    """Use some hacks to figure out where the data files got installed to.
-    
-    This is a bit ugly but at least it allows me to run and test from my source
-    tree and also works after installation. I'm working on improving this but
-    at least for now this was good enough to get my data files out of module dir.
-    """
-    if __file__[:5] == "/home":
-        return join(dirname(dirname(__file__)), 'data')
-    prefix = os_sep
-    for d in __file__.split(os_sep):
-        prefix = join(prefix, d)
-        data_dir = join(prefix, 'share', 'gottengeography')
-        if isdir(data_dir):
-            return data_dir
-
-PKG_DATA_DIR = find_pkg_data_dir()
+from build_info import PKG_DATA_DIR
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
