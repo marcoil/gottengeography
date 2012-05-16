@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
+    <key type="(ii)" name="window-size">
+      <default>(800, 600)</default>
+      <summary>The current size of the main window.</summary>
+    </key>
     <key type="aad" name="history">
       <default>[[34.5, 15.8, 2]]</default>
       <summary>A short history of the places the user has visited.</summary>

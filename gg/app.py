@@ -28,7 +28,7 @@ GObject.threads_init()
 GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import GLib, Gtk, Gdk, GdkPixbuf
 from gi.repository import GtkChamplain, Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
@@ -807,9 +807,17 @@ class GottenGeography(CommonAttributes):
         
         accel  = Gtk.AccelGroup()
         window = get_obj("main")
+        window.resize(*gst_get('window-size'))
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
+        
+        variant_type = GLib.VariantType.new('(ii)')
+        parse = GLib.Variant.parse
+        save_window_size = lambda view, sig, get_size: gst_set('window-size',
+            parse(variant_type, "(%d, %d)" % get_size(), None, None))
+        for prop in ['width', 'height']:
+            self.map_view.connect('notify::' + prop, save_window_size, window.get_size)
         
         map_source_button = get_obj("map_source_label").get_parent()
         if map_source_button:
