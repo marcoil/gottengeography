@@ -42,9 +42,9 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from files import Photograph, GPXFile, KMLFile
-from utils import get_file, GSettingsSetting
-from utils import Coordinates, Polygon, Struct, make_clutter_color
-from utils import format_list, format_coords, valid_coords, maps_link
+from utils import make_clutter_color, get_file
+from utils import format_list, format_coords, valid_coords
+from utils import GSettingsSetting, Coordinates, Polygon, Struct
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
@@ -472,8 +472,18 @@ class ActorController(CommonAttributes):
     def display(self, view, param, mlink, label):
         """Display map center coordinates when they change."""
         lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
-        mlink.set_markup(maps_link(lat, lon))
+        mlink.set_markup(self.to_google())
         label.set_markup(format_coords(lat, lon))
+    
+    def to_google(self):
+        """Recreate the current map view in Google Maps."""
+        anchor=_("View in Google Maps")
+        url_base = 'http://maps.google.com/maps?'
+        lat, lon = [ self.map_view.get_property(x) for x in ('latitude', 'longitude') ]
+        w = lon - self.map_view.x_to_longitude(0)
+        h = self.map_view.y_to_latitude(0) - lat
+        query = 'll=%s,%s&amp;spn=%s,%s' % (lat, lon, w, h)
+        return '<a title="%s" href="%s%s">Google</a>' % (anchor, url_base, query)
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
