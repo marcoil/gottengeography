@@ -42,8 +42,8 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from files import Photograph, GPXFile, KMLFile
-from utils import make_clutter_color, get_file
 from utils import format_list, format_coords, valid_coords
+from utils import make_clutter_color, get_file, map_sources
 from utils import GSettingsSetting, Coordinates, Polygon, Struct
 from territories import tz_regions, get_timezone, get_state, get_country
 
@@ -281,17 +281,16 @@ class PreferencesController(CommonAttributes):
         
         radio_group = []
         map_menu = get_obj("map_source_menu")
-        factory = Champlain.MapSourceFactory.dup_default()
         bind_with_convert("map-source-id", self.map_view, "map-source",
-            lambda x: factory.create_cached_source(x), lambda x: x.get_id())
+            map_sources.get, lambda x: x.get_id())
         last_source = self.map_view.get_map_source().get_id()
-        for i, source in enumerate(factory.get_registered()):
+        for i, source_id in enumerate(sorted(map_sources.keys())):
+            source = map_sources[source_id]
             menu_item = Gtk.RadioMenuItem.new_with_label(radio_group, source.get_name())
             radio_group.append(menu_item)
-            if last_source == source.get_id():
+            if last_source == source_id:
                 menu_item.set_active(True)
-            menu_item.connect("activate", self.map_menu_clicked,
-                source.get_id(), factory)
+            menu_item.connect("activate", self.map_menu_clicked, source_id)
             map_menu.attach(menu_item, 0, 1, i, i+1)
         map_menu.show_all()
         
@@ -368,10 +367,10 @@ class PreferencesController(CommonAttributes):
         for i, polygon in enumerate(polygons):
             polygon.set_stroke_color(two if i % 2 else one)
     
-    def map_menu_clicked(self, menu_item, mapid, factory):
+    def map_menu_clicked(self, menu_item, mapid):
         """Change the map source when the user selects a different one."""
         if menu_item.get_active():
-            self.map_view.set_map_source(factory.create_cached_source(mapid))
+            self.map_view.set_map_source(map_sources[mapid])
 
 
 class LabelController(CommonAttributes):
