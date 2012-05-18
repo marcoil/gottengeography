@@ -296,6 +296,21 @@
                     <property name="can_focus">False</property>
                     <property name="spacing">2</property>
                     <child>
+                      <object class="GtkLabel" id="maps_link">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Google</property>
+                        <property name="use_markup">True</property>
+                        <property name="single_line_mode">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="padding">12</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkMenuToolButton" id="map_source_menu_button">
                         <property name="visible">True</property>
                         <property name="menu">map_source_menu</property>
@@ -313,22 +328,6 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">False</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="maps_link">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="xalign">0.05000000074505806</property>
-                        <property name="label"> </property>
-                        <property name="use_markup">True</property>
-                        <property name="single_line_mode">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
-                        <property name="padding">12</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
