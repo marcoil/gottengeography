@@ -471,18 +471,11 @@ class ActorController(CommonAttributes):
     def display(self, view, param, mlink, label):
         """Display map center coordinates when they change."""
         lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
-        mlink.set_markup(self.to_google())
         label.set_markup(format_coords(lat, lon))
-    
-    def to_google(self):
-        """Recreate the current map view in Google Maps."""
-        anchor=_("View in Google Maps")
-        url_base = 'http://maps.google.com/maps?'
-        lat, lon = [ self.map_view.get_property(x) for x in ('latitude', 'longitude') ]
-        w = lon - self.map_view.x_to_longitude(0)
-        h = self.map_view.y_to_latitude(0) - lat
-        query = 'll=%s,%s&amp;spn=%s,%s' % (lat, lon, w, h)
-        return '<a title="%s" href="%s%s">Google</a>' % (anchor, url_base, query)
+        mlink.set_markup(
+            '<a title="%s" href="http://maps.google.com/maps?ll=%s,%s&amp;spn=%s,%s">Google</a>'
+            % (_("View in Google Maps"), lat, lon,
+            lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
