@@ -10,6 +10,7 @@ from gg.version import *
 data_files = [
     ('share/' + PACKAGE, ['data/cities.txt', 'data/%s.ui' % PACKAGE]),
     ('share/applications', ['data/%s.desktop' % PACKAGE]),
+    ('share/icons/hicolor/scalable/apps', ['data/%s.svg' % PACKAGE]),
     ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
     ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
 ]

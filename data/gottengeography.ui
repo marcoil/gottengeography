@@ -7,7 +7,7 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="title">GottenGeography</property>
-    <property name="icon_name">gtk-new</property>
+    <property name="icon_name">gottengeography</property>
     <child>
       <object class="GtkVBox" id="app_container">
         <property name="visible">True</property>
