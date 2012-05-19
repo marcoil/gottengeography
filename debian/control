@@ -13,7 +13,8 @@ Vcs-Browser: https://github.com/robru/gottengeography
 Package: gottengeography
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python-pyexiv2, python-dateutil,
- python-gi, gir1.2-gtkclutter-1.0, gir1.2-gtkchamplain-0.12 (>= 0.12.2)
+ python-gi, gir1.2-glib-2.0, gir1.2-gtkclutter-1.0,
+ gir1.2-gtkchamplain-0.12 (>= 0.12.2)
 XB-Python-Version: ${python:Versions}
 Description: Automagically geotag photos with GPX data.
  GottenGeography is a GNOME application that aims to make it easy to record
