@@ -27,10 +27,8 @@ from time import tzset
 
 import app
 from files import Photograph
-from utils import Coordinates
-from utils import Polygon, make_clutter_color
-from utils import get_file, gconf_get, gconf_set
-from utils import maps_link, valid_coords, Struct
+from utils import Coordinates, Polygon, Struct
+from utils import get_file, make_clutter_color, maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
 # Disable animations so tests pass more quickly.
@@ -38,6 +36,7 @@ app.CommonAttributes.slide_to = app.CommonAttributes.map_view.center_on
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
+gst_get = app.gst_get
 
 class GottenGeographyTester(TestCase):
     def setUp(self):
@@ -46,16 +45,13 @@ class GottenGeographyTester(TestCase):
         system('git checkout demo')
         environ['TZ'] = 'America/Edmonton'
         tzset()
-        self.restore = {}
-        for key in ('clock_offset', 'history', 'timezone', 'timezone_method', 'track_color', 'map-source'):
-            self.restore[key] = gconf_get(key)
-        get_obj('system_timezone').clicked()
+        get_obj('system-timezone').clicked()
     
     def tearDown(self):
-        """Restore history."""
+        """Undo whatever mess the testsuite created."""
         system('git checkout demo')
-        for key in self.restore:
-            gconf_set(key, self.restore[key])
+        for key in app.gsettings.list_keys():
+            app.gsettings.reset(key)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -120,6 +116,24 @@ class GottenGeographyTester(TestCase):
             photo.longitude = 45.0
             self.assertTrue(photo.valid_coords())
             
+            # 'Drag' a ChamplainLabel and make sure the photo gets the same location.
+            photo.label.set_location(random_coord(80), random_coord(180))
+            photo.label.emit('drag-finish', Clutter.Event())
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
+            
+            # 'Drag' a photo onto the map and make sure that also works.
+            gui.selected.add(photo)
+            gui.photo_drag_end(None, None, 20, 20, None, None, None)
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            self.assertNotEqual(photo.latitude, old[0])
+            self.assertNotEqual(photo.longitude, old[1])
+            self.assertNotEqual(photo.pretty_geoname(), old[2])
+            
             # photo.read() should discard all the crap we added above.
             # This is in response to a bug where I was using pyexiv2 wrongly
             # and it would load data from disk without discarding old data.
@@ -136,7 +150,6 @@ class GottenGeographyTester(TestCase):
         
         # Test the select-all button.
         select_all = get_obj('select_all_button')
-        self.assertEqual(len(gui.selected), 0)
         select_all.set_active(True)
         self.assertEqual(len(gui.selected), len(gui.liststore))
         select_all.set_active(False)
@@ -238,7 +251,7 @@ class GottenGeographyTester(TestCase):
         """Ensure that we can determine the correct timezone if it is set incorrectly."""
         environ['TZ'] = 'Europe/Paris'
         tzset()
-        get_obj('lookup_timezone').clicked()
+        get_obj('lookup-timezone').clicked()
         self.test_demo_data()
         environ['TZ'] = 'America/Edmonton'
         tzset()
@@ -379,8 +392,8 @@ S 10.00000, W 10.00000
         gui.map_view.center_on(lat, lon)
         coords.append([lat, lon])
         
-        self.assertAlmostEqual(coords[0][0], gconf_get('history')[-1][0], 5)
-        self.assertAlmostEqual(coords[0][1], gconf_get('history')[-1][1], 5)
+        self.assertAlmostEqual(coords[0][0], gst_get('history')[-1][0], 5)
+        self.assertAlmostEqual(coords[0][1], gst_get('history')[-1][1], 5)
         
         lat = round(random_coord(80),  6)
         lon = round(random_coord(170), 6)
@@ -483,20 +496,6 @@ S 10.00000, W 10.00000
         
         self.assertEqual(len(polygon.get_nodes()), 2)
     
-    def test_gconf(self):
-        """Read and write some stuff from GConf."""
-        history = gconf_get("history")
-        
-        gconf_set('history', [[0,0,0]])
-        self.assertEqual(gconf_get('history'), [[0,0,0]])
-        gconf_set('history', [[50,-113,11]])
-        self.assertEqual(gconf_get('history'), [[50,-113,11]])
-        
-        gconf_set('ran_testsuite', True)
-        self.assertTrue(gconf_get('ran_testsuite', False))
-        
-        gconf_set('history', history)
-    
     def test_time_offset(self):
         """Fiddle with the time offset setting."""
         minutes = get_obj("minutes")
@@ -531,20 +530,18 @@ S 10.00000, W 10.00000
         entry.set_text('edm')
         self.assertEqual(len(gui.search.results), 8)
         
-        entry.set_text('calg')
-        self.assertEqual(len(gui.search.results), 411)
-        
         get_title = get_obj("main").get_title
-        for i, result in enumerate(gui.search.results):
+        for result in gui.search.results:
             gui.search.search_completed(entry, gui.search.results, result.iter, gui.map_view)
             loc, lat, lon = result
             self.assertAlmostEqual(lat, gui.map_view.get_property('latitude'), 4)
             self.assertAlmostEqual(lon, gui.map_view.get_property('longitude'), 4)
             
-            if i < 20:
-                # This bit is really slow so let's not bother testing it all 411 times
-                gui.map_view.emit("animation-completed")
-                self.assertEqual(get_title(), "GottenGeography - " + loc)
+            gui.map_view.emit("animation-completed")
+            self.assertEqual(get_title(), "GottenGeography - " + loc)
+        
+        entry.set_text('calg')
+        self.assertEqual(len(gui.search.results), 411)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
@@ -553,16 +550,17 @@ S 10.00000, W 10.00000
         self.assertEqual(new.red, 0)
         self.assertEqual(new.green, 0)
         self.assertEqual(new.blue, 0)
-        self.assertEqual(gconf_get('track_color'), [0, 0, 0])
+        self.assertEqual(list(gst_get('track-color')), [0, 0, 0])
         
         gui.prefs.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
         new = gui.prefs.colorpicker.get_current_color()
         self.assertEqual(new.red, 32768)
         self.assertEqual(new.green, 32768)
         self.assertEqual(new.blue, 32768)
-        self.assertEqual(gconf_get('track_color'), [32768, 32768, 32768])
+        self.assertEqual(list(gst_get('track-color')), [32768, 32768, 32768])
         
-        self.assertEqual(gconf_get('map-source'), gui.map_view.get_property('map-source').get_id())
+        self.assertEqual(str(gst_get('map-source-id')), "<GLib.Variant('%s')>" %
+            gui.map_view.get_property('map-source').get_id())
         for menu_item in get_obj("map_source_menu").get_active().get_group():
             menu_item.set_active(True)
             self.assertEqual(gui.map_view.get_property('map-source').get_name(), menu_item.get_label())

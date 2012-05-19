@@ -16,11 +16,10 @@
 
 from __future__ import division
 
-from cPickle import dumps as pickle
-from cPickle import loads as unpickle
-from os.path import join, dirname, basename
+from os import sep as os_sep
+from os.path import join, isdir, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import GConf, Clutter, Champlain
+from gi.repository import Gio, GLib, Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -29,10 +28,11 @@ from fractions import Fraction
 from pyexiv2 import Rational
 
 from territories import get_state, get_country
+from build_info import PKG_DATA_DIR
 
 def get_file(filename):
     """Find a file that's in the same directory as this program."""
-    return join(dirname(__file__), filename)
+    return join(PKG_DATA_DIR, filename)
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
@@ -40,25 +40,67 @@ def make_clutter_color(color):
         *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
 ################################################################################
-# GConf methods. These methods interact with GConf.
+# GSettings overrides. This allows me to interact with GSettings more easily.
 ################################################################################
 
-gconf = GConf.Client.get_default()
-
-def gconf_key(key):
-    """Determine appropriate GConf key that is unique to this application."""
-    return "/apps/gottengeography/" + key
-
-def gconf_set(key, value):
-    """Sets the given GConf key to the given value."""
-    gconf.set_string(gconf_key(key), pickle(value))
-
-def gconf_get(key, default=None):
-    """Gets the given GConf key as the requested type."""
-    try:
-        return unpickle(gconf.get_string(gconf_key(key)))
-    except TypeError:
-        return default
+class GSettingsSetting(Gio.Settings):
+    def __init__(self, schema_name):
+        Gio.Settings.__init__(self, schema_name)
+        
+        # Some common data types I use
+        self._history_matrix = GLib.VariantType.new('aad')
+        self._window_size = GLib.VariantType.new('(ii)')
+        
+        # These are used to avoid infinite looping.
+        self._ignore_key_changed = False
+        self._ignore_prop_changed = True
+    
+    def bind(self, key, widget, prop, flags=Gio.SettingsBindFlags.DEFAULT):
+        """Don't make me specify the default flags every time."""
+        Gio.Settings.bind(self, key, widget, prop, flags)
+    
+    def set_value(self, key, value):
+        """Convert arrays to GVariants.
+        
+        This makes it easier to set the back button history and the window size.
+        """
+        use_matrix = type(value) is list
+        do_override = type(value) is tuple or use_matrix
+        Gio.Settings.set_value(self, key, GLib.Variant.parse(
+            self._history_matrix if use_matrix else self._window_size,
+            str(value), None, None) if do_override else value)
+    
+    def bind_with_convert(self, key, widget, prop, key_to_prop_converter, prop_to_key_converter):
+        """Recreate g_settings_bind_with_mapping from scratch.
+        
+        This method was shamelessly stolen from John Stowers'
+        gnome-tweak-tool on May 14, 2012.
+        """
+        def key_changed(settings, key):
+            if self._ignore_key_changed: return
+            orig_value = self[key]
+            converted_value = key_to_prop_converter(orig_value)
+            self._ignore_prop_changed = True
+            try:
+                widget.set_property(prop, converted_value)
+            except TypeError:
+                print "TypeError: %s not a valid %s." % (converted_value, key)
+            self._ignore_prop_changed = False
+        
+        def prop_changed(widget, param):
+            if self._ignore_prop_changed: return
+            orig_value = widget.get_property(prop)
+            converted_value = prop_to_key_converter(orig_value)
+            self._ignore_key_changed = True
+            try:
+                self[key] = converted_value
+            except TypeError:
+                print "TypeError: %s not a valid %s." % (converted_value, prop)
+            self._ignore_key_changed = False
+        
+        self.connect("changed::" + key, key_changed)
+        widget.connect("notify::" + prop, prop_changed)
+        key_changed(self,key) # init default state
 
 ################################################################################
 # GPS math functions. These methods convert numbers into other numbers.
@@ -111,6 +153,62 @@ def format_coords(lat, lon):
         _("N") if lat >= 0 else _("S"), abs(lat),
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
+
+################################################################################
+# Map source definitions.
+################################################################################
+
+def create_map_source(id, name, license, uri, minzoom, maxzoom, tile_size, uri_format):
+    renderer  = Champlain.ImageRenderer()
+    map_chain = Champlain.MapSourceChain()
+    factory   = Champlain.MapSourceFactory.dup_default()
+    err_src   = factory.create_error_source(tile_size)
+    tile_src  = Champlain.NetworkTileSource.new_full(id, name, license, uri,
+        minzoom, maxzoom, tile_size, Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
+        uri_format, renderer)
+    
+    renderer   = Champlain.ImageRenderer()
+    file_cache = Champlain.FileCache.new_full(100000000, None, renderer)
+    
+    renderer  = Champlain.ImageRenderer()
+    mem_cache = Champlain.MemoryCache.new_full(100, renderer)
+    
+    for src in (err_src, tile_src, file_cache, mem_cache):
+        map_chain.push(src)
+    
+    return map_chain
+
+map_sources = {
+    'osm-mapnik':
+    create_map_source('osm-mapnik', 'OpenStreetMap Mapnik',
+    'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
+    'http://creativecommons.org/licenses/by-sa/2.0/',
+    0, 18, 256, 'http://tile.openstreetmap.org/#Z#/#X#/#Y#.png'),
+    
+    'osm-cyclemap':
+    create_map_source('osm-cyclemap', 'OpenStreetMap Cycle Map',
+    'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
+    'http://creativecommons.org/licenses/by-sa/2.0/',
+    0, 17, 256, 'http://a.tile.opencyclemap.org/cycle/#Z#/#X#/#Y#.png'),
+    
+    'osm-transport':
+    create_map_source('osm-transport', 'OpenStreetMap Transport Map',
+    'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
+    'http://creativecommons.org/licenses/by-sa/2.0/',
+    0, 18, 256, 'http://tile.xn--pnvkarte-m4a.de/tilegen/#Z#/#X#/#Y#.png'),
+    
+    'mapquest-osm':
+    create_map_source('mapquest-osm', 'MapQuest OSM',
+    'Data, imagery and map information provided by MapQuest, Open Street Map and contributors',
+    'http://creativecommons.org/licenses/by-sa/2.0/',
+    0, 17, 256, 'http://otile1.mqcdn.com/tiles/1.0.0/osm/#Z#/#X#/#Y#.png'),
+    
+    'mff-relief':
+    create_map_source('mff-relief', 'Maps for Free Relief',
+    'Map data available under GNU Free Documentation license, Version 1.2 or later',
+    'http://www.gnu.org/copyleft/fdl.html',
+    0, 11, 256, 'http://maps-for-free.com/layer/relief/z#Z#/row#Y#/#Z#_#X#-#Y#.jpg')
+}
 
 ################################################################################
 # Class definitions.

@@ -1,14 +1,40 @@
 #!/usr/bin/env python
 
+from os.path import join
 from distutils.core import setup
 from DistUtilsExtra.command import *
+from distutils.command.build_py import build_py as _build_py
 
 from gg.version import *
 
 data_files = [
-    ('share/applications', ['data/gottengeography.desktop']),
-    ('share/doc/%s' % PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
+    ('share/' + PACKAGE, ['data/cities.txt', 'data/%s.ui' % PACKAGE]),
+    ('share/applications', ['data/%s.desktop' % PACKAGE]),
+    ('share/icons/hicolor/scalable/apps', ['data/%s.svg' % PACKAGE]),
+    ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
+    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
 ]
+
+build_info_template = """# -*- coding: UTF-8 -*-
+
+# Distutils installed GottenGeography into:
+PKG_DATA_DIR='%s'
+"""
+
+class build_py(_build_py): 
+    """Clobber gg/build_info.py with the real package data dir.
+    
+    Inspired by a distutils-sig posting by Wolodja Wentland in Sept 2009.
+    """
+    def build_module (self, module, module_file, package):
+        if ('%s/%s' % (package, module) == 'gg/build_info'):
+            iobj = self.distribution.command_obj['install']
+            with open(module_file, 'w') as module_fp:
+                module_fp.write(build_info_template % (
+                    join(iobj.prefix, 'share', PACKAGE)
+                ))
+        
+        _build_py.build_module(self, module, module_file, package)
 
 setup(
     name=PACKAGE,
@@ -28,9 +54,10 @@ and then record those locations into the photos.
     download_url="https://github.com/robru/GottenGeography/tags",
     license="GPLv3",
     packages=['gg'],
-    package_data={'gg': ['ui.glade', 'cities.txt']},
     scripts=['gottengeography'],
     data_files=data_files,
     cmdclass = { "build" : build_extra.build_extra,
-                 "build_i18n" :  build_i18n.build_i18n }
+                 "build_i18n" :  build_i18n.build_i18n,
+                 "build_py": build_py }
 )
+

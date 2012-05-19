@@ -1,11 +1,10 @@
 [Desktop Entry]
-Version=1.2.1
 Name=GottenGeography
-GenericName=GottenGeography
-Comment=Tag your photographs with geolocation data easily.
-Exec=gottengeography
+GenericName=Photo Geotagger
+Comment=Easily store geolocation data in your photographs.
 Icon=gottengeography
-MimeType=x-content/image-dcf;
+Exec=gottengeography
 Terminal=false
 Type=Application
+StartupNotify=true
 Categories=Graphics;Photography;
