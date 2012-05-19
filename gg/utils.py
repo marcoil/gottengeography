@@ -189,7 +189,7 @@ map_sources = {
     create_map_source('osm-cyclemap', 'OpenStreetMap Cycle Map',
     'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
     'http://creativecommons.org/licenses/by-sa/2.0/',
-    0, 18, 256, 'http://a.tile.opencyclemap.org/cycle/#Z#/#X#/#Y#.png'),
+    0, 17, 256, 'http://a.tile.opencyclemap.org/cycle/#Z#/#X#/#Y#.png'),
     
     'osm-transport':
     create_map_source('osm-transport', 'OpenStreetMap Transport Map',
