@@ -8,3 +8,8 @@
 
 from os.path import dirname, join
 PKG_DATA_DIR=join(dirname(dirname(__file__)), 'data')
+
+# Make GSettings run without being installed into the system first.
+from os import system, environ
+environ['GSETTINGS_SCHEMA_DIR'] = 'data'
+system('glib-compile-schemas data')
