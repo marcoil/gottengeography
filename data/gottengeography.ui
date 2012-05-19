@@ -951,6 +951,7 @@
     <property name="window_position">center-always</property>
     <property name="destroy_with_parent">True</property>
     <property name="icon_name">gtk-about</property>
+    <property name="logo_icon_name">gottengeography</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
