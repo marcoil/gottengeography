@@ -34,7 +34,7 @@ class build_py(_build_py):
                     module_fp.write(build_info_template % (
                         join(iobj.prefix, 'share', PACKAGE)
                     ))
-            except:
+            except KeyError:
                 pass
         
         _build_py.build_module(self, module, module_file, package)
