@@ -28,11 +28,14 @@ class build_py(_build_py):
     """
     def build_module (self, module, module_file, package):
         if ('%s/%s' % (package, module) == 'gg/build_info'):
-            iobj = self.distribution.command_obj['install']
-            with open(module_file, 'w') as module_fp:
-                module_fp.write(build_info_template % (
-                    join(iobj.prefix, 'share', PACKAGE)
-                ))
+            try:
+                iobj = self.distribution.command_obj['install']
+                with open(module_file, 'w') as module_fp:
+                    module_fp.write(build_info_template % (
+                        join(iobj.prefix, 'share', PACKAGE)
+                    ))
+            except:
+                pass
         
         _build_py.build_module(self, module, module_file, package)
 
