@@ -16,7 +16,7 @@
 
 from __future__ import division
 
-from gi.repository import Gdk, Clutter, GObject, Champlain
+from gi.repository import Gdk, Clutter, Champlain
 from unittest import TestCase, TextTestRunner, TestLoader
 from os import listdir, system, environ
 from fractions import Fraction
@@ -26,8 +26,8 @@ from math import floor
 from time import tzset
 
 import app
-from common import Struct, map_view
 from files import Photograph
+from common import Struct, map_view
 from build_info import PKG_DATA_DIR
 from utils import Coordinates, Polygon
 from utils import make_clutter_color, maps_link, valid_coords

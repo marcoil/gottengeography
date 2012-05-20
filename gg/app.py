@@ -22,7 +22,7 @@ import gettext
 gettext.bindtextdomain(PACKAGE)
 gettext.textdomain(PACKAGE)
 
-from gi.repository import GObject, GtkClutter, Clutter
+from gi.repository import GObject, GtkClutter
 
 GObject.threads_init()
 GObject.set_prgname(PACKAGE)
@@ -31,10 +31,9 @@ GtkClutter.init([])
 from gi.repository import Gtk, Gdk
 from gi.repository import Champlain
 from os.path import basename, abspath
-from time import tzset, sleep, clock
 from gettext import gettext as _
 from urlparse import urlparse
-from os import environ
+from time import clock
 from sys import argv
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."

@@ -16,13 +16,12 @@
 
 from __future__ import division
 
-from os import sep as os_sep
-from os.path import join, isdir, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
+from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
@@ -86,10 +85,6 @@ def format_coords(lat, lon):
         _("N") if lat >= 0 else _("S"), abs(lat),
         _("E") if lon >= 0 else _("W"), abs(lon)
     )
-
-################################################################################
-# Map source definitions.
-################################################################################
 
 ################################################################################
 # Class definitions.

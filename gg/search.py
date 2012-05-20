@@ -19,8 +19,8 @@ from __future__ import division
 from os.path import join
 from re import compile as re_compile, IGNORECASE
 
-from territories import get_state, get_country
 from common import CommonAttributes, get_obj, map_view
+from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
 from utils import format_list
 

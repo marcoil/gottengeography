@@ -26,7 +26,6 @@ class ActorController(CommonAttributes):
     """Controls the behavior of the custom actors I have placed over the map."""
     
     def __init__(self):
-        self.stage = map_view.get_stage()
         self.black = Clutter.Box.new(Clutter.BinLayout())
         self.black.set_color(Clutter.Color.new(0, 0, 0, 64))
         self.label = Clutter.Text()
