@@ -20,10 +20,10 @@ from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
 from time import sleep
 
-from common import CommonAttributes, get_obj, map_view
+from common import get_obj, map_view
 from utils import format_coords
 
-class ActorController(CommonAttributes):
+class ActorController():
     """Controls the behavior of the custom actors I have placed over the map."""
     
     def __init__(self):

@@ -18,11 +18,11 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import CommonAttributes, get_obj, gst, map_view
+from common import get_obj, gst, map_view
 from utils import Coordinates, valid_coords
 from version import APPNAME
 
-class NavigationController(CommonAttributes):
+class NavigationController():
     """Controls how users navigate the map."""
     
     def __init__(self):

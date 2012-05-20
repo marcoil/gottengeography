@@ -19,10 +19,9 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from os.path import basename
 
-from common import CommonAttributes, get_obj, map_view
-from common import selected, modified
+from common import get_obj, map_view, selected, modified, photos
 
-class LabelController(CommonAttributes):
+class LabelController():
     """Control the behavior and creation of ChamplainLabels."""
     
     def __init__(self):
@@ -32,8 +31,7 @@ class LabelController(CommonAttributes):
         self.layer = Champlain.MarkerLayer()
         map_view.add_layer(self.layer)
         
-        self.selection.connect('changed', self.update_highlights,
-            self.photo.viewvalues())
+        self.selection.connect('changed', self.update_highlights)
         self.selection.connect('changed', self.selection_sensitivity,
             *[get_obj(name) for name in ('apply_button', 'close_button',
                 'save_button', 'revert_button', 'photos_with_buttons')])
@@ -48,17 +46,17 @@ class LabelController(CommonAttributes):
         label.set_property('reactive', True)
         label.connect('enter-event', self.hover, 1.05)
         label.connect('leave-event', self.hover, 1/1.05)
-        label.connect('drag-finish', self.drag_finish, self.photo)
+        label.connect('drag-finish', self.drag_finish)
         label.connect('button-press', self.clicked, self.selection,
-            self.select_all, self.photo)
+            self.select_all)
         self.layer.add_marker(label)
         return label
     
-    def update_highlights(self, selection, photos):
+    def update_highlights(self, selection):
         """Ensure only the selected labels are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
         selected.clear()
-        for photo in photos:
+        for photo in photos.values():
             # Maintain the 'selected' set() for easier iterating later.
             if selection.iter_is_selected(photo.iter):
                 selected.add(photo)
@@ -71,10 +69,10 @@ class LabelController(CommonAttributes):
         aply.set_sensitive(sensitive)
         save.set_sensitive(  len(modified) > 0)
         revert.set_sensitive(len(modified & selected) > 0)
-        if len(self.photo) > 0: left.show()
+        if len(photos) > 0: left.show()
         else:                   left.hide()
     
-    def clicked(self, label, event, selection, select_all, photos):
+    def clicked(self, label, event, selection, select_all):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
         
         The interface defined by this method is consistent with the behavior of
@@ -91,7 +89,7 @@ class LabelController(CommonAttributes):
             selection.unselect_all()
             selection.select_iter(photo.iter)
     
-    def drag_finish(self, label, event, photos):
+    def drag_finish(self, label, event):
         """Update photos with new locations after photos have been dragged."""
         photo = photos[label.get_name()]
         photo.set_location(label.get_latitude(), label.get_longitude())

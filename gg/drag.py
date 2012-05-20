@@ -19,11 +19,9 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from common import CommonAttributes, Struct
-from common import get_obj, map_view
-from common import selected
+from common import Struct, get_obj, map_view, selected, photos
 
-class DragController(CommonAttributes):
+class DragController():
     """Control the drag & drop behavior."""
     
     def __init__(self, open_files):
@@ -62,7 +60,7 @@ class DragController(CommonAttributes):
         # drag & drop but then don't need to have set_location called on them.
         dummy = Struct({'set_location': lambda x,y: None})
         for filename in files:
-            self.photo.get(filename, dummy).set_location(
+            photos.get(filename, dummy).set_location(
                 map_view.y_to_latitude(y),
                 map_view.x_to_longitude(x))
         

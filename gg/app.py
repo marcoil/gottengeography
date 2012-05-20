@@ -38,11 +38,10 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from common import polygons
-from common import get_obj, gst, map_view
-from common import Struct, CommonAttributes
+from common import polygons, tracks, photos
 from common import auto_timestamp_comparison
 from common import metadata, selected, modified
+from common import Struct, get_obj, gst, map_view
 from files import Photograph, GPXFile, KMLFile
 from utils import format_list, format_coords
 from utils import Coordinates, valid_coords
@@ -57,7 +56,7 @@ from preferences import PreferencesController
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 
-class GottenGeography(CommonAttributes):
+class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
     
     Just load your photos, and load a GPX file, and GottenGeography will
@@ -96,17 +95,17 @@ class GottenGeography(CommonAttributes):
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = self.photo.get(filename) or Photograph(filename, self.modify_summary)
+        photo = photos.get(filename) or Photograph(filename, self.modify_summary)
         photo.read()
-        if filename not in self.photo:
-            photo.iter           = self.liststore.append()
-            photo.label          = self.labels.add(filename)
-            self.photo[filename] = photo
+        if filename not in photos:
+            photo.iter       = self.liststore.append()
+            photo.label      = self.labels.add(filename)
+            photos[filename] = photo
         photo.position_label()
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
-        auto_timestamp_comparison(photo, self.tracks)
+        auto_timestamp_comparison(photo, tracks)
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -124,7 +123,7 @@ class GottenGeography(CommonAttributes):
         if len(gpx.tracks) < 2:
             return
         
-        self.tracks.update(gpx.tracks)
+        tracks.update(gpx.tracks)
         metadata.alpha = min(metadata.alpha, gpx.alpha)
         metadata.omega = max(metadata.omega, gpx.omega)
         
@@ -157,7 +156,7 @@ class GottenGeography(CommonAttributes):
         """Discard all selected photos."""
         for photo in selected.copy():
             self.labels.layer.remove_marker(photo.label)
-            del self.photo[photo.filename]
+            del photos[photo.filename]
             modified.discard(photo)
             self.liststore.remove(photo.iter)
         self.labels.select_all.set_active(False)
@@ -168,7 +167,7 @@ class GottenGeography(CommonAttributes):
             map_view.remove_layer(polygon)
         
         del polygons[:]
-        self.tracks.clear()
+        tracks.clear()
         metadata.omega = float('-inf')   # Final GPX track point
         metadata.alpha = float('inf')    # Initial GPX track point
         self.gpx_sensitivity()
@@ -205,8 +204,8 @@ class GottenGeography(CommonAttributes):
                 minutes += seconds / 60
                 self.secbutton.set_value(0)
                 self.minbutton.set_value(minutes)
-            for photo in self.photo.values():
-                auto_timestamp_comparison(photo, self.tracks)
+            for photo in photos.values():
+                auto_timestamp_comparison(photo, tracks)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -344,7 +343,7 @@ class GottenGeography(CommonAttributes):
     
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
-        gpx_sensitive = len(self.tracks) > 0
+        gpx_sensitive = len(tracks) > 0
         get_obj('clear_button').set_sensitive(gpx_sensitive)
         for widget in [ 'minutes', 'seconds', 'offset_label' ]:
             get_obj(widget).set_visible(gpx_sensitive)

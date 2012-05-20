@@ -27,12 +27,11 @@ from time import tzset
 
 import app
 from files import Photograph
-from utils import Coordinates
-from utils import maps_link, valid_coords
+from utils import Coordinates, maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from common import Struct, Polygon, polygons, map_view
+from common import tracks, photos, selected, modified
 from preferences import make_clutter_color
-from common import Struct, Polygon, map_view
-from common import selected, modified, polygons
 from build_info import PKG_DATA_DIR
 
 gui = app.GottenGeography()
@@ -71,7 +70,7 @@ class GottenGeographyTester(TestCase):
         
         # Start with a fresh state.
         system('git checkout demo')
-        self.assertEqual(len(gui.tracks), 0)
+        self.assertEqual(len(tracks), 0)
         self.assertEqual(len(polygons), 0)
         self.assertEqual(app.metadata.alpha, float('inf'))
         self.assertEqual(app.metadata.omega, float('-inf'))
@@ -97,7 +96,7 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(gui.liststore), 6)
         self.assertTrue(gui.liststore.get_iter_first())
         
-        for photo in gui.photo.values():
+        for photo in photos.values():
             self.assertFalse(photo in modified)
             self.assertFalse(photo in selected)
             self.assertFalse(photo.label.get_property('visible'))
@@ -168,7 +167,7 @@ class GottenGeographyTester(TestCase):
         gui.labels.selection.emit('changed')
         
         # Check that the GPX is loaded
-        self.assertEqual(len(gui.tracks), 374)
+        self.assertEqual(len(tracks), 374)
         self.assertEqual(len(polygons), 1)
         self.assertEqual(app.metadata.alpha, 1287259751)
         self.assertEqual(app.metadata.omega, 1287260756)
@@ -179,7 +178,7 @@ class GottenGeographyTester(TestCase):
         for button in ('revert', 'apply', 'close'):
             self.assertFalse(buttons[button].get_sensitive())
         
-        for photo in gui.photo.values():
+        for photo in photos.values():
             self.assertTrue(photo in modified)
             
             self.assertIsNotNone(photo.latitude)
@@ -207,7 +206,7 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(photo.label.get_property('opacity'), 255)
             
             # Make sure the Labels that we didn't click on are deselected.
-            for other in gui.photo.values():
+            for other in photos.values():
                 if other.filename == photo.filename: continue
                 self.assertFalse(gui.labels.selection.iter_is_selected(other.iter))
                 self.assertFalse(other in selected)
@@ -217,7 +216,7 @@ class GottenGeographyTester(TestCase):
         
         # Unload the GPX data.
         buttons['clear'].emit('clicked')
-        self.assertEqual(len(gui.tracks), 0)
+        self.assertEqual(len(tracks), 0)
         self.assertEqual(len(polygons), 0)
         self.assertFalse(buttons['clear'].get_sensitive())
         
@@ -239,7 +238,7 @@ class GottenGeographyTester(TestCase):
         buttons['close'].emit('clicked')
         for button in ('save', 'revert', 'apply', 'close'):
             self.assertFalse(buttons[button].get_sensitive())
-        self.assertEqual(len(gui.photo), 0)
+        self.assertEqual(len(photos), 0)
         self.assertEqual(len(modified), 0)
         self.assertEqual(len(selected), 0)
         

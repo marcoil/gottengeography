@@ -173,16 +173,6 @@ class Struct:
         self.__dict__.update(attributes)
 
 
-class CommonAttributes:
-    """Define attributes required by all Controller classes.
-    
-    This class is never instantiated, it is only inherited by classes that
-    need to manipulate the map, or the loaded photos.
-    """
-    tracks    = {}
-    photo     = {}
-
-
 # Initialize GtkBuilder, Champlain, and GSettings
 get_obj  = Builder().get_object
 map_view = ChamplainEmbedder().get_view()
@@ -192,4 +182,6 @@ gst      = GSettings()
 selected = set()
 modified = set()
 polygons = []
+tracks   = {}
+photos   = {}
 

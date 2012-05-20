@@ -19,7 +19,7 @@ from __future__ import division
 from os.path import join
 from re import compile as re_compile, IGNORECASE
 
-from common import CommonAttributes, get_obj, map_view
+from common import get_obj, map_view
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
 from utils import format_list
@@ -27,7 +27,7 @@ from utils import format_list
 # ListStore column names
 LOCATION, LATITUDE, LONGITUDE = range(3)
 
-class SearchController(CommonAttributes):
+class SearchController():
     """Controls the behavior for searching the map."""
     last_search = None
     

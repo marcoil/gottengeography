@@ -22,9 +22,8 @@ from gi.repository import Clutter
 from time import tzset
 from os import environ
 
-from common import polygons
-from common import CommonAttributes, Struct, get_obj, gst
-from common import auto_timestamp_comparison, map_view
+from common import Struct, polygons, tracks, photos, map_view
+from common import auto_timestamp_comparison, get_obj, gst
 from territories import tz_regions, get_timezone
 
 def make_clutter_color(color):
@@ -85,7 +84,7 @@ map_sources = {
 }
 
 
-class PreferencesController(CommonAttributes):
+class PreferencesController():
     """Controls the behavior of the preferences dialog."""
     gpx_timezone = ''
     
@@ -166,9 +165,9 @@ class PreferencesController(CommonAttributes):
             if region is not None and city is not None:
                 environ['TZ'] = '%s/%s' % (region, city)
         tzset()
-        for photo in self.photo.values():
+        for photo in photos.values():
             photo.calculate_timestamp()
-            auto_timestamp_comparison(photo, self.tracks)
+            auto_timestamp_comparison(photo, tracks)
     
     def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""
