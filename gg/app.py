@@ -295,10 +295,6 @@ class GottenGeography(CommonAttributes):
         self.labels    = LabelController()
         self.actors    = ActorController()
         
-        self.labels.selection.connect("changed", self.selection_sensitivity,
-            *[get_obj(name) for name in ("apply_button", "close_button",
-                "save_button", "revert_button", "photos_with_buttons")])
-        
         about_dialog = get_obj("about")
         about_dialog.set_version(VERSION)
         about_dialog.set_program_name(APPNAME)
@@ -352,18 +348,6 @@ class GottenGeography(CommonAttributes):
         gpx_sensitive = len(self.tracks) > 0
         for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
             get_obj(widget).set_sensitive(gpx_sensitive)
-    
-    def selection_sensitivity(self, selection, aply, close, save, revert, left):
-        """Control the sensitivity of various widgets."""
-        assert self.selected is CommonAttributes.selected
-        assert self.modified is CommonAttributes.modified
-        sensitive = selection.count_selected_rows() > 0
-        close.set_sensitive(sensitive)
-        aply.set_sensitive(sensitive)
-        save.set_sensitive(  len(self.modified) > 0)
-        revert.set_sensitive(len(self.modified & self.selected) > 0)
-        if len(self.photo) > 0: left.show()
-        else:                   left.hide()
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
