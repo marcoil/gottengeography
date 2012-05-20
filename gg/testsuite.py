@@ -72,8 +72,8 @@ class GottenGeographyTester(TestCase):
         system('git checkout demo')
         self.assertEqual(len(gui.tracks), 0)
         self.assertEqual(len(gui.polygons), 0)
-        self.assertEqual(gui.metadata.alpha, float('inf'))
-        self.assertEqual(gui.metadata.omega, float('-inf'))
+        self.assertEqual(app.metadata.alpha, float('inf'))
+        self.assertEqual(app.metadata.omega, float('-inf'))
         
         # No buttons should be sensitive yet because nothing's loaded.
         buttons = {}
@@ -169,8 +169,8 @@ class GottenGeographyTester(TestCase):
         # Check that the GPX is loaded
         self.assertEqual(len(gui.tracks), 374)
         self.assertEqual(len(gui.polygons), 1)
-        self.assertEqual(gui.metadata.alpha, 1287259751)
-        self.assertEqual(gui.metadata.omega, 1287260756)
+        self.assertEqual(app.metadata.alpha, 1287259751)
+        self.assertEqual(app.metadata.omega, 1287260756)
         
         # The save button should be sensitive because loading GPX modifies
         # photos, but nothing is selected so the others are insensitive.
@@ -506,21 +506,21 @@ S 10.00000, W 10.00000
         seconds = get_obj("seconds")
         seconds.set_value(0)
         minutes.set_value(0)
-        self.assertEqual(gui.metadata.delta, 0)
+        self.assertEqual(app.metadata.delta, 0)
         minutes.set_value(1)
-        self.assertEqual(gui.metadata.delta, 60)
+        self.assertEqual(app.metadata.delta, 60)
         seconds.set_value(1)
-        self.assertEqual(gui.metadata.delta, 61)
+        self.assertEqual(app.metadata.delta, 61)
         
         seconds.set_value(59)
-        self.assertEqual(gui.metadata.delta, 119)
+        self.assertEqual(app.metadata.delta, 119)
         minutes.set_value(59)
-        self.assertEqual(gui.metadata.delta, 3599)
+        self.assertEqual(app.metadata.delta, 3599)
         
         seconds.set_value(60)
         self.assertEqual(seconds.get_value(), 0)
         self.assertEqual(minutes.get_value(), 60)
-        self.assertEqual(gui.metadata.delta, 3600)
+        self.assertEqual(app.metadata.delta, 3600)
     
     def test_search(self):
         """Make sure the search box functions."""

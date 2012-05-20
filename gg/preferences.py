@@ -167,7 +167,7 @@ class PreferencesController(CommonAttributes):
         tzset()
         for photo in self.photo.values():
             photo.calculate_timestamp()
-            auto_timestamp_comparison(photo, self.tracks, self.metadata)
+            auto_timestamp_comparison(photo, self.tracks)
     
     def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""

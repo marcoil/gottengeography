@@ -38,6 +38,7 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from common import metadata
 from common import get_obj, gst, map_view
 from common import Struct, CommonAttributes
 from common import auto_timestamp_comparison
@@ -104,7 +105,7 @@ class GottenGeography(CommonAttributes):
         self.modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
-        auto_timestamp_comparison(photo, self.tracks, self.metadata)
+        auto_timestamp_comparison(photo, self.tracks)
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -123,8 +124,8 @@ class GottenGeography(CommonAttributes):
             return
         
         self.tracks.update(gpx.tracks)
-        self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
-        self.metadata.omega = max(self.metadata.omega, gpx.omega)
+        metadata.alpha = min(metadata.alpha, gpx.alpha)
+        metadata.omega = max(metadata.omega, gpx.omega)
         
         map_view.emit("realize")
         map_view.set_zoom_level(map_view.get_max_zoom_level())
@@ -163,14 +164,13 @@ class GottenGeography(CommonAttributes):
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
         assert self.polygons is CommonAttributes.polygons
-        assert self.metadata is CommonAttributes.metadata
         for polygon in self.polygons:
             map_view.remove_layer(polygon)
         
         del self.polygons[:]
         self.tracks.clear()
-        self.metadata.omega = float('-inf')   # Final GPX track point
-        self.metadata.alpha = float('inf')    # Initial GPX track point
+        metadata.omega = float('-inf')   # Final GPX track point
+        metadata.alpha = float('inf')    # Initial GPX track point
         self.gpx_sensitivity()
     
     def save_all_files(self, widget=None):
@@ -199,14 +199,14 @@ class GottenGeography(CommonAttributes):
         seconds = self.secbutton.get_value()
         minutes = self.minbutton.get_value()
         offset  = int((minutes * 60) + seconds)
-        if offset != self.metadata.delta:
-            self.metadata.delta = offset
+        if offset != metadata.delta:
+            metadata.delta = offset
             if abs(seconds) == 60 and abs(minutes) != 60:
                 minutes += seconds / 60
                 self.secbutton.set_value(0)
                 self.minbutton.set_value(minutes)
             for photo in self.photo.values():
-                auto_timestamp_comparison(photo, self.tracks, self.metadata)
+                auto_timestamp_comparison(photo, self.tracks)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -332,7 +332,7 @@ class GottenGeography(CommonAttributes):
         self.labels.selection.emit("changed")
         self.clear_all_gpx()
         
-        self.metadata.delta = 0
+        metadata.delta = 0
         self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
         gst.bind("offset-minutes", self.minbutton, "value")
         gst.bind("offset-seconds", self.secbutton, "value")

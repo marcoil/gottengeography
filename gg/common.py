@@ -23,15 +23,19 @@ from os.path import join
 from build_info import PKG_DATA_DIR
 from version import PACKAGE
 
+class metadata:
+    """Records clock offset and times of first/last gps track points"""
+    delta = 0
+    omega = float('-inf')
+    alpha = float('inf')
 
 # This function is the embodiment of my applications core logic.
 # Everything else is just implementation details.
-def auto_timestamp_comparison(photo, points, metadata):
+def auto_timestamp_comparison(photo, points):
     """Use GPX data to calculate photo coordinates and elevation.
     
     photo:    A Photograph object.
     points:   A dictionary mapping epoch seconds to ChamplainCoordinates.
-    metadata: A Struct object defining clock offset and first/last points.
     """
     if photo.manual or len(points) < 2:
         return
@@ -175,7 +179,6 @@ class CommonAttributes:
     This class is never instantiated, it is only inherited by classes that
     need to manipulate the map, or the loaded photos.
     """
-    metadata  = Struct()
     selected  = set()
     modified  = set()
     polygons  = []
