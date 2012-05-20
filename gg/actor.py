@@ -16,8 +16,9 @@
 
 from __future__ import division
 
-from gi.repository import Champlain, Clutter
+from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
+from time import sleep
 
 from common import CommonAttributes, get_obj, map_view
 from utils import format_coords
