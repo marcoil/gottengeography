@@ -47,6 +47,7 @@ from utils import make_clutter_color, valid_coords
 from utils import format_list, format_coords
 from utils import Coordinates, Polygon
 
+from actor import ActorController
 from label import LabelController
 from search import SearchController
 from navigation import NavigationController
@@ -54,58 +55,6 @@ from preferences import PreferencesController
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
-
-
-class ActorController(CommonAttributes):
-    """Controls the behavior of the custom actors I have placed over the map."""
-    
-    def __init__(self):
-        self.stage = self.map_view.get_stage()
-        self.black = Clutter.Box.new(Clutter.BinLayout())
-        self.black.set_color(Clutter.Color.new(0, 0, 0, 64))
-        self.label = Clutter.Text()
-        self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
-        self.xhair = Clutter.Rectangle.new_with_color(
-            Clutter.Color.new(0, 0, 0, 64))
-        for signal in [ 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::' + signal, self.display,
-                get_obj("maps_link"), self.label)
-        self.map_view.connect('notify::width',
-            lambda view, param, black:
-                black.set_size(view.get_width(), 30),
-            self.black)
-        
-        scale = Champlain.Scale.new()
-        scale.connect_view(self.map_view)
-        self.map_view.bin_layout_add(scale,
-            Clutter.BinAlignment.START, Clutter.BinAlignment.END)
-        self.map_view.bin_layout_add(self.black,
-            Clutter.BinAlignment.START, Clutter.BinAlignment.START)
-        self.black.get_layout_manager().add(self.label,
-            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
-    
-    def display(self, view, param, mlink, label):
-        """Display map center coordinates when they change."""
-        lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
-        label.set_markup(format_coords(lat, lon))
-        mlink.set_markup(
-            '<a title="%s" href="http://maps.google.com/maps?ll=%s,%s&amp;spn=%s,%s">Google</a>'
-            % (_("View in Google Maps"), lat, lon,
-            lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
-    
-    def animate_in(self, start=400):
-        """Animate the crosshair."""
-        self.map_view.bin_layout_add(self.xhair,
-            Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
-        self.xhair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        for i in xrange(start, 7, -1):
-            self.xhair.set_size(i, i)
-            opacity = 0.6407035175879398 * (400 - i) # don't ask
-            for actor in [self.xhair, self.label, self.black]:
-                actor.set_opacity(opacity)
-            while Gtk.events_pending():
-                Gtk.main_iteration()
-            sleep(0.002)
 
 class GottenGeography(CommonAttributes):
     """Provides a graphical interface to automagically geotag photos.
