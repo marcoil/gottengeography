@@ -22,9 +22,9 @@ from time import tzset
 from os import environ
 
 from common import CommonAttributes, Struct, get_obj, gst
-from common import auto_timestamp_comparison
-from utils import make_clutter_color
+from common import auto_timestamp_comparison, map_view
 from territories import tz_regions, get_timezone
+from utils import make_clutter_color
 
 def create_map_source(id, name, license, uri, minzoom, maxzoom, tile_size, uri_format):
     renderer  = Champlain.ImageRenderer()
@@ -102,7 +102,7 @@ class PreferencesController(CommonAttributes):
         
         radio_group = []
         map_menu = get_obj('map_source_menu')
-        gst.bind_with_convert('map-source-id', self.map_view, 'map-source',
+        gst.bind_with_convert('map-source-id', map_view, 'map-source',
             map_sources.get, lambda x: x.get_id())
         last_source = gst.get('map-source-id')
         for i, source_id in enumerate(sorted(map_sources.keys())):
@@ -191,5 +191,5 @@ class PreferencesController(CommonAttributes):
     def map_menu_clicked(self, menu_item, mapid):
         """Change the map source when the user selects a different one."""
         if menu_item.get_active():
-            self.map_view.set_map_source(map_sources[mapid])
+            map_view.set_map_source(map_sources[mapid])
 

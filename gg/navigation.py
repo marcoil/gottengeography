@@ -18,7 +18,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import CommonAttributes, get_obj, gst
+from common import CommonAttributes, get_obj, gst, map_view
 from utils import Coordinates, valid_coords
 from version import APPNAME
 
@@ -31,12 +31,12 @@ class NavigationController(CommonAttributes):
         back_button     = get_obj('back_button')
         zoom_in_button  = get_obj('zoom_in_button')
         zoom_out_button = get_obj('zoom_out_button')
-        zoom_out_button.connect('clicked', perform_zoom, self.map_view.zoom_out)
-        zoom_in_button.connect('clicked', perform_zoom, self.map_view.zoom_in)
-        back_button.connect('clicked', self.go_back, self.map_view)
+        zoom_out_button.connect('clicked', perform_zoom, map_view.zoom_out)
+        zoom_in_button.connect('clicked', perform_zoom, map_view.zoom_in)
+        back_button.connect('clicked', self.go_back, map_view)
         
         for key in ['latitude', 'longitude', 'zoom-level']:
-            gst.bind(key, self.map_view, key)
+            gst.bind(key, map_view, key)
         
         accel = Gtk.AccelGroup()
         window = get_obj('main')
@@ -44,12 +44,12 @@ class NavigationController(CommonAttributes):
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
-        self.map_view.connect('notify::zoom-level', self.zoom_button_sensitivity,
+        map_view.connect('notify::zoom-level', self.zoom_button_sensitivity,
             zoom_in_button, zoom_out_button)
-        self.map_view.connect('realize', self.remember_location)
-        self.map_view.connect('animation-completed', self.set_window_title,
+        map_view.connect('realize', self.remember_location)
+        map_view.connect('animation-completed', self.set_window_title,
             window.set_title, Coordinates())
-        self.map_view.emit('animation-completed')
+        map_view.emit('animation-completed')
     
     def set_window_title(self, map_view, set_title, center):
         """Add the current location we are looking at into the titlebar."""
@@ -60,7 +60,7 @@ class NavigationController(CommonAttributes):
     
     def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
         """Move the map view by 5% of its length in the given direction."""
-        key, view = Gdk.keyval_name(keyval), self.map_view
+        key, view = Gdk.keyval_name(keyval), map_view
         factor    = (0.45 if key in ('Up', 'Left') else 0.55)
         lat       = view.get_center_latitude()
         lon       = view.get_center_longitude()
@@ -91,7 +91,7 @@ class NavigationController(CommonAttributes):
             gst.set('history', history)
         else:
             gst.reset('history')
-        self.map_view.emit('animation-completed')
+        map_view.emit('animation-completed')
     
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
         """Ensure zoom buttons are only sensitive when they need to be."""

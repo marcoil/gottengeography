@@ -137,6 +137,14 @@ class GSettings(Gio.Settings):
         key_changed(self,key) # init default state
 
 
+class ChamplainEmbedder(GtkChamplain.Embed):
+    """Put the map view onto the main window."""
+    
+    def __init__(self):
+        GtkChamplain.Embed.__init__(self)
+        get_obj("map_container").add_with_viewport(self)
+
+
 class Struct:
     """This is a generic object which can be assigned arbitrary attributes."""
     
@@ -150,9 +158,6 @@ class CommonAttributes:
     This class is never instantiated, it is only inherited by classes that
     need to manipulate the map, or the loaded photos.
     """
-    champlain = GtkChamplain.Embed()
-    map_view  = champlain.get_view()
-    slide_to  = map_view.go_to
     metadata  = Struct()
     selected  = set()
     modified  = set()
@@ -161,7 +166,8 @@ class CommonAttributes:
     photo     = {}
 
 
-# Initialize GtkBuilder and GSettings
-get_obj = Builder().get_object
-gst = GSettings()
+# Initialize Champlain, GtkBuilder, and GSettings
+map_view = ChamplainEmbedder().get_view()
+get_obj  = Builder().get_object
+gst      = GSettings()
 

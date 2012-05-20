@@ -20,7 +20,7 @@ from os.path import join
 from re import compile as re_compile, IGNORECASE
 
 from territories import get_state, get_country
-from common import CommonAttributes, get_obj
+from common import CommonAttributes, get_obj, map_view
 from build_info import PKG_DATA_DIR
 from utils import format_list
 
@@ -34,15 +34,16 @@ class SearchController(CommonAttributes):
     def __init__(self):
         """Make the search box and insert it into the window."""
         self.results = get_obj('search_results')
+        self.slide_to = map_view.go_to
         search = get_obj('search_completion')
         search.set_match_func(
             lambda c, s, itr, get: self.search(get(itr, LOCATION) or ''),
             self.results.get_value)
-        search.connect('match-selected', self.search_completed, self.map_view)
+        search.connect('match-selected', self.search_completed, map_view)
         entry = get_obj('search_box')
         entry.connect('changed', self.load_results, self.results.append)
         entry.connect('icon-release', lambda entry, i, e: entry.set_text(''))
-        entry.connect('activate', self.repeat_last_search, self.results, self.map_view)
+        entry.connect('activate', self.repeat_last_search, self.results, map_view)
     
     def load_results(self, entry, append, searched=set()):
         """Load a few search results based on what's been typed.
@@ -72,7 +73,7 @@ class SearchController(CommonAttributes):
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
         self.last_search = itr.copy()
-        self.map_view.emit('realize')
+        map_view.emit('realize')
         view.set_zoom_level(11)
         self.slide_to(*model.get(itr, LATITUDE, LONGITUDE))
     

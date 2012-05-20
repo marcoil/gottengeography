@@ -19,7 +19,7 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from os.path import basename
 
-from common import CommonAttributes, get_obj
+from common import CommonAttributes, get_obj, map_view
 
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
@@ -29,9 +29,9 @@ class LabelController(CommonAttributes):
         self.selection  = get_obj("photos_view").get_selection()
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.layer = Champlain.MarkerLayer()
-        self.map_view.add_layer(self.layer)
+        map_view.add_layer(self.layer)
         self.selection.connect("changed", self.update_highlights,
-            self.map_view, self.selected, self.photo.viewvalues())
+            map_view, self.selected, self.photo.viewvalues())
     
     def add(self, name):
         """Create a new ChamplainLabel and add it to the map."""
@@ -81,7 +81,7 @@ class LabelController(CommonAttributes):
         photo = photos[label.get_name()]
         photo.set_location(label.get_latitude(), label.get_longitude())
         photo.manual = True
-        self.map_view.emit("animation-completed")
+        map_view.emit("animation-completed")
     
     def hover(self, label, event, factor):
         """Scale a ChamplainLabel by the given factor."""

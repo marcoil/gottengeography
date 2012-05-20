@@ -40,7 +40,7 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from common import Struct, CommonAttributes
+from common import Struct, CommonAttributes, map_view
 from common import get_obj, gst, auto_timestamp_comparison
 from files import Photograph, GPXFile, KMLFile
 from utils import make_clutter_color, valid_coords
@@ -89,7 +89,7 @@ class GottenGeography(CommonAttributes):
             self.status_message(_("Could not open: ") + format_list(invalid_files))
         self.progressbar.hide()
         self.labels.selection.emit("changed")
-        self.map_view.emit("animation-completed")
+        map_view.emit("animation-completed")
     
     def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
@@ -130,13 +130,13 @@ class GottenGeography(CommonAttributes):
         self.metadata.alpha = min(self.metadata.alpha, gpx.alpha)
         self.metadata.omega = max(self.metadata.omega, gpx.omega)
         
-        self.map_view.emit("realize")
-        self.map_view.set_zoom_level(self.map_view.get_max_zoom_level())
+        map_view.emit("realize")
+        map_view.set_zoom_level(map_view.get_max_zoom_level())
         bounds = Champlain.BoundingBox.new()
         for poly in self.polygons:
             bounds.compose(poly.get_bounding_box())
         gpx.latitude, gpx.longitude = bounds.get_center()
-        self.map_view.ensure_visible(bounds, False)
+        map_view.ensure_visible(bounds, False)
         
         self.prefs.gpx_timezone = gpx.lookup_geoname()
         self.prefs.set_timezone()
@@ -169,7 +169,7 @@ class GottenGeography(CommonAttributes):
         assert self.polygons is CommonAttributes.polygons
         assert self.metadata is CommonAttributes.metadata
         for polygon in self.polygons:
-            self.map_view.remove_layer(polygon)
+            map_view.remove_layer(polygon)
         
         del self.polygons[:]
         self.tracks.clear()
@@ -205,11 +205,11 @@ class GottenGeography(CommonAttributes):
     
     def photo_drag_end(self, widget, drag_context, x, y, data, info, time):
         """Accept photo drops on the map and set the location accordingly."""
-        lat = self.map_view.y_to_latitude(y)
-        lon = self.map_view.x_to_longitude(x)
+        lat = map_view.y_to_latitude(y)
+        lon = map_view.x_to_longitude(x)
         for photo in self.selected:
             photo.set_location(lat, lon)
-        self.map_view.emit("animation-completed")
+        map_view.emit("animation-completed")
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -252,7 +252,7 @@ class GottenGeography(CommonAttributes):
         self.polygons.append(polygon)
         # Emitting this signal ensures the new polygon gets the correct color.
         self.prefs.colorpicker.emit("color-changed")
-        self.map_view.add_layer(polygon)
+        map_view.add_layer(polygon)
         return polygon.append_point
     
 ################################################################################
@@ -340,7 +340,6 @@ class GottenGeography(CommonAttributes):
         photos_view.drag_source_add_text_targets()
         
         map_container = get_obj("map_container")
-        map_container.add_with_viewport(self.champlain)
         map_container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         map_container.connect("drag-data-received", self.photo_drag_end)
         map_container.drag_dest_add_text_targets()
@@ -366,7 +365,7 @@ class GottenGeography(CommonAttributes):
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
             "about_button":      [self.about_dialog, about_dialog],
-            "apply_button":      [self.apply_selected_photos, self.selected, self.map_view],
+            "apply_button":      [self.apply_selected_photos, self.selected, map_view],
             "select_all_button": [self.toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
@@ -381,7 +380,7 @@ class GottenGeography(CommonAttributes):
         
         save_size = lambda v,s,size: gst.set('window-size', size())
         for prop in ['width', 'height']:
-            self.map_view.connect('notify::' + prop, save_size, window.get_size)
+            map_view.connect('notify::' + prop, save_size, window.get_size)
         
         map_source_button = get_obj("map_source_label").get_parent()
         if map_source_button:

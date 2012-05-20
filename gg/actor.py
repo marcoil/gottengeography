@@ -19,14 +19,14 @@ from __future__ import division
 from gi.repository import Champlain, Clutter
 from gettext import gettext as _
 
-from common import CommonAttributes, get_obj
+from common import CommonAttributes, get_obj, map_view
 from utils import format_coords
 
 class ActorController(CommonAttributes):
     """Controls the behavior of the custom actors I have placed over the map."""
     
     def __init__(self):
-        self.stage = self.map_view.get_stage()
+        self.stage = map_view.get_stage()
         self.black = Clutter.Box.new(Clutter.BinLayout())
         self.black.set_color(Clutter.Color.new(0, 0, 0, 64))
         self.label = Clutter.Text()
@@ -34,18 +34,18 @@ class ActorController(CommonAttributes):
         self.xhair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 64))
         for signal in [ 'latitude', 'longitude' ]:
-            self.map_view.connect('notify::' + signal, self.display,
+            map_view.connect('notify::' + signal, self.display,
                 get_obj("maps_link"), self.label)
-        self.map_view.connect('notify::width',
+        map_view.connect('notify::width',
             lambda view, param, black:
                 black.set_size(view.get_width(), 30),
             self.black)
         
         scale = Champlain.Scale.new()
-        scale.connect_view(self.map_view)
-        self.map_view.bin_layout_add(scale,
+        scale.connect_view(map_view)
+        map_view.bin_layout_add(scale,
             Clutter.BinAlignment.START, Clutter.BinAlignment.END)
-        self.map_view.bin_layout_add(self.black,
+        map_view.bin_layout_add(self.black,
             Clutter.BinAlignment.START, Clutter.BinAlignment.START)
         self.black.get_layout_manager().add(self.label,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
@@ -61,7 +61,7 @@ class ActorController(CommonAttributes):
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
-        self.map_view.bin_layout_add(self.xhair,
+        map_view.bin_layout_add(self.xhair,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
         self.xhair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
         for i in xrange(start, 7, -1):
