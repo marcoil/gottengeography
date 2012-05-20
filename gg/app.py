@@ -41,9 +41,8 @@ from sys import argv
 
 from common import Struct, CommonAttributes, map_view
 from common import get_obj, gst, auto_timestamp_comparison
+from utils import format_list, format_coords, valid_coords
 from files import Photograph, GPXFile, KMLFile
-from utils import make_clutter_color, valid_coords
-from utils import format_list, format_coords
 from utils import Coordinates, Polygon
 
 from actor import ActorController

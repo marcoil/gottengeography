@@ -17,7 +17,7 @@
 from __future__ import division
 
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import Clutter, Champlain
+from gi.repository import Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -28,11 +28,6 @@ from pyexiv2 import Rational
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
-
-def make_clutter_color(color):
-    """Generate a Clutter.Color from the currently chosen color."""
-    return Clutter.Color.new(
-        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
 ################################################################################
 # GPS math functions. These methods convert numbers into other numbers.

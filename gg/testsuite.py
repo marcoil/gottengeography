@@ -30,8 +30,9 @@ from files import Photograph
 from common import Struct, map_view
 from build_info import PKG_DATA_DIR
 from utils import Coordinates, Polygon
-from utils import make_clutter_color, maps_link, valid_coords
+from utils import maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from preferences import make_clutter_color
 
 gui = app.GottenGeography()
 get_obj = app.get_obj

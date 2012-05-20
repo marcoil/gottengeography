@@ -18,13 +18,18 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 from gi.repository import Champlain
+from gi.repository import Clutter
 from time import tzset
 from os import environ
 
 from common import CommonAttributes, Struct, get_obj, gst
 from common import auto_timestamp_comparison, map_view
 from territories import tz_regions, get_timezone
-from utils import make_clutter_color
+
+def make_clutter_color(color):
+    """Generate a Clutter.Color from the currently chosen color."""
+    return Clutter.Color.new(
+        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
 def create_map_source(id, name, license, uri, minzoom, maxzoom, tile_size, uri_format):
     renderer  = Champlain.ImageRenderer()
