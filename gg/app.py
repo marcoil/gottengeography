@@ -346,8 +346,9 @@ class GottenGeography(CommonAttributes):
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
         gpx_sensitive = len(self.tracks) > 0
-        for widget in [ "minutes", "seconds", "offset_label", "clear_button" ]:
-            get_obj(widget).set_sensitive(gpx_sensitive)
+        get_obj('clear_button').set_sensitive(gpx_sensitive)
+        for widget in [ 'minutes', 'seconds', 'offset_label' ]:
+            get_obj(widget).set_visible(gpx_sensitive)
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
