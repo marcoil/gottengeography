@@ -166,8 +166,8 @@ class CommonAttributes:
     photo     = {}
 
 
-# Initialize Champlain, GtkBuilder, and GSettings
-map_view = ChamplainEmbedder().get_view()
+# Initialize GtkBuilder, Champlain, and GSettings
 get_obj  = Builder().get_object
+map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
 
