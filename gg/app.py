@@ -112,7 +112,7 @@ class GottenGeography(CommonAttributes):
         start_time = clock()
         
         open_file = KMLFile if filename[-3:].lower() == 'kml' else GPXFile
-        gpx = open_file(filename, self.gpx_pulse, self.create_polygon)
+        gpx = open_file(filename, self.progressbar, self.create_polygon)
         
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
@@ -216,16 +216,6 @@ class GottenGeography(CommonAttributes):
         """Toggle the selection of photos."""
         if button.get_active(): selection.select_all()
         else:                   selection.unselect_all()
-    
-    def gpx_pulse(self, gpx):
-        """Update the display during GPX parsing.
-        
-        This is called by GPXLoader every 0.2s during parsing so that we
-        can prevent the display from looking hung.
-        """
-        self.progressbar.pulse()
-        while Gtk.events_pending():
-            Gtk.main_iteration()
     
     def create_polygon(self):
         """Get a newly created Champlain.MarkerLayer and decorate it."""

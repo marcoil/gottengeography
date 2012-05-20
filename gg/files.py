@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dateutil.parser import parse as parse_date
-from gi.repository import GdkPixbuf, Gio, GObject
+from gi.repository import Gtk, GdkPixbuf, Gio, GObject
 from re import compile as re_compile
 from pyexiv2 import ImageMetadata
 from time import mktime, clock
@@ -175,9 +175,9 @@ class TrackFile(Coordinates):
     the base class.
     """
     
-    def __init__(self, filename, callback, add_polygon):
+    def __init__(self, filename, progressbar, add_polygon):
         self.add_poly = add_polygon
-        self.pulse    = callback
+        self.progress = progressbar
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
@@ -195,7 +195,9 @@ class TrackFile(Coordinates):
     def element_end(self, name, state):
         """Occasionally redraw the screen so the user can see what's happening."""
         if clock() - self.clock > .2:
-            self.pulse(self)
+            self.progress.pulse()
+            while Gtk.events_pending():
+                Gtk.main_iteration()
             self.clock = clock()
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
@@ -205,9 +207,9 @@ split = re_compile(r'[:TZ-]').split
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
-    def __init__(self, filename, callback, add_polygon):
+    def __init__(self, filename, progressbar, add_polygon):
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-        TrackFile.__init__(self, filename, callback, add_polygon)
+        TrackFile.__init__(self, filename, progressbar, add_polygon)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
