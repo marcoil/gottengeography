@@ -262,9 +262,6 @@ class GottenGeography(CommonAttributes):
 ################################################################################
     
     def __init__(self):
-        get_obj("toolbar").get_style_context().add_class(
-            Gtk.STYLE_CLASS_PRIMARY_TOOLBAR)
-        
         self.progressbar = get_obj("progressbar")
         self.status      = get_obj("status")
         
