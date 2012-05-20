@@ -129,7 +129,8 @@ class GottenGeographyTester(TestCase):
             
             # 'Drag' a photo onto the map and make sure that also works.
             gui.selected.add(photo)
-            gui.photo_drag_end(None, None, 20, 20, None, None, None)
+            data = Struct({'get_text': lambda: photo.filename})
+            gui.drag.photo_drag_end(None, None, 20, 20, data, None, None, lambda x: None)
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
             self.assertEqual(photo.label.get_longitude(), photo.longitude)
             self.assertGreater(len(photo.pretty_geoname()), 5)

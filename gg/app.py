@@ -32,7 +32,6 @@ from gi.repository import Gtk, Gdk
 from gi.repository import Champlain
 from os.path import basename, abspath
 from gettext import gettext as _
-from urlparse import urlparse
 from time import clock
 from sys import argv
 
@@ -46,6 +45,7 @@ from utils import format_list, format_coords, valid_coords
 from files import Photograph, GPXFile, KMLFile
 from utils import Coordinates
 
+from drag import DragController
 from actor import ActorController
 from label import LabelController
 from search import SearchController
@@ -67,17 +67,12 @@ class GottenGeography(CommonAttributes):
 # File data handling. These methods interact with files (loading, saving, etc)
 ################################################################################
     
-    def file_dragged_in(self, widget, context, x, y, data, info, time):
-        """Load files that have been dragged in."""
-        self.open_files(data.get_uris())
-    
     def open_files(self, files):
         """Attempt to load all of the specified files."""
         self.progressbar.show()
         invalid_files, total = [], len(files)
-        # abspath is used to correct relative paths entered on the commandline,
-        # urlparse is used to correct URIs given from drag&drop operations.
-        for i, name in enumerate([abspath(urlparse(f).path) for f in files], 1):
+        # abspath is used to correct relative paths entered on the commandline
+        for i, name in enumerate([abspath(f) for f in files], 1):
             self.redraw_interface(i / total, basename(name))
             try:
                 try:            self.load_img_from_file(name)
@@ -196,19 +191,6 @@ class GottenGeography(CommonAttributes):
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
-    
-    def photo_drag_start(self, widget, drag_context, data, info, time):
-        """Acknowledge that a drag has initiated."""
-        for photo in self.selected:
-            data.set_text(photo.filename, -1)
-    
-    def photo_drag_end(self, widget, drag_context, x, y, data, info, time):
-        """Accept photo drops on the map and set the location accordingly."""
-        lat = map_view.y_to_latitude(y)
-        lon = map_view.x_to_longitude(x)
-        for photo in self.selected:
-            photo.set_location(lat, lon)
-        map_view.emit("animation-completed")
     
     def time_offset_changed(self, widget):
         """Update all photos each time the camera's clock is corrected."""
@@ -331,18 +313,9 @@ class GottenGeography(CommonAttributes):
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        photos_view = get_obj("photos_view")
-        photos_view.append_column(column)
-        photos_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
-            [], Gdk.DragAction.COPY)
-        photos_view.connect("drag-data-get", self.photo_drag_start)
-        photos_view.drag_source_add_text_targets()
+        get_obj("photos_view").append_column(column)
         
-        map_container = get_obj("map_container")
-        map_container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
-        map_container.connect("drag-data-received", self.photo_drag_end)
-        map_container.drag_dest_add_text_targets()
-        
+        self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
         self.search    = SearchController()
         self.prefs     = PreferencesController()
@@ -400,11 +373,6 @@ class GottenGeography(CommonAttributes):
         
         get_obj("open").connect("update-preview", self.update_preview,
             get_obj("preview_label"), get_obj("preview_image"))
-        
-        drop_target = get_obj("photos_and_map")
-        drop_target.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
-        drop_target.connect("drag-data-received", self.file_dragged_in)
-        drop_target.drag_dest_add_uri_targets()
     
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
