@@ -47,6 +47,7 @@ from files import Photograph, GPXFile, KMLFile
 from utils import format_list, format_coords, valid_coords
 from utils import make_clutter_color, get_file, map_sources
 from utils import Coordinates, Polygon
+from navigation import NavigationController
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
@@ -98,84 +99,6 @@ def auto_timestamp_comparison(photo, points, metadata):
                (hi_point.ele * hi_ratio))
     
     photo.set_location(lat, lon, ele)
-
-
-class NavigationController(CommonAttributes):
-    """Controls how users navigate the map."""
-    
-    def __init__(self):
-        """Start the map at the previous location, and connect signals."""
-        perform_zoom    = lambda button, zoom: zoom()
-        back_button     = get_obj("back_button")
-        zoom_in_button  = get_obj("zoom_in_button")
-        zoom_out_button = get_obj("zoom_out_button")
-        zoom_out_button.connect("clicked", perform_zoom, self.map_view.zoom_out)
-        zoom_in_button.connect("clicked", perform_zoom, self.map_view.zoom_in)
-        back_button.connect("clicked", self.go_back, self.map_view)
-        
-        for key in ['latitude', 'longitude', 'zoom-level']:
-            gst.bind(key, self.map_view, key)
-        
-        accel = Gtk.AccelGroup()
-        window = get_obj("main")
-        window.add_accel_group(accel)
-        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            accel.connect(Gdk.keyval_from_name(key),
-                Gdk.ModifierType.MOD1_MASK, 0, self.move_by_arrow_keys)
-        self.map_view.connect("notify::zoom-level", self.zoom_button_sensitivity,
-            zoom_in_button, zoom_out_button)
-        self.map_view.connect("realize", self.remember_location)
-        self.map_view.connect("animation-completed", self.set_window_title,
-            window.set_title, Coordinates())
-        self.map_view.emit("animation-completed")
-    
-    def set_window_title(self, map_view, set_title, center):
-        """Add the current location we are looking at into the titlebar."""
-        center.latitude  = map_view.get_center_latitude()
-        center.longitude = map_view.get_center_longitude()
-        center.lookup_geoname()
-        set_title("%s - %s" % (APPNAME, center.pretty_geoname(False)))
-    
-    def move_by_arrow_keys(self, accel_group, acceleratable, keyval, modifier):
-        """Move the map view by 5% of its length in the given direction."""
-        key, view = Gdk.keyval_name(keyval), self.map_view
-        factor    = (0.45 if key in ("Up", "Left") else 0.55)
-        if key in ("Up", "Down"):
-            lat = view.y_to_latitude(view.get_height() * factor)
-            lon = view.get_property('longitude')
-        else:
-            lat = view.get_property('latitude')
-            lon = view.x_to_longitude(view.get_width() * factor)
-        if valid_coords(lat, lon):
-            view.center_on(lat, lon)
-    
-    def remember_location(self, view):
-        """Add current location to history stack."""
-        history = list(gst.get('history'))
-        location = [view.get_property(x) for x in
-            ('latitude', 'longitude', 'zoom-level')]
-        if history[-1] != location:
-            history.append(location)
-        gst.set('history', history[-30:])
-    
-    def go_back(self, button, view):
-        """Return the map view to where the user last set it."""
-        history = list(gst.get('history'))
-        lat, lon, zoom = history.pop()
-        if valid_coords(lat, lon):
-            view.set_zoom_level(zoom)
-            view.center_on(lat, lon)
-        if len(history) > 1:
-            gst.set('history', history)
-        else:
-            gst.reset('history')
-        self.map_view.emit("animation-completed")
-    
-    def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
-        """Ensure zoom buttons are only sensitive when they need to be."""
-        zoom = view.get_zoom_level()
-        zoom_out.set_sensitive(view.get_min_zoom_level() != zoom)
-        zoom_in.set_sensitive( view.get_max_zoom_level() != zoom)
 
 
 class SearchController(CommonAttributes):
