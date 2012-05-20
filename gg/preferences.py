@@ -22,6 +22,7 @@ from gi.repository import Clutter
 from time import tzset
 from os import environ
 
+from common import polygons
 from common import CommonAttributes, Struct, get_obj, gst
 from common import auto_timestamp_comparison, map_view
 from territories import tz_regions, get_timezone
@@ -103,7 +104,7 @@ class PreferencesController(CommonAttributes):
         self.colorpicker = get_obj('colorselection')
         gst.bind_with_convert('track-color', self.colorpicker, 'current-color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        self.colorpicker.connect('color-changed', self.track_color_changed, self.polygons)
+        self.colorpicker.connect('color-changed', self.track_color_changed)
         
         radio_group = []
         map_menu = get_obj('map_source_menu')
@@ -185,7 +186,7 @@ class PreferencesController(CommonAttributes):
         if cities.get_active_id() is not None:
             self.set_timezone()
     
-    def track_color_changed(self, selection, polygons):
+    def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
         color = selection.get_current_color()
         one   = make_clutter_color(color)

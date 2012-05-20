@@ -38,6 +38,7 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from common import polygons
 from common import get_obj, gst, map_view
 from common import Struct, CommonAttributes
 from common import auto_timestamp_comparison
@@ -112,7 +113,7 @@ class GottenGeography(CommonAttributes):
         start_time = clock()
         
         open_file = KMLFile if filename[-3:].lower() == 'kml' else GPXFile
-        gpx = open_file(filename, self.progressbar, self.polygons)
+        gpx = open_file(filename, self.progressbar)
         
         # Emitting this signal ensures the new tracks get the correct color.
         get_obj('colorselection').emit('color-changed')
@@ -130,7 +131,7 @@ class GottenGeography(CommonAttributes):
         map_view.emit("realize")
         map_view.set_zoom_level(map_view.get_max_zoom_level())
         bounds = Champlain.BoundingBox.new()
-        for poly in self.polygons:
+        for poly in polygons:
             bounds.compose(poly.get_bounding_box())
         gpx.latitude, gpx.longitude = bounds.get_center()
         map_view.ensure_visible(bounds, False)
@@ -163,11 +164,10 @@ class GottenGeography(CommonAttributes):
     
     def clear_all_gpx(self, widget=None):
         """Forget all GPX data, start over with a clean slate."""
-        assert self.polygons is CommonAttributes.polygons
-        for polygon in self.polygons:
+        for polygon in polygons:
             map_view.remove_layer(polygon)
         
-        del self.polygons[:]
+        del polygons[:]
         self.tracks.clear()
         metadata.omega = float('-inf')   # Final GPX track point
         metadata.alpha = float('inf')    # Initial GPX track point

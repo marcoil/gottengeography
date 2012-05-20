@@ -25,7 +25,7 @@ from os import stat
 from utils import Coordinates, XMLSimpleParser, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from territories import get_state, get_country
-from common import map_view, Polygon
+from common import map_view, Polygon, polygons
 
 # Prefixes for common EXIF keys.
 gps  = 'Exif.GPSInfo.GPS'
@@ -178,8 +178,7 @@ class TrackFile(Coordinates):
     the base class.
     """
     
-    def __init__(self, filename, progressbar, polygons):
-        self.polygons = polygons
+    def __init__(self, filename, progressbar):
         self.progress = progressbar
         self.clock    = clock()
         self.append   = None
@@ -206,7 +205,7 @@ class TrackFile(Coordinates):
     def add_poly(self):
         """Create a new Polygon and add it to the map."""
         polygon = Polygon()
-        self.polygons.append(polygon)
+        polygons.append(polygon)
         map_view.add_layer(polygon)
         return polygon.append_point
 
@@ -219,9 +218,9 @@ split = re_compile(r'[:TZ-]').split
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
-    def __init__(self, filename, progressbar, polygons):
+    def __init__(self, filename, progressbar):
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-        TrackFile.__init__(self, filename, progressbar, polygons)
+        TrackFile.__init__(self, filename, progressbar)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
@@ -260,12 +259,12 @@ class GPXFile(TrackFile):
 class KMLFile(TrackFile):
     """Parse a KML file."""
     
-    def __init__(self, filename, progressbar, polygons):
+    def __init__(self, filename, progressbar):
         self.whens    = []
         self.coords   = []
         
         self.parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
-        TrackFile.__init__(self, filename, progressbar, polygons)
+        TrackFile.__init__(self, filename, progressbar)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""
