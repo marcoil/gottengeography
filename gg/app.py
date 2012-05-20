@@ -71,8 +71,7 @@ class GottenGeography(CommonAttributes):
         """Attempt to load all of the specified files."""
         self.progressbar.show()
         invalid_files, total = [], len(files)
-        # abspath is used to correct relative paths entered on the commandline
-        for i, name in enumerate([abspath(f) for f in files], 1):
+        for i, name in enumerate(files, 1):
             self.redraw_interface(i / total, basename(name))
             try:
                 try:            self.load_img_from_file(name)
@@ -368,7 +367,7 @@ class GottenGeography(CommonAttributes):
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
-            self.open_files(argv[1:])
+            self.open_files([abspath(f) for f in argv[1:]])
             anim_start = 10
         self.actors.animate_in(anim_start)
         Gtk.main()
