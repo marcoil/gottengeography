@@ -28,7 +28,7 @@ GObject.threads_init()
 GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk
 from gi.repository import Champlain
 from os.path import basename, abspath
 from time import tzset, sleep, clock
@@ -40,179 +40,20 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from common import get_obj, gst
 from common import Struct, CommonAttributes
+from common import get_obj, gst, auto_timestamp_comparison
 from files import Photograph, GPXFile, KMLFile
-from utils import format_list, format_coords, valid_coords
-from utils import make_clutter_color, map_sources
+from utils import make_clutter_color, valid_coords
+from utils import format_list, format_coords
 from utils import Coordinates, Polygon
-from navigation import NavigationController
+
 from search import SearchController
-from territories import tz_regions, get_timezone, get_state, get_country
+from navigation import NavigationController
+from preferences import PreferencesController
+
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
-
-
-# This function embodies almost the entirety of my application's logic.
-# The things that come after this method are just implementation details.
-def auto_timestamp_comparison(photo, points, metadata):
-    """Use GPX data to calculate photo coordinates and elevation.
-    
-    photo:    A Photograph object.
-    points:   A dictionary mapping epoch seconds to ChamplainCoordinates.
-    metadata: A Struct object defining clock offset and first/last points.
-    """
-    if photo.manual or len(points) < 2:
-        return
-    
-    # Add the user-specified clock offset (metadata.delta) to the photo
-    # timestamp, and then keep it within the range of available GPX points.
-    # The result is in epoch seconds, just like the keys of the 'points' dict.
-    stamp = min(max(
-        metadata.delta + photo.timestamp,
-        metadata.alpha),
-        metadata.omega)
-    
-    try:
-        point = points[stamp] # Try to use an exact match,
-        lat   = point.lat     # if such a thing were to exist.
-        lon   = point.lon     # It's more likely than you think. 50%
-        ele   = point.ele     # of the included demo data matches here.
-    
-    except KeyError:
-        # Find the two points that are nearest (in time) to the photo.
-        hi = min([point for point in points if point > stamp])
-        lo = max([point for point in points if point < stamp])
-        hi_point = points[hi]
-        lo_point = points[lo]
-        hi_ratio = (stamp - lo) / (hi - lo)  # Proportional amount of time
-        lo_ratio = (hi - stamp) / (hi - lo)  # between each point & the photo.
-        
-        # Find intermediate values using the proportional ratios.
-        lat = ((lo_point.lat * lo_ratio)  +
-               (hi_point.lat * hi_ratio))
-        lon = ((lo_point.lon * lo_ratio)  +
-               (hi_point.lon * hi_ratio))
-        ele = ((lo_point.ele * lo_ratio)  +
-               (hi_point.ele * hi_ratio))
-    
-    photo.set_location(lat, lon, ele)
-
-
-class PreferencesController(CommonAttributes):
-    """Controls the behavior of the preferences dialog."""
-    gpx_timezone = ''
-    
-    def __init__(self):
-        self.region = region = get_obj("timezone_region")
-        self.cities = cities = get_obj("timezone_cities")
-        pref_button = get_obj("pref_button")
-        
-        for name in tz_regions:
-            region.append(name, name)
-        region.connect("changed", self.region_handler, cities)
-        cities.connect("changed", self.cities_handler, region)
-        gst.bind("timezone-region", region, 'active')
-        gst.bind("timezone-cities", cities, 'active')
-        
-        self.colorpicker = get_obj("colorselection")
-        gst.bind_with_convert("track-color", self.colorpicker, "current-color",
-            lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
-        
-        radio_group = []
-        map_menu = get_obj("map_source_menu")
-        gst.bind_with_convert("map-source-id", self.map_view, "map-source",
-            map_sources.get, lambda x: x.get_id())
-        last_source = self.map_view.get_map_source().get_id()
-        for i, source_id in enumerate(sorted(map_sources.keys())):
-            source = map_sources[source_id]
-            menu_item = Gtk.RadioMenuItem.new_with_label(radio_group, source.get_name())
-            radio_group.append(menu_item)
-            if last_source == source_id:
-                menu_item.set_active(True)
-            menu_item.connect("activate", self.map_menu_clicked, source_id)
-            map_menu.attach(menu_item, 0, 1, i, i+1)
-        map_menu.show_all()
-        
-        pref_button.connect("clicked", self.preferences_dialog,
-            get_obj("preferences"), region, cities, self.colorpicker)
-        
-        self.radios = {}
-        for option in ["system", "lookup", "custom"]:
-            option += "-timezone"
-            radio = get_obj(option)
-            radio.set_name(option)
-            gst.bind(option, radio, 'active')
-            self.radios[option] = radio
-            radio.connect("clicked", self.radio_handler)
-        gst.bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive')
-    
-    def preferences_dialog(self, button, dialog, region, cities, colorpicker):
-        """Allow the user to configure this application."""
-        previous = Struct({
-            'system': gst.get_boolean('system-timezone'),
-            'lookup': gst.get_boolean('lookup-timezone'),
-            'custom': gst.get_boolean('custom-timezone'),
-            'region': region.get_active(),
-            'city':   cities.get_active(),
-            'color':  colorpicker.get_current_color()
-        })
-        if not dialog.run():
-            colorpicker.set_current_color(previous.color)
-            colorpicker.set_previous_color(previous.color)
-            gst.set_boolean('system-timezone', previous.system)
-            gst.set_boolean('lookup-timezone', previous.lookup)
-            gst.set_boolean('custom-timezone', previous.custom)
-            region.set_active(previous.region)
-            cities.set_active(previous.city)
-        dialog.hide()
-    
-    def set_timezone(self):
-        """Set the timezone to the given zone and update all photos."""
-        if "TZ" in environ:
-            del environ["TZ"]
-        if gst.get_boolean('lookup-timezone'):
-            environ["TZ"] = self.gpx_timezone
-        elif gst.get_boolean('custom-timezone'):
-            region = self.region.get_active_id()
-            city   = self.cities.get_active_id()
-            if region is not None and city is not None:
-                environ["TZ"] = "%s/%s" % (region, city)
-        tzset()
-        for photo in self.photo.values():
-            photo.calculate_timestamp()
-            auto_timestamp_comparison(photo, self.tracks, self.metadata)
-    
-    def radio_handler(self, radio):
-        """Reposition photos depending on which timezone the user selected."""
-        if radio.get_active():
-            self.set_timezone()
-    
-    def region_handler(self, regions, cities):
-        """Populate the list of cities when a continent is selected."""
-        cities.remove_all()
-        for city in get_timezone(regions.get_active_id(), []):
-            cities.append(city, city)
-    
-    def cities_handler(self, cities, regions):
-        """When a city is selected, update the chosen timezone."""
-        if cities.get_active_id() is not None:
-            self.set_timezone()
-    
-    def track_color_changed(self, selection, polygons):
-        """Update the color of any loaded GPX tracks."""
-        color = selection.get_current_color()
-        one   = make_clutter_color(color)
-        two   = one.lighten().lighten()
-        for i, polygon in enumerate(polygons):
-            polygon.set_stroke_color(two if i % 2 else one)
-    
-    def map_menu_clicked(self, menu_item, mapid):
-        """Change the map source when the user selects a different one."""
-        if menu_item.get_active():
-            self.map_view.set_map_source(map_sources[mapid])
 
 
 class LabelController(CommonAttributes):

@@ -18,7 +18,7 @@ from __future__ import division
 
 from gi.repository import Gdk, Clutter, GObject, Champlain
 from unittest import TestCase, TextTestRunner, TestLoader
-from os import listdir, getcwd, system, environ
+from os import listdir, system, environ
 from fractions import Fraction
 from random import random
 from os.path import join
@@ -82,7 +82,7 @@ class GottenGeographyTester(TestCase):
         
         # Load only the photos first.
         for demo in listdir('./demo/'):
-            filename = join(getcwd(), 'demo', demo)
+            filename = join(PKG_DATA_DIR, '..', 'demo', demo)
             if demo[-3:] != 'gpx':
                 self.assertRaises(IOError, gui.load_gpx_from_file, filename)
                 gui.load_img_from_file(filename)
@@ -158,7 +158,7 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(gui.selected), 0)
         
         # Load the GPX
-        gpx_filename=join(getcwd(), 'demo', '20101016.gpx')
+        gpx_filename=join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.load_gpx_from_file(gpx_filename)
         self.assertTrue(buttons['clear'].get_sensitive())
@@ -265,7 +265,7 @@ class GottenGeographyTester(TestCase):
         
         # Make a photo with a dummy ChamplainLabel.
         label = Struct()
-        label.get_text = lambda: join(PKG_DATA_DIR, '../demo/IMG_2411.JPG')
+        label.get_text = lambda: join(PKG_DATA_DIR, '..', 'demo', 'IMG_2411.JPG')
         photo = Photograph(label.get_text(), lambda x: None)
         photo.read()
         photo.label = label
