@@ -30,8 +30,9 @@ from files import Photograph
 from utils import Coordinates
 from utils import maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
-from common import Struct, Polygon, map_view
 from preferences import make_clutter_color
+from common import Struct, Polygon, map_view
+from common import selected, modified
 from build_info import PKG_DATA_DIR
 
 gui = app.GottenGeography()
@@ -97,8 +98,8 @@ class GottenGeographyTester(TestCase):
         self.assertTrue(gui.liststore.get_iter_first())
         
         for photo in gui.photo.values():
-            self.assertFalse(photo in gui.modified)
-            self.assertFalse(photo in gui.selected)
+            self.assertFalse(photo in modified)
+            self.assertFalse(photo in selected)
             self.assertFalse(photo.label.get_property('visible'))
             
             # Test that missing the provincestate doesn't break the geoname.
@@ -128,7 +129,7 @@ class GottenGeographyTester(TestCase):
             old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
             
             # 'Drag' a photo onto the map and make sure that also works.
-            gui.selected.add(photo)
+            selected.add(photo)
             data = Struct({'get_text': lambda: photo.filename})
             gui.drag.photo_drag_end(None, None, 20, 20, data, None, None, lambda x: None)
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
@@ -155,9 +156,9 @@ class GottenGeographyTester(TestCase):
         # Test the select-all button.
         select_all = get_obj('select_all_button')
         select_all.set_active(True)
-        self.assertEqual(len(gui.selected), len(gui.liststore))
+        self.assertEqual(len(selected), len(gui.liststore))
         select_all.set_active(False)
-        self.assertEqual(len(gui.selected), 0)
+        self.assertEqual(len(selected), 0)
         
         # Load the GPX
         gpx_filename=join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
@@ -179,7 +180,7 @@ class GottenGeographyTester(TestCase):
             self.assertFalse(buttons[button].get_sensitive())
         
         for photo in gui.photo.values():
-            self.assertTrue(photo in gui.modified)
+            self.assertTrue(photo in modified)
             
             self.assertIsNotNone(photo.latitude)
             self.assertIsNotNone(photo.longitude)
@@ -199,8 +200,8 @@ class GottenGeographyTester(TestCase):
                 self.assertTrue(buttons[button].get_sensitive())
             self.assertTrue(gui.labels.selection.iter_is_selected(photo.iter))
             self.assertEqual(gui.labels.selection.count_selected_rows(), 1)
-            self.assertTrue(photo in gui.selected)
-            self.assertEqual(len(gui.selected), 1)
+            self.assertTrue(photo in selected)
+            self.assertEqual(len(selected), 1)
             self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
             self.assertTrue(photo.label.get_selected())
             self.assertEqual(photo.label.get_property('opacity'), 255)
@@ -209,7 +210,7 @@ class GottenGeographyTester(TestCase):
             for other in gui.photo.values():
                 if other.filename == photo.filename: continue
                 self.assertFalse(gui.labels.selection.iter_is_selected(other.iter))
-                self.assertFalse(other in gui.selected)
+                self.assertFalse(other in selected)
                 self.assertEqual(other.label.get_scale(), (1, 1))
                 self.assertFalse(other.label.get_selected())
                 self.assertEqual(other.label.get_property('opacity'), 64)
@@ -222,25 +223,25 @@ class GottenGeographyTester(TestCase):
         
         # Save all photos
         buttons['save'].emit('clicked')
-        self.assertEqual(len(gui.modified), 0)
+        self.assertEqual(len(modified), 0)
         for button in ('save', 'revert'):
             self.assertFalse(buttons[button].get_sensitive())
         
         gui.labels.selection.select_all()
-        self.assertEqual(len(gui.selected), 6)
+        self.assertEqual(len(selected), 6)
         for button in ('save', 'revert'):
             self.assertFalse(buttons[button].get_sensitive())
         for button in ('apply', 'close'):
             self.assertTrue(buttons[button].get_sensitive())
         
         # Close all the photos.
-        files = [photo.filename for photo in gui.selected]
+        files = [photo.filename for photo in selected]
         buttons['close'].emit('clicked')
         for button in ('save', 'revert', 'apply', 'close'):
             self.assertFalse(buttons[button].get_sensitive())
         self.assertEqual(len(gui.photo), 0)
-        self.assertEqual(len(gui.modified), 0)
-        self.assertEqual(len(gui.selected), 0)
+        self.assertEqual(len(modified), 0)
+        self.assertEqual(len(selected), 0)
         
         # Re-read the photos back from disk to make sure that the saving
         # was successful.

@@ -179,8 +179,6 @@ class CommonAttributes:
     This class is never instantiated, it is only inherited by classes that
     need to manipulate the map, or the loaded photos.
     """
-    selected  = set()
-    modified  = set()
     polygons  = []
     tracks    = {}
     photo     = {}
@@ -190,4 +188,8 @@ class CommonAttributes:
 get_obj  = Builder().get_object
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
+
+# This is some shared data that gets imported into various places that need it
+selected = set()
+modified = set()
 

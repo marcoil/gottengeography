@@ -21,6 +21,7 @@ from urlparse import urlparse
 
 from common import CommonAttributes, Struct
 from common import get_obj, map_view
+from common import selected
 
 class DragController(CommonAttributes):
     """Control the drag & drop behavior."""
@@ -42,7 +43,7 @@ class DragController(CommonAttributes):
     def photo_drag_start(self, widget, drag_context, data, info, time):
         """Allow dragging more than one photo."""
         self.external_drag = False # Don't reload files from disk
-        files = [ photo.filename for photo in self.selected ]
+        files = [ photo.filename for photo in selected ]
         data.set_text('\n'.join(files), -1)
     
     def photo_drag_end(self, widget, drag_context, x, y, data, info, time, open_files):

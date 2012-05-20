@@ -20,6 +20,7 @@ from gi.repository import Gtk, Champlain, Clutter
 from os.path import basename
 
 from common import CommonAttributes, get_obj, map_view
+from common import selected, modified
 
 class LabelController(CommonAttributes):
     """Control the behavior and creation of ChamplainLabels."""
@@ -32,7 +33,7 @@ class LabelController(CommonAttributes):
         map_view.add_layer(self.layer)
         
         self.selection.connect('changed', self.update_highlights,
-            self.selected, self.photo.viewvalues())
+            self.photo.viewvalues())
         self.selection.connect('changed', self.selection_sensitivity,
             *[get_obj(name) for name in ('apply_button', 'close_button',
                 'save_button', 'revert_button', 'photos_with_buttons')])
@@ -53,7 +54,7 @@ class LabelController(CommonAttributes):
         self.layer.add_marker(label)
         return label
     
-    def update_highlights(self, selection, selected, photos):
+    def update_highlights(self, selection, photos):
         """Ensure only the selected labels are highlighted."""
         selection_exists = selection.count_selected_rows() > 0
         selected.clear()
@@ -65,13 +66,11 @@ class LabelController(CommonAttributes):
     
     def selection_sensitivity(self, selection, aply, close, save, revert, left):
         """Control the sensitivity of various widgets."""
-        assert self.selected is CommonAttributes.selected
-        assert self.modified is CommonAttributes.modified
         sensitive = selection.count_selected_rows() > 0
         close.set_sensitive(sensitive)
         aply.set_sensitive(sensitive)
-        save.set_sensitive(  len(self.modified) > 0)
-        revert.set_sensitive(len(self.modified & self.selected) > 0)
+        save.set_sensitive(  len(modified) > 0)
+        revert.set_sensitive(len(modified & selected) > 0)
         if len(self.photo) > 0: left.show()
         else:                   left.hide()
     

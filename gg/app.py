@@ -38,10 +38,10 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from common import metadata
 from common import get_obj, gst, map_view
 from common import Struct, CommonAttributes
 from common import auto_timestamp_comparison
+from common import metadata, selected, modified
 from files import Photograph, GPXFile, KMLFile
 from utils import format_list, format_coords
 from utils import Coordinates, valid_coords
@@ -102,7 +102,7 @@ class GottenGeography(CommonAttributes):
             photo.label          = self.labels.add(filename)
             self.photo[filename] = photo
         photo.position_label()
-        self.modified.discard(photo)
+        modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
         auto_timestamp_comparison(photo, self.tracks)
@@ -139,7 +139,7 @@ class GottenGeography(CommonAttributes):
         self.prefs.set_timezone()
         self.gpx_sensitivity()
     
-    def apply_selected_photos(self, button, selected, view):
+    def apply_selected_photos(self, button, view):
         """Manually apply map center coordinates to all selected photos."""
         for photo in selected:
             photo.manual = True
@@ -150,14 +150,14 @@ class GottenGeography(CommonAttributes):
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
-        self.open_files([photo.filename for photo in self.modified & self.selected])
+        self.open_files([photo.filename for photo in modified & selected])
     
     def close_selected_photos(self, button=None):
         """Discard all selected photos."""
-        for photo in self.selected.copy():
+        for photo in selected.copy():
             self.labels.layer.remove_marker(photo.label)
             del self.photo[photo.filename]
-            self.modified.discard(photo)
+            modified.discard(photo)
             self.liststore.remove(photo.iter)
         self.labels.select_all.set_active(False)
     
@@ -176,7 +176,7 @@ class GottenGeography(CommonAttributes):
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        photos, total = list(self.modified), len(self.modified)
+        photos, total = list(modified), len(modified)
         for i, photo in enumerate(photos, 1):
             self.redraw_interface(i / total, basename(photo.filename))
             try:
@@ -184,7 +184,7 @@ class GottenGeography(CommonAttributes):
             except Exception as inst:
                 self.status_message(str(inst))
             else:
-                self.modified.discard(photo)
+                modified.discard(photo)
                 self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
         self.progressbar.hide()
@@ -210,7 +210,7 @@ class GottenGeography(CommonAttributes):
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
-        self.modified.add(photo)
+        modified.add(photo)
         self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
     
@@ -244,11 +244,11 @@ class GottenGeography(CommonAttributes):
     
     def confirm_quit_dialog(self, *args):
         """Teardown method, inform user of unsaved files, if any."""
-        if len(self.modified) == 0:
+        if len(modified) == 0:
             Gtk.main_quit()
             return True
         dialog = get_obj("quit")
-        dialog.format_secondary_markup(self.strings.quit % len(self.modified))
+        dialog.format_secondary_markup(self.strings.quit % len(modified))
         response = dialog.run()
         dialog.hide()
         self.redraw_interface()
@@ -305,7 +305,7 @@ class GottenGeography(CommonAttributes):
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
             "about_button":      [lambda b, d: d.run() and d.hide(), about_dialog],
-            "apply_button":      [self.apply_selected_photos, self.selected, map_view],
+            "apply_button":      [self.apply_selected_photos, map_view],
             "select_all_button": [self.toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
