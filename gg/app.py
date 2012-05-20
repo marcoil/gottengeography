@@ -39,11 +39,11 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from common import get_obj, gst, map_view
+from common import Struct, CommonAttributes
 from common import auto_timestamp_comparison
-from common import Struct, CommonAttributes, Polygon
-from utils import format_list, format_coords, valid_coords
 from files import Photograph, GPXFile, KMLFile
-from utils import Coordinates
+from utils import format_list, format_coords
+from utils import Coordinates, valid_coords
 
 from drag import DragController
 from actor import ActorController
@@ -112,7 +112,10 @@ class GottenGeography(CommonAttributes):
         start_time = clock()
         
         open_file = KMLFile if filename[-3:].lower() == 'kml' else GPXFile
-        gpx = open_file(filename, self.progressbar, self.create_polygon)
+        gpx = open_file(filename, self.progressbar, self.polygons)
+        
+        # Emitting this signal ensures the new tracks get the correct color.
+        get_obj('colorselection').emit('color-changed')
         
         self.status_message(_("%d points loaded in %.2fs.") %
             (len(gpx.tracks), clock() - start_time))
@@ -216,15 +219,6 @@ class GottenGeography(CommonAttributes):
         """Toggle the selection of photos."""
         if button.get_active(): selection.select_all()
         else:                   selection.unselect_all()
-    
-    def create_polygon(self):
-        """Get a newly created Champlain.MarkerLayer and decorate it."""
-        polygon = Polygon()
-        self.polygons.append(polygon)
-        # Emitting this signal ensures the new polygon gets the correct color.
-        self.prefs.colorpicker.emit("color-changed")
-        map_view.add_layer(polygon)
-        return polygon.append_point
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.

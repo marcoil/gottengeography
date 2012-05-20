@@ -25,6 +25,7 @@ from os import stat
 from utils import Coordinates, XMLSimpleParser, format_list
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 from territories import get_state, get_country
+from common import map_view, Polygon
 
 # Prefixes for common EXIF keys.
 gps  = 'Exif.GPSInfo.GPS'
@@ -35,6 +36,7 @@ def pixbuf_from_data(data, size):
     pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
         input_str, size, size, True, None)
     return pixbuf
+
 
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
@@ -168,6 +170,7 @@ class Photograph(Coordinates):
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
 
+
 class TrackFile(Coordinates):
     """Parent class for all types of GPS track files.
     
@@ -175,8 +178,8 @@ class TrackFile(Coordinates):
     the base class.
     """
     
-    def __init__(self, filename, progressbar, add_polygon):
-        self.add_poly = add_polygon
+    def __init__(self, filename, progressbar, polygons):
+        self.polygons = polygons
         self.progress = progressbar
         self.clock    = clock()
         self.append   = None
@@ -199,17 +202,26 @@ class TrackFile(Coordinates):
             while Gtk.events_pending():
                 Gtk.main_iteration()
             self.clock = clock()
+    
+    def add_poly(self):
+        """Create a new Polygon and add it to the map."""
+        polygon = Polygon()
+        self.polygons.append(polygon)
+        map_view.add_layer(polygon)
+        return polygon.append_point
+
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
 split = re_compile(r'[:TZ-]').split
 
+
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
-    def __init__(self, filename, progressbar, add_polygon):
+    def __init__(self, filename, progressbar, polygons):
         self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-        TrackFile.__init__(self, filename, progressbar, add_polygon)
+        TrackFile.__init__(self, filename, progressbar, polygons)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
@@ -244,15 +256,16 @@ class GPXFile(TrackFile):
         
         TrackFile.element_end(self, name, state)
 
+
 class KMLFile(TrackFile):
     """Parse a KML file."""
     
-    def __init__(self, filename, callback, add_polygon):
+    def __init__(self, filename, progressbar, polygons):
         self.whens    = []
         self.coords   = []
         
         self.parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
-        TrackFile.__init__(self, filename, callback, add_polygon)
+        TrackFile.__init__(self, filename, progressbar, polygons)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""
