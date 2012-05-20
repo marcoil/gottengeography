@@ -257,14 +257,6 @@ class GottenGeography(CommonAttributes):
         if response != Gtk.ResponseType.CANCEL: Gtk.main_quit()
         return True
     
-    def about_dialog(self, button, dialog):
-        """Describe this application to the user."""
-        # you can
-        dialog.run()
-        # but you can't
-        dialog.hide()
-        # ahahahhahahah!
-    
 ################################################################################
 # Initialization and Gtk boilerplate/housekeeping type stuff and such.
 ################################################################################
@@ -320,7 +312,7 @@ class GottenGeography(CommonAttributes):
             "clear_button":      [self.clear_all_gpx],
             "close_button":      [self.close_selected_photos],
             "revert_button":     [self.revert_selected_photos],
-            "about_button":      [self.about_dialog, about_dialog],
+            "about_button":      [lambda b, d: d.run() and d.hide(), about_dialog],
             "apply_button":      [self.apply_selected_photos, self.selected, map_view],
             "select_all_button": [self.toggle_selected_photos, self.labels.selection]
         }
