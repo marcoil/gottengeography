@@ -30,10 +30,6 @@ from pyexiv2 import Rational
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
 
-def get_file(filename):
-    """Find a file that's in the same directory as this program."""
-    return join(PKG_DATA_DIR, filename)
-
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
@@ -215,7 +211,7 @@ class Coordinates():
             return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
-        with open(get_file("cities.txt")) as cities:
+        with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
             for city in cities:
                 name, lat, lon, country, state, tz = city.split("\t")
                 lat2, lon2 = radians(float(lat)), radians(float(lon))

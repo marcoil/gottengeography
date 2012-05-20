@@ -30,7 +30,6 @@ GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import Champlain
-from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
 from time import tzset, sleep, clock
 from gettext import gettext as _
@@ -45,14 +44,14 @@ from common import get_obj, gst
 from common import Struct, CommonAttributes
 from files import Photograph, GPXFile, KMLFile
 from utils import format_list, format_coords, valid_coords
-from utils import make_clutter_color, get_file, map_sources
+from utils import make_clutter_color, map_sources
 from utils import Coordinates, Polygon
 from navigation import NavigationController
+from search import SearchController
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
-LOCATION, LATITUDE, LONGITUDE = range(3)
 
 
 # This function embodies almost the entirety of my application's logic.
@@ -99,61 +98,6 @@ def auto_timestamp_comparison(photo, points, metadata):
                (hi_point.ele * hi_ratio))
     
     photo.set_location(lat, lon, ele)
-
-
-class SearchController(CommonAttributes):
-    """Controls the behavior for searching the map."""
-    last_search = None
-    
-    def __init__(self):
-        """Make the search box and insert it into the window."""
-        self.results = get_obj("search_results")
-        search = get_obj("search_completion")
-        search.set_match_func(
-            lambda c, s, itr, get: self.search(get(itr, LOCATION) or ""),
-            self.results.get_value)
-        search.connect("match-selected", self.search_completed, self.map_view)
-        entry = get_obj("search_box")
-        entry.connect("changed", self.load_results, self.results.append)
-        entry.connect("icon-release", lambda entry, i, e: entry.set_text(''))
-        entry.connect("activate", self.repeat_last_search, self.results, self.map_view)
-    
-    def load_results(self, entry, append, searched=set()):
-        """Load a few search results based on what's been typed.
-        
-        Requires at least three letters typed, and is careful not to load
-        duplicate results.
-        
-        The searched argument persists across calls to this method, and should
-        not be passed as an argument unless your intention is to trigger the
-        loading of duplicate results.
-        """
-        text  = entry.get_text().lower()
-        three = text[0:3]
-        self.search, search = [ re_compile('(^|\s)' + string,
-            flags=IGNORECASE).search for string in (text, three) ]
-        if len(three) == 3 and three not in searched:
-            searched.add(three)
-            with open(get_file("cities.txt")) as cities:
-                for line in cities:
-                    city, lat, lon, country, state, tz = line.split("\t")
-                    if search(city):
-                        state    = get_state(country, state)
-                        country  = get_country(country)
-                        location = format_list([city, state, country])
-                        append([location, float(lat), float(lon)])
-    
-    def search_completed(self, entry, model, itr, view):
-        """Go to the selected location."""
-        self.last_search = itr.copy()
-        self.map_view.emit("realize")
-        view.set_zoom_level(11)
-        self.slide_to(*model.get(itr, LATITUDE, LONGITUDE))
-    
-    def repeat_last_search(self, entry, model, view):
-        """Snap back to the last-searched location when user hits enter key."""
-        if self.last_search is not None:
-            self.search_completed(entry, model, self.last_search, view)
 
 
 class PreferencesController(CommonAttributes):

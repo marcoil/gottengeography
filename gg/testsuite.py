@@ -28,8 +28,9 @@ from time import tzset
 import app
 from common import Struct
 from files import Photograph
+from build_info import PKG_DATA_DIR
 from utils import Coordinates, Polygon
-from utils import get_file, make_clutter_color, maps_link, valid_coords
+from utils import make_clutter_color, maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
 # Disable animations so tests pass more quickly.
@@ -264,7 +265,7 @@ class GottenGeographyTester(TestCase):
         
         # Make a photo with a dummy ChamplainLabel.
         label = Struct()
-        label.get_text = lambda: get_file('../demo/IMG_2411.JPG')
+        label.get_text = lambda: join(PKG_DATA_DIR, '../demo/IMG_2411.JPG')
         photo = Photograph(label.get_text(), lambda x: None)
         photo.read()
         photo.label = label
