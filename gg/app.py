@@ -29,7 +29,7 @@ GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
-from gi.repository import GtkChamplain, Champlain
+from gi.repository import Champlain
 from re import compile as re_compile, IGNORECASE
 from os.path import basename, abspath
 from time import tzset, sleep, clock
@@ -41,26 +41,18 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from common import get_obj, gst
+from common import Struct, CommonAttributes
 from files import Photograph, GPXFile, KMLFile
 from utils import format_list, format_coords, valid_coords
 from utils import make_clutter_color, get_file, map_sources
-from utils import GSettingsSetting, Coordinates, Polygon, Struct
+from utils import Coordinates, Polygon
 from territories import tz_regions, get_timezone, get_state, get_country
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 LOCATION, LATITUDE, LONGITUDE = range(3)
 
-builder = Gtk.Builder()
-builder.set_translation_domain(PACKAGE)
-builder.add_from_file(get_file(PACKAGE + '.ui'))
-get_obj = builder.get_object
-
-gsettings = GSettingsSetting('ca.exolucere.' + PACKAGE)
-gst_get = gsettings.get_value
-gst_set = gsettings.set_value
-bind_with_convert = gsettings.bind_with_convert
-bind = gsettings.bind
 
 # This function embodies almost the entirety of my application's logic.
 # The things that come after this method are just implementation details.
@@ -108,23 +100,6 @@ def auto_timestamp_comparison(photo, points, metadata):
     photo.set_location(lat, lon, ele)
 
 
-class CommonAttributes:
-    """Define attributes required by all Controller classes.
-    
-    This class is never instantiated, it is only inherited by classes that
-    need to manipulate the map, or the loaded photos.
-    """
-    champlain = GtkChamplain.Embed()
-    map_view  = champlain.get_view()
-    slide_to  = map_view.go_to
-    metadata  = Struct()
-    selected  = set()
-    modified  = set()
-    polygons  = []
-    tracks    = {}
-    photo     = {}
-
-
 class NavigationController(CommonAttributes):
     """Controls how users navigate the map."""
     
@@ -139,7 +114,7 @@ class NavigationController(CommonAttributes):
         back_button.connect("clicked", self.go_back, self.map_view)
         
         for key in ['latitude', 'longitude', 'zoom-level']:
-            bind(key, self.map_view, key)
+            gst.bind(key, self.map_view, key)
         
         accel = Gtk.AccelGroup()
         window = get_obj("main")
@@ -176,24 +151,24 @@ class NavigationController(CommonAttributes):
     
     def remember_location(self, view):
         """Add current location to history stack."""
-        history = list(gst_get('history'))
+        history = list(gst.get('history'))
         location = [view.get_property(x) for x in
             ('latitude', 'longitude', 'zoom-level')]
         if history[-1] != location:
             history.append(location)
-        gst_set('history', history[-30:])
+        gst.set('history', history[-30:])
     
     def go_back(self, button, view):
         """Return the map view to where the user last set it."""
-        history = list(gst_get('history'))
+        history = list(gst.get('history'))
         lat, lon, zoom = history.pop()
         if valid_coords(lat, lon):
             view.set_zoom_level(zoom)
             view.center_on(lat, lon)
         if len(history) > 1:
-            gst_set('history', history)
+            gst.set('history', history)
         else:
-            gsettings.reset('history')
+            gst.reset('history')
         self.map_view.emit("animation-completed")
     
     def zoom_button_sensitivity(self, view, signal, zoom_in, zoom_out):
@@ -271,17 +246,17 @@ class PreferencesController(CommonAttributes):
             region.append(name, name)
         region.connect("changed", self.region_handler, cities)
         cities.connect("changed", self.cities_handler, region)
-        bind("timezone-region", region, 'active')
-        bind("timezone-cities", cities, 'active')
+        gst.bind("timezone-region", region, 'active')
+        gst.bind("timezone-cities", cities, 'active')
         
         self.colorpicker = get_obj("colorselection")
-        bind_with_convert("track-color", self.colorpicker, "current-color",
+        gst.bind_with_convert("track-color", self.colorpicker, "current-color",
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
         self.colorpicker.connect("color-changed", self.track_color_changed, self.polygons)
         
         radio_group = []
         map_menu = get_obj("map_source_menu")
-        bind_with_convert("map-source-id", self.map_view, "map-source",
+        gst.bind_with_convert("map-source-id", self.map_view, "map-source",
             map_sources.get, lambda x: x.get_id())
         last_source = self.map_view.get_map_source().get_id()
         for i, source_id in enumerate(sorted(map_sources.keys())):
@@ -302,17 +277,17 @@ class PreferencesController(CommonAttributes):
             option += "-timezone"
             radio = get_obj(option)
             radio.set_name(option)
-            bind(option, radio, 'active')
+            gst.bind(option, radio, 'active')
             self.radios[option] = radio
             radio.connect("clicked", self.radio_handler)
-        bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive')
+        gst.bind("custom-timezone", get_obj("custom_timezone_combos"), 'sensitive')
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
         previous = Struct({
-            'system': gsettings.get_boolean('system-timezone'),
-            'lookup': gsettings.get_boolean('lookup-timezone'),
-            'custom': gsettings.get_boolean('custom-timezone'),
+            'system': gst.get_boolean('system-timezone'),
+            'lookup': gst.get_boolean('lookup-timezone'),
+            'custom': gst.get_boolean('custom-timezone'),
             'region': region.get_active(),
             'city':   cities.get_active(),
             'color':  colorpicker.get_current_color()
@@ -320,9 +295,9 @@ class PreferencesController(CommonAttributes):
         if not dialog.run():
             colorpicker.set_current_color(previous.color)
             colorpicker.set_previous_color(previous.color)
-            gsettings.set_boolean('system-timezone', previous.system)
-            gsettings.set_boolean('lookup-timezone', previous.lookup)
-            gsettings.set_boolean('custom-timezone', previous.custom)
+            gst.set_boolean('system-timezone', previous.system)
+            gst.set_boolean('lookup-timezone', previous.lookup)
+            gst.set_boolean('custom-timezone', previous.custom)
             region.set_active(previous.region)
             cities.set_active(previous.city)
         dialog.hide()
@@ -331,9 +306,9 @@ class PreferencesController(CommonAttributes):
         """Set the timezone to the given zone and update all photos."""
         if "TZ" in environ:
             del environ["TZ"]
-        if gsettings.get_boolean('lookup-timezone'):
+        if gst.get_boolean('lookup-timezone'):
             environ["TZ"] = self.gpx_timezone
-        elif gsettings.get_boolean('custom-timezone'):
+        elif gst.get_boolean('custom-timezone'):
             region = self.region.get_active_id()
             city   = self.cities.get_active_id()
             if region is not None and city is not None:
@@ -809,12 +784,12 @@ class GottenGeography(CommonAttributes):
         
         accel  = Gtk.AccelGroup()
         window = get_obj("main")
-        window.resize(*gst_get('window-size'))
+        window.resize(*gst.get('window-size'))
         window.connect("delete_event", self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
         
-        save_size = lambda v,s,size: gst_set('window-size', size())
+        save_size = lambda v,s,size: gst.set('window-size', size())
         for prop in ['width', 'height']:
             self.map_view.connect('notify::' + prop, save_size, window.get_size)
         
@@ -830,8 +805,8 @@ class GottenGeography(CommonAttributes):
         
         self.metadata.delta = 0
         self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
-        bind("offset-minutes", self.minbutton, "value")
-        bind("offset-seconds", self.secbutton, "value")
+        gst.bind("offset-minutes", self.minbutton, "value")
+        gst.bind("offset-seconds", self.secbutton, "value")
         for spinbutton in [ self.secbutton, self.minbutton ]:
             spinbutton.connect("value-changed", self.time_offset_changed)
         

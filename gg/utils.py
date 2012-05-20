@@ -19,7 +19,7 @@ from __future__ import division
 from os import sep as os_sep
 from os.path import join, isdir, dirname, basename
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import Gio, GLib, Clutter, Champlain
+from gi.repository import Clutter, Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -38,64 +38,6 @@ def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
-
-################################################################################
-# GSettings overrides. This allows me to interact with GSettings more easily.
-################################################################################
-
-class GSettingsSetting(Gio.Settings):
-    def __init__(self, schema_name):
-        Gio.Settings.__init__(self, schema_name)
-        
-        # These are used to avoid infinite looping.
-        self._ignore_key_changed = False
-        self._ignore_prop_changed = True
-    
-    def bind(self, key, widget, prop, flags=Gio.SettingsBindFlags.DEFAULT):
-        """Don't make me specify the default flags every time."""
-        Gio.Settings.bind(self, key, widget, prop, flags)
-    
-    def set_value(self, key, value):
-        """Convert arrays to GVariants.
-        
-        This makes it easier to set the back button history and the window size.
-        """
-        use_matrix = type(value) is list
-        do_override = type(value) is tuple or use_matrix
-        Gio.Settings.set_value(self, key,
-            GLib.Variant('aad' if use_matrix else '(ii)', value) if do_override else value)
-    
-    def bind_with_convert(self, key, widget, prop, key_to_prop_converter, prop_to_key_converter):
-        """Recreate g_settings_bind_with_mapping from scratch.
-        
-        This method was shamelessly stolen from John Stowers'
-        gnome-tweak-tool on May 14, 2012.
-        """
-        def key_changed(settings, key):
-            if self._ignore_key_changed: return
-            orig_value = self[key]
-            converted_value = key_to_prop_converter(orig_value)
-            self._ignore_prop_changed = True
-            try:
-                widget.set_property(prop, converted_value)
-            except TypeError:
-                print "TypeError: %s not a valid %s." % (converted_value, key)
-            self._ignore_prop_changed = False
-        
-        def prop_changed(widget, param):
-            if self._ignore_prop_changed: return
-            orig_value = widget.get_property(prop)
-            converted_value = prop_to_key_converter(orig_value)
-            self._ignore_key_changed = True
-            try:
-                self[key] = converted_value
-            except TypeError:
-                print "TypeError: %s not a valid %s." % (converted_value, prop)
-            self._ignore_key_changed = False
-        
-        self.connect("changed::" + key, key_changed)
-        widget.connect("notify::" + prop, prop_changed)
-        key_changed(self,key) # init default state
 
 ################################################################################
 # GPS math functions. These methods convert numbers into other numbers.
@@ -398,11 +340,4 @@ class XMLSimpleParser:
         self.state.clear()
         self.parser.CharacterDataHandler = None
         self.parser.EndElementHandler = None
-
-
-class Struct:
-    """This is a generic object which can be assigned arbitrary attributes."""
-    
-    def __init__(self, attributes={}):
-        self.__dict__.update(attributes)
 

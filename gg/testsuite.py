@@ -26,8 +26,9 @@ from math import floor
 from time import tzset
 
 import app
+from common import Struct
 from files import Photograph
-from utils import Coordinates, Polygon, Struct
+from utils import Coordinates, Polygon
 from utils import get_file, make_clutter_color, maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
 
@@ -36,7 +37,7 @@ app.CommonAttributes.slide_to = app.CommonAttributes.map_view.center_on
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
-gst_get = app.gst_get
+gst_get = app.gst.get
 
 class GottenGeographyTester(TestCase):
     def setUp(self):
@@ -50,8 +51,8 @@ class GottenGeographyTester(TestCase):
     def tearDown(self):
         """Undo whatever mess the testsuite created."""
         system('git checkout demo')
-        for key in app.gsettings.list_keys():
-            app.gsettings.reset(key)
+        for key in app.gst.list_keys():
+            app.gst.reset(key)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
