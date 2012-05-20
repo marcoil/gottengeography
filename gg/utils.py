@@ -17,7 +17,6 @@
 from __future__ import division
 
 from xml.parsers.expat import ParserCreate, ExpatError
-from gi.repository import Champlain
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -84,23 +83,6 @@ def format_coords(lat, lon):
 ################################################################################
 # Class definitions.
 ################################################################################
-
-class Polygon(Champlain.PathLayer):
-    """Extend a Champlain.PathLayer to do things more the way I like them."""
-    
-    def __init__(self):
-        super(Champlain.PathLayer, self).__init__()
-        self.set_stroke_width(4)
-    
-    def append_point(self, latitude, longitude, elevation):
-        """Simplify appending a point onto a polygon."""
-        coord = Champlain.Coordinate.new_full(latitude, longitude)
-        coord.lat = latitude
-        coord.lon = longitude
-        coord.ele = elevation
-        self.add_node(coord)
-        return coord
-
 
 class Coordinates():
     """A generic object containing latitude and longitude coordinates.

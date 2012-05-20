@@ -27,12 +27,12 @@ from time import tzset
 
 import app
 from files import Photograph
-from common import Struct, map_view
-from build_info import PKG_DATA_DIR
-from utils import Coordinates, Polygon
+from utils import Coordinates
 from utils import maps_link, valid_coords
 from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from common import Struct, Polygon, map_view
 from preferences import make_clutter_color
+from build_info import PKG_DATA_DIR
 
 gui = app.GottenGeography()
 get_obj = app.get_obj

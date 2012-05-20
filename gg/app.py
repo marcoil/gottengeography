@@ -39,11 +39,12 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
-from common import Struct, CommonAttributes, map_view
-from common import get_obj, gst, auto_timestamp_comparison
+from common import get_obj, gst, map_view
+from common import auto_timestamp_comparison
+from common import Struct, CommonAttributes, Polygon
 from utils import format_list, format_coords, valid_coords
 from files import Photograph, GPXFile, KMLFile
-from utils import Coordinates, Polygon
+from utils import Coordinates
 
 from actor import ActorController
 from label import LabelController

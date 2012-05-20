@@ -17,7 +17,7 @@
 from __future__ import division
 
 from gi.repository import Gtk, Gio, GLib
-from gi.repository import GtkChamplain
+from gi.repository import GtkChamplain, Champlain
 from os.path import join
 
 from build_info import PKG_DATA_DIR
@@ -143,6 +143,23 @@ class ChamplainEmbedder(GtkChamplain.Embed):
     def __init__(self):
         GtkChamplain.Embed.__init__(self)
         get_obj("map_container").add_with_viewport(self)
+
+
+class Polygon(Champlain.PathLayer):
+    """Extend a Champlain.PathLayer to do things more the way I like them."""
+    
+    def __init__(self):
+        Champlain.PathLayer.__init__(self)
+        self.set_stroke_width(4)
+    
+    def append_point(self, latitude, longitude, elevation):
+        """Simplify appending a point onto a polygon."""
+        coord = Champlain.Coordinate.new_full(latitude, longitude)
+        coord.lat = latitude
+        coord.lon = longitude
+        coord.ele = elevation
+        self.add_node(coord)
+        return coord
 
 
 class Struct:
