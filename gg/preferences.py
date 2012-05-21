@@ -32,16 +32,16 @@ def make_clutter_color(color):
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
-def create_map_source(id, name, license, license_uri, min_zoom, max_zoom,
-                      tile_size, uri_format):
+def create_map_source(mapid, name, license, license_uri, min_zoom,
+                      max_zoom, tile_size, uri_format):
     """Put together a chain of caches for the specified map source details."""
     chain = Champlain.MapSourceChain()
     chain.push(Champlain.MapSourceFactory.dup_default().create_error_source(
         tile_size))
     
     chain.push(Champlain.NetworkTileSource.new_full(
-        id, name, license, license_uri, min_zoom, max_zoom, tile_size,
-        Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
+        mapid, name, license, license_uri, min_zoom, max_zoom,
+        tile_size, Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
         uri_format, Champlain.ImageRenderer()))
     
     chain.push(Champlain.FileCache.new_full(1e8, None, Champlain.ImageRenderer()))
@@ -49,7 +49,7 @@ def create_map_source(id, name, license, license_uri, min_zoom, max_zoom,
     
     return chain
 
-map_sources = {
+MAP_SOURCES = {
     'osm-mapnik':
     create_map_source('osm-mapnik', 'OpenStreetMap Mapnik',
     'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
@@ -83,6 +83,28 @@ map_sources = {
 }
 
 
+def map_source_menu():
+    """Load the predefined map sources into a menu the user can use."""
+    radio_group = []
+    map_menu = get_obj('map_source_menu')
+    last_source = gst.get_string('map-source-id')
+    gst.bind_with_convert('map-source-id', map_view, 'map-source',
+        MAP_SOURCES.get, lambda x: x.get_id())
+    menu_item_clicked = (lambda item, mapid: item.get_active() and
+        map_view.set_map_source(MAP_SOURCES[mapid]))
+    
+    for i, source_id in enumerate(sorted(MAP_SOURCES.keys())):
+        source = MAP_SOURCES[source_id]
+        menu_item = Gtk.RadioMenuItem.new_with_label(radio_group,
+                                                     source.get_name())
+        radio_group.append(menu_item)
+        if last_source == source_id:
+            menu_item.set_active(True)
+        menu_item.connect('activate', menu_item_clicked, source_id)
+        map_menu.attach(menu_item, 0, 1, i, i+1)
+    map_menu.show_all()
+
+
 class PreferencesController():
     """Controls the behavior of the preferences dialog."""
     gpx_timezone = ''
@@ -104,24 +126,6 @@ class PreferencesController():
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
         self.colorpicker.connect('color-changed', self.track_color_changed)
         
-        radio_group = []
-        map_menu = get_obj('map_source_menu')
-        last_source = gst.get('map-source-id').get_string()
-        gst.bind_with_convert('map-source-id', map_view, 'map-source',
-            map_sources.get, lambda x: x.get_id())
-        menu_item_clicked = (lambda item, mapid: item.get_active() and
-            map_view.set_map_source(map_sources[mapid]))
-        for i, source_id in enumerate(sorted(map_sources.keys())):
-            source = map_sources[source_id]
-            menu_item = Gtk.RadioMenuItem.new_with_label(radio_group,
-                                                         source.get_name())
-            radio_group.append(menu_item)
-            if last_source == source_id:
-                menu_item.set_active(True)
-            menu_item.connect('activate', menu_item_clicked, source_id)
-            map_menu.attach(menu_item, 0, 1, i, i+1)
-        map_menu.show_all()
-        
         pref_button.connect('clicked', self.preferences_dialog,
             get_obj('preferences'), region, cities, self.colorpicker)
         
@@ -135,6 +139,8 @@ class PreferencesController():
             radio.connect('clicked', self.radio_handler)
         gst.bind('custom-timezone', get_obj('custom_timezone_combos'),
                  'sensitive')
+        
+        map_source_menu()
     
     def preferences_dialog(self, button, dialog, region, cities, colorpicker):
         """Allow the user to configure this application."""
