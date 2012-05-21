@@ -1,4 +1,3 @@
-# GottenGeography - Control the drag & drop behavior.
 # Copyright (C) 2012 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,6 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Control the drag & drop behavior."""
 
 from __future__ import division
 
@@ -33,10 +34,10 @@ class DragController():
         photos_view.drag_source_add_text_targets()
         photos_view.connect('drag-data-get', self.photo_drag_start)
         
-        map_container = get_obj('map_container')
-        map_container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
-        map_container.drag_dest_add_text_targets()
-        map_container.connect('drag-data-received', self.photo_drag_end, open_files)
+        container = get_obj('map_container')
+        container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        container.drag_dest_add_text_targets()
+        container.connect('drag-data-received', self.photo_drag_end, open_files)
     
     def photo_drag_start(self, widget, drag_context, data, info, time):
         """Allow dragging more than one photo."""
@@ -44,13 +45,15 @@ class DragController():
         files = [ photo.filename for photo in selected ]
         data.set_text('\n'.join(files), -1)
     
-    def photo_drag_end(self, widget, drag_context, x, y, data, info, time, open_files):
+    def photo_drag_end(self, widget, drag_context, x, y,
+                       data, info, time, open_files):
         """Respond to drops and position photos accordingly.
         
-        This method allows photos to be dropped in from the photo pane or any
-        other drag source, such as the file browser.
+        This method allows photos to be dropped in from the photo
+        pane or any other drag source, such as the file browser.
         """
-        files = [urlparse(s).path.strip() for s in data.get_text().split('\n') if s]
+        files = [urlparse(s).path.strip() for s in
+                 data.get_text().split('\n') if s]
         
         if self.external_drag:
             open_files(files)
@@ -58,7 +61,7 @@ class DragController():
         
         # The dummy is used in the case of XML files, which can be opened by
         # drag & drop but then don't need to have set_location called on them.
-        dummy = Struct({'set_location': lambda x,y: None})
+        dummy = Struct({'set_location': lambda lat, lon: None})
         for filename in files:
             photos.get(filename, dummy).set_location(
                 map_view.y_to_latitude(y),
