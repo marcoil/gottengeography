@@ -32,6 +32,7 @@ from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
 from common import Struct, Polygon, polygons, map_view
 from common import points, photos, selected, modified
 from preferences import make_clutter_color
+from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
 
 gui = app.GottenGeography()
@@ -435,37 +436,37 @@ S 10.00000, W 10.00000
         lat = map_view.get_property('latitude')
         lon = map_view.get_property('longitude')
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 4)
         self.assertGreater(    lon, map_view.get_property('longitude'))
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 4)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 0)
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Right"), None)
         self.assertLess(       lon, map_view.get_property('longitude'))
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 4)
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Left"), None)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 0)
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 4)
         
         lon = map_view.get_property('longitude')
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 4)
         self.assertLess(       lat, map_view.get_property('latitude'))
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 4)
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 0)
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Down"), None)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 4)
         self.assertGreater(    lat, map_view.get_property('latitude'))
         
-        gui.navigator.move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
+        move_by_arrow_keys(None, None, Gdk.keyval_from_name("Up"), None)
         self.assertAlmostEqual(lon, map_view.get_property('longitude'), 4)
         self.assertAlmostEqual(lat, map_view.get_property('latitude'), 0)
     
