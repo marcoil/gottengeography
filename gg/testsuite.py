@@ -1,4 +1,4 @@
-# GottenGeography - Test suite ensures that GottenGeography functions correctly
+# GottenGeography - Test suite ensures that GottenGeography functions correctly.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,9 +26,9 @@ from math import floor
 from time import tzset
 
 import app
-from files import Photograph
-from utils import Coordinates, maps_link, valid_coords
-from utils import decimal_to_dms, dms_to_decimal, float_to_rational
+from photos import Photograph
+from gpsmath import Coordinates, valid_coords
+from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
 from common import Struct, Polygon, polygons, map_view
 from common import tracks, photos, selected, modified
 from preferences import make_clutter_color

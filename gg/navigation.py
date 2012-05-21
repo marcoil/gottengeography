@@ -19,7 +19,7 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 
 from common import get_obj, gst, map_view
-from utils import Coordinates, valid_coords
+from gpsmath import Coordinates, valid_coords
 from version import APPNAME
 
 class NavigationController():

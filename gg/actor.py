@@ -18,10 +18,9 @@ from __future__ import division
 
 from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
-from time import sleep
 
 from common import get_obj, map_view
-from utils import format_coords
+from gpsmath import format_coords
 
 class ActorController():
     """Controls the behavior of the custom actors I have placed over the map."""
@@ -35,7 +34,7 @@ class ActorController():
             Clutter.Color.new(0, 0, 0, 64))
         for signal in [ 'latitude', 'longitude' ]:
             map_view.connect('notify::' + signal, self.display,
-                get_obj("maps_link"), self.label)
+                get_obj('maps_link'), self.label)
         map_view.connect('notify::width',
             lambda view, param, black:
                 black.set_size(view.get_width(), 30),
@@ -56,7 +55,7 @@ class ActorController():
         label.set_markup(format_coords(lat, lon))
         mlink.set_markup(
             '<a title="%s" href="http://maps.google.com/maps?ll=%s,%s&amp;spn=%s,%s">Google</a>'
-            % (_("View in Google Maps"), lat, lon,
+            % (_('View in Google Maps'), lat, lon,
             lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
     
     def animate_in(self, start=400):
@@ -71,5 +70,4 @@ class ActorController():
                 actor.set_opacity(opacity)
             while Gtk.events_pending():
                 Gtk.main_iteration()
-            sleep(0.002)
 

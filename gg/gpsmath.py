@@ -1,4 +1,4 @@
-# GottenGeography - Utility functions used by GottenGeography
+# GottenGeography - Trigonometry and other mathematical calculations.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,6 @@
 
 from __future__ import division
 
-from xml.parsers.expat import ParserCreate, ExpatError
 from math import acos, sin, cos, radians
 from time import strftime, localtime
 from math import modf as split_float
@@ -28,11 +27,7 @@ from pyexiv2 import Rational
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
 
-################################################################################
-# GPS math functions. These methods convert numbers into other numbers.
-################################################################################
-
-def dms_to_decimal(degrees, minutes, seconds, sign=" "):
+def dms_to_decimal(degrees, minutes, seconds, sign=' '):
     """Convert degrees, minutes, seconds into decimal degrees."""
     return (-1 if sign[0] in 'SWsw' else 1) * (
         float(degrees)        +
@@ -61,28 +56,21 @@ def valid_coords(lat, lon):
     if type(lon) not in (float, int): return False
     return abs(lat) <= 90 and abs(lon) <= 180
 
-################################################################################
-# String formatting methods. These methods manipulate strings.
-################################################################################
-
-def format_list(strings, joiner=", "):
+def format_list(strings, joiner=', '):
     """Join geonames with a comma, ignoring missing names."""
     return joiner.join([name for name in strings if name])
 
-def maps_link(lat, lon, anchor=_("View in Google Maps")):
+def maps_link(lat, lon, anchor=_('View in Google Maps')):
     """Create a Pango link to Google Maps."""
     return '<a title="%s" href="http://maps.google.com/maps?q=%s,%s">Google</a>' % (anchor, lat, lon)
 
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
-    return "%s %.5f, %s %.5f" % (
-        _("N") if lat >= 0 else _("S"), abs(lat),
-        _("E") if lon >= 0 else _("W"), abs(lon)
+    return '%s %.5f, %s %.5f' % (
+        _('N') if lat >= 0 else _('S'), abs(lat),
+        _('E') if lon >= 0 else _('W'), abs(lon)
     )
 
-################################################################################
-# Class definitions.
-################################################################################
 
 class Coordinates():
     """A generic object containing latitude and longitude coordinates.
@@ -104,7 +92,7 @@ class Coordinates():
     countryname   = None
     city          = None
     
-    filename  = ""
+    filename  = ''
     altitude  = None
     latitude  = None
     longitude = None
@@ -126,14 +114,14 @@ class Coordinates():
         if not self.valid_coords():
             return
         assert self.geodata is Coordinates.geodata
-        key = "%.2f,%.2f" % (self.latitude, self.longitude)
+        key = '%.2f,%.2f' % (self.latitude, self.longitude)
         if key in self.geodata:
             return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
             for city in cities:
-                name, lat, lon, country, state, tz = city.split("\t")
+                name, lat, lon, country, state, tz = city.split('\t')
                 lat2, lon2 = radians(float(lat)), radians(float(lon))
                 try:
                     delta = acos(sin(lat1) * sin(lat2) +
@@ -158,12 +146,12 @@ class Coordinates():
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
         if type(self.timestamp) is int:
-            return strftime("%Y-%m-%d %X", localtime(self.timestamp))
+            return strftime('%Y-%m-%d %X', localtime(self.timestamp))
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
         return format_coords(self.latitude, self.longitude) \
-            if self.valid_coords() else _("Not geotagged")
+            if self.valid_coords() else _('Not geotagged')
     
     def pretty_geoname(self, multiline=True):
         """Display city, state, and country, if present."""
@@ -174,13 +162,13 @@ class Coordinates():
     def pretty_elevation(self):
         """Convert elevation into a human readable format."""
         if type(self.altitude) in (float, int):
-            return "%.1f%s" % (abs(self.altitude), _("m above sea level")
-                        if self.altitude >= 0 else _("m below sea level"))
+            return '%.1f%s' % (abs(self.altitude), _('m above sea level')
+                        if self.altitude >= 0 else _('m below sea level'))
     
     def short_summary(self):
         """Plaintext summary of photo metadata."""
         return format_list([self.pretty_time(), self.pretty_coords(),
-            self.pretty_geoname(), self.pretty_elevation()], "\n")
+            self.pretty_geoname(), self.pretty_elevation()], '\n')
     
     def long_summary(self):
         """Longer summary with Pango markup."""
@@ -188,72 +176,4 @@ class Coordinates():
             'size="larger"', basename(self.filename),
             'style="italic" size="smaller"', self.short_summary()
         )
-
-
-class XMLSimpleParser:
-    """A simple wrapper for the Expat XML parser."""
-    
-    def __init__(self, rootname, watchlist):
-        self.rootname = rootname
-        self.watchlist = watchlist
-        self.call_start = None
-        self.call_end = None
-        self.element = None
-        self.tracking = None
-        self.state = {}
-        
-        self.parser = ParserCreate()
-        self.parser.StartElementHandler = self.element_root
-    
-    def parse(self, filename, call_start, call_end):
-        """Begin the loading and parsing of the XML file."""
-        self.call_start = call_start
-        self.call_end = call_end
-        try:
-            with open(filename) as xml:
-                self.parser.ParseFile(xml)
-        except ExpatError:
-            raise IOError
-   
-    def element_root(self, name, attributes):
-        """Called on the root XML element, we check if it's the one we want."""
-        if self.rootname != None and name != self.rootname:
-            raise IOError
-        self.parser.StartElementHandler = self.element_start
-    
-    def element_start(self, name, attributes):
-        """Only collect the attributes from XML elements that we care about."""
-        if not self.tracking:
-            if name not in self.watchlist:
-                return
-            if self.call_start(name, attributes):
-                # Start tracking this element, accumulate everything under it.
-                self.tracking = name
-                self.parser.CharacterDataHandler = self.element_data
-                self.parser.EndElementHandler = self.element_end
-        
-        if self.tracking is not None:
-            self.element = name
-            self.state[name] = ""
-            self.state.update(attributes)
-    
-    def element_data(self, data):
-        """Accumulate all data for an element.
-        
-        Expat can call this handler multiple times with data chunks.
-        """
-        if not data or data.strip() == '':
-            return
-        self.state[self.element] += data
-    
-    def element_end(self, name):
-        """When the tag closes, pass it's data to the end callback and reset."""
-        if name != self.tracking:
-            return
-        
-        self.call_end(name, self.state)
-        self.tracking = None
-        self.state.clear()
-        self.parser.CharacterDataHandler = None
-        self.parser.EndElementHandler = None
 

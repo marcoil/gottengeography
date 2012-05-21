@@ -38,13 +38,13 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from photos import Photograph
+from gpsmath import format_list
+from xmlfiles import GPXFile, KMLFile
 from common import polygons, tracks, photos
 from common import auto_timestamp_comparison
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
-from files import Photograph, GPXFile, KMLFile
-from utils import format_list, format_coords
-from utils import Coordinates, valid_coords
 
 from drag import DragController
 from actor import ActorController
@@ -80,10 +80,10 @@ class GottenGeography():
             except IOError:
                 invalid_files.append(basename(name))
         if len(invalid_files) > 0:
-            self.status_message(_("Could not open: ") + format_list(invalid_files))
+            self.status_message(_('Could not open: ') + format_list(invalid_files))
         self.progressbar.hide()
-        self.labels.selection.emit("changed")
-        map_view.emit("animation-completed")
+        self.labels.selection.emit('changed')
+        map_view.emit('animation-completed')
     
     def load_img_from_file(self, filename):
         """Create or update a row in the ListStore.
@@ -117,7 +117,7 @@ class GottenGeography():
         # Emitting this signal ensures the new tracks get the correct color.
         get_obj('colorselection').emit('color-changed')
         
-        self.status_message(_("%d points loaded in %.2fs.") %
+        self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time))
         
         if len(gpx.tracks) < 2:
@@ -127,7 +127,7 @@ class GottenGeography():
         metadata.alpha = min(metadata.alpha, gpx.alpha)
         metadata.omega = max(metadata.omega, gpx.omega)
         
-        map_view.emit("realize")
+        map_view.emit('realize')
         map_view.set_zoom_level(map_view.get_max_zoom_level())
         bounds = Champlain.BoundingBox.new()
         for poly in polygons:
@@ -146,7 +146,7 @@ class GottenGeography():
             photo.set_location(
                 view.get_property('latitude'),
                 view.get_property('longitude'))
-        self.labels.selection.emit("changed")
+        self.labels.selection.emit('changed')
     
     def revert_selected_photos(self, button=None):
         """Discard any modifications to all selected photos."""
@@ -175,8 +175,8 @@ class GottenGeography():
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
-        photos, total = list(modified), len(modified)
-        for i, photo in enumerate(photos, 1):
+        total = len(modified)
+        for i, photo in enumerate(list(modified), 1):
             self.redraw_interface(i / total, basename(photo.filename))
             try:
                 photo.write()
@@ -187,7 +187,7 @@ class GottenGeography():
                 self.liststore.set_value(photo.iter, SUMMARY,
                     photo.long_summary())
         self.progressbar.hide()
-        self.labels.selection.emit("changed")
+        self.labels.selection.emit('changed')
     
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
@@ -232,7 +232,7 @@ class GottenGeography():
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
-        label.set_label(format_list([photo.short_summary(), photo.maps_link()], "\n"))
+        label.set_label(format_list([photo.short_summary(), photo.maps_link()], '\n'))
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
@@ -246,7 +246,7 @@ class GottenGeography():
         if len(modified) == 0:
             Gtk.main_quit()
             return True
-        dialog = get_obj("quit")
+        dialog = get_obj('quit')
         dialog.format_secondary_markup(self.strings.quit % len(modified))
         response = dialog.run()
         dialog.hide()
@@ -260,15 +260,15 @@ class GottenGeography():
 ################################################################################
     
     def __init__(self):
-        self.progressbar = get_obj("progressbar")
-        self.status      = get_obj("status")
+        self.progressbar = get_obj('progressbar')
+        self.status      = get_obj('status')
         
         self.strings = Struct({
-            "quit":    get_obj("quit").get_property('secondary-text'),
-            "preview": get_obj("preview_label").get_text()
+            'quit':    get_obj('quit').get_property('secondary-text'),
+            'preview': get_obj('preview_label').get_text()
         })
         
-        self.liststore = get_obj("loaded_photos")
+        self.liststore = get_obj('loaded_photos')
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
         
         cell_string = Gtk.CellRendererText()
@@ -284,7 +284,7 @@ class GottenGeography():
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        get_obj("photos_view").append_column(column)
+        get_obj('photos_view').append_column(column)
         
         self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
@@ -293,53 +293,53 @@ class GottenGeography():
         self.labels    = LabelController()
         self.actors    = ActorController()
         
-        about_dialog = get_obj("about")
+        about_dialog = get_obj('about')
         about_dialog.set_version(VERSION)
         about_dialog.set_program_name(APPNAME)
         
         click_handlers = {
-            "open_button":       [self.add_files_dialog, get_obj("open")],
-            "save_button":       [self.save_all_files],
-            "clear_button":      [self.clear_all_gpx],
-            "close_button":      [self.close_selected_photos],
-            "revert_button":     [self.revert_selected_photos],
-            "about_button":      [lambda b, d: d.run() and d.hide(), about_dialog],
-            "apply_button":      [self.apply_selected_photos, map_view],
-            "select_all_button": [self.toggle_selected_photos, self.labels.selection]
+            'open_button':       [self.add_files_dialog, get_obj('open')],
+            'save_button':       [self.save_all_files],
+            'clear_button':      [self.clear_all_gpx],
+            'close_button':      [self.close_selected_photos],
+            'revert_button':     [self.revert_selected_photos],
+            'about_button':      [lambda b, d: d.run() and d.hide(), about_dialog],
+            'apply_button':      [self.apply_selected_photos, map_view],
+            'select_all_button': [self.toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
-            get_obj(button).connect("clicked", *handler)
+            get_obj(button).connect('clicked', *handler)
         
         accel  = Gtk.AccelGroup()
-        window = get_obj("main")
+        window = get_obj('main')
         window.resize(*gst.get('window-size'))
-        window.connect("delete_event", self.confirm_quit_dialog)
+        window.connect('delete_event', self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
         
-        save_size = lambda v,s,size: gst.set('window-size', size())
+        save_size = lambda v, s, size: gst.set('window-size', size())
         for prop in ['width', 'height']:
             map_view.connect('notify::' + prop, save_size, window.get_size)
         
-        map_source_button = get_obj("map_source_label").get_parent()
+        map_source_button = get_obj('map_source_label').get_parent()
         if map_source_button:
-            map_source_button.set_property("visible", False)
+            map_source_button.set_property('visible', False)
         
-        accel.connect(Gdk.keyval_from_name("q"),
+        accel.connect(Gdk.keyval_from_name('q'),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
-        self.labels.selection.emit("changed")
+        self.labels.selection.emit('changed')
         self.clear_all_gpx()
         
         metadata.delta = 0
-        self.secbutton, self.minbutton = get_obj("seconds"), get_obj("minutes")
-        gst.bind("offset-minutes", self.minbutton, "value")
-        gst.bind("offset-seconds", self.secbutton, "value")
+        self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
+        gst.bind('offset-minutes', self.minbutton, 'value')
+        gst.bind('offset-seconds', self.secbutton, 'value')
         for spinbutton in [ self.secbutton, self.minbutton ]:
-            spinbutton.connect("value-changed", self.time_offset_changed)
+            spinbutton.connect('value-changed', self.time_offset_changed)
         
-        get_obj("open").connect("update-preview", self.update_preview,
-            get_obj("preview_label"), get_obj("preview_image"))
+        get_obj('open').connect('update-preview', self.update_preview,
+            get_obj('preview_label'), get_obj('preview_image'))
     
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
@@ -361,7 +361,7 @@ class GottenGeography():
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
-        self.status.push(self.status.get_context_id("msg"), message)
+        self.status.push(self.status.get_context_id('msg'), message)
     
     def main(self, anim_start=400):
         """Animate the crosshair and begin user interaction."""

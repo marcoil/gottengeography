@@ -1,4 +1,4 @@
-# GottenGeography - Common things used throughout the app.
+# GottenGeography - Common classes and functions used throughout the app.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify

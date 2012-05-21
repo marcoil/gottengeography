@@ -1,4 +1,4 @@
-# GottenGeography - Package version data for GottenGeography
+# GottenGeography - Package version data for GottenGeography.
 # Copyright (C) 2011 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify

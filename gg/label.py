@@ -1,4 +1,4 @@
-# GottenGeography - Control how the preferences are set.
+# GottenGeography - Control the behavior of ChamplainLabels.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify

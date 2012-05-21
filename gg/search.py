@@ -22,7 +22,7 @@ from re import compile as re_compile, IGNORECASE
 from common import get_obj, map_view
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
-from utils import format_list
+from gpsmath import format_list
 
 # ListStore column names
 LOCATION, LATITUDE, LONGITUDE = range(3)
