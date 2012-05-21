@@ -421,14 +421,15 @@ S 10.00000, W 10.00000
                 10 # equal to 10 places
             )
     
-    def test_map_navigation(self):
+    def test_navigation_controller(self):
         """Ensure that it's possible to navigate the map."""
-        
         coords = [[
             map_view.get_property('latitude'),
             map_view.get_property('longitude')
         ]]
         map_view.emit('realize')
+        map_view.emit('animation-completed')
+        self.assertGreater(len(get_obj('main').get_title()[18:]), 5)
         
         lat = round(random_coord(90),  6)
         lon = round(random_coord(180), 6)
