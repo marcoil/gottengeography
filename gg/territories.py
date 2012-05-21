@@ -1,14 +1,17 @@
 # coding=UTF-8
 
-# This data was provided by geonames.org and is licensed
-# under the Creative Commons Attribution 3.0 License,
-# see http://creativecommons.org/licenses/by/3.0/
-#
-# The data is provided "as is" without warranty or any
-# representation of accuracy, timeliness or completeness.
-#
-# The data was then converted from tab-delimited UTF8 into
-# python source code by Robert Park <rbpark@exolucere.ca>
+"""Define an exhaustive list of countries and administrative regions.
+
+This data was provided by geonames.org and is licensed
+under the Creative Commons Attribution 3.0 License,
+see http://creativecommons.org/licenses/by/3.0/
+
+The data is provided "as is" without warranty or any
+representation of accuracy, timeliness or completeness.
+
+The data was then converted from tab-delimited UTF8 into
+python source code by Robert Park <rbpark@exolucere.ca>
+"""
 
 countries = {
 "AD": "Andorra",
