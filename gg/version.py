@@ -21,7 +21,7 @@ as it is also imported by the po/initialize-pot.sh script.
 
 APPNAME='GottenGeography'
 PACKAGE='gottengeography'
-VERSION='1.2.1'
+VERSION='1.3'
 
 AUTHOR='Robert Park'
 EMAIL='rbpark@exolucere.ca'
