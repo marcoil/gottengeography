@@ -1,4 +1,3 @@
-# GottenGeography - Control how the custom map actors behave.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Control how the custom map actors behave."""
+
 from __future__ import division
 
 from gi.repository import Gtk, Champlain, Clutter
@@ -21,6 +22,16 @@ from gettext import gettext as _
 
 from common import get_obj, map_view
 from gpsmath import format_coords
+
+def display(view, param, mlink, label):
+    """Display map center coordinates when they change."""
+    lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
+    label.set_markup(format_coords(lat, lon))
+    mlink.set_markup(
+        '<a title="%s" href="%s?ll=%s,%s&amp;spn=%s,%s">Google</a>'
+        % (_('View in Google Maps'), 'http://maps.google.com/maps', lat, lon,
+        lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
+
 
 class ActorController():
     """Controls the behavior of the custom actors I have placed over the map."""
@@ -33,7 +44,7 @@ class ActorController():
         self.xhair = Clutter.Rectangle.new_with_color(
             Clutter.Color.new(0, 0, 0, 64))
         for signal in [ 'latitude', 'longitude' ]:
-            map_view.connect('notify::' + signal, self.display,
+            map_view.connect('notify::' + signal, display,
                 get_obj('maps_link'), self.label)
         map_view.connect('notify::width',
             lambda view, param, black:
@@ -48,15 +59,6 @@ class ActorController():
             Clutter.BinAlignment.START, Clutter.BinAlignment.START)
         self.black.get_layout_manager().add(self.label,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
-    
-    def display(self, view, param, mlink, label):
-        """Display map center coordinates when they change."""
-        lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
-        label.set_markup(format_coords(lat, lon))
-        mlink.set_markup(
-            '<a title="%s" href="http://maps.google.com/maps?ll=%s,%s&amp;spn=%s,%s">Google</a>'
-            % (_('View in Google Maps'), lat, lon,
-            lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
     
     def animate_in(self, start=400):
         """Animate the crosshair."""
