@@ -57,6 +57,21 @@ class GottenGeographyTester(TestCase):
         for key in app.gst.list_keys():
             app.gst.reset(key)
     
+    def test_actor_controller(self):
+        """Make sure the actors are behaving."""
+        from actor import ActorController
+        control = ActorController()
+        map_view.center_on(50, 50)
+        self.assertEqual(control.label.get_text(), 'N 50.00000, E 50.00000')
+        map_view.center_on(-10, -30)
+        self.assertEqual(control.label.get_text(), 'S 10.00000, W 30.00000')
+        for rot in control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
+            self.assertEqual(rot, 0)
+        control.animate_in(10)
+        self.assertEqual(control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0], 45)
+        self.assertEqual(control.xhair.get_size(), (8, 9))
+        self.assertEqual(control.black.get_width(), map_view.get_width())
+    
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
