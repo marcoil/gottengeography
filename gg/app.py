@@ -349,7 +349,7 @@ class GottenGeography():
         """Display a message on the GtkStatusBar."""
         self.status.push(self.status.get_context_id('msg'), message)
     
-    def main(self, anim_start=400):
+    def main(self, anim_start=200):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files([abspath(f) for f in argv[1:]])

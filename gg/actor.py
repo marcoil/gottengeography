@@ -19,6 +19,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
+from time import sleep
 
 from common import get_obj, map_view
 from gpsmath import format_coords
@@ -60,7 +61,7 @@ class ActorController():
         self.black.get_layout_manager().add(self.label,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
     
-    def animate_in(self, start=400):
+    def animate_in(self, start):
         """Animate the crosshair."""
         map_view.bin_layout_add(self.xhair,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
@@ -72,4 +73,5 @@ class ActorController():
                 actor.set_opacity(opacity)
             while Gtk.events_pending():
                 Gtk.main_iteration()
+            sleep(0.01)
 
