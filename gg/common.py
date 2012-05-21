@@ -186,3 +186,11 @@ get_obj  = Builder().get_object
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
 
+
+def add_polygon_to_map():
+    """Create a new Polygon and add it to the map."""
+    polygon = Polygon()
+    polygons.append(polygon)
+    map_view.add_layer(polygon)
+    return polygon.append_point
+

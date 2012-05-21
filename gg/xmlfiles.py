@@ -1,4 +1,3 @@
-# GottenGeography - Classes for parsing GPX/KML XML files.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Define classes used for parsing GPX and KML XML files."""
+
 from __future__ import division
 
 from xml.parsers.expat import ParserCreate, ExpatError
@@ -24,7 +25,7 @@ from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import map_view, Polygon, polygons
+from common import add_polygon_to_map
 
 
 class XMLSimpleParser:
@@ -102,12 +103,13 @@ class TrackFile(Coordinates):
     the base class.
     """
     
-    def __init__(self, filename, progressbar):
+    def __init__(self, filename, root, watch, progressbar):
         self.progress = progressbar
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
         
+        self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         
         keys = self.tracks.keys()
@@ -115,7 +117,7 @@ class TrackFile(Coordinates):
         self.omega = max(keys)
     
     def element_start(self, name, attributes):
-        """Placeholder for a method that might do something in the future."""
+        """Placeholder for a method that gets overridden in subclasses."""
         return False
     
     def element_end(self, name, state):
@@ -125,13 +127,6 @@ class TrackFile(Coordinates):
             while Gtk.events_pending():
                 Gtk.main_iteration()
             self.clock = clock()
-    
-    def add_poly(self):
-        """Create a new Polygon and add it to the map."""
-        polygon = Polygon()
-        polygons.append(polygon)
-        map_view.add_layer(polygon)
-        return polygon.append_point
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
@@ -142,14 +137,14 @@ split = re_compile(r'[:TZ-]').split
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
-    def __init__(self, filename, progressbar):
-        self.parser = XMLSimpleParser('gpx', ['trkseg', 'trkpt'])
-        TrackFile.__init__(self, filename, progressbar)
+    def __init__(self, filename, progress):
+        TrackFile.__init__(self, filename, 'gpx',
+                           ['trkseg', 'trkpt'], progress)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
         if name == 'trkseg':
-            self.append = self.add_poly()
+            self.append = add_polygon_to_map()
         if name == 'trkpt':
             return True
         return False
@@ -183,17 +178,17 @@ class GPXFile(TrackFile):
 class KMLFile(TrackFile):
     """Parse a KML file."""
     
-    def __init__(self, filename, progressbar):
+    def __init__(self, filename, progress):
         self.whens    = []
         self.coords   = []
         
-        self.parser = XMLSimpleParser('kml', ['gx:Track', 'when', 'gx:coord'])
-        TrackFile.__init__(self, filename, progressbar)
+        TrackFile.__init__(self, filename, 'kml', ['gx:Track',
+                           'when', 'gx:coord'], progress)
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""
         if name == 'gx:Track':
-            self.append = self.add_poly()
+            self.append = add_polygon_to_map()
             return False
         return True
     
