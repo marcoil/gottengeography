@@ -1,4 +1,3 @@
-# GottenGeography - Automagically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,6 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Main application code that ties all the other modules together."""
 
 from __future__ import division
 
@@ -45,6 +46,7 @@ from common import polygons, points, photos
 from common import auto_timestamp_comparison
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
+from common import gpx_sensitivity, clear_all_gpx
 
 from drag import DragController
 from actor import ActorController
@@ -55,6 +57,11 @@ from preferences import PreferencesController
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
+
+def toggle_selected_photos(button, sel):
+    """Toggle the selection of photos."""
+    (sel.select_all if button.get_active() else sel.unselect_all)()
+
 
 class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
@@ -71,21 +78,21 @@ class GottenGeography():
     def open_files(self, files):
         """Attempt to load all of the specified files."""
         self.progressbar.show()
-        invalid_files, total = [], len(files)
+        invalid, total = [], len(files)
         for i, name in enumerate(files, 1):
             self.redraw_interface(i / total, basename(name))
             try:
                 try:            self.load_img_from_file(name)
                 except IOError: self.load_gpx_from_file(name)
             except IOError:
-                invalid_files.append(basename(name))
-        if len(invalid_files) > 0:
-            self.status_message(_('Could not open: ') + format_list(invalid_files))
+                invalid.append(basename(name))
+        if len(invalid) > 0:
+            self.status_message(_('Could not open: ') + format_list(invalid))
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
     
-    def load_img_from_file(self, filename):
+    def load_img_from_file(self, uri):
         """Create or update a row in the ListStore.
         
         Checks if the file has already been loaded, and if not, creates a new
@@ -95,24 +102,24 @@ class GottenGeography():
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = photos.get(filename) or Photograph(filename, self.modify_summary)
+        photo = photos.get(uri) or Photograph(uri, self.modify_summary)
         photo.read()
-        if filename not in photos:
-            photo.iter       = self.liststore.append()
-            photo.label      = self.labels.add(filename)
-            photos[filename] = photo
+        if uri not in photos:
+            photo.iter  = self.liststore.append()
+            photo.label = self.labels.add(uri)
+            photos[uri] = photo
         photo.position_label()
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
-            [filename, photo.long_summary(), photo.thumb, photo.timestamp])
+            [uri, photo.long_summary(), photo.thumb, photo.timestamp])
         auto_timestamp_comparison(photo)
     
-    def load_gpx_from_file(self, filename):
+    def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        open_file = KMLFile if filename[-3:].lower() == 'kml' else GPXFile
-        gpx = open_file(filename, self.progressbar)
+        open_file = KMLFile if uri[-3:].lower() == 'kml' else GPXFile
+        gpx = open_file(uri, self.progressbar)
         
         # Emitting this signal ensures the new tracks get the correct color.
         get_obj('colorselection').emit('color-changed')
@@ -137,7 +144,7 @@ class GottenGeography():
         
         self.prefs.gpx_timezone = gpx.lookup_geoname()
         self.prefs.set_timezone()
-        self.gpx_sensitivity()
+        gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):
         """Manually apply map center coordinates to all selected photos."""
@@ -160,17 +167,6 @@ class GottenGeography():
             modified.discard(photo)
             self.liststore.remove(photo.iter)
         self.labels.select_all.set_active(False)
-    
-    def clear_all_gpx(self, widget=None):
-        """Forget all GPX data, start over with a clean slate."""
-        for polygon in polygons:
-            map_view.remove_layer(polygon)
-        
-        del polygons[:]
-        points.clear()
-        metadata.omega = float('-inf')   # Final GPX track point
-        metadata.alpha = float('inf')    # Initial GPX track point
-        self.gpx_sensitivity()
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -213,11 +209,6 @@ class GottenGeography():
         self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
     
-    def toggle_selected_photos(self, button, selection):
-        """Toggle the selection of photos."""
-        if button.get_active(): selection.select_all()
-        else:                   selection.unselect_all()
-    
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
 ################################################################################
@@ -227,12 +218,14 @@ class GottenGeography():
         label.set_label(self.strings.preview)
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(), lambda x: None, 300)
+            photo = Photograph(chooser.get_preview_filename(),
+                               lambda x: None, 300)
             photo.read()
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
-        label.set_label(format_list([photo.short_summary(), photo.maps_link()], '\n'))
+        label.set_label(
+            format_list([photo.short_summary(), photo.maps_link()], '\n'))
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
@@ -293,19 +286,19 @@ class GottenGeography():
         self.labels    = LabelController()
         self.actors    = ActorController()
         
-        about_dialog = get_obj('about')
-        about_dialog.set_version(VERSION)
-        about_dialog.set_program_name(APPNAME)
+        about = get_obj('about')
+        about.set_version(VERSION)
+        about.set_program_name(APPNAME)
         
         click_handlers = {
             'open_button':       [self.add_files_dialog, get_obj('open')],
             'save_button':       [self.save_all_files],
-            'clear_button':      [self.clear_all_gpx],
+            'clear_button':      [clear_all_gpx],
             'close_button':      [self.close_selected_photos],
             'revert_button':     [self.revert_selected_photos],
-            'about_button':      [lambda b, d: d.run() and d.hide(), about_dialog],
+            'about_button':      [lambda b, d: d.run() and d.hide(), about],
             'apply_button':      [self.apply_selected_photos, map_view],
-            'select_all_button': [self.toggle_selected_photos, self.labels.selection]
+            'select_all_button': [toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
@@ -329,7 +322,7 @@ class GottenGeography():
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
         self.labels.selection.emit('changed')
-        self.clear_all_gpx()
+        clear_all_gpx()
         
         metadata.delta = 0
         self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
@@ -340,13 +333,6 @@ class GottenGeography():
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))
-    
-    def gpx_sensitivity(self):
-        """Control the sensitivity of GPX-related widgets."""
-        gpx_sensitive = len(points) > 0
-        get_obj('clear_button').set_sensitive(gpx_sensitive)
-        for widget in [ 'minutes', 'seconds', 'offset_label' ]:
-            get_obj(widget).set_visible(gpx_sensitive)
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.

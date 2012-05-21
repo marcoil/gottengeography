@@ -187,3 +187,21 @@ def add_polygon_to_map():
     map_view.add_layer(polygon)
     return polygon.append_point
 
+def clear_all_gpx(widget=None):
+    """Forget all GPX data, start over with a clean slate."""
+    for polygon in polygons:
+        map_view.remove_layer(polygon)
+    
+    del polygons[:]
+    points.clear()
+    metadata.omega = float('-inf')   # Final GPX track point
+    metadata.alpha = float('inf')    # Initial GPX track point
+    gpx_sensitivity()
+
+def gpx_sensitivity():
+    """Control the sensitivity of GPX-related widgets."""
+    gpx_sensitive = len(points) > 0
+    get_obj('clear_button').set_sensitive(gpx_sensitive)
+    for widget in [ 'minutes', 'seconds', 'offset_label' ]:
+        get_obj(widget).set_visible(gpx_sensitive)
+
