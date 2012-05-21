@@ -1,4 +1,3 @@
-# GottenGeography - Class for loading and savings photographs.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Class for loading and saving photographs."""
+
 from __future__ import division
 
 from gi.repository import Gio, GObject, GdkPixbuf
@@ -26,8 +27,8 @@ from gpsmath import dms_to_decimal, decimal_to_dms, float_to_rational
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
-gps  = 'Exif.GPSInfo.GPS'
-iptc = 'Iptc.Application2.'
+GPS  = 'Exif.GPSInfo.GPS'
+IPTC = 'Iptc.Application2.'
 
 
 class Photograph(Coordinates):
@@ -40,6 +41,9 @@ class Photograph(Coordinates):
         self.thm_size = thumb_size
         self.label    = None
         self.iter     = None
+        self.exif     = None
+        self.thumb    = None
+        self.manual   = None
     
     def read(self):
         """Load exif data from disk."""
@@ -55,7 +59,7 @@ class Photograph(Coordinates):
         except TypeError:
             raise IOError
         
-        """Try to get a thumbnail."""
+        # Try to get a thumbnail.
         try:
             self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     self.filename, self.thm_size, self.thm_size)
@@ -74,18 +78,18 @@ class Photograph(Coordinates):
         self.calculate_timestamp()
         try:
             self.latitude = dms_to_decimal(
-                *self.exif[gps + 'Latitude'].value +
-                [self.exif[gps + 'LatitudeRef'].value]
+                *self.exif[GPS + 'Latitude'].value +
+                [self.exif[GPS + 'LatitudeRef'].value]
             )
             self.longitude = dms_to_decimal(
-                *self.exif[gps + 'Longitude'].value +
-                [self.exif[gps + 'LongitudeRef'].value]
+                *self.exif[GPS + 'Longitude'].value +
+                [self.exif[GPS + 'LongitudeRef'].value]
             )
         except KeyError:
             pass
         try:
-            self.altitude = float(self.exif[gps + 'Altitude'].value)
-            if int(self.exif[gps + 'AltitudeRef'].value) > 0:
+            self.altitude = float(self.exif[GPS + 'Altitude'].value)
+            if int(self.exif[GPS + 'AltitudeRef'].value) > 0:
                 self.altitude *= -1
         except KeyError:
             pass
@@ -107,13 +111,13 @@ class Photograph(Coordinates):
     def write(self):
         """Save exif data to photo file on disk."""
         if self.altitude is not None:
-            self.exif[gps + 'Altitude']    = float_to_rational(self.altitude)
-            self.exif[gps + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
-        self.exif[gps + 'Latitude']     = decimal_to_dms(self.latitude)
-        self.exif[gps + 'LatitudeRef']  = 'N' if self.latitude >= 0 else 'S'
-        self.exif[gps + 'Longitude']    = decimal_to_dms(self.longitude)
-        self.exif[gps + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
-        self.exif[gps + 'MapDatum']     = 'WGS-84'
+            self.exif[GPS + 'Altitude']    = float_to_rational(self.altitude)
+            self.exif[GPS + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
+        self.exif[GPS + 'Latitude']     = decimal_to_dms(self.latitude)
+        self.exif[GPS + 'LatitudeRef']  = 'N' if self.latitude >= 0 else 'S'
+        self.exif[GPS + 'Longitude']    = decimal_to_dms(self.longitude)
+        self.exif[GPS + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
+        self.exif[GPS + 'MapDatum']     = 'WGS-84'
         self.exif.write()
     
     def set_location(self, lat, lon, ele=None):
@@ -147,18 +151,18 @@ class Photograph(Coordinates):
     
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
-        city, state, countrycode, tz      = data
-        self.exif[iptc + 'City']          = [city or '']
-        self.exif[iptc + 'ProvinceState'] = [get_state(countrycode, state) or '']
-        self.exif[iptc + 'CountryName']   = [get_country(countrycode) or '']
-        self.exif[iptc + 'CountryCode']   = [countrycode or '']
+        city, state, country, tz          = data
+        self.exif[IPTC + 'City']          = [city or '']
+        self.exif[IPTC + 'ProvinceState'] = [get_state(country, state) or '']
+        self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
+        self.exif[IPTC + 'CountryCode']   = [country or '']
         self.timezone                     = tz.strip()
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""
         names = []
         for key in [ 'City', 'ProvinceState', 'CountryName' ]:
-            try: names.extend(self.exif[iptc + key].values)
+            try: names.extend(self.exif[IPTC + key].values)
             except KeyError: pass
         length = sum(map(len, names))
         return format_list(names, ',\n' if length > 35 else ', ')
