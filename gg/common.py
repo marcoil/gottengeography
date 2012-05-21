@@ -1,4 +1,3 @@
-# GottenGeography - Common classes and functions used throughout the app.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,6 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Common classes and functions used throughout the app."""
 
 from __future__ import division
 
@@ -123,30 +124,22 @@ class GSettings(Gio.Settings):
         gnome-tweak-tool on May 14, 2012.
         """
         def key_changed(settings, key):
+            """Update widget property."""
             if self._ignore_key_changed: return
-            orig_value = self[key]
-            converted_value = key_to_prop(orig_value)
             self._ignore_prop_changed = True
-            try:
-                widget.set_property(prop, converted_value)
-            except TypeError:
-                print "TypeError: %s not a valid %s." % (converted_value, prop)
+            widget.set_property(prop, key_to_prop(self[key]))
             self._ignore_prop_changed = False
         
         def prop_changed(widget, param):
+            """Update GSettings key."""
             if self._ignore_prop_changed: return
-            orig_value = widget.get_property(prop)
-            converted_value = prop_to_key(orig_value)
             self._ignore_key_changed = True
-            try:
-                self[key] = converted_value
-            except TypeError:
-                print "TypeError: %s not a valid %s." % (converted_value, key)
+            self[key] = prop_to_key(widget.get_property(prop))
             self._ignore_key_changed = False
         
-        self.connect("changed::" + key, key_changed)
-        widget.connect("notify::" + prop, prop_changed)
-        key_changed(self,key) # init default state
+        self.connect('changed::' + key, key_changed)
+        widget.connect('notify::' + prop, prop_changed)
+        key_changed(self, key) # init default state
 
 
 class ChamplainEmbedder(GtkChamplain.Embed):
