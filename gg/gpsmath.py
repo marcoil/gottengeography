@@ -1,4 +1,3 @@
-# GottenGeography - Trigonometry and other mathematical calculations.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Trigonometry and other mathematical calculations."""
+
 from __future__ import division
 
 from math import acos, sin, cos, radians
@@ -26,6 +27,8 @@ from pyexiv2 import Rational
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
+
+EARTH_RADIUS = 6371 #km
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
     """Convert degrees, minutes, seconds into decimal degrees."""
@@ -62,7 +65,8 @@ def format_list(strings, joiner=', '):
 
 def maps_link(lat, lon, anchor=_('View in Google Maps')):
     """Create a Pango link to Google Maps."""
-    return '<a title="%s" href="http://maps.google.com/maps?q=%s,%s">Google</a>' % (anchor, lat, lon)
+    return '<a title="%s" href="%s?q=%s,%s">Google</a>' % (
+        'http://maps.google.com/maps', anchor, lat, lon)
 
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
@@ -126,7 +130,7 @@ class Coordinates():
                 try:
                     delta = acos(sin(lat1) * sin(lat2) +
                                  cos(lat1) * cos(lat2) *
-                                 cos(lon2  - lon1))    * 6371 # earth's radius in km
+                                 cos(lon2  - lon1))    * EARTH_RADIUS
                 except ValueError:
                     delta = 0
                 if delta < dist:
