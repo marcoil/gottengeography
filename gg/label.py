@@ -70,7 +70,7 @@ class LabelController():
         save.set_sensitive(  len(modified) > 0)
         revert.set_sensitive(len(modified & selected) > 0)
         if len(photos) > 0: left.show()
-        else:                   left.hide()
+        else:               left.hide()
     
     def clicked(self, label, event, selection, select_all):
         """When a ChamplainLabel is clicked, select it in the GtkListStore.
