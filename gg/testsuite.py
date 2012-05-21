@@ -1,4 +1,3 @@
-# GottenGeography - Test suite ensures that GottenGeography functions correctly.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,14 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Ensure that GottenGeography is behaving correctly."""
+
 from __future__ import division
 
 from gi.repository import Gdk, Clutter, Champlain
 from unittest import TestCase, TextTestRunner, TestLoader
 from os import listdir, system, environ
+from os.path import join, abspath
 from fractions import Fraction
 from random import random
-from os.path import join
 from math import floor
 from time import tzset
 
@@ -41,6 +42,9 @@ gst_get = app.gst.get
 
 # Disable animations so tests pass more quickly.
 gui.search.slide_to = map_view.center_on
+
+DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
+             for f in listdir('./demo/')]
 
 class GottenGeographyTester(TestCase):
     def setUp(self):
@@ -72,6 +76,43 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(control.xhair.get_size(), (8, 9))
         self.assertEqual(control.black.get_width(), map_view.get_width())
     
+    def test_drag_controller(self):
+        """Make sure that we can drag photos around."""
+        # Can we load files?
+        data = Struct({'get_text': lambda: '\n'.join(DEMOFILES)})
+        self.assertEqual(len(photos), 0)
+        self.assertEqual(len(points), 0)
+        gui.drag.photo_drag_end(None, None, 20, 20, data,
+                                None, None, gui.open_files)
+        self.assertEqual(len(photos), 6)
+        self.assertEqual(len(points), 374)
+        for button in ('select_all', 'close', 'clear'):
+            get_obj(button + '_button').emit('clicked')
+        self.assertEqual(len(photos), 0)
+        self.assertEqual(len(points), 0)
+        
+        gui.open_files(DEMOFILES)
+        for photo in photos.values():
+            # 'Drag' a ChamplainLabel and make sure the photo location matches.
+            photo.label.set_location(random_coord(80), random_coord(180))
+            photo.label.emit('drag-finish', Clutter.Event())
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
+            
+            # 'Drag' a photo onto the map and make sure that also works.
+            selected.add(photo)
+            data = Struct({'get_text': lambda: photo.filename})
+            gui.drag.photo_drag_end(None, None, 20, 20, data,
+                                    None, None, lambda x: None)
+            self.assertEqual(photo.label.get_latitude(), photo.latitude)
+            self.assertEqual(photo.label.get_longitude(), photo.longitude)
+            self.assertGreater(len(photo.pretty_geoname()), 5)
+            self.assertNotEqual(photo.latitude, old[0])
+            self.assertNotEqual(photo.longitude, old[1])
+            self.assertNotEqual(photo.pretty_geoname(), old[2])
+    
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
@@ -98,9 +139,8 @@ class GottenGeographyTester(TestCase):
             self.assertFalse(buttons[button].get_sensitive())
         
         # Load only the photos first.
-        for demo in listdir('./demo/'):
-            filename = join(PKG_DATA_DIR, '..', 'demo', demo)
-            if demo[-3:] != 'gpx':
+        for filename in DEMOFILES:
+            if filename[-3:] != 'gpx':
                 self.assertRaises(IOError, gui.load_gpx_from_file, filename)
                 gui.load_img_from_file(filename)
         
@@ -134,25 +174,6 @@ class GottenGeographyTester(TestCase):
             photo.altitude  = 650
             photo.longitude = 45.0
             self.assertTrue(photo.valid_coords())
-            
-            # 'Drag' a ChamplainLabel and make sure the photo gets the same location.
-            photo.label.set_location(random_coord(80), random_coord(180))
-            photo.label.emit('drag-finish', Clutter.Event())
-            self.assertEqual(photo.label.get_latitude(), photo.latitude)
-            self.assertEqual(photo.label.get_longitude(), photo.longitude)
-            self.assertGreater(len(photo.pretty_geoname()), 5)
-            old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
-            
-            # 'Drag' a photo onto the map and make sure that also works.
-            selected.add(photo)
-            data = Struct({'get_text': lambda: photo.filename})
-            gui.drag.photo_drag_end(None, None, 20, 20, data, None, None, lambda x: None)
-            self.assertEqual(photo.label.get_latitude(), photo.latitude)
-            self.assertEqual(photo.label.get_longitude(), photo.longitude)
-            self.assertGreater(len(photo.pretty_geoname()), 5)
-            self.assertNotEqual(photo.latitude, old[0])
-            self.assertNotEqual(photo.longitude, old[1])
-            self.assertNotEqual(photo.pretty_geoname(), old[2])
             
             # photo.read() should discard all the crap we added above.
             # This is in response to a bug where I was using pyexiv2 wrongly
@@ -283,7 +304,7 @@ class GottenGeographyTester(TestCase):
         
         # Make a photo with a dummy ChamplainLabel.
         label = Struct()
-        label.get_text = lambda: join(PKG_DATA_DIR, '..', 'demo', 'IMG_2411.JPG')
+        label.get_text = lambda: DEMOFILES[5]
         photo = Photograph(label.get_text(), lambda x: None)
         photo.read()
         photo.label = label
