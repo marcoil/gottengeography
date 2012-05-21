@@ -40,7 +40,6 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from photos import Photograph
-from gpsmath import format_list
 from xmlfiles import GPXFile, KMLFile
 from common import polygons, points, photos
 from common import auto_timestamp_comparison
@@ -87,7 +86,7 @@ class GottenGeography():
             except IOError:
                 invalid.append(basename(name))
         if len(invalid) > 0:
-            self.status_message(_('Could not open: ') + format_list(invalid))
+            self.status_message(_('Could not open: ') + ', '.join(invalid))
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
@@ -225,7 +224,7 @@ class GottenGeography():
             return
         image.set_from_pixbuf(photo.thumb)
         label.set_label(
-            format_list([photo.short_summary(), photo.maps_link()], '\n'))
+            '\n'.join([photo.short_summary(), photo.maps_link()]))
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
