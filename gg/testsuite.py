@@ -30,7 +30,7 @@ from photos import Photograph
 from gpsmath import Coordinates, valid_coords
 from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
 from common import Struct, Polygon, polygons, map_view
-from common import tracks, photos, selected, modified
+from common import points, photos, selected, modified
 from preferences import make_clutter_color
 from build_info import PKG_DATA_DIR
 
@@ -70,7 +70,7 @@ class GottenGeographyTester(TestCase):
         
         # Start with a fresh state.
         system('git checkout demo')
-        self.assertEqual(len(tracks), 0)
+        self.assertEqual(len(points), 0)
         self.assertEqual(len(polygons), 0)
         self.assertEqual(app.metadata.alpha, float('inf'))
         self.assertEqual(app.metadata.omega, float('-inf'))
@@ -167,7 +167,7 @@ class GottenGeographyTester(TestCase):
         gui.labels.selection.emit('changed')
         
         # Check that the GPX is loaded
-        self.assertEqual(len(tracks), 374)
+        self.assertEqual(len(points), 374)
         self.assertEqual(len(polygons), 1)
         self.assertEqual(app.metadata.alpha, 1287259751)
         self.assertEqual(app.metadata.omega, 1287260756)
@@ -216,7 +216,7 @@ class GottenGeographyTester(TestCase):
         
         # Unload the GPX data.
         buttons['clear'].emit('clicked')
-        self.assertEqual(len(tracks), 0)
+        self.assertEqual(len(points), 0)
         self.assertEqual(len(polygons), 0)
         self.assertFalse(buttons['clear'].get_sensitive())
         

@@ -22,7 +22,7 @@ from gi.repository import Clutter
 from time import tzset
 from os import environ
 
-from common import Struct, polygons, tracks, photos, map_view
+from common import Struct, polygons, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
 from territories import tz_regions, get_timezone
 
@@ -167,7 +167,7 @@ class PreferencesController():
         tzset()
         for photo in photos.values():
             photo.calculate_timestamp()
-            auto_timestamp_comparison(photo, tracks)
+            auto_timestamp_comparison(photo)
     
     def radio_handler(self, radio):
         """Reposition photos depending on which timezone the user selected."""

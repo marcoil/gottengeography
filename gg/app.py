@@ -41,7 +41,7 @@ from sys import argv
 from photos import Photograph
 from gpsmath import format_list
 from xmlfiles import GPXFile, KMLFile
-from common import polygons, tracks, photos
+from common import polygons, points, photos
 from common import auto_timestamp_comparison
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
@@ -105,7 +105,7 @@ class GottenGeography():
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [filename, photo.long_summary(), photo.thumb, photo.timestamp])
-        auto_timestamp_comparison(photo, tracks)
+        auto_timestamp_comparison(photo)
     
     def load_gpx_from_file(self, filename):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -123,7 +123,7 @@ class GottenGeography():
         if len(gpx.tracks) < 2:
             return
         
-        tracks.update(gpx.tracks)
+        points.update(gpx.tracks)
         metadata.alpha = min(metadata.alpha, gpx.alpha)
         metadata.omega = max(metadata.omega, gpx.omega)
         
@@ -167,7 +167,7 @@ class GottenGeography():
             map_view.remove_layer(polygon)
         
         del polygons[:]
-        tracks.clear()
+        points.clear()
         metadata.omega = float('-inf')   # Final GPX track point
         metadata.alpha = float('inf')    # Initial GPX track point
         self.gpx_sensitivity()
@@ -205,7 +205,7 @@ class GottenGeography():
                 self.secbutton.set_value(0)
                 self.minbutton.set_value(minutes)
             for photo in photos.values():
-                auto_timestamp_comparison(photo, tracks)
+                auto_timestamp_comparison(photo)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -343,7 +343,7 @@ class GottenGeography():
     
     def gpx_sensitivity(self):
         """Control the sensitivity of GPX-related widgets."""
-        gpx_sensitive = len(tracks) > 0
+        gpx_sensitive = len(points) > 0
         get_obj('clear_button').set_sensitive(gpx_sensitive)
         for widget in [ 'minutes', 'seconds', 'offset_label' ]:
             get_obj(widget).set_visible(gpx_sensitive)

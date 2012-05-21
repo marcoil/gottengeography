@@ -23,6 +23,14 @@ from os.path import join
 from build_info import PKG_DATA_DIR
 from version import PACKAGE
 
+# These variables are used for sharing data between classes
+selected = set()
+modified = set()
+polygons = []
+points   = {}
+photos   = {}
+
+
 class metadata:
     """Records clock offset and times of first/last gps track points"""
     delta = 0
@@ -31,7 +39,7 @@ class metadata:
 
 # This function is the embodiment of my applications core logic.
 # Everything else is just implementation details.
-def auto_timestamp_comparison(photo, points):
+def auto_timestamp_comparison(photo):
     """Use GPX data to calculate photo coordinates and elevation.
     
     photo:    A Photograph object.
@@ -39,7 +47,7 @@ def auto_timestamp_comparison(photo, points):
     """
     if photo.manual or len(points) < 2:
         return
-        
+    
     # Add the user-specified clock offset (metadata.delta) to the photo
     # timestamp, and then keep it within the range of available GPX points.
     # The result is in epoch seconds, just like the keys of the 'points' dict.
@@ -177,11 +185,4 @@ class Struct:
 get_obj  = Builder().get_object
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
-
-# These variables are used for sharing data between classes
-selected = set()
-modified = set()
-polygons = []
-tracks   = {}
-photos   = {}
 
