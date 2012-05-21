@@ -99,7 +99,7 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
             self.assertEqual(photo.label.get_longitude(), photo.longitude)
             self.assertGreater(len(photo.pretty_geoname()), 5)
-            old = [photo.latitude, photo.longitude, photo.pretty_geoname()]
+            old = [photo.latitude, photo.longitude]
             
             # 'Drag' a photo onto the map and make sure that also works.
             selected.add(photo)
@@ -111,7 +111,37 @@ class GottenGeographyTester(TestCase):
             self.assertGreater(len(photo.pretty_geoname()), 5)
             self.assertNotEqual(photo.latitude, old[0])
             self.assertNotEqual(photo.longitude, old[1])
-            self.assertNotEqual(photo.pretty_geoname(), old[2])
+    
+    def test_label_controller(self):
+        """Make sure that ChamplainLabels are behaving."""
+        gui.open_files(DEMOFILES)
+        for photo in photos.values():
+            self.assertEqual(photo.label.get_scale(), (1, 1))
+            photo.label.emit("enter-event", Clutter.Event())
+            self.assertEqual(photo.label.get_scale(), (1.05, 1.05))
+            photo.label.emit("leave-event", Clutter.Event())
+            self.assertEqual(photo.label.get_scale(), (1, 1))
+            
+            # Are Labels clickable?
+            photo.label.emit("button-press", Clutter.Event())
+            for button in ('save', 'revert', 'apply', 'close'):
+                self.assertTrue(get_obj(button + '_button').get_sensitive())
+            self.assertTrue(gui.labels.selection.iter_is_selected(photo.iter))
+            self.assertEqual(gui.labels.selection.count_selected_rows(), 1)
+            self.assertTrue(photo in selected)
+            self.assertEqual(len(selected), 1)
+            self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
+            self.assertTrue(photo.label.get_selected())
+            self.assertEqual(photo.label.get_property('opacity'), 255)
+            
+            # Make sure the Labels that we didn't click on are deselected.
+            for other in photos.values():
+                if other.filename == photo.filename: continue
+                self.assertFalse(gui.labels.selection.iter_is_selected(other.iter))
+                self.assertFalse(other in selected)
+                self.assertEqual(other.label.get_scale(), (1, 1))
+                self.assertFalse(other.label.get_selected())
+                self.assertEqual(other.label.get_property('opacity'), 64)
     
     def test_gtk_window(self):
         """Make sure that various widgets were created properly."""
@@ -222,34 +252,6 @@ class GottenGeographyTester(TestCase):
             self.assertIsNotNone(photo.longitude)
             self.assertTrue(photo.valid_coords())
             self.assertTrue(photo.label.get_property('visible'))
-            
-            # Play with ChamplainLabels for a bit.
-            self.assertEqual(photo.label.get_scale(), (1, 1))
-            photo.label.emit("enter-event", Clutter.Event())
-            self.assertEqual(photo.label.get_scale(), (1.05, 1.05))
-            photo.label.emit("leave-event", Clutter.Event())
-            self.assertEqual(photo.label.get_scale(), (1, 1))
-            
-            # Are Labels clickable?
-            photo.label.emit("button-press", Clutter.Event())
-            for button in ('save', 'revert', 'apply', 'close'):
-                self.assertTrue(buttons[button].get_sensitive())
-            self.assertTrue(gui.labels.selection.iter_is_selected(photo.iter))
-            self.assertEqual(gui.labels.selection.count_selected_rows(), 1)
-            self.assertTrue(photo in selected)
-            self.assertEqual(len(selected), 1)
-            self.assertEqual(photo.label.get_scale(), (1.1, 1.1))
-            self.assertTrue(photo.label.get_selected())
-            self.assertEqual(photo.label.get_property('opacity'), 255)
-            
-            # Make sure the Labels that we didn't click on are deselected.
-            for other in photos.values():
-                if other.filename == photo.filename: continue
-                self.assertFalse(gui.labels.selection.iter_is_selected(other.iter))
-                self.assertFalse(other in selected)
-                self.assertEqual(other.label.get_scale(), (1, 1))
-                self.assertFalse(other.label.get_selected())
-                self.assertEqual(other.label.get_property('opacity'), 64)
         
         # Unload the GPX data.
         buttons['clear'].emit('clicked')
