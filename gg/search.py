@@ -1,4 +1,3 @@
-# GottenGeography - Control how the map is searched.
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,13 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Control how the map is searched."""
+
 from __future__ import division
 
 from os.path import join
 from re import compile as re_compile, IGNORECASE
 
-from common import get_obj, map_view
 from territories import get_state, get_country
+from common import get_obj, map_view
 from build_info import PKG_DATA_DIR
 from gpsmath import format_list
 
@@ -33,6 +34,7 @@ class SearchController():
     
     def __init__(self):
         """Make the search box and insert it into the window."""
+        self.search = None
         self.results = get_obj('search_results')
         self.slide_to = map_view.go_to
         search = get_obj('search_completion')
@@ -43,7 +45,8 @@ class SearchController():
         entry = get_obj('search_box')
         entry.connect('changed', self.load_results, self.results.append)
         entry.connect('icon-release', lambda entry, i, e: entry.set_text(''))
-        entry.connect('activate', self.repeat_last_search, self.results, map_view)
+        entry.connect('activate', self.repeat_last_search,
+                      self.results, map_view)
     
     def load_results(self, entry, append, searched=set()):
         """Load a few search results based on what's been typed.
@@ -63,12 +66,13 @@ class SearchController():
             searched.add(three)
             with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
                 for line in cities:
-                    city, lat, lon, country, state, tz = line.split('\t')
+                    city, lat, lon, country, state = line.split('\t')[0:5]
                     if search(city):
-                        state    = get_state(country, state)
-                        country  = get_country(country)
-                        location = format_list([city, state, country])
-                        append([location, float(lat), float(lon)])
+                        append([format_list([city,
+                                             get_state(country, state),
+                                             get_country(country)]),
+                                float(lat),
+                                float(lon)])
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
