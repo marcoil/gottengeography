@@ -20,7 +20,7 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from common import Struct, get_obj, map_view, selected, photos
+from common import Struct, get_obj, map_view, selected, modified, photos
 
 class DragController():
     """Control the drag & drop behavior."""
@@ -38,6 +38,8 @@ class DragController():
         container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         container.drag_dest_add_text_targets()
         container.connect('drag-data-received', self.photo_drag_end, open_files)
+        
+        self.selection = photos_view.get_selection()
     
     def photo_drag_start(self, widget, drag_context, data, info, time):
         """Allow dragging more than one photo."""
@@ -59,13 +61,15 @@ class DragController():
             open_files(files)
         self.external_drag = True
         
-        # The dummy is used in the case of XML files, which can be opened by
-        # drag & drop but then don't need to have set_location called on them.
-        dummy = Struct({'set_location': lambda lat, lon: None})
         for filename in files:
-            photos.get(filename, dummy).set_location(
-                map_view.y_to_latitude(y),
-                map_view.x_to_longitude(x))
+            photo = photos.get(filename)
+            if photo is not None:
+                photo.manual = True
+                photo.set_location(
+                    map_view.y_to_latitude(y),
+                    map_view.x_to_longitude(x))
+                modified.add(photo)
         
+        self.selection.emit('changed')
         map_view.emit('animation-completed')
 

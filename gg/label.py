@@ -59,11 +59,12 @@ def clicked(label, event, selection, select_all):
         selection.unselect_all()
         selection.select_iter(photo.iter)
 
-def drag_finish(label, event):
+def drag_finish(label, event, selection):
     """Update photos with new locations after photos have been dragged."""
     photo = photos[label.get_name()]
     photo.set_location(label.get_latitude(), label.get_longitude())
     photo.manual = True
+    selection.emit('changed')
     map_view.emit('animation-completed')
 
 def hover(label, event, factor):
@@ -96,7 +97,7 @@ class LabelController():
         label.set_property('reactive', True)
         label.connect('enter-event', hover, 1.05)
         label.connect('leave-event', hover, 1/1.05)
-        label.connect('drag-finish', drag_finish)
+        label.connect('drag-finish', drag_finish, self.selection)
         label.connect('button-press', clicked, self.selection,
             self.select_all)
         self.layer.add_marker(label)
