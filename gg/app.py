@@ -223,8 +223,11 @@ class GottenGeography():
         except IOError:
             return
         image.set_from_pixbuf(photo.thumb)
-        label.set_label(
-            '\n'.join([photo.short_summary(), photo.maps_link()]))
+        if photo.valid_coords():
+            label.set_label(
+                '\n'.join([photo.short_summary(), photo.maps_link()]))
+        else:
+            label.set_label(photo.short_summary())
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
