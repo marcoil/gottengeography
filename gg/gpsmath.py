@@ -63,11 +63,6 @@ def format_list(strings, joiner=', '):
     """Join geonames with a comma, ignoring missing names."""
     return joiner.join([name for name in strings if name])
 
-def maps_link(lat, lon, anchor=_('View in Google Maps')):
-    """Create a Pango link to Google Maps."""
-    return '<a title="%s" href="%s?q=%s,%s">Google</a>' % (
-        'http://maps.google.com/maps', anchor, lat, lon)
-
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
     return '%s %.5f, %s %.5f' % (
@@ -108,10 +103,10 @@ class Coordinates():
         """Check if this object contains valid coordinates."""
         return valid_coords(self.latitude, self.longitude)
     
-    def maps_link(self):
+    def maps_link(self, link=_('View in Google Maps')):
         """Return a link to Google Maps if this object has valid coordinates."""
-        if self.valid_coords():
-            return maps_link(self.latitude, self.longitude)
+        return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
+            self.latitude, self.longitude, link) if self.valid_coords() else ''
     
     def lookup_geoname(self):
         """Search cities.txt for nearest city."""
