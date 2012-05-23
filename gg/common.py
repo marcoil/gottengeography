@@ -13,7 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Common classes and functions used throughout the app."""
+"""Common classes and datatypes used throughout the app.
+
+The `selected` and `modified` set()s contain Photograph() instances, and
+are frequently used for iteration and membership testing throughout the app.
+
+The `polygons` list contains a list of Polygon() instances in the order they
+were loaded. It's mostly used for being able to change the colors of the 
+polygons but is also iterated over during unloading of GPS data.
+
+The `points` dict maps epoch seconds to ChamplainCoordinate() instances. This
+is used to place photos on the map by looking up their timestamps.
+
+The `photos` dict maps absolute filename paths to Photograph() instances, and
+is used for most of the photo manipulations (eg, loading, saving, etc).
+"""
 
 from __future__ import division
 
@@ -33,19 +47,19 @@ photos   = {}
 
 
 class metadata:
-    """Records clock offset and times of first/last gps track points"""
+    """Records clock offset and times of first/last gps track points.
+    
+    Never instantiated, simply used for static class attributes.
+    """
     delta = 0
     omega = float('-inf')
     alpha = float('inf')
 
+
 # This function is the embodiment of my applications core logic.
 # Everything else is just implementation details.
 def auto_timestamp_comparison(photo):
-    """Use GPX data to calculate photo coordinates and elevation.
-    
-    photo:    A Photograph object.
-    points:   A dictionary mapping epoch seconds to ChamplainCoordinates.
-    """
+    """Use GPX data to calculate photo coordinates and elevation."""
     if photo.manual or len(points) < 2:
         return
     
@@ -147,7 +161,7 @@ class ChamplainEmbedder(GtkChamplain.Embed):
     
     def __init__(self):
         GtkChamplain.Embed.__init__(self)
-        get_obj("map_container").add_with_viewport(self)
+        get_obj('map_container').add_with_viewport(self)
 
 
 class Polygon(Champlain.PathLayer):
