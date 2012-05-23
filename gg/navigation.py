@@ -63,7 +63,7 @@ def set_window_title(view, set_title, center):
     center.latitude  = view.get_center_latitude()
     center.longitude = view.get_center_longitude()
     center.lookup_geoname()
-    set_title('%s - %s' % (APPNAME, center.pretty_geoname(False)))
+    set_title('%s - %s' % (APPNAME, center.pretty_geoname()))
 
 def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     """Ensure zoom buttons are only sensitive when they need to be."""

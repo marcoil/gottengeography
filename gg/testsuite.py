@@ -88,7 +88,7 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(photos), 0)
         self.assertEqual(len(points), 0)
         gui.drag.photo_drag_end(None, None, 20, 20, data,
-                                None, None, gui.open_files, True)
+                                None, None, True)
         self.assertEqual(len(photos), 6)
         self.assertEqual(len(points), 374)
         for button in ('select_all', 'close', 'clear'):
@@ -110,7 +110,7 @@ class GottenGeographyTester(TestCase):
             selected.add(photo)
             data = Struct({'get_text': lambda: photo.filename})
             gui.drag.photo_drag_end(None, None, 20, 20, data,
-                                    None, None, lambda x: None, True)
+                                    None, None, True)
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
             self.assertEqual(photo.label.get_longitude(), photo.longitude)
             self.assertGreater(len(photo.pretty_geoname()), 5)
@@ -206,16 +206,21 @@ class GottenGeographyTester(TestCase):
             self.assertFalse(photo in selected)
             self.assertFalse(photo.label.get_property('visible'))
             
-            # Test that missing the provincestate doesn't break the geoname.
-            photo.set_geodata(['Anytown', None, 'US', 'timezone'])
-            self.assertEqual(photo.pretty_geoname(), 'Anytown, United States')
-            self.assertEqual(photo.timezone, 'timezone')
-            
             # Pristine demo data shouldn't have any tags.
             self.assertIsNone(photo.altitude)
             self.assertIsNone(photo.latitude)
             self.assertIsNone(photo.longitude)
             self.assertFalse(photo.manual)
+            
+            # Test that missing the provincestate doesn't break the geoname.
+            photo.latitude = 47.56494
+            photo.longitude = -52.70931
+            photo.lookup_geoname()
+            self.assertEqual(photo.pretty_geoname(),
+                "St. John's,\nNewfoundland and Labrador,\nCanada")
+            photo.set_geodata(['Anytown', None, 'US', 'timezone'])
+            self.assertEqual(photo.pretty_geoname(), 'Anytown, United States')
+            self.assertEqual(photo.timezone, 'timezone')
             
             # Add some crap
             photo.manual    = True
@@ -391,11 +396,6 @@ S 10.00000, W 10.00000
         stjohns.longitude = -52.70931
         stjohns.lookup_geoname()
         self.assertEqual(stjohns.city, "St. John's")
-        
-        # Also test this bug fixed in commit 47efbeba.
-        self.assertEqual(stjohns.pretty_geoname(), "St. John's,\nNewfoundland and Labrador,\nCanada")
-        stjohns.provincestate = None
-        self.assertEqual(stjohns.pretty_geoname(), "St. John's, Canada")
         
         # Pick 100 random coordinates on the globe, convert them from decimal
         # to sexagesimal and then back, and ensure that they are always equal.
