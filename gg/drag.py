@@ -27,6 +27,9 @@ In cases 2 & 3 where photos are dragged onto the map (regardless of the drag
 source), the photos will be tagged with the precise map coordinates that they
 were dragged to on the map. Otherwise the photos are simply loaded without
 any modifications being made to the location tags.
+
+Note that the code controlling dragging ChamplainLabels around within the map
+is defined in label.py
 """
 
 from __future__ import division
@@ -50,17 +53,16 @@ class DragController():
         # Drag destination defintions
         photos_view.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         photos_view.drag_dest_add_text_targets()
-        photos_view.connect('drag-data-received', self.photo_drag_end,
-                            open_files, False)
+        photos_view.connect('drag-data-received', self.photo_drag_end, False)
         
         container = get_obj('map_container')
         container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         container.drag_dest_add_text_targets()
-        container.connect('drag-data-received', self.photo_drag_end,
-                          open_files, True)
+        container.connect('drag-data-received', self.photo_drag_end, True)
         
         self.external_drag = True
         self.selection = photos_view.get_selection()
+        self.open_files = open_files
     
     def photo_drag_start(self, widget, drag_context, data, info, time):
         """Allow dragging more than one photo."""
@@ -69,7 +71,7 @@ class DragController():
         data.set_text('\n'.join(files), -1)
     
     def photo_drag_end(self, widget, drag_context, x, y,
-                       data, info, time, open_files, on_map):
+                       data, info, time, on_map):
         """Respond to drops and position photos accordingly.
         
         This method allows photos to be dropped in from the photo
@@ -79,7 +81,7 @@ class DragController():
                  data.get_text().split('\n') if s]
         
         if self.external_drag:
-            open_files(files)
+            self.open_files(files)
         self.external_drag = True
         
         if on_map:
