@@ -65,10 +65,15 @@ class GottenGeographyTester(TestCase):
         """Make sure the actors are behaving."""
         from actor import ActorController
         control = ActorController()
+        link = get_obj('maps_link')
         map_view.center_on(50, 50)
         self.assertEqual(control.label.get_text(), 'N 50.00000, E 50.00000')
+        self.assertEqual(link.get_current_uri(),
+            'http://maps.google.com/maps?ll=50.0,50.0&spn=0.078125,0.0641917366591')
         map_view.center_on(-10, -30)
         self.assertEqual(control.label.get_text(), 'S 10.00000, W 30.00000')
+        self.assertEqual(link.get_current_uri(),
+            'http://maps.google.com/maps?ll=-10.0,-30.0&spn=0.234375,0.20432241717')
         for rot in control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
             self.assertEqual(rot, 0)
         control.animate_in(10)
@@ -83,7 +88,7 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(photos), 0)
         self.assertEqual(len(points), 0)
         gui.drag.photo_drag_end(None, None, 20, 20, data,
-                                None, None, gui.open_files)
+                                None, None, gui.open_files, True)
         self.assertEqual(len(photos), 6)
         self.assertEqual(len(points), 374)
         for button in ('select_all', 'close', 'clear'):
@@ -105,7 +110,7 @@ class GottenGeographyTester(TestCase):
             selected.add(photo)
             data = Struct({'get_text': lambda: photo.filename})
             gui.drag.photo_drag_end(None, None, 20, 20, data,
-                                    None, None, lambda x: None)
+                                    None, None, lambda x: None, True)
             self.assertEqual(photo.label.get_latitude(), photo.latitude)
             self.assertEqual(photo.label.get_longitude(), photo.longitude)
             self.assertGreater(len(photo.pretty_geoname()), 5)
