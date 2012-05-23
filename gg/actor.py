@@ -39,7 +39,7 @@ class ActorController():
     
     def __init__(self):
         self.black = Clutter.Box.new(Clutter.BinLayout())
-        self.black.set_color(Clutter.Color.new(0, 0, 0, 64))
+        self.black.set_color(Clutter.Color.new(0, 0, 0, 96))
         self.label = Clutter.Text()
         self.label.set_color(Clutter.Color.new(255, 255, 255, 255))
         self.xhair = Clutter.Rectangle.new_with_color(
