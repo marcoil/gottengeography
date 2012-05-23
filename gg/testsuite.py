@@ -30,9 +30,9 @@ import app
 from photos import Photograph
 from gpsmath import Coordinates, valid_coords
 from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
+from preferences import MAP_SOURCES, make_clutter_color
 from common import Struct, Polygon, polygons, map_view
 from common import points, photos, selected, modified
-from preferences import make_clutter_color
 from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
 
@@ -68,12 +68,12 @@ class GottenGeographyTester(TestCase):
         link = get_obj('maps_link')
         map_view.center_on(50, 50)
         self.assertEqual(control.label.get_text(), 'N 50.00000, E 50.00000')
-        self.assertEqual(link.get_current_uri(),
-            'http://maps.google.com/maps?ll=50.0,50.0&spn=0.078125,0.0641917366591')
+        self.assertEqual(link.get_current_uri()[:45],
+            'http://maps.google.com/maps?ll=50.0,50.0&spn=')
         map_view.center_on(-10, -30)
         self.assertEqual(control.label.get_text(), 'S 10.00000, W 30.00000')
-        self.assertEqual(link.get_current_uri(),
-            'http://maps.google.com/maps?ll=-10.0,-30.0&spn=0.234375,0.20432241717')
+        self.assertEqual(link.get_current_uri()[:47],
+            'http://maps.google.com/maps?ll=-10.0,-30.0&spn=')
         for rot in control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
             self.assertEqual(rot, 0)
         control.animate_in(10)
@@ -148,7 +148,7 @@ class GottenGeographyTester(TestCase):
                 self.assertFalse(other.label.get_selected())
                 self.assertEqual(other.label.get_property('opacity'), 64)
     
-    def test_gtk_window(self):
+    def test_gtk_builder(self):
         """Make sure that various widgets were created properly."""
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
@@ -156,6 +156,20 @@ class GottenGeographyTester(TestCase):
         self.assertGreater(size[1], 500)
         self.assertGreater(size[0], 799)
         self.assertEqual(gui.labels.selection.count_selected_rows(), 0)
+    
+    def test_gsettings(self):
+        """Make sure that GSettings is storing data correctly."""
+        app.gst.reset('history')
+        self.assertEqual(gst_get('history')[0], [34.5, 15.8, 2.0])
+        map_view.center_on(12.3, 45.6)
+        self.assertEqual(app.gst.get_double('latitude'), 12.3)
+        self.assertEqual(app.gst.get_double('longitude'), 45.6)
+        map_view.zoom_in()
+        map_view.emit('realize')
+        self.assertEqual(list(gst_get('history')),
+                         [[34.5, 15.8, 2.0], [12.3, 45.6, 3.0]])
+        map_view.set_map_source(MAP_SOURCES['osm-cyclemap'])
+        self.assertEqual(app.gst.get_string('map-source-id'), 'osm-cyclemap')
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
