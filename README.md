@@ -1,9 +1,9 @@
 Status
 ======
 
-1.2.1 is released, and it's targetted for Fedora 17, meaning that Fedora 17 ships with everything needed to run GottenGeography. Users of other distros who want to run it will need to make sure they have python-distutils-extra, libchamplain 0.12.2 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0, and Python 2.7.
+Version 1.3 is released, and it's targetted for Fedora 17, meaning that Fedora 17 ships with everything needed to run GottenGeography. Users of other distros who want to run it will need to make sure they have libchamplain 0.12.2 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0, and Python 2.7.
 
-Unfortunately Fedora 16 does not provide the necessary dependencies to run v1.2 and so users of Fedora 16 should be using v1.1.
+Unfortunately Fedora 16 does not provide the necessary dependencies to run v1.3 and so users of Fedora 16 should be using v1.1.
 
 GottenGeography
 ===============
@@ -18,7 +18,7 @@ It is currently able to:
 
 * Read pre-existing geotags inside photo EXIF data using [pyexiv2](http://tilloy.net/dev/pyexiv2/) and display markers on the map indicating where those photos were taken.
 
-* Manually geotag images, using either of two methods: by clicking the 'apply' button, the selected photos are placed onto the center of the map, or by directly dragging map markers across the map, they will remember where you place them.
+* Manually geotag images, using either of two methods: by clicking the 'apply' button, the selected photos are placed onto the center of the map, or by drag & drop. Photos can be dragged in from the file browser, or dragged from the left pane onto the map, or dragged around the map once they're already on the map. Any way you do it, GottenGeography will record where the photos were dragged to and store that location into the photos.
 
 * Automatically geotag images using timestamp comparison between photos and GPX data, proportionally calculating photo coordinates that fall in-between gpx track points. No clicking necessary! Simply load a GPX file along with your images, and they will automatically be placed along the track based on their timestamp.
 
@@ -26,7 +26,7 @@ It is currently able to:
 
 * Automatically determine the timezone that your photos were taken in so that you don't have to specify it manually when you go travelling.
 
-* Remember the last viewed location in [GConf](http://projects.gnome.org/gconf/), and return to it the next time you run the program.
+* Extensive use of [GSettings](https://live.gnome.org/GnomeGoals/GSettingsMigration) to store program state, meaning that each time you launch GottenGeography, it remembers things like where on the map you were last browsing, what map you were using, what size the window was, etc.
 
 * Save EXIF/IPTC data into your photos using pyexiv2.
 
