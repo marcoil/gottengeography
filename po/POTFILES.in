@@ -1,4 +1,4 @@
+gg/actor.py
 gg/app.py
-gg/files.py
-gg/utils.py
+gg/gpsmath.py
 [type: gettext/glade] data/gottengeography.ui
