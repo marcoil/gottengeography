@@ -161,7 +161,7 @@ class ChamplainEmbedder(GtkChamplain.Embed):
     
     def __init__(self):
         GtkChamplain.Embed.__init__(self)
-        get_obj('map_container').add_with_viewport(self)
+        get_obj('map_container').add(self)
 
 
 class Polygon(Champlain.PathLayer):
@@ -216,6 +216,5 @@ def gpx_sensitivity():
     """Control the sensitivity of GPX-related widgets."""
     gpx_sensitive = len(points) > 0
     get_obj('clear_button').set_sensitive(gpx_sensitive)
-    for widget in [ 'minutes', 'seconds', 'offset_label' ]:
-        get_obj(widget).set_visible(gpx_sensitive)
+    get_obj('offset_container').set_visible(gpx_sensitive)
 

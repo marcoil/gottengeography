@@ -254,7 +254,6 @@ class GottenGeography():
     
     def __init__(self):
         self.progressbar = get_obj('progressbar')
-        self.status      = get_obj('status')
         
         self.strings = Struct({
             'quit':    get_obj('quit').get_property('secondary-text'),
@@ -347,7 +346,8 @@ class GottenGeography():
     
     def status_message(self, message):
         """Display a message on the GtkStatusBar."""
-        self.status.push(self.status.get_context_id('msg'), message)
+        # TODO find a replacement for GtkStatusBar for this.
+        print message
     
     def main(self, anim_start=200):
         """Animate the crosshair and begin user interaction."""
