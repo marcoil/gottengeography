@@ -18,6 +18,7 @@
 from __future__ import division
 
 from version import APPNAME, PACKAGE, VERSION
+from build_info import REVISION
 
 import gettext
 gettext.bindtextdomain(PACKAGE)
@@ -286,7 +287,7 @@ class GottenGeography():
         self.actors    = ActorController()
         
         about = get_obj('about')
-        about.set_version(VERSION)
+        about.set_version(_('Version %s (%s)') % (VERSION, REVISION[:10]))
         about.set_program_name(APPNAME)
         
         click_handlers = {

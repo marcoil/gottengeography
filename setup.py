@@ -2,6 +2,7 @@
 
 from os.path import join
 from distutils.core import setup
+from subprocess import Popen, PIPE
 from DistUtilsExtra.command import *
 from distutils.command.build_py import build_py as _build_py
 
@@ -17,8 +18,10 @@ data_files = [
 
 build_info_template = """# -*- coding: UTF-8 -*-
 
-# Distutils installed GottenGeography into:
+# Distutils installation details:
+PREFIX='%s'
 PKG_DATA_DIR='%s'
+REVISION='%s'
 """
 
 class build_py(_build_py): 
@@ -32,7 +35,10 @@ class build_py(_build_py):
                 iobj = self.distribution.command_obj['install']
                 with open(module_file, 'w') as module_fp:
                     module_fp.write(build_info_template % (
-                        join(iobj.prefix, 'share', PACKAGE)
+                        iobj.prefix,
+                        join(iobj.prefix, 'share', PACKAGE),
+                        Popen(['git', 'rev-parse', 'HEAD'],
+                            stdout=PIPE).communicate()[0].strip()
                     ))
             except KeyError:
                 pass
