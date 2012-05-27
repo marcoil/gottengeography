@@ -461,7 +461,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="expand">False</property>
-                                <property name="halign">2</property>
+                                <property name="halign">3</property>
                                 <property name="valign">2</property>
                                 <property name="border_width">6</property>
                                 <property name="spacing">12</property>
