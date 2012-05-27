@@ -18,7 +18,7 @@
 from __future__ import division
 
 from version import APPNAME, PACKAGE, VERSION
-from build_info import REVISION
+from build_info import PKG_DATA_DIR, REVISION
 
 import gettext
 gettext.bindtextdomain(PACKAGE)
@@ -31,8 +31,9 @@ GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk
+from gi.repository import GdkPixbuf
 from gi.repository import Champlain
-from os.path import basename, abspath
+from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
 from sys import argv
@@ -296,6 +297,8 @@ class GottenGeography():
         about = get_obj('about')
         about.set_version(REVISION)
         about.set_program_name(APPNAME)
+        about.set_logo(GdkPixbuf.Pixbuf.new_from_file_at_size(
+            join(PKG_DATA_DIR, PACKAGE + '.svg'), 192, 192))
         
         click_handlers = {
             'open_button':       [self.add_files_dialog, get_obj('open')],
@@ -357,7 +360,7 @@ class GottenGeography():
         self.error.bar.set_message_type(
             Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
         self.error.icon.set_from_stock(
-            Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 5)
+            Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
         self.error.bar.show()
     
     def main(self, anim_start=200):

@@ -27,9 +27,8 @@ from common import Struct, polygons, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
 from territories import tz_regions, get_timezone
 
-gtksettings = Gtk.Settings.get_default()
-gtksettings.set_property('gtk-application-prefer-dark-theme', True)
-gtksettings.set_property('gtk-icon-sizes', 'gtk-dialog=128,128')
+Gtk.Settings.get_default().set_property(
+    'gtk-application-prefer-dark-theme', True)
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""

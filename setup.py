@@ -9,11 +9,12 @@ from distutils.command.build_py import build_py as _build_py
 from gg.version import *
 
 data_files = [
-    ('share/' + PACKAGE, ['data/cities.txt', 'data/%s.ui' % PACKAGE]),
-    ('share/applications', ['data/%s.desktop' % PACKAGE]),
     ('share/icons/hicolor/scalable/apps', ['data/%s.svg' % PACKAGE]),
     ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
-    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
+    ('share/applications', ['data/%s.desktop' % PACKAGE]),
+    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING']),
+    ('share/' + PACKAGE, ['data/cities.txt',
+        'data/%s.ui' % PACKAGE, 'data/%s.svg' % PACKAGE])
 ]
 
 build_info_template = """# -*- coding: UTF-8 -*-
