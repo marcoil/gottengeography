@@ -32,55 +32,47 @@ def make_clutter_color(color):
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
 
-def create_map_source(mapid, name, license, license_uri, min_zoom,
-                      max_zoom, tile_size, uri_format):
-    """Put together a chain of caches for the specified map source details."""
-    chain = Champlain.MapSourceChain()
-    chain.push(Champlain.MapSourceFactory.dup_default().create_error_source(
-        tile_size))
-    
-    chain.push(Champlain.NetworkTileSource.new_full(
-        mapid, name, license, license_uri, min_zoom, max_zoom,
-        tile_size, Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
-        uri_format, Champlain.ImageRenderer()))
-    
-    chain.push(Champlain.FileCache.new_full(1e8, None, Champlain.ImageRenderer()))
-    chain.push(Champlain.MemoryCache.new_full(100, Champlain.ImageRenderer()))
-    
-    return chain
+MAP_SOURCES = {}
 
-MAP_SOURCES = {
-    'osm-mapnik':
-    create_map_source('osm-mapnik', 'OpenStreetMap Mapnik',
+for map_desc in [
+    ['osm-mapnik', 'OpenStreetMap Mapnik', 0, 18, 256,
     'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
     'http://creativecommons.org/licenses/by-sa/2.0/',
-    0, 18, 256, 'http://tile.openstreetmap.org/#Z#/#X#/#Y#.png'),
+    'http://tile.openstreetmap.org/#Z#/#X#/#Y#.png'],
     
-    'osm-cyclemap':
-    create_map_source('osm-cyclemap', 'OpenStreetMap Cycle Map',
+    ['osm-cyclemap', 'OpenStreetMap Cycle Map', 0, 17, 256,
     'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
     'http://creativecommons.org/licenses/by-sa/2.0/',
-    0, 17, 256, 'http://a.tile.opencyclemap.org/cycle/#Z#/#X#/#Y#.png'),
+    'http://a.tile.opencyclemap.org/cycle/#Z#/#X#/#Y#.png'],
     
-    'osm-transport':
-    create_map_source('osm-transport', 'OpenStreetMap Transport Map',
+    ['osm-transport', 'OpenStreetMap Transport Map', 0, 18, 256,
     'Map data is CC-BY-SA 2.0 OpenStreetMap contributors',
     'http://creativecommons.org/licenses/by-sa/2.0/',
-    0, 18, 256, 'http://tile.xn--pnvkarte-m4a.de/tilegen/#Z#/#X#/#Y#.png'),
+    'http://tile.xn--pnvkarte-m4a.de/tilegen/#Z#/#X#/#Y#.png'],
     
-    'mapquest-osm':
-    create_map_source('mapquest-osm', 'MapQuest OSM',
+    ['mapquest-osm', 'MapQuest OSM', 0, 17, 256,
     'Map data provided by MapQuest, Open Street Map and contributors',
     'http://creativecommons.org/licenses/by-sa/2.0/',
-    0, 17, 256, 'http://otile1.mqcdn.com/tiles/1.0.0/osm/#Z#/#X#/#Y#.png'),
+    'http://otile1.mqcdn.com/tiles/1.0.0/osm/#Z#/#X#/#Y#.png'],
     
-    'mff-relief':
-    create_map_source('mff-relief', 'Maps for Free Relief',
+    ['mff-relief', 'Maps for Free Relief', 0, 11, 256,
     'Map data available under GNU Free Documentation license, v1.2 or later',
     'http://www.gnu.org/copyleft/fdl.html',
-    0, 11, 256,
-    'http://maps-for-free.com/layer/relief/z#Z#/row#Y#/#Z#_#X#-#Y#.jpg')
-}
+    'http://maps-for-free.com/layer/relief/z#Z#/row#Y#/#Z#_#X#-#Y#.jpg'],
+    ]:
+    mapid, name, min_zoom, max_zoom, size, license, lic_uri, tile_uri = map_desc
+    
+    c = Champlain.MapSourceChain()
+    c.push(Champlain.MapSourceFactory.dup_default().create_error_source(size))
+    
+    c.push(Champlain.NetworkTileSource.new_full(
+        mapid, name, license, lic_uri, min_zoom, max_zoom,
+        size, Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
+        tile_uri, Champlain.ImageRenderer()))
+    
+    c.push(Champlain.FileCache.new_full(1e8, None, Champlain.ImageRenderer()))
+    c.push(Champlain.MemoryCache.new_full(100,     Champlain.ImageRenderer()))
+    MAP_SOURCES[mapid] = c
 
 
 def map_source_menu():
