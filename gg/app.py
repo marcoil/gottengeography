@@ -317,13 +317,12 @@ class GottenGeography():
         window.add_accel_group(accel)
         window.show_all()
         
+        # Hide the unused button that appears beside the map source menu.
+        get_obj('map_source_menu_button').get_child().get_children()[0].set_visible(False)
+        
         save_size = lambda v, s, size: gst.set('window-size', size())
         for prop in ['width', 'height']:
             map_view.connect('notify::' + prop, save_size, window.get_size)
-        
-        map_source_button = get_obj('map_source_label').get_parent()
-        if map_source_button:
-            map_source_button.set_property('visible', False)
         
         accel.connect(Gdk.keyval_from_name('q'),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)

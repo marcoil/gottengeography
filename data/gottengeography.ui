@@ -321,7 +321,6 @@
                         <property name="use_action_appearance">False</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Change Map</property>
-                        <property name="label_widget">map_source_label</property>
                         <child type="menu">
                           <object class="GtkMenu" id="map_source_menu">
                             <property name="visible">True</property>
@@ -1202,8 +1201,5 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
     <property name="minimum_key_length">3</property>
     <property name="text_column">0</property>
     <property name="inline_completion">True</property>
-  </object>
-  <object class="GtkLabel" id="map_source_label">
-    <property name="label"> </property>
   </object>
 </interface>
