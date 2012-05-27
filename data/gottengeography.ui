@@ -570,7 +570,7 @@
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Open Files</property>
-    <property name="window_position">center-on-parent</property>
+    <property name="transient_for">main</property>
     <property name="destroy_with_parent">True</property>
     <property name="icon_name">gtk-open</property>
     <property name="type_hint">dialog</property>
@@ -1021,7 +1021,7 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
     <property name="title"> </property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
-    <property name="window_position">center-on-parent</property>
+    <property name="transient_for">main</property>
     <property name="destroy_with_parent">True</property>
     <property name="icon_name">dialog-warning</property>
     <property name="type_hint">dialog</property>
