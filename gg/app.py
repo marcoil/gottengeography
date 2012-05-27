@@ -125,7 +125,7 @@ class GottenGeography():
         get_obj('colorselection').emit('color-changed')
         
         self.status_message(_('%d points loaded in %.2fs.') %
-            (len(gpx.tracks), clock() - start_time))
+            (len(gpx.tracks), clock() - start_time), True)
         
         if len(gpx.tracks) < 2:
             return
@@ -255,6 +255,14 @@ class GottenGeography():
     def __init__(self):
         self.progressbar = get_obj('progressbar')
         
+        self.errormessage = Gtk.Label('')
+        self.errormessage.show()
+        
+        self.errorbar = get_obj('error_bar')
+        self.errorbar.get_content_area().add(self.errormessage)
+        self.errorbar.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        self.errorbar.connect('response', lambda widget, signal: widget.hide())
+        
         self.strings = Struct({
             'quit':    get_obj('quit').get_property('secondary-text'),
             'preview': get_obj('preview_label').get_text()
@@ -344,10 +352,12 @@ class GottenGeography():
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
-    def status_message(self, message):
+    def status_message(self, message, info=False):
         """Display a message on the GtkStatusBar."""
-        # TODO find a replacement for GtkStatusBar for this.
-        print message
+        self.errormessage.set_markup('<b>%s</b>' % message)
+        self.errorbar.set_message_type(
+            Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
+        self.errorbar.show()
     
     def main(self, anim_start=200):
         """Animate the crosshair and begin user interaction."""

@@ -457,6 +457,17 @@
                               <placeholder/>
                             </child>
                             <child type="overlay">
+                              <object class="GtkInfoBar" id="error_bar">
+                                <property name="message-type">1</property>
+                                <property name="no_show_all">True</property>
+                                <property name="visible">False</property>
+                                <property name="can_focus">False</property>
+                                <property name="expand">False</property>
+                                <property name="halign">0</property>
+                                <property name="valign">1</property>
+                              </object>
+                            </child>
+                            <child type="overlay">
                               <object class="GtkHBox" id="offset_container">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
