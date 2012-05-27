@@ -20,8 +20,5 @@ Popen(['glib-compile-schemas', 'data'])
 # Figure out where we are and what version is running.
 PREFIX = dirname(dirname(__file__))
 PKG_DATA_DIR = join(PREFIX, 'data')
-REVISION = Popen(
-    ['git', 'rev-parse', 'HEAD'],
-    stdout=PIPE
-).communicate()[0].strip()
+REVISION = Popen(['git', 'describe'], stdout=PIPE).communicate()[0].strip()
 

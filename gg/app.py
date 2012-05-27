@@ -286,7 +286,7 @@ class GottenGeography():
         self.actors    = ActorController()
         
         about = get_obj('about')
-        about.set_version(_('Version %s (%s)') % (VERSION, REVISION[:10]))
+        about.set_version(REVISION)
         about.set_program_name(APPNAME)
         
         click_handlers = {

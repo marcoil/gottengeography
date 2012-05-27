@@ -37,7 +37,7 @@ class build_py(_build_py):
                     module_fp.write(build_info_template % (
                         iobj.prefix,
                         join(iobj.prefix, 'share', PACKAGE),
-                        Popen(['git', 'rev-parse', 'HEAD'],
+                        Popen(['git', 'describe'],
                             stdout=PIPE).communicate()[0].strip()
                     ))
             except KeyError:
