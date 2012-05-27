@@ -255,13 +255,13 @@ class GottenGeography():
     def __init__(self):
         self.progressbar = get_obj('progressbar')
         
-        self.errormessage = Gtk.Label('')
-        self.errormessage.show()
+        self.error = Struct({
+            'message': get_obj('error_message'),
+            'icon': get_obj('error_icon'),
+            'bar': get_obj('error_bar')
+        })
         
-        self.errorbar = get_obj('error_bar')
-        self.errorbar.get_content_area().add(self.errormessage)
-        self.errorbar.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
-        self.errorbar.connect('response', lambda widget, signal: widget.hide())
+        self.error.bar.connect('response', lambda widget, signal: widget.hide())
         
         self.strings = Struct({
             'quit':    get_obj('quit').get_property('secondary-text'),
@@ -354,10 +354,12 @@ class GottenGeography():
     
     def status_message(self, message, info=False):
         """Display a message on the GtkStatusBar."""
-        self.errormessage.set_markup('<b>%s</b>' % message)
-        self.errorbar.set_message_type(
+        self.error.message.set_markup('<b>%s</b>' % message)
+        self.error.bar.set_message_type(
             Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
-        self.errorbar.show()
+        self.error.icon.set_from_stock(
+            Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 5)
+        self.error.bar.show()
     
     def main(self, anim_start=200):
         """Animate the crosshair and begin user interaction."""
