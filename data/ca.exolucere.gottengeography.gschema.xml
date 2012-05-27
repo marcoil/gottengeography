@@ -59,5 +59,9 @@
       <default>false</default>
       <summary>Specify a manual timezone.</summary>
     </key>
+    <key type="b" name="use-dark-theme">
+      <default>true</default>
+      <summary>Use the dark GTK theme, if available.</summary>
+    </key>
   </schema>
 </schemalist>

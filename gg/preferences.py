@@ -27,9 +27,6 @@ from common import Struct, polygons, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
 from territories import tz_regions, get_timezone
 
-Gtk.Settings.get_default().set_property(
-    'gtk-application-prefer-dark-theme', True)
-
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
@@ -142,6 +139,9 @@ class PreferencesController():
             radio.connect('clicked', self.radio_handler)
         gst.bind('custom-timezone', get_obj('custom_timezone_combos'),
                  'sensitive')
+        
+        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
+                 'gtk-application-prefer-dark-theme')
         
         map_source_menu()
     
