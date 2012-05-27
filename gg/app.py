@@ -325,10 +325,10 @@ class GottenGeography():
         
         metadata.delta = 0
         self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
-        gst.bind('offset-minutes', self.minbutton, 'value')
-        gst.bind('offset-seconds', self.secbutton, 'value')
         for spinbutton in [ self.secbutton, self.minbutton ]:
             spinbutton.connect('value-changed', self.time_offset_changed)
+        gst.bind('offset-minutes', self.minbutton, 'value')
+        gst.bind('offset-seconds', self.secbutton, 'value')
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))
