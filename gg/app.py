@@ -276,7 +276,7 @@ class GottenGeography():
         cell_thumb  = Gtk.CellRendererPixbuf()
         cell_thumb.set_property('stock-id', Gtk.STOCK_MISSING_IMAGE)
         cell_thumb.set_property('ypad', 6)
-        cell_thumb.set_property('xpad', 6)
+        cell_thumb.set_property('xpad', 12)
         
         column = Gtk.TreeViewColumn('Photos')
         column.pack_start(cell_thumb, False)
