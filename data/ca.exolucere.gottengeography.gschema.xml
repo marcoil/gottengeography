@@ -40,6 +40,7 @@
       <summary>Current level to which the map is zoomed.</summary>
     </key>
     <key type="i" name="left-pane-page">
+      <range min="0" max="2"/>
       <default>0</default>
       <summary>Indicates whether the Photos, Cameras, or GPS tab is currently visible.</summary>
     </key>
