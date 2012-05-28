@@ -214,5 +214,4 @@ def gpx_sensitivity():
     """Control the sensitivity of GPX-related widgets."""
     gpx_sensitive = len(points) > 0
     get_obj('clear_button').set_sensitive(gpx_sensitive)
-    get_obj('offset_container').set_visible(gpx_sensitive)
 

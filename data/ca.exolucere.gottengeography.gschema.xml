@@ -39,6 +39,10 @@
       <default>2</default>
       <summary>Current level to which the map is zoomed.</summary>
     </key>
+    <key type="i" name="left-pane-page">
+      <default>0</default>
+      <summary>Indicates whether the Photos, Cameras, or GPS tab is currently visible.</summary>
+    </key>
     <key type="i" name="timezone-region">
       <default>-1</default>
       <summary>The custom timezone region that is selected.</summary>

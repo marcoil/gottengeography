@@ -340,6 +340,8 @@ class GottenGeography():
         gst.bind('offset-minutes', self.minbutton, 'value')
         gst.bind('offset-seconds', self.secbutton, 'value')
         
+        gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
+        
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))
     
