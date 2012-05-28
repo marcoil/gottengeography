@@ -160,14 +160,14 @@ class GottenGeographyTester(TestCase):
     def test_gsettings(self):
         """Make sure that GSettings is storing data correctly."""
         app.gst.reset('history')
-        self.assertEqual(gst_get('history')[0], [34.5, 15.8, 2.0])
+        self.assertEqual(gst_get('history')[0], (34.5, 15.8, 2))
         map_view.center_on(12.3, 45.6)
         self.assertEqual(app.gst.get_double('latitude'), 12.3)
         self.assertEqual(app.gst.get_double('longitude'), 45.6)
         map_view.zoom_in()
         map_view.emit('realize')
         self.assertEqual(list(gst_get('history')),
-                         [[34.5, 15.8, 2.0], [12.3, 45.6, 3.0]])
+                         [(34.5, 15.8, 2), (12.3, 45.6, 3)])
         map_view.set_map_source(MAP_SOURCES['osm-cyclemap'])
         self.assertEqual(app.gst.get_string('map-source-id'), 'osm-cyclemap')
     

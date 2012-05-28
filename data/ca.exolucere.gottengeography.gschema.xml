@@ -5,8 +5,8 @@
       <default>(800, 600)</default>
       <summary>The current size of the main window.</summary>
     </key>
-    <key type="aad" name="history">
-      <default>[[34.5, 15.8, 2]]</default>
+    <key type="a(ddi)" name="history">
+      <default>[(34.5, 15.8, 2)]</default>
       <summary>A short history of the places the user has visited.</summary>
     </key>
     <key type="(iii)" name="track-color">

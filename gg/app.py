@@ -323,7 +323,7 @@ class GottenGeography():
         # Hide the unused button that appears beside the map source menu.
         get_obj('map_source_menu_button').get_child().get_children()[0].set_visible(False)
         
-        save_size = lambda v, s, size: gst.set('window-size', size())
+        save_size = lambda v, s, size: gst.set_window_size(size())
         for prop in ['width', 'height']:
             map_view.connect('notify::' + prop, save_size, window.get_size)
         

@@ -121,15 +121,13 @@ class GSettings(Gio.Settings):
         """Don't make me specify the default flags every time."""
         Gio.Settings.bind(self, key, widget, prop, flags)
     
-    def set(self, key, value):
-        """Convert arrays to GVariants.
-        
-        This makes it easier to set the back button history and the window size.
-        """
-        use_matrix = type(value) is list
-        do_override = type(value) is tuple or use_matrix
-        Gio.Settings.set_value(self, key, value if not do_override else
-            GLib.Variant('aad' if use_matrix else '(ii)', value))
+    def set_history(self, value):
+        """Convert the map history to an array of tuples."""
+        Gio.Settings.set_value(self, 'history', GLib.Variant('a(ddi)', value))
+    
+    def set_window_size(self, value):
+        """Convert the window size to a pair of ints."""
+        Gio.Settings.set_value(self, 'window-size', GLib.Variant('(ii)', value))
     
     def bind_with_convert(self, key, widget, prop, key_to_prop, prop_to_key):
         """Recreate g_settings_bind_with_mapping from scratch.

@@ -39,11 +39,11 @@ def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):
 def remember_location(view):
     """Add current location to history stack."""
     history = list(gst.get('history'))
-    location = [view.get_property(x) for x in
-        ('latitude', 'longitude', 'zoom-level')]
+    location = tuple([view.get_property(x) for x in
+        ('latitude', 'longitude', 'zoom-level')])
     if history[-1] != location:
         history.append(location)
-    gst.set('history', history[-30:])
+    gst.set_history(history[-30:])
 
 def go_back(button, view):
     """Return the map view to where the user last set it."""
@@ -53,7 +53,7 @@ def go_back(button, view):
         view.set_zoom_level(zoom)
         view.center_on(lat, lon)
     if len(history) > 1:
-        gst.set('history', history)
+        gst.set_history(history)
     else:
         gst.reset('history')
     map_view.emit('animation-completed')
