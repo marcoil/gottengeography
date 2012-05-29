@@ -1,4 +1,5 @@
 gg/actor.py
 gg/app.py
 gg/gpsmath.py
+gg/camera.py
 [type: gettext/glade] data/gottengeography.ui

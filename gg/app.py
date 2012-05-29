@@ -334,11 +334,11 @@ class GottenGeography():
         clear_all_gpx()
         
         metadata.delta = 0
-        self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
-        for spinbutton in [ self.secbutton, self.minbutton ]:
-            spinbutton.connect('value-changed', self.time_offset_changed)
-        gst.bind('offset-minutes', self.minbutton, 'value')
-        gst.bind('offset-seconds', self.secbutton, 'value')
+        #self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
+        #for spinbutton in [ self.secbutton, self.minbutton ]:
+        #    spinbutton.connect('value-changed', self.time_offset_changed)
+        #gst.bind('offset-minutes', self.minbutton, 'value')
+        #gst.bind('offset-seconds', self.secbutton, 'value')
         
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
         
