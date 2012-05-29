@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
+
+
   <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
     <key type="(ii)" name="window-size">
       <default>(800, 600)</default>
@@ -69,4 +71,41 @@
       <summary>Use the dark GTK theme, if available.</summary>
     </key>
   </schema>
+
+
+  <schema id="ca.exolucere.gottengeography.camera">
+    <key type="s" name="make">
+      <default>'Unknown Make'</default>
+      <summary>The name of the company that manufactured the camera.</summary>
+    </key>
+    <key type="s" name="model">
+      <default>'Unknown Model'</default>
+      <summary>The name of the camera as identified by the manufacturer.</summary>
+    </key>
+    <key type="i" name="offset">
+      <range min="-3600" max="3600"/>
+      <default>0</default>
+      <summary>The error in the camera's clock, measured in seconds.</summary>
+    </key>
+    <key type="s" name="timezone-method">
+      <choices>
+        <choice value='system'/>
+        <choice value='lookup'/>
+        <choice value='custom'/>
+      </choices>
+      <default>'system'</default>
+      <summary>What method is used to determine the camera's timezone.</summary>
+      <description>This rubbish is necessary because the EXIF standard does not specify the timezone, even if the user has specified a timezone in their camera's setup menu.</description>
+    </key>
+    <key type="i" name="timezone-region">
+      <default>-1</default>
+      <summary>The custom timezone region that the user has selected, if any.</summary>
+    </key>
+    <key type="i" name="timezone-cities">
+      <default>-1</default>
+      <summary>The custom timezone city that the user has selected, if any.</summary>
+    </key>
+  </schema>
+
+
 </schemalist>

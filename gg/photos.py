@@ -22,6 +22,7 @@ from pyexiv2 import ImageMetadata
 from time import mktime
 from os import stat
 
+from camera import Camera
 from gpsmath import Coordinates, format_list
 from gpsmath import dms_to_decimal, decimal_to_dms, float_to_rational
 from territories import get_state, get_country
@@ -58,6 +59,8 @@ class Photograph(Coordinates):
             self.exif.read()
         except TypeError:
             raise IOError
+        
+        Camera(self.exif)
         
         # Try to get a thumbnail.
         try:
