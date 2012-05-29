@@ -30,6 +30,8 @@ taken by that camera.
 
 from gi.repository import Gio, GObject, Gtk
 from gettext import gettext as _
+from time import tzset
+from os import environ
 
 from territories import tz_regions, get_timezone
 from version import PACKAGE
@@ -41,7 +43,7 @@ RIGHT = Gtk.PositionType.RIGHT
 
 known_cameras = {}
 
-def get_camera(exif):
+def get_camera(photo):
     """This method caches Camera instances."""
     names = {'Make': 'Unknown Make', 'Model': 'Unknown Camera'}
     keys = ['Exif.Image.' + key for key in names.keys()
@@ -49,7 +51,7 @@ def get_camera(exif):
     
     for key in keys:
         try:
-            names.update({key.split('.')[-1]: exif[key].value})
+            names.update({key.split('.')[-1]: photo.exif[key].value})
         except KeyError:
             pass
     
@@ -60,7 +62,9 @@ def get_camera(exif):
         known_cameras[camera_id] = Camera(
             camera_id, names['Make'], names['Model'])
     
-    return known_cameras[camera_id]
+    camera = known_cameras[camera_id]
+    camera.photos.append(photo)
+    return camera
 
 
 class Camera():
@@ -68,9 +72,7 @@ class Camera():
     
     def __init__(self, camera_id, make, model):
         """Generate Gtk widgets and bind their properties to GSettings."""
-        self.camera_id = camera_id
-        self.make = make
-        self.model = model
+        self.photos = []
         
         camera_label = Gtk.Label()
         camera_label.set_property('margin-top', 12)
@@ -80,6 +82,7 @@ class Camera():
         # SpinButton allows the user to correct the camera's clock.
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
+        offset.connect('changed', self.offset_handler)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -116,6 +119,14 @@ class Camera():
         grid.attach_next_to(offset, offset_label, RIGHT, 1, 1)
         grid.show_all()
         
+        self.offset    = offset
+        self.tz_method = timezone
+        self.tz_region = tz_region
+        self.tz_cities = tz_cities
+        self.camera_id = camera_id
+        self.make      = make
+        self.model     = model
+        
         gst = Gio.Settings.new_with_path(
             'ca.exolucere.%s.camera' % PACKAGE,
             '/ca/exolucere/%s/cameras/%s/'
@@ -134,6 +145,7 @@ class Camera():
         visible = method.get_active_id() == 'custom'
         region.set_visible(visible)
         cities.set_visible(visible)
+        self.set_timezone()
     
     def region_handler(self, region, cities):
         """Populate the list of cities when a continent is selected."""
@@ -144,7 +156,30 @@ class Camera():
     def cities_handler(self, cities):
         """When a city is selected, update the chosen timezone."""
         if cities.get_active_id() is not None:
-            return
             self.set_timezone()
     
+    def set_timezone(self):
+        """Set the timezone to the chosen zone and update all photos."""
+        if 'TZ' in environ:
+            del environ['TZ']
+        case = lambda x: x == self.tz_method.get_active_id()
+        if case('lookup'):
+            # TODO
+            pass #environ['TZ'] = self.gpx_timezone
+        elif case('custom'):
+            region = self.tz_region.get_active_id()
+            city   = self.tz_cities.get_active_id()
+            if region is not None and city is not None:
+                environ['TZ'] = '/'.join([region, city])
+        tzset()
+        self.offset_handler()
+    
+    def offset_handler(self, offset=None):
+        """When the offset is changed, update the loaded photos."""
+        for photo in self.photos:
+            photo.calculate_timestamp()
+    
+    def get_offset(self):
+        """Return the currently selected clock offset value."""
+        return int(self.offset.get_value())
 

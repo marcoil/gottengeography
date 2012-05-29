@@ -44,7 +44,6 @@ from sys import argv
 from photos import Photograph
 from xmlfiles import GPXFile, KMLFile
 from common import polygons, points, photos
-from common import auto_timestamp_comparison
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
 from common import gpx_sensitivity, clear_all_gpx
@@ -104,16 +103,15 @@ class GottenGeography():
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = photos.get(uri) or Photograph(uri, self.modify_summary)
-        photo.read()
         if uri not in photos:
             photo.iter  = self.liststore.append()
             photo.label = self.labels.add(uri)
             photos[uri] = photo
+        photo.read()
         photo.position_label()
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [uri, photo.long_summary(), photo.thumb, photo.timestamp])
-        auto_timestamp_comparison(photo)
     
     def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -144,7 +142,6 @@ class GottenGeography():
         map_view.ensure_visible(bounds, False)
         
         self.prefs.gpx_timezone = gpx.lookup_geoname()
-        self.prefs.set_timezone()
         gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):
@@ -189,20 +186,6 @@ class GottenGeography():
 ################################################################################
 # Data manipulation. These methods modify the loaded files in some way.
 ################################################################################
-    
-    def time_offset_changed(self, widget):
-        """Update all photos each time the camera's clock is corrected."""
-        seconds = self.secbutton.get_value()
-        minutes = self.minbutton.get_value()
-        offset  = int((minutes * 60) + seconds)
-        if offset != metadata.delta:
-            metadata.delta = offset
-            if abs(seconds) == 60 and abs(minutes) != 60:
-                minutes += seconds / 60
-                self.secbutton.set_value(0)
-                self.minbutton.set_value(minutes)
-            for photo in photos.values():
-                auto_timestamp_comparison(photo)
     
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
@@ -332,13 +315,6 @@ class GottenGeography():
         
         self.labels.selection.emit('changed')
         clear_all_gpx()
-        
-        metadata.delta = 0
-        #self.secbutton, self.minbutton = get_obj('seconds'), get_obj('minutes')
-        #for spinbutton in [ self.secbutton, self.minbutton ]:
-        #    spinbutton.connect('value-changed', self.time_offset_changed)
-        #gst.bind('offset-minutes', self.minbutton, 'value')
-        #gst.bind('offset-seconds', self.secbutton, 'value')
         
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
         

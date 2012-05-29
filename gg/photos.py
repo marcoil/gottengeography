@@ -23,6 +23,7 @@ from time import mktime
 from os import stat
 
 from camera import get_camera
+from common import auto_timestamp_comparison
 from gpsmath import Coordinates, format_list
 from gpsmath import dms_to_decimal, decimal_to_dms, float_to_rational
 from territories import get_state, get_country
@@ -45,6 +46,7 @@ class Photograph(Coordinates):
         self.exif     = None
         self.thumb    = None
         self.manual   = None
+        self.camera   = None
     
     def read(self):
         """Load exif data from disk."""
@@ -60,7 +62,7 @@ class Photograph(Coordinates):
         except TypeError:
             raise IOError
         
-        camera = get_camera(self.exif)
+        self.camera = get_camera(self)
         
         # Try to get a thumbnail.
         try:
@@ -110,6 +112,8 @@ class Photograph(Coordinates):
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
+        self.timestamp += self.camera.get_offset()
+        auto_timestamp_comparison(self)
     
     def write(self):
         """Save exif data to photo file on disk."""

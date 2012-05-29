@@ -102,16 +102,7 @@ class PreferencesController():
     gpx_timezone = ''
     
     def __init__(self):
-        self.region = region = get_obj('timezone_region')
-        self.cities = cities = get_obj('timezone_cities')
         pref_button = get_obj('pref_button')
-        
-        for name in tz_regions:
-            region.append(name, name)
-        region.connect('changed', self.region_handler, cities)
-        cities.connect('changed', self.cities_handler)
-        gst.bind('timezone-region', region, 'active')
-        gst.bind('timezone-cities', cities, 'active')
         
         self.colorpicker = get_obj('colorselection')
         gst.bind_with_convert('track-color', self.colorpicker, 'current-color',
@@ -119,75 +110,22 @@ class PreferencesController():
         self.colorpicker.connect('color-changed', self.track_color_changed)
         
         pref_button.connect('clicked', self.preferences_dialog,
-            get_obj('preferences'), region, cities, self.colorpicker)
-        
-        self.radios = {}
-        for option in ['system', 'lookup', 'custom']:
-            option += '-timezone'
-            radio = get_obj(option)
-            radio.set_name(option)
-            gst.bind(option, radio, 'active')
-            self.radios[option] = radio
-            radio.connect('clicked', self.radio_handler)
-        gst.bind('custom-timezone', get_obj('custom_timezone_combos'),
-                 'sensitive')
+            get_obj('preferences'), self.colorpicker)
         
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
         map_source_menu()
     
-    def preferences_dialog(self, button, dialog, region, cities, colorpicker):
+    def preferences_dialog(self, button, dialog, colorpicker):
         """Allow the user to configure this application."""
         previous = Struct({
-            'system': gst.get_boolean('system-timezone'),
-            'lookup': gst.get_boolean('lookup-timezone'),
-            'custom': gst.get_boolean('custom-timezone'),
-            'region': region.get_active(),
-            'city':   cities.get_active(),
             'color':  colorpicker.get_current_color()
         })
         if not dialog.run():
             colorpicker.set_current_color(previous.color)
             colorpicker.set_previous_color(previous.color)
-            gst.set_boolean('system-timezone', previous.system)
-            gst.set_boolean('lookup-timezone', previous.lookup)
-            gst.set_boolean('custom-timezone', previous.custom)
-            region.set_active(previous.region)
-            cities.set_active(previous.city)
         dialog.hide()
-    
-    def set_timezone(self):
-        """Set the timezone to the given zone and update all photos."""
-        if 'TZ' in environ:
-            del environ['TZ']
-        if gst.get_boolean('lookup-timezone'):
-            environ['TZ'] = self.gpx_timezone
-        elif gst.get_boolean('custom-timezone'):
-            region = self.region.get_active_id()
-            city   = self.cities.get_active_id()
-            if region is not None and city is not None:
-                environ['TZ'] = '%s/%s' % (region, city)
-        tzset()
-        for photo in photos.values():
-            photo.calculate_timestamp()
-            auto_timestamp_comparison(photo)
-    
-    def radio_handler(self, radio):
-        """Reposition photos depending on which timezone the user selected."""
-        if radio.get_active():
-            self.set_timezone()
-    
-    def region_handler(self, regions, cities):
-        """Populate the list of cities when a continent is selected."""
-        cities.remove_all()
-        for city in get_timezone(regions.get_active_id(), []):
-            cities.append(city, city)
-    
-    def cities_handler(self, cities):
-        """When a city is selected, update the chosen timezone."""
-        if cities.get_active_id() is not None:
-            self.set_timezone()
     
     def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
