@@ -40,7 +40,6 @@ from territories import tz_regions, get_timezone
 from version import PACKAGE
 from common import get_obj, GSettings
 
-DEFAULT = Gio.SettingsBindFlags.DEFAULT
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
 
@@ -149,10 +148,10 @@ class Camera():
         self.gst.set_string('make', make)
         self.gst.set_string('model', model)
         
-        self.gst.bind('offset', offset, 'value', DEFAULT)
-        self.gst.bind('timezone-method', timezone, 'active-id', DEFAULT)
-        self.gst.bind('timezone-region', tz_region, 'active', DEFAULT)
-        self.gst.bind('timezone-cities', tz_cities, 'active', DEFAULT)
+        self.gst.bind('offset', offset, 'value')
+        self.gst.bind('timezone-method', timezone, 'active-id')
+        self.gst.bind('timezone-region', tz_region, 'active')
+        self.gst.bind('timezone-cities', tz_cities, 'active')
     
     def method_handler(self, method, region, cities):
         """Only show manual tz selectors when necessary."""
