@@ -30,14 +30,13 @@ class Camera():
     """Store per-camera configuration in GSettings."""
     
     def __init__(self, exif):
-        names = {'Make': 'Unknown Make',
-                 'Model': 'Unknown Camera'}
+        names = {'Make': 'Unknown Make', 'Model': 'Unknown Camera'}
+        keys = ['Exif.Image.' + key for key in names.keys()
+            + ['CameraSerialNumber']] + ['Exif.Photo.BodySerialNumber']
         
-        # TODO: Find as many manufacturer-specific methods of storing the
-        # camera serial numbers so that the camera_id can be more unique.
-        for key in ('Make', 'Model'):
+        for key in keys:
             try:
-                names.update({key: exif['Exif.Image.' + key].value})
+                names.update({key.split('.')[-1]: exif[key].value})
             except KeyError:
                 pass
         
