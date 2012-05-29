@@ -35,6 +35,8 @@ from common import Struct, Polygon, polygons, map_view
 from common import points, photos, selected, modified
 from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
+from camera import known_cameras
+from common import clear_all_gpx
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
@@ -53,13 +55,19 @@ class GottenGeographyTester(TestCase):
         system('git checkout demo')
         environ['TZ'] = 'America/Edmonton'
         tzset()
-        get_obj('system-timezone').clicked()
     
     def tearDown(self):
         """Undo whatever mess the testsuite created."""
+        for photo in photos.values():
+            gui.labels.layer.remove_marker(photo.label)
+            del photos[photo.filename]
+            modified.discard(photo)
+        gui.labels.select_all.set_active(False)
+        gui.liststore.clear()
         system('git checkout demo')
         for key in app.gst.list_keys():
             app.gst.reset(key)
+        clear_all_gpx()
     
     def test_actor_controller(self):
         """Make sure the actors are behaving."""
@@ -78,7 +86,6 @@ class GottenGeographyTester(TestCase):
             self.assertEqual(rot, 0)
         control.animate_in(10)
         self.assertEqual(control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0], 45)
-        self.assertEqual(control.xhair.get_size(), (8, 9))
         self.assertEqual(control.black.get_width(), map_view.get_width())
     
     def test_drag_controller(self):
@@ -91,8 +98,7 @@ class GottenGeographyTester(TestCase):
                                 None, None, True)
         self.assertEqual(len(photos), 6)
         self.assertEqual(len(points), 374)
-        for button in ('select_all', 'close', 'clear'):
-            get_obj(button + '_button').emit('clicked')
+        self.tearDown()
         self.assertEqual(len(photos), 0)
         self.assertEqual(len(points), 0)
         
@@ -153,8 +159,8 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(gui.liststore.get_n_columns(), 4)
         self.assertEqual(gui.search.results.get_n_columns(), 3)
         size = get_obj('main').get_size()
-        self.assertGreater(size[1], 500)
-        self.assertGreater(size[0], 799)
+        self.assertGreater(size[1], 300)
+        self.assertGreater(size[0], 400)
         self.assertEqual(gui.labels.selection.count_selected_rows(), 0)
     
     def test_gsettings(self):
@@ -173,9 +179,6 @@ class GottenGeographyTester(TestCase):
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
-        
-        # Start with a fresh state.
-        system('git checkout demo')
         self.assertEqual(len(points), 0)
         self.assertEqual(len(polygons), 0)
         self.assertEqual(app.metadata.alpha, float('inf'))
@@ -204,7 +207,6 @@ class GottenGeographyTester(TestCase):
         for photo in photos.values():
             self.assertFalse(photo in modified)
             self.assertFalse(photo in selected)
-            self.assertFalse(photo.label.get_property('visible'))
             
             # Pristine demo data shouldn't have any tags.
             self.assertIsNone(photo.altitude)
@@ -251,9 +253,9 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(selected), 0)
         
         # Load the GPX
-        gpx_filename=join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
+        gpx_filename = join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
-        gui.load_gpx_from_file(gpx_filename)
+        gui.open_files([gpx_filename])
         self.assertTrue(buttons['clear'].get_sensitive())
         gui.labels.selection.emit('changed')
         
@@ -313,15 +315,6 @@ class GottenGeographyTester(TestCase):
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
             self.assertEqual(photo.pretty_geoname(), 'Edmonton, Alberta, Canada')
-    
-    def test_auto_timestamp(self):
-        """Ensure that we can determine the correct timezone if it is set incorrectly."""
-        environ['TZ'] = 'Europe/Paris'
-        tzset()
-        get_obj('lookup-timezone').clicked()
-        self.test_demo_data()
-        environ['TZ'] = 'America/Edmonton'
-        tzset()
     
     def test_string_functions(self):
         """Ensure that strings print properly."""
@@ -558,28 +551,6 @@ S 10.00000, W 10.00000
         self.assertEqual(point.ele, 1000)
         
         self.assertEqual(len(polygon.get_nodes()), 2)
-    
-    def test_time_offset(self):
-        """Fiddle with the time offset setting."""
-        minutes = get_obj("minutes")
-        seconds = get_obj("seconds")
-        seconds.set_value(0)
-        minutes.set_value(0)
-        self.assertEqual(app.metadata.delta, 0)
-        minutes.set_value(1)
-        self.assertEqual(app.metadata.delta, 60)
-        seconds.set_value(1)
-        self.assertEqual(app.metadata.delta, 61)
-        
-        seconds.set_value(59)
-        self.assertEqual(app.metadata.delta, 119)
-        minutes.set_value(59)
-        self.assertEqual(app.metadata.delta, 3599)
-        
-        seconds.set_value(60)
-        self.assertEqual(seconds.get_value(), 0)
-        self.assertEqual(minutes.get_value(), 60)
-        self.assertEqual(app.metadata.delta, 3600)
     
     def test_search(self):
         """Make sure the search box functions."""
