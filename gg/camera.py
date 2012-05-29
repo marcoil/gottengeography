@@ -19,13 +19,25 @@ It uniquely identifies each camera model that the user owns and stores
 settings such as what timezone to use and how wrong the camera's clock is.
 A 'relocatable' GSettings schema is used to persist this data across application
 launches.
+
+Note that the Cameras tab will only display the cameras responsible for
+creating the currently loaded photos. This means that it's entirely possible
+for GSettings to store a camera definition that isn't displayed in the UI.
+Rest assured that your camera's settings are simply gone but not forgotten,
+and if you want to see the camera in the camera list, you should load a photo
+taken by that camera.
 """
 
 from gi.repository import Gio, GObject, Gtk
 from gettext import gettext as _
 
+from territories import tz_regions, get_timezone
 from version import PACKAGE
 from common import get_obj
+
+DEFAULT = Gio.SettingsBindFlags.DEFAULT
+BOTTOM = Gtk.PositionType.BOTTOM
+RIGHT = Gtk.PositionType.RIGHT
 
 known_cameras = {}
 
@@ -41,44 +53,98 @@ def get_camera(exif):
         except KeyError:
             pass
     
+    # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
     camera_id = '_'.join(sorted(names.values())).lower().replace(' ', '_')
     
-    if camera_id in known_cameras:
-        return known_cameras[camera_id]
-    else:
-        camera = Camera(camera_id, names['Make'], names['Model'])
-        known_cameras[camera_id] = camera
-        return camera
+    if camera_id not in known_cameras:
+        known_cameras[camera_id] = Camera(
+            camera_id, names['Make'], names['Model'])
+    
+    return known_cameras[camera_id]
 
 
 class Camera():
     """Store per-camera configuration in GSettings."""
     
     def __init__(self, camera_id, make, model):
+        """Generate Gtk widgets and bind their properties to GSettings."""
         self.camera_id = camera_id
         self.make = make
         self.model = model
         
-        label = Gtk.Label()
-        label.set_markup('<span size="larger" weight="heavy">%s</span>' % model)
-        label.set_property('margin-top', 12)
+        camera_label = Gtk.Label()
+        camera_label.set_property('margin-top', 12)
+        camera_label.set_markup(
+            '<span size="larger" weight="heavy">%s</span>' % model)
         
+        # SpinButton allows the user to correct the camera's clock.
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
         
+        # These two ComboBoxTexts are used for choosing the timezone manually.
+        # They're hidden to reduce clutter when not needed.
+        tz_region = Gtk.ComboBoxText()
+        tz_cities = Gtk.ComboBoxText()
+        for combo in (tz_region, tz_cities):
+            combo.set_id_column(0)
+            combo.set_property('no-show-all', True)
+        for name in tz_regions:
+            tz_region.append(name, name)
+        tz_region.connect('changed', self.region_handler, tz_cities)
+        tz_cities.connect('changed', self.cities_handler)
+        
+        # TODO we're gonna need some on screen help to explain what it even
+        # means to select the method of determining the timezone.
+        # Back when this was radio button in a preferences window we had more
+        # room for verbosity, but this combobox is *so terse* that I don't
+        # really expect anybody to understand it at all.
+        timezone = Gtk.ComboBox.new_with_model(get_obj('timezone_methods'))
+        timezone.set_id_column(0)
+        timezone.connect('changed', self.method_handler, tz_region, tz_cities)
+        
+        tz_summary = Gtk.CellRendererText()
+        timezone.pack_start(tz_summary, False)
+        timezone.add_attribute(tz_summary, 'markup', 1)
+        
+        # Push all the widgets into the UI and display them to the user.
         grid = get_obj('cameras_view')
-        grid.attach_next_to(label, None, Gtk.PositionType.BOTTOM, 2, 1)
-        grid.attach_next_to(offset_label, label, Gtk.PositionType.BOTTOM, 1, 1)
-        grid.attach_next_to(offset, offset_label, Gtk.PositionType.RIGHT, 1, 1)
+        grid.attach_next_to(camera_label, None, BOTTOM, 2, 1)
+        grid.attach_next_to(timezone, None, BOTTOM, 2, 1)
+        grid.attach_next_to(tz_region, None, BOTTOM, 1, 1)
+        grid.attach_next_to(tz_cities, tz_region, RIGHT, 1, 1)
+        grid.attach_next_to(offset_label, None, BOTTOM, 1, 1)
+        grid.attach_next_to(offset, offset_label, RIGHT, 1, 1)
         grid.show_all()
         
-        self.gst = Gio.Settings.new_with_path(
+        gst = Gio.Settings.new_with_path(
             'ca.exolucere.%s.camera' % PACKAGE,
             '/ca/exolucere/%s/cameras/%s/'
                 % (PACKAGE, camera_id))
         
-        self.gst.set_string('make', make)
-        self.gst.set_string('model', model)
+        gst.set_string('make', make)
+        gst.set_string('model', model)
         
-        self.gst.bind('offset', offset, 'value', Gio.SettingsBindFlags.DEFAULT)
+        gst.bind('offset', offset, 'value', DEFAULT)
+        gst.bind('timezone-method', timezone, 'active-id', DEFAULT)
+        gst.bind('timezone-region', tz_region, 'active', DEFAULT)
+        gst.bind('timezone-cities', tz_cities, 'active', DEFAULT)
+    
+    def method_handler(self, method, region, cities):
+        """Only show manual tz selectors when necessary."""
+        visible = method.get_active_id() == 'custom'
+        region.set_visible(visible)
+        cities.set_visible(visible)
+    
+    def region_handler(self, region, cities):
+        """Populate the list of cities when a continent is selected."""
+        cities.remove_all()
+        for city in get_timezone(region.get_active_id(), []):
+            cities.append(city, city)
+    
+    def cities_handler(self, cities):
+        """When a city is selected, update the chosen timezone."""
+        if cities.get_active_id() is not None:
+            return
+            self.set_timezone()
+    
 

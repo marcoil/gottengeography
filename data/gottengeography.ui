@@ -297,8 +297,8 @@
                     <property name="can_focus">False</property>
                     <property name="margin">20</property>
                     <property name="row-spacing">6</property>
-                    <property name="column-spacing">12</property>
-                    <property name="column-homogeneous">True</property>
+                    <property name="column-spacing">6</property>
+                    <property name="column-homogeneous">False</property>
                     <property name="halign">center</property>
                     <property name="valign">center</property>
                   </object>
@@ -1172,6 +1172,28 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <action-widget response="-6">quit_cancel</action-widget>
       <action-widget response="-3">quit_save</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkListStore" id="timezone_methods">
+    <columns>
+      <!-- column-name tz_id -->
+      <column type="gchararray"/>
+      <!-- column-name summary -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0">system</col>
+        <col id="1" translatable="yes">Use the &lt;b&gt;system&lt;/b&gt; timezone.</col>
+      </row>
+      <row>
+        <col id="0">lookup</col>
+        <col id="1" translatable="yes">Use the &lt;b&gt;local&lt;/b&gt; timezone.</col>
+      </row>
+      <row>
+        <col id="0">custom</col>
+        <col id="1" translatable="yes">Specify the timezone &lt;b&gt;manually&lt;/b&gt;.</col>
+      </row>
+    </data>
   </object>
   <object class="GtkListStore" id="loaded_photos">
     <columns>
