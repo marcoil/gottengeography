@@ -54,6 +54,7 @@ from label import LabelController
 from search import SearchController
 from navigation import NavigationController
 from preferences import PreferencesController
+from camera import known_cameras
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -88,6 +89,14 @@ class GottenGeography():
                 invalid.append(basename(name))
         if len(invalid) > 0:
             self.status_message(_('Could not open: ') + ', '.join(invalid))
+        
+        if len(points) > 2:
+            for camera in known_cameras.values():
+                if camera.use_timezone_lookup():
+                    # If the user loads GPX first and photos second, the
+                    # camera won't know what timezone the GPX was in, but
+                    # this will discover it.
+                    camera.set_timezone()
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
@@ -141,7 +150,9 @@ class GottenGeography():
         gpx.latitude, gpx.longitude = bounds.get_center()
         map_view.ensure_visible(bounds, False)
         
-        self.prefs.gpx_timezone = gpx.lookup_geoname()
+        for camera in known_cameras.values():
+            camera.set_found_timezone(gpx.lookup_geoname())
+            camera.set_timezone()
         gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):

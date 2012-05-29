@@ -113,7 +113,10 @@ class Photograph(Coordinates):
         except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
         self.timestamp += self.camera.get_offset()
-        auto_timestamp_comparison(self)
+        if self.label is not None:
+            # self.label would be none if we're just generating the preview
+            # and haven't actually loaded the photo yet.
+            auto_timestamp_comparison(self)
     
     def write(self):
         """Save exif data to photo file on disk."""
@@ -164,6 +167,7 @@ class Photograph(Coordinates):
         self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
         self.exif[IPTC + 'CountryCode']   = [country or '']
         self.timezone                     = tz.strip()
+        self.camera.set_found_timezone(self.timezone)
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""

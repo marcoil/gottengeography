@@ -51,7 +51,6 @@ class metadata:
     
     Never instantiated, simply used for static class attributes.
     """
-    delta = 0
     omega = float('-inf')
     alpha = float('inf')
 
@@ -67,7 +66,7 @@ def auto_timestamp_comparison(photo):
     # timestamp, and then keep it within the range of available GPX points.
     # The result is in epoch seconds, just like the keys of the 'points' dict.
     stamp = min(max(
-        metadata.delta + photo.timestamp,
+        photo.timestamp,
         metadata.alpha),
         metadata.omega)
     

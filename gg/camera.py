@@ -69,6 +69,15 @@ def get_camera(photo):
     camera.photos.append(photo)
     return camera
 
+def display_offset(offset):
+    """Display the offset spinbutton as M:SS."""
+    value = offset.get_value()
+    sign = '-' if value < 0 else ''
+    seconds, minutes = split_float(abs(value) / 60)
+    seconds = int(seconds * 60)
+    offset.set_text('%s%d:%02d' % (sign, minutes, seconds))
+    return True
+
 
 class Camera():
     """Store per-camera configuration in GSettings."""
@@ -86,7 +95,7 @@ class Camera():
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
         offset.connect('changed', self.offset_handler)
-        offset.connect('output', self.display_offset)
+        offset.connect('output', display_offset)
         offset.set_numeric(False)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
@@ -132,18 +141,18 @@ class Camera():
         self.make      = make
         self.model     = model
         
-        gst = Gio.Settings.new_with_path(
+        self.gst = Gio.Settings.new_with_path(
             'ca.exolucere.%s.camera' % PACKAGE,
             '/ca/exolucere/%s/cameras/%s/'
                 % (PACKAGE, camera_id))
         
-        gst.set_string('make', make)
-        gst.set_string('model', model)
+        self.gst.set_string('make', make)
+        self.gst.set_string('model', model)
         
-        gst.bind('offset', offset, 'value', DEFAULT)
-        gst.bind('timezone-method', timezone, 'active-id', DEFAULT)
-        gst.bind('timezone-region', tz_region, 'active', DEFAULT)
-        gst.bind('timezone-cities', tz_cities, 'active', DEFAULT)
+        self.gst.bind('offset', offset, 'value', DEFAULT)
+        self.gst.bind('timezone-method', timezone, 'active-id', DEFAULT)
+        self.gst.bind('timezone-region', tz_region, 'active', DEFAULT)
+        self.gst.bind('timezone-cities', tz_cities, 'active', DEFAULT)
     
     def method_handler(self, method, region, cities):
         """Only show manual tz selectors when necessary."""
@@ -163,14 +172,23 @@ class Camera():
         if cities.get_active_id() is not None:
             self.set_timezone()
     
+    def set_found_timezone(self, found):
+        """Store discovered timezone in GSettings."""
+        self.gst.set_string('found-timezone', found)
+    
+    def use_timezone_lookup(self):
+        """Returns True if we're supposed to discover the timezone by magic."""
+        return self.gst.get_string('timezone-method') == 'lookup'
+    
     def set_timezone(self):
         """Set the timezone to the chosen zone and update all photos."""
         if 'TZ' in environ:
             del environ['TZ']
         case = lambda x: x == self.tz_method.get_active_id()
         if case('lookup'):
-            # TODO
-            pass #environ['TZ'] = self.gpx_timezone
+            # Note that this will gracefully fallback on system timezone
+            # if no timezone has actually been found yet.
+            environ['TZ'] = self.gst.get_string('found-timezone')
         elif case('custom'):
             region = self.tz_region.get_active_id()
             city   = self.tz_cities.get_active_id()
@@ -187,13 +205,4 @@ class Camera():
     def get_offset(self):
         """Return the currently selected clock offset value."""
         return int(self.offset.get_value())
-    
-    def display_offset(self, offset):
-        """Display the offset as M:SS."""
-        value = offset.get_value()
-        sign = '-' if value < 0 else ''
-        seconds, minutes = split_float(abs(value) / 60)
-        seconds = int(seconds * 60)
-        offset.set_text('%s%d:%02d' % (sign, minutes, seconds))
-        return True
 

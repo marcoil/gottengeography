@@ -25,7 +25,6 @@ from os import environ
 
 from common import Struct, polygons, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
-from territories import tz_regions, get_timezone
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
@@ -99,7 +98,6 @@ def map_source_menu():
 
 class PreferencesController():
     """Controls the behavior of the preferences dialog."""
-    gpx_timezone = ''
     
     def __init__(self):
         pref_button = get_obj('pref_button')
