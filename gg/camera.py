@@ -28,7 +28,10 @@ and if you want to see the camera in the camera list, you should load a photo
 taken by that camera.
 """
 
+from __future__ import division
+
 from gi.repository import Gio, GObject, Gtk
+from math import modf as split_float
 from gettext import gettext as _
 from time import tzset
 from os import environ
@@ -83,6 +86,8 @@ class Camera():
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
         offset.connect('changed', self.offset_handler)
+        offset.connect('output', self.display_offset)
+        offset.set_numeric(False)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -182,4 +187,13 @@ class Camera():
     def get_offset(self):
         """Return the currently selected clock offset value."""
         return int(self.offset.get_value())
+    
+    def display_offset(self, offset):
+        """Display the offset as M:SS."""
+        value = offset.get_value()
+        sign = '-' if value < 0 else ''
+        seconds, minutes = split_float(abs(value) / 60)
+        seconds = int(seconds * 60)
+        offset.set_text('%s%d:%02d' % (sign, minutes, seconds))
+        return True
 
