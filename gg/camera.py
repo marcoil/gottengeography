@@ -38,7 +38,7 @@ from os import environ
 
 from territories import tz_regions, get_timezone
 from version import PACKAGE
-from common import get_obj
+from common import get_obj, GSettings
 
 DEFAULT = Gio.SettingsBindFlags.DEFAULT
 BOTTOM = Gtk.PositionType.BOTTOM
@@ -141,7 +141,7 @@ class Camera():
         self.make      = make
         self.model     = model
         
-        self.gst = Gio.Settings.new_with_path(
+        self.gst = GSettings(
             'ca.exolucere.%s.camera' % PACKAGE,
             '/ca/exolucere/%s/cameras/%s/'
                 % (PACKAGE, camera_id))

@@ -109,8 +109,8 @@ class GSettings(Gio.Settings):
     """Override GSettings to be more useful to me."""
     get = Gio.Settings.get_value
     
-    def __init__(self):
-        Gio.Settings.__init__(self, 'ca.exolucere.' + PACKAGE)
+    def __init__(self, schema = 'ca.exolucere.' + PACKAGE, path=None):
+        Gio.Settings.__init__(self, schema, path)
         
         # These are used to avoid infinite looping.
         self._ignore_key_changed = False
