@@ -90,13 +90,10 @@ class GottenGeography():
         if len(invalid) > 0:
             self.status_message(_('Could not open: ') + ', '.join(invalid))
         
-        if len(points) > 2:
-            for camera in known_cameras.values():
-                if camera.use_timezone_lookup():
-                    # If the user loads GPX first and photos second, the
-                    # camera won't know what timezone the GPX was in, but
-                    # this will discover it.
-                    camera.set_timezone()
+        # Ensure camera has found correct timezone regardless of the order
+        # that the GPX/KML files were loaded in.
+        for camera in known_cameras.values():
+            camera.set_timezone()
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
@@ -112,12 +109,12 @@ class GottenGeography():
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = photos.get(uri) or Photograph(uri, self.modify_summary)
+        photo.read()
         if uri not in photos:
             photo.iter  = self.liststore.append()
             photo.label = self.labels.add(uri)
             photos[uri] = photo
-        photo.read()
-        photo.position_label()
+        photo.calculate_timestamp()
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [uri, photo.long_summary(), photo.thumb, photo.timestamp])
@@ -152,7 +149,6 @@ class GottenGeography():
         
         for camera in known_cameras.values():
             camera.set_found_timezone(gpx.lookup_geoname())
-            camera.set_timezone()
         gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):

@@ -114,8 +114,6 @@ class Photograph(Coordinates):
             self.timestamp = int(stat(self.filename).st_mtime)
         self.timestamp += self.camera.get_offset()
         if self.label is not None:
-            # self.label would be none if we're just generating the preview
-            # and haven't actually loaded the photo yet.
             auto_timestamp_comparison(self)
     
     def write(self):
@@ -142,6 +140,8 @@ class Photograph(Coordinates):
     
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""
+        if self.label.get_parent() is None:
+            return
         if self.valid_coords():
             self.label.set_location(self.latitude, self.longitude)
             self.label.show()

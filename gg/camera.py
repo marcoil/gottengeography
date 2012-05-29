@@ -175,14 +175,9 @@ class Camera():
         """Store discovered timezone in GSettings."""
         self.gst.set_string('found-timezone', found)
     
-    def use_timezone_lookup(self):
-        """Returns True if we're supposed to discover the timezone by magic."""
-        return self.gst.get_string('timezone-method') == 'lookup'
-    
     def set_timezone(self):
         """Set the timezone to the chosen zone and update all photos."""
-        if 'TZ' in environ:
-            del environ['TZ']
+        environ['TZ'] = ''
         case = lambda x: x == self.tz_method.get_active_id()
         if case('lookup'):
             # Note that this will gracefully fallback on system timezone
