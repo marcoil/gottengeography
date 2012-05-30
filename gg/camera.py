@@ -65,7 +65,7 @@ def get_camera(photo):
             camera_id, names['Make'], names['Model'])
     
     camera = known_cameras[camera_id]
-    camera.photos.append(photo)
+    camera.photos.add(photo)
     return camera
 
 def display_offset(offset):
@@ -83,7 +83,7 @@ class Camera():
     
     def __init__(self, camera_id, make, model):
         """Generate Gtk widgets and bind their properties to GSettings."""
-        self.photos = []
+        self.photos = set()
         
         camera_label = Gtk.Label()
         camera_label.set_property('margin-top', 12)
@@ -179,7 +179,7 @@ class Camera():
     def set_timezone(self):
         """Set the timezone to the chosen zone and update all photos."""
         environ['TZ'] = ''
-        case = lambda x: x == self.tz_method.get_active_id()
+        case = lambda x, y=self.tz_method.get_active_id(): x == y
         if case('lookup'):
             # Note that this will gracefully fallback on system timezone
             # if no timezone has actually been found yet.

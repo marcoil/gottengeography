@@ -197,6 +197,8 @@ class GottenGeography():
     def modify_summary(self, photo):
         """Insert the current photo summary into the liststore."""
         modified.add(photo)
+        if photo.iter not in self.liststore:
+            return
         self.liststore.set_value(photo.iter, SUMMARY,
             ('<b>%s</b>' % photo.long_summary()))
     

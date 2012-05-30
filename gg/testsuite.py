@@ -59,13 +59,16 @@ class GottenGeographyTester(TestCase):
     
     def tearDown(self):
         """Undo whatever mess the testsuite created."""
+        clear_all_gpx()
+        gui.labels.select_all.set_active(False)
+        for camera in known_cameras.values():
+            camera.photos.clear()
         for photo in photos.values():
             gui.labels.layer.remove_marker(photo.label)
         photos.clear()
         modified.clear()
-        gui.labels.select_all.set_active(False)
+        selected.clear()
         gui.liststore.clear()
-        clear_all_gpx()
         system('git checkout demo')
         for key in app.gst.list_keys():
             app.gst.reset(key)
@@ -217,7 +220,6 @@ class GottenGeographyTester(TestCase):
         gui.open_files([DEMOFILES[0]])
         self.assertEqual(gst.get_string('found-timezone'), 'America/Edmonton')
         photo = photos.values()[0]
-        print photo.latitude, photo.longitude
         self.assertAlmostEqual(photo.latitude, 53.530476, 5)
         self.assertAlmostEqual(photo.longitude, -113.450635, 5)
         
@@ -246,7 +248,7 @@ class GottenGeographyTester(TestCase):
         for filename in DEMOFILES:
             if filename[-3:] != 'gpx':
                 self.assertRaises(IOError, gui.load_gpx_from_file, filename)
-                gui.load_img_from_file(filename)
+                gui.open_files([filename])
         
         # Nothing is yet selected or modified, so buttons still insensitive.
         for button in buttons.values():
@@ -294,8 +296,6 @@ class GottenGeographyTester(TestCase):
             self.assertFalse(photo.valid_coords())
             self.assertFalse(photo.manual)
             self.assertEqual(photo.filename, photo.label.get_name())
-            self.assertEqual(photo.timestamp,
-                gui.liststore.get_value(photo.iter, app.TIMESTAMP))
         
         # Test the select-all button.
         select_all = get_obj('select_all_button')
