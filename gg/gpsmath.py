@@ -165,8 +165,8 @@ class Coordinates():
     
     def short_summary(self):
         """Plaintext summary of photo metadata."""
-        return format_list([self.pretty_time(), self.pretty_coords(),
-            self.pretty_geoname(), self.pretty_elevation()], '\n')
+        return format_list([self.pretty_geoname(), self.pretty_time(),
+            self.pretty_coords(), self.pretty_elevation()], '\n')
     
     def long_summary(self):
         """Longer summary with Pango markup."""
