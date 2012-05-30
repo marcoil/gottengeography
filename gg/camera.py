@@ -68,14 +68,12 @@ def get_camera(photo):
     camera.photos.add(photo)
     return camera
 
-def display_offset(offset):
+def display_offset(offset, value, label=_('Clock Offset:')):
     """Display the offset spinbutton as M:SS."""
-    value = offset.get_value()
     sign = '-' if value < 0 else ''
     seconds, minutes = split_float(abs(value) / 60)
     seconds = int(seconds * 60)
-    offset.set_text('%s%d:%02d' % (sign, minutes, seconds))
-    return True
+    return label + ' %s%d:%02d' % (sign, minutes, seconds)
 
 
 class Camera():
@@ -91,12 +89,9 @@ class Camera():
             '<span size="larger" weight="heavy">%s</span>' % model)
         
         # SpinButton allows the user to correct the camera's clock.
-        offset_label = Gtk.Label(_('Clock Offset:'))
-        offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
-        offset.connect('changed', self.offset_handler)
-        # FIXME: This is buggy as shit!
-        #offset.set_numeric(False)
-        #offset.connect('output', display_offset)
+        offset = Gtk.HScale.new_with_range(-3600, 3600, 1)
+        offset.connect('value-changed', self.offset_handler)
+        offset.connect('format-value', display_offset)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -129,8 +124,7 @@ class Camera():
         grid.attach_next_to(timezone, None, BOTTOM, 2, 1)
         grid.attach_next_to(tz_region, None, BOTTOM, 1, 1)
         grid.attach_next_to(tz_cities, tz_region, RIGHT, 1, 1)
-        grid.attach_next_to(offset_label, None, BOTTOM, 1, 1)
-        grid.attach_next_to(offset, offset_label, RIGHT, 1, 1)
+        grid.attach_next_to(offset, None, BOTTOM, 2, 1)
         grid.show_all()
         
         self.offset    = offset
@@ -149,7 +143,7 @@ class Camera():
         self.gst.set_string('make', make)
         self.gst.set_string('model', model)
         
-        self.gst.bind('offset', offset, 'value')
+        self.gst.bind('offset', offset.get_adjustment(), 'value')
         self.gst.bind('timezone-method', timezone, 'active-id')
         self.gst.bind('timezone-region', tz_region, 'active')
         self.gst.bind('timezone-cities', tz_cities, 'active')
