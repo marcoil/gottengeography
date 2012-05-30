@@ -94,8 +94,9 @@ class Camera():
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
         offset.connect('changed', self.offset_handler)
-        offset.connect('output', display_offset)
-        offset.set_numeric(False)
+        # FIXME: This is buggy as shit!
+        #offset.set_numeric(False)
+        #offset.connect('output', display_offset)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
