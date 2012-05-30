@@ -93,6 +93,7 @@ class LabelController():
         label.set_selectable(True)
         label.set_draggable(True)
         label.set_property('reactive', True)
+        label.hide()
         label.connect('enter-event', hover, 1.05)
         label.connect('leave-event', hover, 1/1.05)
         label.connect('drag-finish', drag_finish, self.selection)
