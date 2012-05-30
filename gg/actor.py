@@ -21,7 +21,7 @@ from gi.repository import Gtk, Champlain, Clutter
 from gettext import gettext as _
 from time import sleep
 
-from common import get_obj, map_view
+from common import gst, get_obj, map_view
 from gpsmath import format_coords
 
 def display(view, param, mlink, label):
@@ -54,6 +54,9 @@ class ActorController():
         
         scale = Champlain.Scale.new()
         scale.connect_view(map_view)
+        gst.bind('show-map-scale', scale, 'visible')
+        gst.bind('show-map-center', self.xhair, 'visible')
+        gst.bind('show-map-coords', self.black, 'visible')
         map_view.bin_layout_add(scale,
             Clutter.BinAlignment.START, Clutter.BinAlignment.END)
         map_view.bin_layout_add(self.black,

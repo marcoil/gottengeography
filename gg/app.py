@@ -326,6 +326,7 @@ class GottenGeography():
         clear_all_gpx()
         
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
+        gst.bind('show-buttons', get_obj('photo_btn_bar'), 'visible')
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))

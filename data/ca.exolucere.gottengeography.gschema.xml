@@ -40,6 +40,22 @@
       <default>true</default>
       <summary>Use the dark GTK theme, if available.</summary>
     </key>
+    <key type="b" name="show-map-scale">
+      <default>true</default>
+      <summary>Determines whether or not to show the scale on the map.</summary>
+    </key>
+    <key type="b" name="show-map-center">
+      <default>true</default>
+      <summary>Determines whether or not to show the crosshair at map center.</summary>
+    </key>
+    <key type="b" name="show-map-coords">
+      <default>true</default>
+      <summary>Determines whether or not to show the latitude and longitude atop the map.</summary>
+    </key>
+    <key type="b" name="show-buttons">
+      <default>true</default>
+      <summary>Determines whether or not to show the Select All and Apply buttons.</summary>
+    </key>
   </schema>
 
 
