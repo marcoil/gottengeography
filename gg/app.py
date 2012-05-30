@@ -32,7 +32,7 @@ GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk
 from gi.repository import GdkPixbuf
-from gi.repository import Champlain
+from gi.repository import Champlain, Pango
 from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
@@ -263,6 +263,8 @@ class GottenGeography():
         self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
         
         cell_string = Gtk.CellRendererText()
+        cell_string.set_property('wrap-mode', Pango.WrapMode.WORD)
+        cell_string.set_property('wrap-width', 200)
         cell_thumb  = Gtk.CellRendererPixbuf()
         cell_thumb.set_property('stock-id', Gtk.STOCK_MISSING_IMAGE)
         cell_thumb.set_property('ypad', 6)

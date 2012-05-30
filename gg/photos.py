@@ -175,6 +175,5 @@ class Photograph(Coordinates):
         for key in [ 'City', 'ProvinceState', 'CountryName' ]:
             try: names.extend(self.exif[IPTC + key].values)
             except KeyError: pass
-        length = sum(map(len, names))
-        return format_list(names, ',\n' if length > 35 else ', ')
+        return format_list(names)
 
