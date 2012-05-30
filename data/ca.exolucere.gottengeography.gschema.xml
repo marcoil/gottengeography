@@ -85,4 +85,16 @@
   </schema>
 
 
+  <schema id="ca.exolucere.gottengeography.tracks">
+    <key type="(iii)" name="track-color">
+      <default>(32768, 0, 65535)</default>
+      <summary>Use this color for the polygons on the map.</summary>
+    </key>
+    <key type="s" name="start-timezone">
+      <default>''</default>
+      <summary>The timezone that the GPS trace began at.</summary>
+    </key>
+  </schema>
+
+
 </schemalist>
