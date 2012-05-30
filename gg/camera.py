@@ -31,8 +31,10 @@ taken by that camera.
 from __future__ import division
 
 from gi.repository import Gio, GObject, Gtk
+from ctypes import c_double, c_voidp, sizeof
 from math import modf as split_float
 from gettext import gettext as _
+from re import compile as re_compile
 from time import tzset
 from os import environ
 
@@ -68,13 +70,43 @@ def get_camera(photo):
     camera.photos.add(photo)
     return camera
 
-def display_offset(offset):
+offset_regexp = re_compile(r'^(-)?(([0-5]?[0-9]):)?([0-5]?[0-9])$')
+
+def offset_input(spinner, new_value):
+    text = spinner.get_text()
+    print 'Input - text: {0}'.format(text)
+    match = offset_regexp.match(text)
+    print 'Input - groups: {0}'.format(match.groups())
+    if match is None:
+        return Gtk.INPUT_ERROR
+    try:
+        seconds = int(match.group(4))
+    except (IndexError, ValueError):
+        return Gtk.INPUT_ERROR
+    sign = 1 if match.group(1) is None else -1
+    try:
+        minutes = int(match.group(3))
+    except (IndexError, ValueError, TypeError):
+        minutes = 0
+    offset = float(sign * ((minutes * 60) + seconds))
+    print 'Input - offset: {0}'.format(offset)
+    # NOTE: This is a terrible, terribel hack! I'm not even sure it'll work
+    # on all architectures, but it's necessary because the 'input' signal is
+    # designed in such a way that makes it difficult to map into Python, and
+    # it hasn't been done yet. So, this:
+    p = c_double.from_address(id(new_value) + (sizeof(c_voidp)*2))
+    p.value = offset
+    print 'Input - new_value: {0}'.format(new_value)
+    return True
+
+def offset_output(spinner):
     """Display the offset spinbutton as M:SS."""
-    value = offset.get_value()
+    print 'Output - value: {0}'.format(spinner.get_adjustment().get_value())
+    value = spinner.get_adjustment().get_value()
     sign = '-' if value < 0 else ''
     seconds, minutes = split_float(abs(value) / 60)
     seconds = int(seconds * 60)
-    offset.set_text('%s%d:%02d' % (sign, minutes, seconds))
+    spinner.set_text('%s%d:%02d' % (sign, minutes, seconds))
     return True
 
 
@@ -94,9 +126,9 @@ class Camera():
         offset_label = Gtk.Label(_('Clock Offset:'))
         offset = Gtk.SpinButton.new_with_range(-3600, 3600, 1)
         offset.connect('changed', self.offset_handler)
-        # FIXME: This is buggy as shit!
-        #offset.set_numeric(False)
-        #offset.connect('output', display_offset)
+        offset.set_numeric(False)
+        offset.connect('input', offset_input)
+        offset.connect('output', offset_output)
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -149,7 +181,7 @@ class Camera():
         self.gst.set_string('make', make)
         self.gst.set_string('model', model)
         
-        self.gst.bind('offset', offset, 'value')
+        # self.gst.bind('offset', offset, 'value')
         self.gst.bind('timezone-method', timezone, 'active-id')
         self.gst.bind('timezone-region', tz_region, 'active')
         self.gst.bind('timezone-cities', tz_cities, 'active')
