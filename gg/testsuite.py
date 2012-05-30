@@ -33,10 +33,11 @@ from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
 from preferences import MAP_SOURCES, make_clutter_color
 from common import Struct, Polygon, polygons, map_view
 from common import points, photos, selected, modified
+from common import clear_all_gpx, GSettings
 from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
 from camera import known_cameras
-from common import clear_all_gpx
+from version import PACKAGE
 
 gui = app.GottenGeography()
 get_obj = app.get_obj
@@ -60,14 +61,14 @@ class GottenGeographyTester(TestCase):
         """Undo whatever mess the testsuite created."""
         for photo in photos.values():
             gui.labels.layer.remove_marker(photo.label)
-            del photos[photo.filename]
-            modified.discard(photo)
+        photos.clear()
+        modified.clear()
         gui.labels.select_all.set_active(False)
         gui.liststore.clear()
+        clear_all_gpx()
         system('git checkout demo')
         for key in app.gst.list_keys():
             app.gst.reset(key)
-        clear_all_gpx()
     
     def test_actor_controller(self):
         """Make sure the actors are behaving."""
@@ -176,6 +177,57 @@ class GottenGeographyTester(TestCase):
                          [(34.5, 15.8, 2), (12.3, 45.6, 3)])
         map_view.set_map_source(MAP_SOURCES['osm-cyclemap'])
         self.assertEqual(app.gst.get_string('map-source-id'), 'osm-cyclemap')
+    
+    def test_camera_offsets(self):
+        """Make sure that camera offsets function correctly."""
+        gui.open_files([DEMOFILES[1]])
+        spinbutton = known_cameras.values()[0].offset
+        photo = photos.values()[0]
+        for delta in (1, 10, 100, 600, -711):
+            start = [photo.timestamp, spinbutton.get_value(),
+                     photo.camera.gst.get_int('offset')]
+            spinbutton.set_value(start[1] + delta)
+            end = [photo.timestamp, spinbutton.get_value(),
+                   photo.camera.gst.get_int('offset')]
+            # Check that the photo timestamp, spinbutton value, and gsettings
+            # key have all changed by precisely the same amount.
+            for i, num in enumerate(start):
+                self.assertEqual(end[i] - num, delta)
+    
+    def test_timezone_lookups(self):
+        """Ensure that the timezone can be discovered from the map."""
+        # Be very careful to reset everything so that we're sure that
+        # we're not just finding the timezone from gsettings.
+        gst = GSettings(
+            'ca.exolucere.%s.camera' % PACKAGE,
+            '/ca/exolucere/%s/cameras/%s/' % (PACKAGE,
+                'canon_canon_powershot_a590_is'))
+        gst.reset('found-timezone')
+        gst.reset('offset')
+        gst.set_string('timezone-method', 'lookup')
+        known_cameras.clear()
+        
+        # Open just the GPX
+        gui.open_files([DEMOFILES[3]])
+        
+        # At this point the camera hasn't been informed of the timezone
+        self.assertEqual(gst.get_string('found-timezone'), '')
+        
+        # Opening a photo should place it on the map.
+        gui.open_files([DEMOFILES[0]])
+        self.assertEqual(gst.get_string('found-timezone'), 'America/Edmonton')
+        photo = photos.values()[0]
+        print photo.latitude, photo.longitude
+        self.assertAlmostEqual(photo.latitude, 53.530476, 5)
+        self.assertAlmostEqual(photo.longitude, -113.450635, 5)
+        
+        # Manually specify the timezone to be not-Edmonton and confirm that
+        # the photo clamps to the end of the gpx track.
+        gst.set_string('timezone-method', 'custom')
+        gst.set_int('timezone-region', 1)
+        gst.set_int('timezone-cities', 43)
+        self.assertAlmostEqual(photo.latitude, 53.52263, 5)
+        self.assertAlmostEqual(photo.longitude, -113.44898, 5)
     
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
@@ -324,6 +376,7 @@ class GottenGeographyTester(TestCase):
         # Make a photo with a dummy ChamplainLabel.
         label = Struct()
         label.get_text = lambda: DEMOFILES[5]
+        label.get_parent = lambda: None
         photo = Photograph(label.get_text(), lambda x: None)
         photo.read()
         photo.label = label
