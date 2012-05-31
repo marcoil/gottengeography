@@ -297,6 +297,11 @@ class GottenGeography():
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
         
+        # Deal with multiple selection drag and drop.
+        self.defer_select = False
+        get_obj('photos_view').connect('button-press-event', self.photoview_pressed)
+        get_obj('photos_view').connect('button-release-event', self.photoview_released)
+        
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
@@ -356,6 +361,29 @@ class GottenGeography():
         if info:
             self.message_timeout_source = \
                 GLib.timeout_add_seconds(5, self.dismiss_message)
+    
+    # Multiple selection drag and drop copied from Kevin Mehall, adapted
+    # to use it with the standard GtkTreeView.
+    # http://blog.kevinmehall.net/2010/pygtk_multi_select_drag_drop
+    def photoview_pressed(self, tree, event):
+        target = tree.get_path_at_pos(int(event.x), int(event.y))
+        if (target
+            and event.type == Gdk.EventType.BUTTON_PRESS
+            and not (event.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK))
+            and tree.get_selection().path_is_selected(target[0])):
+                # disable selection
+                tree.get_selection().set_select_function(lambda *ignore: False, None)
+                self.defer_select = target[0]
+     
+    def photoview_released(self, tree, event):
+        # re-enable selection
+        tree.get_selection().set_select_function(lambda *ignore: True, None)
+        
+        target = tree.get_path_at_pos(int(event.x), int(event.y))
+        if (self.defer_select and target
+            and self.defer_select == target[0]
+            and not (event.x == 0 and event.y == 0)): # certain drag and drop
+                tree.set_cursor(target[0], target[1], False)
     
     def main(self, anim=True):
         """Animate the crosshair and begin user interaction."""
