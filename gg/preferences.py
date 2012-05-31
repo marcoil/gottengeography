@@ -29,7 +29,7 @@ from common import auto_timestamp_comparison, get_obj, gst
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
-        *[x / 256 for x in [color.red, color.green, color.blue, 32768]])
+        *[x / 256 for x in [color.red, color.green, color.blue, 49152]])
 
 MAP_SOURCES = {}
 
@@ -100,36 +100,20 @@ class PreferencesController():
     """Controls the behavior of the preferences dialog."""
     
     def __init__(self):
-        pref_button = get_obj('pref_button')
-        
-        self.colorpicker = get_obj('colorselection')
-        gst.bind_with_convert('track-color', self.colorpicker, 'current-color',
+        self.colorpicker = get_obj('trackfile_default_color')
+        self.colorpicker.connect('color-set', self.track_color_changed)
+        gst.bind_with_convert('track-color', self.colorpicker, 'color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        self.colorpicker.connect('color-changed', self.track_color_changed)
-        
-        pref_button.connect('clicked', self.preferences_dialog,
-            get_obj('preferences'), self.colorpicker)
         
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
         map_source_menu()
     
-    def preferences_dialog(self, button, dialog, colorpicker):
-        """Allow the user to configure this application."""
-        previous = Struct({
-            'color':  colorpicker.get_current_color()
-        })
-        if not dialog.run():
-            colorpicker.set_current_color(previous.color)
-            colorpicker.set_previous_color(previous.color)
-        dialog.hide()
-    
     def track_color_changed(self, selection):
         """Update the color of any loaded GPX tracks."""
-        color = selection.get_current_color()
-        one   = make_clutter_color(color)
-        two   = one.lighten().lighten()
+        one = make_clutter_color(selection.get_color())
+        two = one.lighten().lighten()
         for i, polygon in enumerate(polygons):
             polygon.set_stroke_color(two if i % 2 else one)
 

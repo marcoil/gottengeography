@@ -127,7 +127,7 @@ class GottenGeography():
         gpx = open_file(uri, self.progressbar)
         
         # Emitting this signal ensures the new tracks get the correct color.
-        get_obj('colorselection').emit('color-changed')
+        self.prefs.colorpicker.emit('color-set')
         
         self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
