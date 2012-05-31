@@ -24,8 +24,8 @@ from os import stat
 
 from camera import get_camera
 from common import auto_timestamp_comparison
-from gpsmath import Coordinates, format_list
-from gpsmath import dms_to_decimal, decimal_to_dms, float_to_rational
+from gpsmath import Coordinates, float_to_rational
+from gpsmath import dms_to_decimal, decimal_to_dms
 from territories import get_state, get_country
 
 # Prefixes for common EXIF keys.
@@ -175,5 +175,5 @@ class Photograph(Coordinates):
         for key in [ 'City', 'ProvinceState', 'CountryName' ]:
             try: names.extend(self.exif[IPTC + key].values)
             except KeyError: pass
-        return format_list(names)
+        return ', '.join([name for name in names if name])
 

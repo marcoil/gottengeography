@@ -23,10 +23,10 @@ from re import compile as re_compile, IGNORECASE
 from territories import get_state, get_country
 from common import get_obj, map_view
 from build_info import PKG_DATA_DIR
-from gpsmath import format_list
 
 # ListStore column names
 LOCATION, LATITUDE, LONGITUDE = range(3)
+
 
 class SearchController():
     """Controls the behavior for searching the map."""
@@ -68,11 +68,12 @@ class SearchController():
                 for line in cities:
                     city, lat, lon, country, state = line.split('\t')[0:5]
                     if search(city):
-                        append([format_list([city,
-                                             get_state(country, state),
-                                             get_country(country)]),
-                                float(lat),
-                                float(lon)])
+                        append([
+                            ', '.join([s for s in [city,
+                                                   get_state(country, state),
+                                                   get_country(country)] if s]),
+                            float(lat),
+                            float(lon)])
     
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""

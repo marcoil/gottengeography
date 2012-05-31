@@ -59,10 +59,6 @@ def valid_coords(lat, lon):
     if type(lon) not in (float, int): return False
     return abs(lat) <= 90 and abs(lon) <= 180
 
-def format_list(strings, joiner=', '):
-    """Join geonames with a comma, ignoring missing names."""
-    return joiner.join([name for name in strings if name])
-
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
     return '%s %.5f, %s %.5f' % (
@@ -165,8 +161,10 @@ class Coordinates():
     
     def short_summary(self):
         """Plaintext summary of photo metadata."""
-        return format_list([self.pretty_geoname(), self.pretty_time(),
-            self.pretty_coords(), self.pretty_elevation()], '\n')
+        return '\n'.join([s for s in [self.pretty_geoname(),
+                                      self.pretty_time(),
+                                      self.pretty_coords(),
+                                      self.pretty_elevation()] if s])
     
     def long_summary(self):
         """Longer summary with Pango markup."""
