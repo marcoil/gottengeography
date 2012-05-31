@@ -28,7 +28,6 @@ from time import tzset
 
 import app
 from photos import Photograph
-from preferences import MAP_SOURCES
 from common import GSettings, Struct, map_view
 from common import points, photos, selected, modified
 from xmlfiles import known_trackfiles, make_clutter_color
@@ -38,6 +37,7 @@ from gpsmath import Coordinates, valid_coords
 from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
 from camera import known_cameras
+from actor import MAP_SOURCES
 from version import PACKAGE
 
 gui = app.GottenGeography()
@@ -61,7 +61,6 @@ class GottenGeographyTester(TestCase):
     def tearDown(self):
         """Undo whatever mess the testsuite created."""
         clear_all_gpx()
-        gui.labels.select_all.set_active(False)
         for camera in known_cameras.values():
             camera.photos.clear()
         for photo in photos.values():
@@ -140,7 +139,7 @@ class GottenGeographyTester(TestCase):
             
             # Are Labels clickable?
             photo.label.emit("button-press", Clutter.Event())
-            for button in ('save', 'revert', 'apply', 'close'):
+            for button in ('save', 'revert', 'close'):
                 self.assertTrue(get_obj(button + '_button').get_sensitive())
             self.assertTrue(gui.labels.selection.iter_is_selected(photo.iter))
             self.assertEqual(gui.labels.selection.count_selected_rows(), 1)
@@ -238,7 +237,7 @@ class GottenGeographyTester(TestCase):
         
         # No buttons should be sensitive yet because nothing's loaded.
         buttons = {}
-        for button in ('save', 'revert', 'apply', 'close'):
+        for button in ('save', 'revert', 'close'):
             buttons[button] = get_obj(button + '_button')
             self.assertFalse(buttons[button].get_sensitive())
         
@@ -295,13 +294,6 @@ class GottenGeographyTester(TestCase):
             self.assertFalse(photo.manual)
             self.assertEqual(photo.filename, photo.label.get_name())
         
-        # Test the select-all button.
-        select_all = get_obj('select_all_button')
-        select_all.set_active(True)
-        self.assertEqual(len(selected), len(gui.liststore))
-        select_all.set_active(False)
-        self.assertEqual(len(selected), 0)
-        
         # Load the GPX
         gpx_filename = join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
@@ -317,7 +309,7 @@ class GottenGeographyTester(TestCase):
         # The save button should be sensitive because loading GPX modifies
         # photos, but nothing is selected so the others are insensitive.
         self.assertTrue(buttons['save'].get_sensitive())
-        for button in ('revert', 'apply', 'close'):
+        for button in ('revert', 'close'):
             self.assertFalse(buttons[button].get_sensitive())
         
         for photo in photos.values():
@@ -343,13 +335,12 @@ class GottenGeographyTester(TestCase):
         self.assertEqual(len(selected), 6)
         for button in ('save', 'revert'):
             self.assertFalse(buttons[button].get_sensitive())
-        for button in ('apply', 'close'):
-            self.assertTrue(buttons[button].get_sensitive())
+        self.assertTrue(buttons['close'].get_sensitive())
         
         # Close all the photos.
         files = [photo.filename for photo in selected]
         buttons['close'].emit('clicked')
-        for button in ('save', 'revert', 'apply', 'close'):
+        for button in ('save', 'revert', 'close'):
             self.assertFalse(buttons[button].get_sensitive())
         self.assertEqual(len(photos), 0)
         self.assertEqual(len(modified), 0)
