@@ -112,6 +112,7 @@ class GottenGeography():
         modified.discard(photo)
         self.liststore.set_row(photo.iter,
             [uri, photo.long_summary(), photo.thumb, photo.timestamp])
+        get_obj('empty_camera_list').hide()
     
     def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -138,6 +139,8 @@ class GottenGeography():
         
         for camera in known_cameras.values():
             camera.set_found_timezone(gpx.timezone)
+        
+        get_obj('empty_trackfile_list').hide()
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
@@ -318,6 +321,7 @@ class GottenGeography():
         button = get_obj('apply_button')
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
         gst.bind('show-buttons', button, 'visible')
+        button.set_visible(False)
         
         # This bit of magic will only show the apply button when there is
         # at least one photo loaded that is not manually positioned.

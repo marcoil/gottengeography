@@ -194,8 +194,8 @@
                       <object class="GtkLabel" id="empty_photo_list">
                         <property name="visible">True</property>
                         <property name="sensitive">True</property>
-                        <property name="halign">0</property>
-                        <property name="valign">0</property>
+                        <property name="halign">3</property>
+                        <property name="valign">3</property>
                         <property name="can_focus">False</property>
                         <property name="wrap">True</property>
                         <property name="label" translatable="yes">Drag photos here to load.</property>
@@ -244,6 +244,15 @@
                     <property name="column-homogeneous">False</property>
                     <property name="halign">center</property>
                     <property name="valign">center</property>
+                    <child>
+                      <object class="GtkLabel" id="empty_camera_list">
+                        <property name="visible">True</property>
+                        <property name="sensitive">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="wrap">True</property>
+                        <property name="label" translatable="yes">Once you've loaded some photos, this tab will display a list of the cameras you used and allow you to change the timezone setting and also correct the camera's clock.</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="position">1</property>
@@ -269,6 +278,15 @@
                     <property name="column-homogeneous">False</property>
                     <property name="halign">center</property>
                     <property name="valign">center</property>
+                    <child>
+                      <object class="GtkLabel" id="empty_trackfile_list">
+                        <property name="visible">True</property>
+                        <property name="sensitive">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="wrap">True</property>
+                        <property name="label" translatable="yes">This tab will display the GPS trace files you've loaded and allow you to change their colors independantly.</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="position">2</property>

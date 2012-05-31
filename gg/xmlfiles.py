@@ -231,6 +231,8 @@ class TrackFile(Coordinates):
         for widget in (self.trackfile_label, self.colorpicker, self.trash):
             widget.destroy()
         del known_trackfiles[self.filename]
+        if not known_trackfiles:
+            get_obj('empty_trackfile_list').show()
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
