@@ -168,6 +168,7 @@ class GottenGeography():
         """Discard all selected photos."""
         for photo in selected.copy():
             self.labels.layer.remove_marker(photo.label)
+            photo.camera.photos.discard(photo)
             del photos[photo.filename]
             modified.discard(photo)
             self.liststore.remove(photo.iter)
