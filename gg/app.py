@@ -46,8 +46,7 @@ from camera import known_cameras
 from common import points, photos
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
-from xmlfiles import gpx_sensitivity, clear_all_gpx
-from xmlfiles import get_trackfile, known_trackfiles
+from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
 
 from drag import DragController
 from actor import ActorController
@@ -145,7 +144,6 @@ class GottenGeography():
         
         for camera in known_cameras.values():
             camera.set_found_timezone(gpx.timezone)
-        gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):
         """Manually apply map center coordinates to all selected photos."""
@@ -292,7 +290,6 @@ class GottenGeography():
         click_handlers = {
             'open_button':       [self.add_files_dialog, get_obj('open')],
             'save_button':       [self.save_all_files],
-            'clear_button':      [clear_all_gpx],
             'close_button':      [self.close_selected_photos],
             'revert_button':     [self.revert_selected_photos],
             'about_button':      [lambda b, d: d.run() and d.hide(), about],

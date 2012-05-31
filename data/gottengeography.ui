@@ -70,25 +70,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="clear_button">
-                <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="has_tooltip">True</property>
-                <property name="tooltip_text" translatable="yes">Unload all GPS data (Ctrl X)</property>
-                <property name="use_action_appearance">False</property>
-                <property name="is_important">True</property>
-                <property name="label" translatable="yes">Clear GPX</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-clear</property>
-                <accelerator key="x" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkToolButton" id="close_button">
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>

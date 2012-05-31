@@ -60,20 +60,12 @@ def track_color_changed(selection, polys):
 def clear_all_gpx(widget=None):
     """Forget all GPX data, start over with a clean slate."""
     for trackfile in known_trackfiles.values():
-        for polygon in trackfile.polygons:
-            map_view.remove_layer(polygon)
-        trackfile.polygons.clear()
+        trackfile.destroy()
     
     known_trackfiles.clear()
     points.clear()
     metadata.omega = float('-inf')   # Final GPX track point
     metadata.alpha = float('inf')    # Initial GPX track point
-    gpx_sensitivity()
-
-def gpx_sensitivity():
-    """Control the sensitivity of GPX-related widgets."""
-    gpx_sensitive = len(points) > 0
-    get_obj('clear_button').set_sensitive(gpx_sensitive)
 
 
 class Polygon(Champlain.PathLayer):
@@ -169,6 +161,7 @@ class TrackFile(Coordinates):
     """
     
     def __init__(self, filename, root, watch):
+        self.filename = filename
         self.progress = get_obj('progressbar')
         self.clock    = clock()
         self.append   = None
@@ -184,18 +177,22 @@ class TrackFile(Coordinates):
         self.latitude = self.tracks[self.alpha].lat
         self.longitude = self.tracks[self.alpha].lon
         
-        trackfile_label = Gtk.Label()
-        trackfile_label.set_property('margin-top', 12)
-        trackfile_label.set_markup(
+        self.trackfile_label = Gtk.Label()
+        self.trackfile_label.set_property('margin-top', 12)
+        self.trackfile_label.set_markup(
             '<span size="larger" weight="heavy">%s</span>' % basename(filename))
         
-        colorpicker = Gtk.ColorButton()
-        colorpicker.set_title(basename(filename))
-        colorpicker.connect('color-set', track_color_changed, self.polygons)
+        self.colorpicker = Gtk.ColorButton()
+        self.colorpicker.set_title(basename(filename))
+        self.colorpicker.connect('color-set', track_color_changed, self.polygons)
+        
+        self.trash = Gtk.ToolButton.new_from_stock('gtk-close')
+        self.trash.connect('clicked', self.destroy)
         
         grid = get_obj('trackfiles_view')
-        grid.attach_next_to(trackfile_label, None, BOTTOM, 1, 1)
-        grid.attach_next_to(colorpicker, None, BOTTOM, 1, 1)
+        grid.attach_next_to(self.trackfile_label, None, BOTTOM, 2, 1)
+        grid.attach_next_to(self.colorpicker, None, BOTTOM, 1, 1)
+        grid.attach_next_to(self.trash, self.colorpicker, RIGHT, 1, 1)
         grid.show_all()
         
         self.gst = GSettings('trackfile', basename(filename))
@@ -207,9 +204,9 @@ class TrackFile(Coordinates):
             self.gst.set_value('track-color', gst.get_value('track-color'))
         
         self.gst.set_string('start-timezone', self.lookup_geoname())
-        self.gst.bind_with_convert('track-color', colorpicker, 'color',
+        self.gst.bind_with_convert('track-color', self.colorpicker, 'color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        colorpicker.emit('color-set')
+        self.colorpicker.emit('color-set')
     
     def element_start(self, name, attributes):
         """Placeholder for a method that gets overridden in subclasses."""
@@ -222,6 +219,17 @@ class TrackFile(Coordinates):
             while Gtk.events_pending():
                 Gtk.main_iteration()
             self.clock = clock()
+    
+    def destroy(self, button=None):
+        """Die a horrible death."""
+        for polygon in self.polygons:
+            map_view.remove_layer(polygon)
+        for timestamp in self.tracks:
+            del points[timestamp]
+        self.polygons.clear()
+        for widget in (self.trackfile_label, self.colorpicker, self.trash):
+            widget.destroy()
+        del known_trackfiles[self.filename]
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
