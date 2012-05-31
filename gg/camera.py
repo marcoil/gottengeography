@@ -68,12 +68,10 @@ def get_camera(photo):
     camera.photos.add(photo)
     return camera
 
-def display_offset(offset, value, label=_('Clock Offset:')):
+def display_offset(offset, value, add, subtract):
     """Display the offset spinbutton as M:SS."""
-    sign = '-' if value < 0 else ''
     seconds, minutes = split_float(abs(value) / 60)
-    seconds = int(seconds * 60)
-    return label + ' %s%d:%02d' % (sign, minutes, seconds)
+    return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
 
 class Camera():
@@ -91,7 +89,9 @@ class Camera():
         # SpinButton allows the user to correct the camera's clock.
         offset = Gtk.HScale.new_with_range(-3600, 3600, 1)
         offset.connect('value-changed', self.offset_handler)
-        offset.connect('format-value', display_offset)
+        offset.connect('format-value', display_offset,
+            _('Add %dm, %ds to clock.'),
+            _('Subtract %dm, %ds from clock.'))
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
