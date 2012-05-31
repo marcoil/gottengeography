@@ -51,9 +51,10 @@ class DragController():
         photos_view.connect('drag-data-get', self.photo_drag_start)
         
         # Drag destination defintions
-        photos_view.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
-        photos_view.drag_dest_add_text_targets()
-        photos_view.connect('drag-data-received', self.photo_drag_end, False)
+        notebook = get_obj('photo_camera_gps')
+        notebook.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        notebook.drag_dest_add_text_targets()
+        notebook.connect('drag-data-received', self.photo_drag_end, False)
         
         container = get_obj('map_container')
         container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
