@@ -64,12 +64,12 @@ class ActorController():
         self.black.get_layout_manager().add(self.label,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
     
-    def animate_in(self, start):
+    def animate_in(self, anim=True):
         """Animate the crosshair."""
         map_view.bin_layout_add(self.xhair,
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
         self.xhair.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
-        for i in xrange(start, 7, -1):
+        for i in xrange(gst.get_int('animation-steps') if anim else 8, 7, -1):
             self.xhair.set_size(i, i)
             opacity = 0.6407035175879398 * (400 - i) # don't ask
             for actor in [self.xhair, self.label, self.black]:

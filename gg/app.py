@@ -352,11 +352,11 @@ class GottenGeography():
             Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
         self.error.bar.show()
     
-    def main(self, anim_start=200):
+    def main(self, anim=True):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files([abspath(f) for f in argv[1:]])
-            anim_start = 10
-        self.actors.animate_in(anim_start)
+            anim=False
+        self.actors.animate_in(anim)
         Gtk.main()
 
