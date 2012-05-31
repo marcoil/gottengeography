@@ -615,7 +615,7 @@ S 10.00000, W 10.00000
         self.assertEqual(len(gui.search.results), 0)
         
         entry.set_text('edm')
-        self.assertEqual(len(gui.search.results), 7)
+        self.assertEqual(len(gui.search.results), 23)
         
         get_title = get_obj("main").get_title
         for result in gui.search.results:
@@ -628,10 +628,10 @@ S 10.00000, W 10.00000
             self.assertEqual(get_title(), "GottenGeography - " + loc)
         
         entry.set_text('calg')
-        self.assertEqual(len(gui.search.results), 326)
+        self.assertEqual(len(gui.search.results), 652)
         
         entry.set_text('st.')
-        self.assertEqual(len(gui.search.results), 337)
+        self.assertEqual(len(gui.search.results), 671)
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""

@@ -65,7 +65,7 @@ class SearchController():
             with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
                 for line in cities:
                     city, lat, lon, country, state = line.split('\t')[0:5]
-                    if city[0:3].lower() == three:
+                    if city.lower().find(three) > -1:
                         append([
                             ', '.join([s for s in [city,
                                                    get_state(country, state),
