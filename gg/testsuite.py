@@ -273,7 +273,7 @@ class GottenGeographyTester(TestCase):
             photo.longitude = -52.70931
             photo.lookup_geoname()
             self.assertEqual(photo.pretty_geoname(),
-                "St. John's,\nNewfoundland and Labrador,\nCanada")
+                "St. John's, Newfoundland and Labrador, Canada")
             photo.set_geodata(['Anytown', None, 'US', 'timezone'])
             self.assertEqual(photo.pretty_geoname(), 'Anytown, United States')
             self.assertEqual(photo.timezone, 'timezone')
