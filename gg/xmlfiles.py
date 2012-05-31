@@ -34,11 +34,11 @@ RIGHT = Gtk.PositionType.RIGHT
 
 known_trackfiles = {}
 
-def get_trackfile(uri, progressbar):
+def get_trackfile(uri):
     """This method caches TrackFile instances."""
     if uri not in known_trackfiles:
         fmt = KMLFile if uri[-3:].lower() == 'kml' else GPXFile
-        known_trackfiles[uri] = fmt(uri, progressbar)
+        known_trackfiles[uri] = fmt(uri)
     
     return known_trackfiles[uri]
 
@@ -118,8 +118,8 @@ class TrackFile(Coordinates):
     the base class.
     """
     
-    def __init__(self, filename, root, watch, progressbar):
-        self.progress = progressbar
+    def __init__(self, filename, root, watch):
+        self.progress = get_obj('progressbar')
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
@@ -174,9 +174,8 @@ split = re_compile(r'[:TZ-]').split
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
-    def __init__(self, filename, progress):
-        TrackFile.__init__(self, filename, 'gpx',
-                           ['trkseg', 'trkpt'], progress)
+    def __init__(self, filename):
+        TrackFile.__init__(self, filename, 'gpx', ['trkseg', 'trkpt'])
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
@@ -217,12 +216,12 @@ class GPXFile(TrackFile):
 class KMLFile(TrackFile):
     """Parse a KML file."""
     
-    def __init__(self, filename, progress):
+    def __init__(self, filename):
         self.whens    = []
         self.coords   = []
         
-        TrackFile.__init__(self, filename, 'kml', ['gx:Track',
-                           'when', 'gx:coord'], progress)
+        TrackFile.__init__(self, filename, 'kml',
+                           ['gx:Track', 'when', 'gx:coord'])
     
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""

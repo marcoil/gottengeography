@@ -123,7 +123,7 @@ class GottenGeography():
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        gpx = get_trackfile(uri, self.progressbar)
+        gpx = get_trackfile(uri)
         
         # Emitting this signal ensures the new tracks get the correct color.
         self.prefs.colorpicker.emit('color-set')
