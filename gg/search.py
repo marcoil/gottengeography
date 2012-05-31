@@ -18,7 +18,6 @@
 from __future__ import division
 
 from os.path import join
-from re import compile as re_compile, IGNORECASE
 
 from territories import get_state, get_country
 from common import get_obj, map_view
@@ -39,7 +38,8 @@ class SearchController():
         self.slide_to = map_view.go_to
         search = get_obj('search_completion')
         search.set_match_func(
-            lambda c, s, itr, get: self.search(get(itr, LOCATION) or ''),
+            lambda c, s, itr, get:
+                (get(itr, LOCATION) or '').lower().find(self.search) > -1,
             self.results.get_value)
         search.connect('match-selected', self.search_completed, map_view)
         entry = get_obj('search_box')
@@ -58,16 +58,14 @@ class SearchController():
         not be passed as an argument unless your intention is to trigger the
         loading of duplicate results.
         """
-        text  = entry.get_text().lower()
-        three = text[0:3]
-        self.search, search = [ re_compile('(^|\s)' + string,
-            flags=IGNORECASE).search for string in (text, three) ]
+        self.search = entry.get_text().lower()
+        three = self.search[0:3]
         if len(three) == 3 and three not in searched:
             searched.add(three)
             with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
                 for line in cities:
                     city, lat, lon, country, state = line.split('\t')[0:5]
-                    if search(city):
+                    if city[0:3].lower() == three:
                         append([
                             ', '.join([s for s in [city,
                                                    get_state(country, state),
