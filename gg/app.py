@@ -24,7 +24,7 @@ import gettext
 gettext.bindtextdomain(PACKAGE)
 gettext.textdomain(PACKAGE)
 
-from gi.repository import GObject, GtkClutter
+from gi.repository import GLib, GObject, GtkClutter
 
 GObject.threads_init()
 GObject.set_prgname(PACKAGE)
@@ -238,6 +238,7 @@ class GottenGeography():
 ################################################################################
     
     def __init__(self):
+        self.message_timeout_source = None
         self.progressbar = get_obj('progressbar')
         
         self.error = Struct({
@@ -335,6 +336,11 @@ class GottenGeography():
         if text is not None:     self.progressbar.set_text(str(text))
         while Gtk.events_pending(): Gtk.main_iteration()
     
+    def dismiss_message(self):
+        self.message_timeout_source = None
+        self.error.bar.hide()
+        return False
+    
     def status_message(self, message, info=False):
         """Display a message with the GtkInfoBar."""
         self.error.message.set_markup('<b>%s</b>' % message)
@@ -343,6 +349,12 @@ class GottenGeography():
         self.error.icon.set_from_stock(
             Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
         self.error.bar.show()
+        # Remove any previous message timeout
+        if self.message_timeout_source is not None:
+            GLib.source_remove(self.message_timeout_source)
+        if info:
+            self.message_timeout_source = \
+                GLib.timeout_add_seconds(5, self.dismiss_message)
     
     def main(self, anim=True):
         """Animate the crosshair and begin user interaction."""
