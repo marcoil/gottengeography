@@ -125,9 +125,6 @@ class GottenGeography():
         
         gpx = get_trackfile(uri)
         
-        # Emitting this signal ensures the new tracks get the correct color.
-        self.prefs.colorpicker.emit('color-set')
-        
         self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
         
@@ -143,11 +140,10 @@ class GottenGeography():
         bounds = Champlain.BoundingBox.new()
         for poly in polygons:
             bounds.compose(poly.get_bounding_box())
-        gpx.latitude, gpx.longitude = bounds.get_center()
         map_view.ensure_visible(bounds, False)
         
         for camera in known_cameras.values():
-            camera.set_found_timezone(gpx.lookup_geoname())
+            camera.set_found_timezone(gpx.timezone)
         gpx_sensitivity()
     
     def apply_selected_photos(self, button, view):

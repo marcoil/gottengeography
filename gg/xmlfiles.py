@@ -21,13 +21,14 @@ from xml.parsers.expat import ParserCreate, ExpatError
 from dateutil.parser import parse as parse_date
 from re import compile as re_compile
 from gi.repository import Gtk, Gdk
+from gi.repository import Clutter
+from gi.repository import GLib
 from os.path import basename
 from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from preferences import track_color_changed
-from common import GSettings, add_polygon_to_map, get_obj
+from common import GSettings, add_polygon_to_map, gst, get_obj
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -41,6 +42,21 @@ def get_trackfile(uri):
         known_trackfiles[uri] = fmt(uri)
     
     return known_trackfiles[uri]
+
+def make_clutter_color(color):
+    """Generate a Clutter.Color from the currently chosen color."""
+    return Clutter.Color.new(
+        *[x / 256 for x in [color.red, color.green, color.blue, 49152]])
+
+def track_color_changed(selection, polys):
+    """Update the color of any loaded GPX tracks."""
+    color = selection.get_color()
+    gst.set_value('track-color',
+        GLib.Variant('(iii)', (color.red, color.green, color.blue)))
+    one = make_clutter_color(color)
+    two = one.lighten().lighten()
+    for i, polygon in enumerate(polys):
+        polygon.set_stroke_color(two if i % 2 else one)
 
 
 class XMLSimpleParser:
@@ -131,6 +147,8 @@ class TrackFile(Coordinates):
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
+        self.latitude = self.tracks[self.alpha].lat
+        self.longitude = self.tracks[self.alpha].lon
         
         trackfile_label = Gtk.Label()
         trackfile_label.set_property('margin-top', 12)
@@ -148,10 +166,16 @@ class TrackFile(Coordinates):
         
         self.gst = GSettings('trackfile', basename(filename))
         
-        self.gst.set_string('start-timezone', 'foo') #TODO
+        if self.gst.get_string('start-timezone') is '':
+            # Then this is the first time this file has been loaded
+            # and we should honor the user-selected global default
+            # track color instead of using the schema-defined default
+            self.gst.set_value('track-color', gst.get_value('track-color'))
         
+        self.gst.set_string('start-timezone', self.lookup_geoname())
         self.gst.bind_with_convert('track-color', colorpicker, 'color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
+        colorpicker.emit('color-set')
     
     def element_start(self, name, attributes):
         """Placeholder for a method that gets overridden in subclasses."""

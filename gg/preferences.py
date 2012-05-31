@@ -26,11 +26,6 @@ from os import environ
 from common import Struct, polygons, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
 
-def make_clutter_color(color):
-    """Generate a Clutter.Color from the currently chosen color."""
-    return Clutter.Color.new(
-        *[x / 256 for x in [color.red, color.green, color.blue, 49152]])
-
 MAP_SOURCES = {}
 
 for map_desc in [
@@ -96,23 +91,10 @@ def map_source_menu():
     map_menu.show_all()
 
 
-def track_color_changed(selection, polys):
-    """Update the color of any loaded GPX tracks."""
-    one = make_clutter_color(selection.get_color())
-    two = one.lighten().lighten()
-    for i, polygon in enumerate(polys):
-        polygon.set_stroke_color(two if i % 2 else one)
-
-
 class PreferencesController():
     """Controls the behavior of the preferences dialog."""
     
     def __init__(self):
-        self.colorpicker = get_obj('trackfile_default_color')
-        self.colorpicker.connect('color-set', track_color_changed, polygons)
-        gst.bind_with_convert('track-color', self.colorpicker, 'color',
-            lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
