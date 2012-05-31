@@ -139,13 +139,15 @@ class GottenGeography():
         for camera in known_cameras.values():
             camera.set_found_timezone(gpx.timezone)
     
-    def apply_selected_photos(self, button, view):
-        """Manually apply map center coordinates to all selected photos."""
-        for photo in selected:
+    def apply_selected_photos(self, button):
+        """Manually apply map center coordinates to all unpositioned photos."""
+        for photo in photos.values():
+            if photo.manual:
+                continue
             photo.manual = True
             photo.set_location(
-                view.get_property('latitude'),
-                view.get_property('longitude'))
+                map_view.get_property('latitude'),
+                map_view.get_property('longitude'))
         self.labels.selection.emit('changed')
     
     def revert_selected_photos(self, button=None):
@@ -286,7 +288,7 @@ class GottenGeography():
             'close_button':      [self.close_selected_photos],
             'revert_button':     [self.revert_selected_photos],
             'about_button':      [lambda b, d: d.run() and d.hide(), about],
-            'apply_button':      [self.apply_selected_photos, map_view],
+            'apply_button':      [self.apply_selected_photos],
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
@@ -319,8 +321,19 @@ class GottenGeography():
         self.labels.selection.emit('changed')
         clear_all_gpx()
         
+        button = get_obj('apply_button')
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
-        gst.bind('show-buttons', get_obj('photo_btn_bar'), 'visible')
+        gst.bind('show-buttons', button, 'visible')
+        button.set_visible(False)
+        
+        # This bit of magic will only show the apply button when there is
+        # at least one photo loaded that is not manually positioned.
+        # In effect, it allows you to manually drag & drop some photos,
+        # then batch-apply all the rest
+        btn_visible = lambda *w: w[-1].set_visible(
+            [photo for photo in photos.values() if not photo.manual])
+        self.liststore.connect('row-changed', btn_visible, button)
+        self.liststore.connect('row-deleted', btn_visible, button)
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))

@@ -32,11 +32,10 @@ def update_highlights(selection):
             selected.add(photo)
         photo.set_label_highlight(photo in selected, selection_exists)
 
-def selection_sensitivity(selection, aply, close, save, revert):
+def selection_sensitivity(selection, close, save, revert):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
     close.set_sensitive(sensitive)
-    aply.set_sensitive(sensitive)
     save.set_sensitive(  len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
@@ -80,7 +79,7 @@ class LabelController():
         
         self.selection.connect('changed', update_highlights)
         self.selection.connect('changed', selection_sensitivity,
-            *[get_obj(name) for name in ('apply_button', 'close_button',
+            *[get_obj(name) for name in ('close_button',
                 'save_button', 'revert_button')])
     
     def add(self, name):
