@@ -40,7 +40,7 @@ def selection_sensitivity(selection, aply, close, save, revert):
     save.set_sensitive(  len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
-def clicked(label, event, selection, select_all):
+def clicked(label, event, selection):
     """When a ChamplainLabel is clicked, select it in the GtkListStore.
     
     The interface defined by this method is consistent with the behavior of
@@ -53,7 +53,6 @@ def clicked(label, event, selection, select_all):
         if label.get_selected(): selection.unselect_iter(photo.iter)
         else:                    selection.select_iter(photo.iter)
     else:
-        select_all.set_active(False)
         selection.unselect_all()
         selection.select_iter(photo.iter)
 
@@ -74,7 +73,6 @@ class LabelController():
     """Control the behavior and creation of ChamplainLabels."""
     
     def __init__(self):
-        self.select_all = get_obj('select_all_button')
         self.selection  = get_obj('photos_view').get_selection()
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.layer = Champlain.MarkerLayer()
@@ -97,8 +95,7 @@ class LabelController():
         label.connect('enter-event', hover, 1.05)
         label.connect('leave-event', hover, 1/1.05)
         label.connect('drag-finish', drag_finish, self.selection)
-        label.connect('button-press', clicked, self.selection,
-            self.select_all)
+        label.connect('button-press', clicked, self.selection)
         self.layer.add_marker(label)
         return label
 

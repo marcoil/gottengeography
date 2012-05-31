@@ -57,10 +57,6 @@ from navigation import NavigationController
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 
-def toggle_selected_photos(button, sel):
-    """Toggle the selection of photos."""
-    (sel.select_all if button.get_active() else sel.unselect_all)()
-
 
 class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
@@ -164,7 +160,6 @@ class GottenGeography():
             del photos[photo.filename]
             modified.discard(photo)
             self.liststore.remove(photo.iter)
-        self.labels.select_all.set_active(False)
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -292,7 +287,6 @@ class GottenGeography():
             'revert_button':     [self.revert_selected_photos],
             'about_button':      [lambda b, d: d.run() and d.hide(), about],
             'apply_button':      [self.apply_selected_photos, map_view],
-            'select_all_button': [toggle_selected_photos, self.labels.selection]
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
