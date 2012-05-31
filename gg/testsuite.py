@@ -28,12 +28,13 @@ from time import tzset
 
 import app
 from photos import Photograph
-from gpsmath import Coordinates, valid_coords
-from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
-from preferences import MAP_SOURCES, make_clutter_color
-from common import Struct, Polygon, polygons, map_view
+from preferences import MAP_SOURCES
+from common import GSettings, Struct, map_view
 from common import points, photos, selected, modified
-from common import clear_all_gpx, GSettings
+from xmlfiles import known_trackfiles, make_clutter_color
+from xmlfiles import Polygon, clear_all_gpx
+from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
+from gpsmath import Coordinates, valid_coords
 from navigation import move_by_arrow_keys
 from build_info import PKG_DATA_DIR
 from camera import known_cameras
@@ -201,10 +202,7 @@ class GottenGeographyTester(TestCase):
         """Ensure that the timezone can be discovered from the map."""
         # Be very careful to reset everything so that we're sure that
         # we're not just finding the timezone from gsettings.
-        gst = GSettings(
-            'ca.exolucere.%s.camera' % PACKAGE,
-            '/ca/exolucere/%s/cameras/%s/' % (PACKAGE,
-                'canon_canon_powershot_a590_is'))
+        gst = GSettings('camera', 'canon_canon_powershot_a590_is')
         gst.reset('found-timezone')
         gst.reset('offset')
         gst.set_string('timezone-method', 'lookup')
@@ -234,13 +232,13 @@ class GottenGeographyTester(TestCase):
     def test_demo_data(self):
         """Load the demo data and ensure that we're reading it in properly."""
         self.assertEqual(len(points), 0)
-        self.assertEqual(len(polygons), 0)
+        self.assertEqual(len(known_trackfiles), 0)
         self.assertEqual(app.metadata.alpha, float('inf'))
         self.assertEqual(app.metadata.omega, float('-inf'))
         
         # No buttons should be sensitive yet because nothing's loaded.
         buttons = {}
-        for button in ('save', 'revert', 'apply', 'close', 'clear'):
+        for button in ('save', 'revert', 'apply', 'close'):
             buttons[button] = get_obj(button + '_button')
             self.assertFalse(buttons[button].get_sensitive())
         
@@ -308,12 +306,11 @@ class GottenGeographyTester(TestCase):
         gpx_filename = join(PKG_DATA_DIR, '..', 'demo', '20101016.gpx')
         self.assertRaises(IOError, gui.load_img_from_file, gpx_filename)
         gui.open_files([gpx_filename])
-        self.assertTrue(buttons['clear'].get_sensitive())
         gui.labels.selection.emit('changed')
         
         # Check that the GPX is loaded
         self.assertEqual(len(points), 374)
-        self.assertEqual(len(polygons), 1)
+        self.assertEqual(len(known_trackfiles), 1)
         self.assertEqual(app.metadata.alpha, 1287259751)
         self.assertEqual(app.metadata.omega, 1287260756)
         
@@ -332,10 +329,9 @@ class GottenGeographyTester(TestCase):
             self.assertTrue(photo.label.get_property('visible'))
         
         # Unload the GPX data.
-        buttons['clear'].emit('clicked')
+        clear_all_gpx()
         self.assertEqual(len(points), 0)
-        self.assertEqual(len(polygons), 0)
-        self.assertFalse(buttons['clear'].get_sensitive())
+        self.assertEqual(len(known_trackfiles), 0)
         
         # Save all photos
         buttons['save'].emit('clicked')
@@ -585,11 +581,8 @@ S 10.00000, W 10.00000
         self.assertEqual(label.get_latitude(), lat)
         self.assertEqual(label.get_longitude(), lon)
         
-        color   = make_clutter_color(gui.prefs.colorpicker.get_current_color())
         polygon = Polygon()
-        polygon.set_stroke_color(color)
         self.assertTrue(isinstance(polygon, Champlain.PathLayer))
-        self.assertEqual(color.to_string(), polygon.get_stroke_color().to_string())
         
         point = polygon.append_point(0,0,0)
         self.assertTrue(isinstance(point, Champlain.Coordinate))
@@ -635,20 +628,6 @@ S 10.00000, W 10.00000
     
     def test_preferences(self):
         """Make sure the preferences dialog behaves."""
-        gui.prefs.colorpicker.set_current_color(Gdk.Color(0, 0, 0))
-        new = gui.prefs.colorpicker.get_current_color()
-        self.assertEqual(new.red, 0)
-        self.assertEqual(new.green, 0)
-        self.assertEqual(new.blue, 0)
-        self.assertEqual(list(gst_get('track-color')), [0, 0, 0])
-        
-        gui.prefs.colorpicker.set_current_color(Gdk.Color(32768, 32768, 32768))
-        new = gui.prefs.colorpicker.get_current_color()
-        self.assertEqual(new.red, 32768)
-        self.assertEqual(new.green, 32768)
-        self.assertEqual(new.blue, 32768)
-        self.assertEqual(list(gst_get('track-color')), [32768, 32768, 32768])
-        
         self.assertEqual(str(gst_get('map-source-id')), "<GLib.Variant('%s')>" %
             map_view.get_property('map-source').get_id())
         for menu_item in get_obj("map_source_menu").get_active().get_group():

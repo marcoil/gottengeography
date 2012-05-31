@@ -130,7 +130,6 @@ class GottenGeography():
         if len(gpx.tracks) < 2:
             return
         
-        points.update(gpx.tracks)
         metadata.alpha = min(metadata.alpha, gpx.alpha)
         metadata.omega = max(metadata.omega, gpx.omega)
         

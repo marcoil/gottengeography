@@ -171,6 +171,7 @@ class TrackFile(Coordinates):
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         
+        points.update(self.tracks)
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
