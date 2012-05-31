@@ -23,7 +23,7 @@ from gi.repository import Clutter
 from time import tzset
 from os import environ
 
-from common import Struct, polygons, photos, map_view
+from common import Struct, photos, map_view
 from common import auto_timestamp_comparison, get_obj, gst
 
 MAP_SOURCES = {}

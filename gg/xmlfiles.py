@@ -19,16 +19,15 @@ from __future__ import division
 
 from xml.parsers.expat import ParserCreate, ExpatError
 from dateutil.parser import parse as parse_date
+from gi.repository import Champlain, Clutter
+from gi.repository import Gtk, Gdk, GLib
 from re import compile as re_compile
-from gi.repository import Gtk, Gdk
-from gi.repository import Clutter
-from gi.repository import GLib
 from os.path import basename
 from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import GSettings, add_polygon_to_map, gst, get_obj
+from common import GSettings, gst, get_obj, map_view, points, metadata
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -57,6 +56,41 @@ def track_color_changed(selection, polys):
     two = one.lighten().lighten()
     for i, polygon in enumerate(polys):
         polygon.set_stroke_color(two if i % 2 else one)
+
+def clear_all_gpx(widget=None):
+    """Forget all GPX data, start over with a clean slate."""
+    for trackfile in known_trackfiles.values():
+        for polygon in trackfile.polygons:
+            map_view.remove_layer(polygon)
+        trackfile.polygons.clear()
+    
+    known_trackfiles.clear()
+    points.clear()
+    metadata.omega = float('-inf')   # Final GPX track point
+    metadata.alpha = float('inf')    # Initial GPX track point
+    gpx_sensitivity()
+
+def gpx_sensitivity():
+    """Control the sensitivity of GPX-related widgets."""
+    gpx_sensitive = len(points) > 0
+    get_obj('clear_button').set_sensitive(gpx_sensitive)
+
+
+class Polygon(Champlain.PathLayer):
+    """Extend a Champlain.PathLayer to do things more the way I like them."""
+    
+    def __init__(self):
+        Champlain.PathLayer.__init__(self)
+        self.set_stroke_width(4)
+    
+    def append_point(self, latitude, longitude, elevation):
+        """Simplify appending a point onto a polygon."""
+        coord = Champlain.Coordinate.new_full(latitude, longitude)
+        coord.lat = latitude
+        coord.lon = longitude
+        coord.ele = elevation
+        self.add_node(coord)
+        return coord
 
 
 class XMLSimpleParser:
@@ -204,7 +238,8 @@ class GPXFile(TrackFile):
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
         if name == 'trkseg':
-            polygon = add_polygon_to_map()
+            polygon = Polygon()
+            map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
         if name == 'trkpt':
@@ -250,7 +285,8 @@ class KMLFile(TrackFile):
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""
         if name == 'gx:Track':
-            polygon = add_polygon_to_map()
+            polygon = Polygon()
+            map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
             return False

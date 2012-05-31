@@ -42,11 +42,12 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from photos import Photograph
-from xmlfiles import get_trackfile
-from common import polygons, points, photos
+from camera import known_cameras
+from common import points, photos
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
-from common import gpx_sensitivity, clear_all_gpx
+from xmlfiles import gpx_sensitivity, clear_all_gpx
+from xmlfiles import get_trackfile, known_trackfiles
 
 from drag import DragController
 from actor import ActorController
@@ -54,7 +55,6 @@ from label import LabelController
 from search import SearchController
 from navigation import NavigationController
 from preferences import PreferencesController
-from camera import known_cameras
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -138,8 +138,9 @@ class GottenGeography():
         map_view.emit('realize')
         map_view.set_zoom_level(map_view.get_max_zoom_level())
         bounds = Champlain.BoundingBox.new()
-        for poly in polygons:
-            bounds.compose(poly.get_bounding_box())
+        for trackfile in known_trackfiles.values():
+            for polygon in trackfile.polygons:
+                bounds.compose(polygon.get_bounding_box())
         map_view.ensure_visible(bounds, False)
         
         for camera in known_cameras.values():

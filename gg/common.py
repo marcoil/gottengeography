@@ -18,10 +18,6 @@
 The `selected` and `modified` set()s contain Photograph() instances, and
 are frequently used for iteration and membership testing throughout the app.
 
-The `polygons` list contains a list of Polygon() instances in the order they
-were loaded. It's mostly used for being able to change the colors of the 
-polygons but is also iterated over during unloading of GPS data.
-
 The `points` dict maps epoch seconds to ChamplainCoordinate() instances. This
 is used to place photos on the map by looking up their timestamps.
 
@@ -41,7 +37,6 @@ from version import PACKAGE
 # These variables are used for sharing data between classes
 selected = set()
 modified = set()
-polygons = []
 points   = {}
 photos   = {}
 
@@ -165,23 +160,6 @@ class ChamplainEmbedder(GtkChamplain.Embed):
         get_obj('map_container').add(self)
 
 
-class Polygon(Champlain.PathLayer):
-    """Extend a Champlain.PathLayer to do things more the way I like them."""
-    
-    def __init__(self):
-        Champlain.PathLayer.__init__(self)
-        self.set_stroke_width(4)
-    
-    def append_point(self, latitude, longitude, elevation):
-        """Simplify appending a point onto a polygon."""
-        coord = Champlain.Coordinate.new_full(latitude, longitude)
-        coord.lat = latitude
-        coord.lon = longitude
-        coord.ele = elevation
-        self.add_node(coord)
-        return coord
-
-
 class Struct:
     """This is a generic object which can be assigned arbitrary attributes."""
     
@@ -193,28 +171,4 @@ class Struct:
 get_obj  = Builder().get_object
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
-
-
-def add_polygon_to_map():
-    """Create a new Polygon and add it to the map."""
-    polygon = Polygon()
-    polygons.append(polygon)
-    map_view.add_layer(polygon)
-    return polygon
-
-def clear_all_gpx(widget=None):
-    """Forget all GPX data, start over with a clean slate."""
-    for polygon in polygons:
-        map_view.remove_layer(polygon)
-    
-    del polygons[:]
-    points.clear()
-    metadata.omega = float('-inf')   # Final GPX track point
-    metadata.alpha = float('inf')    # Initial GPX track point
-    gpx_sensitivity()
-
-def gpx_sensitivity():
-    """Control the sensitivity of GPX-related widgets."""
-    gpx_sensitive = len(points) > 0
-    get_obj('clear_button').set_sensitive(gpx_sensitive)
 
