@@ -53,7 +53,6 @@ from actor import ActorController
 from label import LabelController
 from search import SearchController
 from navigation import NavigationController
-from preferences import PreferencesController
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -277,7 +276,6 @@ class GottenGeography():
         self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
         self.search    = SearchController()
-        self.prefs     = PreferencesController()
         self.labels    = LabelController()
         self.actors    = ActorController()
         
@@ -298,6 +296,9 @@ class GottenGeography():
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
+        
+        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
+                 'gtk-application-prefer-dark-theme')
         
         accel  = Gtk.AccelGroup()
         window = get_obj('main')
