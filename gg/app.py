@@ -283,7 +283,7 @@ class GottenGeography():
                 [lambda btn: self.open_files(
                     [p.filename for p in modified & selected])],
             'about_button':
-                [lambda btn, dialog: dialog.run() and dialog.hide(), about],
+                [lambda yes, you_can: you_can.run() and you_can.hide(), about],
             'apply_button':
                 [self.apply_selected_photos],
         }
