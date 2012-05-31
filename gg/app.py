@@ -150,19 +150,6 @@ class GottenGeography():
                 map_view.get_property('longitude'))
         self.labels.selection.emit('changed')
     
-    def revert_selected_photos(self, button=None):
-        """Discard any modifications to all selected photos."""
-        self.open_files([photo.filename for photo in modified & selected])
-    
-    def close_selected_photos(self, button=None):
-        """Discard all selected photos."""
-        for photo in selected.copy():
-            self.labels.layer.remove_marker(photo.label)
-            photo.camera.photos.discard(photo)
-            del photos[photo.filename]
-            modified.discard(photo)
-            self.liststore.remove(photo.iter)
-    
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
         self.progressbar.show()
@@ -283,12 +270,19 @@ class GottenGeography():
             join(PKG_DATA_DIR, PACKAGE + '.svg'), 192, 192))
         
         click_handlers = {
-            'open_button':       [self.add_files_dialog, get_obj('open')],
-            'save_button':       [self.save_all_files],
-            'close_button':      [self.close_selected_photos],
-            'revert_button':     [self.revert_selected_photos],
-            'about_button':      [lambda b, d: d.run() and d.hide(), about],
-            'apply_button':      [self.apply_selected_photos],
+            'open_button':
+                [self.add_files_dialog, get_obj('open')],
+            'save_button':
+                [self.save_all_files],
+            'close_button':
+                [lambda btn: [p.destroy() for p in selected.copy()]],
+            'revert_button':
+                [lambda btn: self.open_files(
+                    [p.filename for p in modified & selected])],
+            'about_button':
+                [lambda btn, dialog: dialog.run() and dialog.hide(), about],
+            'apply_button':
+                [self.apply_selected_photos],
         }
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)

@@ -23,6 +23,7 @@ from time import mktime
 from os import stat
 
 from camera import get_camera
+from common import photos, modified, get_obj
 from common import auto_timestamp_comparison
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
@@ -176,4 +177,13 @@ class Photograph(Coordinates):
             try: names.extend(self.exif[IPTC + key].values)
             except KeyError: pass
         return ', '.join([name for name in names if name])
+    
+    def destroy(self):
+        """Agony!"""
+        self.label.unmap()
+        self.label.destroy()
+        self.camera.photos.discard(self)
+        del photos[self.filename]
+        modified.discard(self)
+        get_obj('loaded_photos').remove(self.iter)
 
