@@ -20,12 +20,27 @@ from __future__ import division
 from xml.parsers.expat import ParserCreate, ExpatError
 from dateutil.parser import parse as parse_date
 from re import compile as re_compile
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
+from os.path import basename
 from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import add_polygon_to_map
+from preferences import track_color_changed
+from common import GSettings, add_polygon_to_map, get_obj
+
+BOTTOM = Gtk.PositionType.BOTTOM
+RIGHT = Gtk.PositionType.RIGHT
+
+known_trackfiles = {}
+
+def get_trackfile(uri, progressbar):
+    """This method caches TrackFile instances."""
+    if uri not in known_trackfiles:
+        fmt = KMLFile if uri[-3:].lower() == 'kml' else GPXFile
+        known_trackfiles[uri] = fmt(uri, progressbar)
+    
+    return known_trackfiles[uri]
 
 
 class XMLSimpleParser:
@@ -108,6 +123,7 @@ class TrackFile(Coordinates):
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
+        self.polygons = set()
         
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
@@ -115,6 +131,27 @@ class TrackFile(Coordinates):
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
+        
+        trackfile_label = Gtk.Label()
+        trackfile_label.set_property('margin-top', 12)
+        trackfile_label.set_markup(
+            '<span size="larger" weight="heavy">%s</span>' % basename(filename))
+        
+        colorpicker = Gtk.ColorButton()
+        colorpicker.set_title(basename(filename))
+        colorpicker.connect('color-set', track_color_changed, self.polygons)
+        
+        grid = get_obj('trackfiles_view')
+        grid.attach_next_to(trackfile_label, None, BOTTOM, 1, 1)
+        grid.attach_next_to(colorpicker, None, BOTTOM, 1, 1)
+        grid.show_all()
+        
+        self.gst = GSettings('trackfile', basename(filename))
+        
+        self.gst.set_string('start-timezone', 'foo') #TODO
+        
+        self.gst.bind_with_convert('track-color', colorpicker, 'color',
+            lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
     
     def element_start(self, name, attributes):
         """Placeholder for a method that gets overridden in subclasses."""
@@ -144,7 +181,9 @@ class GPXFile(TrackFile):
     def element_start(self, name, attributes):
         """Adds a new polygon for each new segment, and watches for track points."""
         if name == 'trkseg':
-            self.append = add_polygon_to_map()
+            polygon = add_polygon_to_map()
+            self.polygons.add(polygon)
+            self.append = polygon.append_point
         if name == 'trkpt':
             return True
         return False
@@ -188,7 +227,9 @@ class KMLFile(TrackFile):
     def element_start(self, name, attributes):
         """Adds a new polygon for each new gx:Track, and watches for location data."""
         if name == 'gx:Track':
-            self.append = add_polygon_to_map()
+            polygon = add_polygon_to_map()
+            self.polygons.add(polygon)
+            self.append = polygon.append_point
             return False
         return True
     

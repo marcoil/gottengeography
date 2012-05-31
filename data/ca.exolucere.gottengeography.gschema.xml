@@ -107,7 +107,7 @@
   </schema>
 
 
-  <schema id="ca.exolucere.gottengeography.tracks">
+  <schema id="ca.exolucere.gottengeography.trackfile">
     <key type="(iii)" name="track-color">
       <default>(32768, 0, 65535)</default>
       <summary>Use this color for the polygons on the map.</summary>

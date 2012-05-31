@@ -135,10 +135,7 @@ class Camera():
         self.make      = make
         self.model     = model
         
-        self.gst = GSettings(
-            'ca.exolucere.%s.camera' % PACKAGE,
-            '/ca/exolucere/%s/cameras/%s/'
-                % (PACKAGE, camera_id))
+        self.gst = GSettings('camera', camera_id)
         
         self.gst.set_string('make', make)
         self.gst.set_string('model', model)

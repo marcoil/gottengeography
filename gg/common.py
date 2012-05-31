@@ -109,7 +109,11 @@ class GSettings(Gio.Settings):
     """Override GSettings to be more useful to me."""
     get = Gio.Settings.get_value
     
-    def __init__(self, schema = 'ca.exolucere.' + PACKAGE, path=None):
+    def __init__(self, schema='ca.exolucere.' + PACKAGE, path=None):
+        if path is not None:
+            path = '/ca/exolucere/%s/%ss/%s/' % (PACKAGE, schema, path)
+            schema = 'ca.exolucere.%s.%s' % (PACKAGE, schema)
+        
         Gio.Settings.__init__(self, schema, path)
         
         # These are used to avoid infinite looping.
@@ -196,7 +200,7 @@ def add_polygon_to_map():
     polygon = Polygon()
     polygons.append(polygon)
     map_view.add_layer(polygon)
-    return polygon.append_point
+    return polygon
 
 def clear_all_gpx(widget=None):
     """Forget all GPX data, start over with a clean slate."""

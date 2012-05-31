@@ -301,7 +301,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkGrid" id="trackfile_view">
+                  <object class="GtkGrid" id="trackfiles_view">
                     <property name="margin">20</property>
                     <property name="row-spacing">6</property>
                     <property name="column-spacing">6</property>
@@ -309,10 +309,24 @@
                     <property name="halign">center</property>
                     <property name="valign">center</property>
                     <child>
+                      <object class="GtkLabel" id="default_color_label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Default Color</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkColorButton" id="trackfile_default_color">
                         <property name="visible">True</property>
-                        <property name="title" translatable="yes">Choose the default color for all trackfiles.</property>
+                        <property name="title" translatable="yes">Default Color for All Tracks</property>
                       </object>
+                      <packing>
+                        <property name="left-attach">0</property>
+                        <property name="top-attach">1</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>

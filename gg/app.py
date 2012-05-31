@@ -42,7 +42,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from photos import Photograph
-from xmlfiles import GPXFile, KMLFile
+from xmlfiles import get_trackfile
 from common import polygons, points, photos
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
@@ -123,8 +123,7 @@ class GottenGeography():
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        open_file = KMLFile if uri[-3:].lower() == 'kml' else GPXFile
-        gpx = open_file(uri, self.progressbar)
+        gpx = get_trackfile(uri, self.progressbar)
         
         # Emitting this signal ensures the new tracks get the correct color.
         self.prefs.colorpicker.emit('color-set')

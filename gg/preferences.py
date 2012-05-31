@@ -96,12 +96,20 @@ def map_source_menu():
     map_menu.show_all()
 
 
+def track_color_changed(selection, polys):
+    """Update the color of any loaded GPX tracks."""
+    one = make_clutter_color(selection.get_color())
+    two = one.lighten().lighten()
+    for i, polygon in enumerate(polys):
+        polygon.set_stroke_color(two if i % 2 else one)
+
+
 class PreferencesController():
     """Controls the behavior of the preferences dialog."""
     
     def __init__(self):
         self.colorpicker = get_obj('trackfile_default_color')
-        self.colorpicker.connect('color-set', self.track_color_changed)
+        self.colorpicker.connect('color-set', track_color_changed, polygons)
         gst.bind_with_convert('track-color', self.colorpicker, 'color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
         
@@ -109,11 +117,4 @@ class PreferencesController():
                  'gtk-application-prefer-dark-theme')
         
         map_source_menu()
-    
-    def track_color_changed(self, selection):
-        """Update the color of any loaded GPX tracks."""
-        one = make_clutter_color(selection.get_color())
-        two = one.lighten().lighten()
-        for i, polygon in enumerate(polygons):
-            polygon.set_stroke_color(two if i % 2 else one)
 
