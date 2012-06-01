@@ -4,18 +4,15 @@
   <object class="GtkWindow" id="main">
     <property name="width_request">620</property>
     <property name="height_request">400</property>
-    <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="title">GottenGeography</property>
     <property name="icon_name">gottengeography</property>
     <child>
       <object class="GtkVBox" id="app_container">
-        <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="spacing">5</property>
         <child>
           <object class="GtkToolbar" id="toolbar">
-            <property name="visible">True</property>
             <property name="can_focus">False</property>
             <style>
                 <class name="primary-toolbar"/>
@@ -23,11 +20,9 @@
             <child>
               <object class="GtkToolButton" id="open_button">
                 <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Load photos or GPS data (Ctrl O)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Open</property>
                 <property name="use_underline">True</property>
@@ -42,12 +37,10 @@
             <child>
               <object class="GtkToolButton" id="save_button">
                 <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Save all photos (Ctrl S)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Save All</property>
                 <property name="use_underline">True</property>
@@ -61,7 +54,6 @@
             </child>
             <child>
               <object class="GtkSeparatorToolItem" id="sep1">
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
               </object>
               <packing>
@@ -72,12 +64,10 @@
             <child>
               <object class="GtkToolButton" id="close_button">
                 <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Close selected photos (Ctrl W)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Close Photo</property>
                 <property name="use_underline">True</property>
@@ -91,7 +81,6 @@
             </child>
             <child>
               <object class="GtkSeparatorToolItem" id="sep2">
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
               </object>
               <packing>
@@ -102,11 +91,9 @@
             <child>
               <object class="GtkToolButton" id="revert_button">
                 <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Reload selected photos, losing all changes (Ctrl Z)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Revert</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-revert-to-saved</property>
@@ -119,7 +106,6 @@
             </child>
             <child>
               <object class="GtkSeparatorToolItem" id="sep3">
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="draw">False</property>
               </object>
@@ -130,11 +116,9 @@
             <child>
               <object class="GtkToolButton" id="about_button">
                 <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">About GottenGeography (Ctrl ?)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">About</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-about</property>
@@ -155,13 +139,11 @@
         </child>
         <child>
           <object class="GtkHBox" id="photos_and_map">
-            <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="spacing">0</property>
             <property name="border_width">3</property>
             <child>
               <object class="GtkNotebook" id="photo_camera_gps">
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="border_width">3</property>
                 <child>
@@ -170,13 +152,11 @@
                     <property name="border_width">0</property>
                     <child>
                       <object class="GtkScrolledWindow" id="photoscroller">
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="border_width">0</property>
                         <property name="hscrollbar_policy">never</property>
                         <child>
                           <object class="GtkTreeView" id="photos_view">
-                            <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="headers_visible">False</property>
                             <property name="headers_clickable">False</property>
@@ -192,7 +172,6 @@
                     </child>
                     <child type="overlay">
                       <object class="GtkLabel" id="empty_photo_list">
-                        <property name="visible">True</property>
                         <property name="sensitive">True</property>
                         <property name="halign">3</property>
                         <property name="valign">3</property>
@@ -204,7 +183,6 @@
                     <child type="overlay">
                       <object class="GtkToolButton" id="apply_button">
                         <property name="no_show_all">True</property>
-                        <property name="visible">False</property>
                         <property name="sensitive">False</property>
                         <property name="margin">6</property>
                         <property name="border_width">0</property>
@@ -224,7 +202,6 @@
                 </child>
                 <child type="tab">
                   <object class="GtkLabel" id="tab_photo">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">Photos</property>
                     <property name="single_line_mode">True</property>
@@ -236,7 +213,6 @@
                 </child>
                 <child>
                   <object class="GtkGrid" id="cameras_view">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="margin">20</property>
                     <property name="row-spacing">6</property>
@@ -246,7 +222,6 @@
                     <property name="valign">center</property>
                     <child>
                       <object class="GtkLabel" id="empty_camera_list">
-                        <property name="visible">True</property>
                         <property name="sensitive">True</property>
                         <property name="can_focus">False</property>
                         <property name="wrap">True</property>
@@ -260,7 +235,6 @@
                 </child>
                 <child type="tab">
                   <object class="GtkLabel" id="tab_cameras">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">Cameras</property>
                     <property name="single_line_mode">True</property>
@@ -280,7 +254,6 @@
                     <property name="valign">center</property>
                     <child>
                       <object class="GtkLabel" id="empty_trackfile_list">
-                        <property name="visible">True</property>
                         <property name="sensitive">True</property>
                         <property name="can_focus">False</property>
                         <property name="wrap">True</property>
@@ -294,7 +267,6 @@
                 </child>
                 <child type="tab">
                   <object class="GtkLabel" id="tab_gps">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">GPS</property>
                     <property name="single_line_mode">True</property>
@@ -313,18 +285,15 @@
             </child>
             <child>
               <object class="GtkVBox" id="search_and_map">
-                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="spacing">5</property>
                 <property name="border_width">3</property>
                 <child>
                   <object class="GtkHBox" id="search_bar">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="spacing">2</property>
                     <child>
                       <object class="GtkLabel" id="maps_link">
-                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label">Google</property>
                         <property name="use_markup">True</property>
@@ -339,14 +308,12 @@
                     </child>
                     <child>
                       <object class="GtkMenuToolButton" id="map_source_menu_button">
-                        <property name="visible">True</property>
                         <property name="menu">map_source_menu</property>
                         <property name="use_action_appearance">False</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Change Map</property>
                         <child type="menu">
                           <object class="GtkMenu" id="map_source_menu">
-                            <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
                         </child>
@@ -360,16 +327,13 @@
                     <child>
                       <object class="GtkButton" id="back_button">
                         <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Return to the previous location viewed on map (Ctrl Left)</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="relief">none</property>
                         <accelerator key="Left" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                         <child>
                           <object class="GtkImage" id="back_icon">
-                            <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="stock">gtk-go-back</property>
                             <property name="icon-size">2</property>
@@ -384,7 +348,6 @@
                     </child>
                     <child>
                       <object class="GtkEntry" id="search_box">
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Type the name of the city you would like to view.</property>
@@ -403,16 +366,13 @@
                     <child>
                       <object class="GtkButton" id="zoom_out_button">
                         <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Zoom the map out one step (Ctrl -)</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="relief">none</property>
                         <accelerator key="minus" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                         <child>
                           <object class="GtkImage" id="zoom_out_icon">
-                            <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="stock">gtk-zoom-out</property>
                             <property name="icon-size">2</property>
@@ -428,16 +388,13 @@
                     <child>
                       <object class="GtkButton" id="zoom_in_button">
                         <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Enhance! (Ctrl +)</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="relief">none</property>
                         <accelerator key="equal" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                         <child>
                           <object class="GtkImage" id="zoom_in_icon">
-                            <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="stock">gtk-zoom-in</property>
                             <property name="icon-size">2</property>
@@ -460,7 +417,6 @@
                 </child>
                 <child>
                   <object class="GtkScrolledWindow" id="map_border">
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="hscrollbar_policy">never</property>
                     <property name="vscrollbar_policy">never</property>
@@ -468,11 +424,9 @@
                     <property name="kinetic_scrolling">False</property>
                     <child>
                       <object class="GtkViewport" id="map_viewport">
-                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
                           <object class="GtkOverlay" id="map_container">
-                            <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
                               <placeholder/>
@@ -492,7 +446,6 @@
                                     <property name="spacing">16</property>
                                     <child>
                                       <object class="GtkImage" id="error_icon">
-                                        <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                       </object>
                                       <packing>
@@ -503,7 +456,6 @@
                                     </child>
                                     <child>
                                       <object class="GtkLabel" id="error_message">
-                                        <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="use_markup">True</property>
                                         <property name="wrap">True</property>
@@ -525,11 +477,9 @@
                                       <object class="GtkButton" id="error_ok_button">
                                         <property name="label">gtk-ok</property>
                                         <property name="use_action_appearance">False</property>
-                                        <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="border_width">6</property>
-                                        <property name="use_action_appearance">False</property>
                                         <property name="use_stock">True</property>
                                       </object>
                                     </child>
@@ -620,7 +570,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -640,7 +589,6 @@
                 <property name="can_default">True</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -794,7 +742,6 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
               </object>
               <packing>
@@ -810,7 +757,6 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -830,7 +776,6 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
                 <property name="can_default">True</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
