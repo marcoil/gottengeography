@@ -93,11 +93,11 @@ def auto_timestamp_comparison(photo):
 
 class Builder(Gtk.Builder):
     """Load GottenGeography's UI definitions."""
-    def __init__(self):
+    def __init__(self, filename=PACKAGE):
         Gtk.Builder.__init__(self)
         
         self.set_translation_domain(PACKAGE)
-        self.add_from_file(join(PKG_DATA_DIR, PACKAGE + '.ui'))
+        self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
 
 
 class GSettings(Gio.Settings):

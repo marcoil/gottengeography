@@ -22,13 +22,13 @@ from dateutil.parser import parse as parse_date
 from gi.repository import Champlain, Clutter
 from gi.repository import Gtk, Gdk, GLib
 from re import compile as re_compile
-from os.path import basename, join
+from os.path import basename
 from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import GSettings, gst, get_obj, map_view, points, metadata
-from build_info import PKG_DATA_DIR
+from common import GSettings, Builder, gst, get_obj
+from common import map_view, points, metadata
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -181,8 +181,7 @@ class TrackFile(Coordinates):
         
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.
-        builder = Gtk.Builder()
-        builder.add_from_file(join(PKG_DATA_DIR, 'trackfile.ui'))
+        builder = Builder('trackfile')
         self.colorpicker, self.trash, self.label = builder.get_objects()
         
         self.label.set_text(basename(filename))

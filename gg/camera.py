@@ -33,13 +33,11 @@ from __future__ import division
 from gi.repository import Gio, GObject, Gtk
 from math import modf as split_float
 from gettext import gettext as _
-from os.path import join
 from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import get_obj, GSettings
-from build_info import PKG_DATA_DIR
+from common import get_obj, GSettings, Builder
 from version import PACKAGE
 
 BOTTOM = Gtk.PositionType.BOTTOM
@@ -85,8 +83,7 @@ class Camera():
         
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.
-        builder = Gtk.Builder()
-        builder.add_from_file(join(PKG_DATA_DIR, 'camera.ui'))
+        builder = Builder('camera')
         
         camera_label = builder.get_object('camera_label')
         camera_label.set_text(model)
