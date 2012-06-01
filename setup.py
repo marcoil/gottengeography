@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from glob import glob
+from os import listdir
 from os.path import join
 from distutils.core import setup
 from subprocess import Popen, PIPE
@@ -16,6 +18,10 @@ data_files = [
     ('share/' + PACKAGE, ['data/cities.txt', 'data/trackfile.ui', 'data/camera.ui',
         'data/%s.ui' % PACKAGE, 'data/%s.svg' % PACKAGE])
 ]
+
+for helplang in listdir('help'):
+    data_files.append(('share/gnome/help/%s/%s' % (PACKAGE, helplang),
+                      glob(join('help', helplang, '*'))))
 
 build_info_template = """# -*- coding: UTF-8 -*-
 

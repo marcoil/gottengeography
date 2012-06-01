@@ -107,16 +107,25 @@
               </object>
             </child>
             <child>
-              <object class="GtkToolButton" id="about_button">
-                <property name="use_action_appearance">False</property>
+              <object class="GtkToolButton" id="help_button">
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
-                <property name="tooltip_text" translatable="yes">About GottenGeography (Ctrl ?)</property>
-                <property name="label" translatable="yes">About</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-about</property>
+                <property name="tooltip_text" translatable="yes">Learn how to use GottenGeography (Ctrl ?)</property>
+                <property name="stock_id">gtk-help</property>
                 <accelerator key="question" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                 <accelerator key="slash" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="about_button">
+                <property name="can_focus">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip_text" translatable="yes">About GottenGeography</property>
+                <property name="stock_id">gtk-about</property>
               </object>
               <packing>
                 <property name="expand">False</property>

@@ -36,6 +36,7 @@ from gi.repository import Champlain, Pango
 from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
+from os import system
 from sys import argv
 
 # "If I have seen a little further it is by standing on the shoulders of Giants."
@@ -272,6 +273,8 @@ class GottenGeography():
                     [p.filename for p in modified & selected])],
             'about_button':
                 [lambda yes, you_can: you_can.run() and you_can.hide(), about],
+            'help_button':
+                [lambda *ignore: system('yelp ghelp:gottengeography')],
             'apply_button':
                 [self.apply_selected_photos],
         }

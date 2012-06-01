@@ -1,0 +1,41 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:e="http://projectmallard.org/experimental/"
+      type="guide" style="2column task"
+      id="index">
+
+  <info>
+    <title type="link">GottenGeography</title>
+    <title type="text">GottenGeography</title>
+
+    <revision pkgversion="0.1" version="1.0" date="2012-06-01" status="final"/>
+    <credit type="author">
+      <name>Robert Park</name>
+      <email>rbpark@exolucere.ca</email>
+    </credit>
+  </info>
+  
+  <title>
+    GottenGeography
+  </title>
+  <p>Welcome to the <app>GottenGeography</app> help guide.</p>
+
+<!--
+    TODO: Actually write some documentation.
+  <section id="gedit-working-with-files">
+    <title>Working With Files</title>
+    <links type="topic" groups="first second third fourth fifth sixth last" style="2column"/>
+  </section>
+
+  <section id="configure-gedit" style="2column">
+    <title>Configure gedit</title>
+  </section> 
+ 
+  <section id="gedit-plugins" style="2column">
+    <title>gedit Plugins</title>
+  </section>
+
+  <section id="gedit-printing-guide" style="2column">
+    <title>Printing with gedit</title>
+  </section>
+-->
+</page>
