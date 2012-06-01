@@ -27,7 +27,7 @@ is used for most of the photo manipulations (eg, loading, saving, etc).
 
 from __future__ import division
 
-from gi.repository import Gtk, Gio, GLib
+from gi.repository import GObject, Gtk, Gio, GLib
 from gi.repository import GtkChamplain, Champlain
 from os.path import join
 
@@ -90,6 +90,17 @@ def auto_timestamp_comparison(photo):
     
     photo.set_location(lat, lon, ele)
 
+# Util function to make it easier to bind properties
+def bind_properties(source, source_prop,
+                    target, target_prop = None,
+                    flags = GObject.BindingFlags.DEFAULT):
+    if target_prop is None:
+        target_prop = source_prop
+    return GObject.Binding(source = source,
+                           source_property = source_prop,
+                           target = target,
+                           target_property = target_prop,
+                           flags = flags)
 
 class Builder(Gtk.Builder):
     """Load GottenGeography's UI definitions."""

@@ -123,7 +123,7 @@ class Photograph(Coordinates):
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
-        self.timestamp += self.camera.get_offset()
+        self.timestamp += self.camera.offset
         if self.label is not None:
             auto_timestamp_comparison(self)
     

@@ -42,7 +42,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from photos import Photograph
-from camera import known_cameras
+from camera import CameraView, known_cameras
 from common import points, photos
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
@@ -87,7 +87,7 @@ class GottenGeography():
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
         for camera in known_cameras.values():
-            camera.set_timezone()
+            camera.timezone_handler()
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
@@ -113,6 +113,14 @@ class GottenGeography():
         if photo.camera.gst.get_string('timezone-method') == 'lookup':
             photo.calculate_timestamp()
         modified.discard(photo)
+        get_obj('empty_camera_list').hide()
+        print 'Known cameras: {0}'.format(known_cameras)
+        if photo.camera not in known_cameras.values():
+            print 'Creating CameraView for {0}'.format(photo.camera)
+            camview = CameraView(photo.camera)
+            get_obj('cameras_view').attach_next_to(
+                        camview, None, Gtk.PositionType.BOTTOM, 1, 1)
+            known_cameras[photo.camera.camera_id] = photo.camera
     
     def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""

@@ -37,11 +37,8 @@ from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import get_obj, GSettings, Builder
+from common import get_obj, bind_properties, GSettings, Builder
 from version import PACKAGE
-
-BOTTOM = Gtk.PositionType.BOTTOM
-RIGHT = Gtk.PositionType.RIGHT
 
 known_cameras = {}
 
@@ -62,18 +59,14 @@ def get_camera(photo):
     # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
     camera_id = '_'.join(sorted(names.values())).lower().replace(' ', '_')
     
-    if camera_id not in known_cameras:
-        known_cameras[camera_id] = Camera(
-            camera_id, names['Make'], names['Model'])
+    if camera_id in known_cameras:
+        camera = known_cameras[camera_id]
+    else: 
+        print 'Creating new Camera({0})'.format(camera_id)
+        camera = Camera(camera_id, names['Make'], names['Model'])
     
-    camera = known_cameras[camera_id]
     camera.photos.add(photo)
     return camera
-
-def display_offset(offset, value, add, subtract):
-    """Display the offset spinbutton as M:SS."""
-    seconds, minutes = split_float(abs(value) / 60)
-    return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
 gproperty = GObject.property
 
@@ -82,9 +75,9 @@ class Camera(GObject.GObject):
     
     # Properties definitions
     make = gproperty(type = str,
-                     default = 'Unknown maker')
+                     default = 'Unknown Make')
     model = gproperty(type = str,
-                      default = 'Unknown camera')
+                      default = 'Unknown Camera')
     offset = gproperty(type = int,
                        default = 0,
                        minimum = -3600,
@@ -104,109 +97,117 @@ class Camera(GObject.GObject):
         self.camera_id = camera_id
         self.photos = set()
         
-        empty_camera_label.hide()
-        
         # Bind properties to settings
         self.gst = GSettings('camera', camera_id)
         self.gst.bind('make', self)
         self.gst.bind('model', self)
-        if self.model == 'Unknown camera':
-            self.make      = make
-            self.model     = model
+        self.make      = make
+        self.model     = model
         self.gst.bind('offset', self)
-        self.gst.bind('timezone-method', self, 'timezone_method')
-        self.gst.bind('timezone-region', self, 'timezone_region')
-        self.gst.bind('timezone-cities', self, 'timezone_cities')
-        self.gst.bind('found-timezone', self, 'found_timezone')
+        self.gst.bind('timezone-method', self, 'timezone-method')
+        self.gst.bind('timezone-region', self, 'timezone-region')
+        self.gst.bind('timezone-cities', self, 'timezone-cities')
+        self.gst.bind('found-timezone', self, 'found-timezone')
+        
+        # Get notifications when properties are changed
+        self.connect('notify::offset', self.offset_handler)
+        self.connect('notify::timezone-method', self.timezone_handler)
+        self.connect('notify::timezone-cities', self.timezone_handler)
+    
+    def set_found_timezone(self, found):
+        """Store discovered timezone in GSettings."""
+        self.found_timezone = found
+    
+    def timezone_handler(self, object = None, gparamspec = None):
+        """Set the timezone to the chosen zone and update all photos."""
+        environ['TZ'] = ''
+        if self.timezone_method == 'lookup':
+            # Note that this will gracefully fallback on system timezone
+            # if no timezone has actually been found yet.
+            environ['TZ'] = self.gst.get_string('found-timezone')
+        elif self.timezone_method == 'custom' and \
+             self.timezone_region is not -1 and \
+             self.timezone_cities is not -1:
+                region = tz_regions[self.timezone_region]
+                city   = get_timezone(region)[self.timezone_cities]
+                if region is not '' and city is not '':
+                    environ['TZ'] = '/'.join([region, city])
+        tzset()
+        self.offset_handler()
+    
+    def offset_handler(self, object = None, gparamstr = None):
+        """When the offset is changed, update the loaded photos."""
+        for photo in self.photos:
+            photo.calculate_timestamp()
+
+def display_offset(offset, value, add, subtract):
+    """Display the offset spinbutton as M:SS."""
+    seconds, minutes = split_float(abs(value) / 60)
+    return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
+
+class CameraView(Gtk.Frame):
+    """A widget to show a camera data."""
+    
+    def __init__(self, camera):
+        Gtk.Frame.__init__(self)
+        self.camera = camera
+        self.set_label(camera.model)
         
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.
         builder = Builder('camera')
+        self.add(builder.get_object('camera_settings'))
         
-        builder = Builder('camera')
-        builder.get_object('camera_label').set_text(model)
+        builder.get_object('camera_label').set_text(camera.model)
         
         # GtkScale allows the user to correct the camera's clock.
-        offset_scale = builder.get_object('offset')
-        offset_scale.connect('value-changed', self.offset_handler)
-        offset_scale.connect('format-value', display_offset,
-            _('Add %dm, %ds to clock.'),
-            _('Subtract %dm, %ds from clock.'))
+        self.scale = builder.get_object('offset')
+        self.scale.connect('format-value', display_offset,
+                           _('Add %dm, %ds to clock.'),
+                           _('Subtract %dm, %ds from clock.'))
+            # NOTE: This has to be so verbose because of
+        # https://bugzilla.gnome.org/show_bug.cgi?id=675582
+        # Also, it seems SYNC_CREATE doesn't really work.
+        self.scale.set_value(camera.offset)
+        self.scale_binding = bind_properties(self.scale.get_adjustment(), 'value',
+                                             camera, 'offset')
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
-        tz_region = builder.get_object('timezone_region')
-        tz_cities = builder.get_object('timezone_cities')
+        self.region_combo = builder.get_object('timezone_region')
+        self.cities_combo = builder.get_object('timezone_cities')
         for name in tz_regions:
-            tz_region.append(name, name)
-        tz_region.connect('changed', self.region_handler, tz_cities)
-        tz_cities.connect('changed', self.cities_handler)
+            self.region_combo.append(name, name)
+        self.region_binding = bind_properties(self.region_combo, 'active',
+                                              camera, 'timezone-region')
+        self.region_combo.connect('changed', self.region_handler, self.cities_combo)
+        self.region_combo.set_active(camera.timezone_region)
+        
+        self.cities_binding = bind_properties(self.cities_combo, 'active',
+                                              camera, 'timezone-cities')
+        self.cities_combo.set_active(camera.timezone_cities)
         
         # TODO we're gonna need some on screen help to explain what it even
         # means to select the method of determining the timezone.
         # Back when this was radio button in a preferences window we had more
         # room for verbosity, but this combobox is *so terse* that I don't
         # really expect anybody to understand it at all.
-        timezone = builder.get_object('timezone_method')
-        timezone.connect('changed', self.method_handler, tz_region, tz_cities)
+        self.method_combo = builder.get_object('timezone_method')
+        self.method_binding = bind_properties(self.method_combo, 'active-id',
+                                              camera, 'timezone-method')
+        self.method_combo.connect('changed', self.method_handler)
+        self.method_combo.set_active_id(camera.timezone_method)
         
-        # Push all the widgets into the UI
-        get_obj('cameras_view').attach_next_to(
-            builder.get_object('camera_settings'), None, BOTTOM, 1, 1)
-        
-        self.offset_scale    = offset_scale
-        self.tz_method = timezone
-        self.tz_region = tz_region
-        self.tz_cities = tz_cities
-        
-        self.gst.bind('offset', offset_scale.get_adjustment(), 'value')
-        self.gst.bind('timezone-method', timezone, 'active-id')
-        self.gst.bind('timezone-region', tz_region, 'active')
-        self.gst.bind('timezone-cities', tz_cities, 'active')
+        self.show_all()
     
-    def method_handler(self, method, region, cities):
+    def method_handler(self, method):
         """Only show manual tz selectors when necessary."""
         visible = method.get_active_id() == 'custom'
-        region.set_visible(visible)
-        cities.set_visible(visible)
-        self.set_timezone()
+        self.region_combo.set_visible(visible)
+        self.cities_combo.set_visible(visible)
     
     def region_handler(self, region, cities):
         """Populate the list of cities when a continent is selected."""
         cities.remove_all()
         for city in get_timezone(region.get_active_id(), []):
             cities.append(city, city)
-    
-    def cities_handler(self, cities):
-        """When a city is selected, update the chosen timezone."""
-        if cities.get_active_id() is not None:
-            self.set_timezone()
-    
-    def set_found_timezone(self, found):
-        """Store discovered timezone in GSettings."""
-        self.gst.set_string('found-timezone', found)
-    
-    def set_timezone(self):
-        """Set the timezone to the chosen zone and update all photos."""
-        environ['TZ'] = ''
-        case = lambda x, y=self.tz_method.get_active_id(): x == y
-        if case('lookup'):
-            # Note that this will gracefully fallback on system timezone
-            # if no timezone has actually been found yet.
-            environ['TZ'] = self.gst.get_string('found-timezone')
-        elif case('custom'):
-            region = self.tz_region.get_active_id()
-            city   = self.tz_cities.get_active_id()
-            if region is not None and city is not None:
-                environ['TZ'] = '/'.join([region, city])
-        tzset()
-        self.offset_handler()
-    
-    def offset_handler(self, offset=None):
-        """When the offset is changed, update the loaded photos."""
-        for photo in self.photos:
-            photo.calculate_timestamp()
-    
-    def get_offset(self):
-        """Return the currently selected clock offset value."""
-        return int(self.offset_scale.get_value())
