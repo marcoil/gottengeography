@@ -13,7 +13,7 @@ data_files = [
     ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
     ('share/applications', ['data/%s.desktop' % PACKAGE]),
     ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING']),
-    ('share/' + PACKAGE, ['data/cities.txt',
+    ('share/' + PACKAGE, ['data/cities.txt', 'data/trackfile.ui',
         'data/%s.ui' % PACKAGE, 'data/%s.svg' % PACKAGE])
 ]
 

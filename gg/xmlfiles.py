@@ -22,12 +22,13 @@ from dateutil.parser import parse as parse_date
 from gi.repository import Champlain, Clutter
 from gi.repository import Gtk, Gdk, GLib
 from re import compile as re_compile
-from os.path import basename
+from os.path import basename, join
 from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
 from common import GSettings, gst, get_obj, map_view, points, metadata
+from build_info import PKG_DATA_DIR
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -178,20 +179,19 @@ class TrackFile(Coordinates):
         self.latitude = self.tracks[self.alpha].lat
         self.longitude = self.tracks[self.alpha].lon
         
-        self.trackfile_label = Gtk.Label()
-        self.trackfile_label.set_property('margin-top', 12)
-        self.trackfile_label.set_markup(
-            '<span size="larger" weight="heavy">%s</span>' % basename(filename))
+        # TODO find some kind of parent widget that can group these together
+        # to make it easier to get them and insert them into places.
+        builder = Gtk.Builder()
+        builder.add_from_file(join(PKG_DATA_DIR, 'trackfile.ui'))
+        self.colorpicker, self.trash, self.label = builder.get_objects()
         
-        self.colorpicker = Gtk.ColorButton()
+        self.label.set_text(basename(filename))
         self.colorpicker.set_title(basename(filename))
         self.colorpicker.connect('color-set', track_color_changed, self.polygons)
-        
-        self.trash = Gtk.ToolButton.new_from_stock('gtk-close')
         self.trash.connect('clicked', self.destroy)
         
         grid = get_obj('trackfiles_view')
-        grid.attach_next_to(self.trackfile_label, None, BOTTOM, 2, 1)
+        grid.attach_next_to(self.label, None, BOTTOM, 2, 1)
         grid.attach_next_to(self.colorpicker, None, BOTTOM, 1, 1)
         grid.attach_next_to(self.trash, self.colorpicker, RIGHT, 1, 1)
         grid.show_all()
@@ -228,7 +228,7 @@ class TrackFile(Coordinates):
         for timestamp in self.tracks:
             del points[timestamp]
         self.polygons.clear()
-        for widget in (self.trackfile_label, self.colorpicker, self.trash):
+        for widget in (self.label, self.colorpicker, self.trash):
             widget.destroy()
         del known_trackfiles[self.filename]
         if not known_trackfiles:

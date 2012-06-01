@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkLabel" id="trackfile_label">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="margin_top">12</property>
+    <property name="label">Filename</property>
+    <property name="single_line_mode">True</property>
+    <attributes>
+      <attribute name="weight" value="heavy"/>
+      <attribute name="size" value="13000"/>
+    </attributes>
+  </object>
+  <object class="GtkColorButton" id="colorpicker">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+  </object>
+  <object class="GtkToolButton" id="unload">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="stock-id">gtk-close</property>
+  </object>
+</interface>
