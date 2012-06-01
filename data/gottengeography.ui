@@ -444,9 +444,11 @@
                                     <property name="can_focus">False</property>
                                     <property name="border_width">8</property>
                                     <property name="spacing">16</property>
+                                    <property name="visible">True</property>
                                     <child>
                                       <object class="GtkImage" id="error_icon">
                                         <property name="can_focus">False</property>
+                                        <property name="visible">True</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -456,6 +458,7 @@
                                     </child>
                                     <child>
                                       <object class="GtkLabel" id="error_message">
+                                        <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="use_markup">True</property>
                                         <property name="wrap">True</property>
@@ -470,11 +473,13 @@
                                 </child>
                                 <child internal-child="action_area">
                                   <object class="GtkButtonBox" id="error_action">
+                                    <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="orientation">vertical</property>
                                     <property name="layout_style">center</property>
                                     <child>
                                       <object class="GtkButton" id="error_ok_button">
+                                        <property name="visible">True</property>
                                         <property name="label">gtk-ok</property>
                                         <property name="use_action_appearance">False</property>
                                         <property name="can_focus">True</property>
