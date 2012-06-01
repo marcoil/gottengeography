@@ -53,58 +53,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="sep1">
-                <property name="can_focus">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="close_button">
-                <property name="use_action_appearance">False</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">False</property>
-                <property name="has_tooltip">True</property>
-                <property name="tooltip_text" translatable="yes">Close selected photos (Ctrl W)</property>
-                <property name="is_important">True</property>
-                <property name="label" translatable="yes">Close Photo</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-close</property>
-                <accelerator key="w" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparatorToolItem" id="sep2">
-                <property name="can_focus">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="revert_button">
-                <property name="use_action_appearance">False</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Reload selected photos, losing all changes (Ctrl Z)</property>
-                <property name="label" translatable="yes">Revert</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-revert-to-saved</property>
-                <accelerator key="z" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkSeparatorToolItem" id="sep3">
                 <property name="can_focus">False</property>
                 <property name="draw">False</property>
@@ -181,15 +129,38 @@
                       </object>
                     </child>
                     <child type="overlay">
+                      <object class="GtkToolButton" id="close_button">
+                        <property name="no_show_all">False</property>
+                        <property name="margin">6</property>
+                        <property name="border_width">0</property>
+                        <property name="halign">1</property>
+                        <property name="valign">2</property>
+                        <property name="stock_id">gtk-close</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Close selected photos (Ctrl W)</property>
+                        <accelerator key="w" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child type="overlay">
+                      <object class="GtkToolButton" id="revert_button">
+                        <property name="no_show_all">False</property>
+                        <property name="margin">6</property>
+                        <property name="border_width">0</property>
+                        <property name="halign">3</property>
+                        <property name="valign">2</property>
+                        <property name="stock_id">gtk-revert-to-saved</property>
+                        <property name="tooltip_text" translatable="yes">Reload selected photos, losing all changes (Ctrl Z)</property>
+                        <accelerator key="z" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child type="overlay">
                       <object class="GtkToolButton" id="apply_button">
                         <property name="no_show_all">True</property>
-                        <property name="sensitive">False</property>
                         <property name="margin">6</property>
                         <property name="border_width">0</property>
                         <property name="halign">2</property>
                         <property name="valign">2</property>
                         <property name="stock-id">gtk-apply</property>
-                        <property name="can_focus">True</property>
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Place selected photos onto center of map (Ctrl Enter)</property>
                         <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>

@@ -35,9 +35,9 @@ def update_highlights(selection):
 def selection_sensitivity(selection, close, save, revert):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
-    close.set_sensitive(sensitive)
-    save.set_sensitive(  len(modified) > 0)
-    revert.set_sensitive(len(modified & selected) > 0)
+    close.set_visible(sensitive)
+    save.set_sensitive(len(modified) > 0)
+    revert.set_visible(len(modified & selected) > 0)
 
 def clicked(label, event, selection):
     """When a ChamplainLabel is clicked, select it in the GtkListStore.
