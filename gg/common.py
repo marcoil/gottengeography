@@ -115,8 +115,10 @@ class GSettings(Gio.Settings):
         self._ignore_key_changed = False
         self._ignore_prop_changed = True
     
-    def bind(self, key, widget, prop, flags=Gio.SettingsBindFlags.DEFAULT):
+    def bind(self, key, widget, prop = None, flags=Gio.SettingsBindFlags.DEFAULT):
         """Don't make me specify the default flags every time."""
+        if prop is None:
+            prop = key
         Gio.Settings.bind(self, key, widget, prop, flags)
     
     def set_history(self, value):

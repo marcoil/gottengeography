@@ -75,23 +75,61 @@ def display_offset(offset, value, add, subtract):
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
+gproperty = GObject.property
 
-class Camera():
+class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
+    
+    # Properties definitions
+    make = gproperty(type = str,
+                     default = 'Unknown maker')
+    model = gproperty(type = str,
+                      default = 'Unknown camera')
+    offset = gproperty(type = int,
+                       default = 0,
+                       minimum = -3600,
+                       maximum = 3600)
+    timezone_method = gproperty(type = str,
+                                default = 'system')
+    found_timezone = gproperty(type = str,
+                               default = '')
+    timezone_region = gproperty(type = int,
+                                default = -1)
+    timezone_cities = gproperty(type = int,
+                                default = -1)
     
     def __init__(self, camera_id, make, model):
         """Generate Gtk widgets and bind their properties to GSettings."""
+        GObject.GObject.__init__(self)
+        self.camera_id = camera_id
         self.photos = set()
         
         empty_camera_label.hide()
+        
+        # Bind properties to settings
+        self.gst = GSettings('camera', camera_id)
+        self.gst.bind('make', self)
+        self.gst.bind('model', self)
+        if self.model == 'Unknown camera':
+            self.make      = make
+            self.model     = model
+        self.gst.bind('offset', self)
+        self.gst.bind('timezone-method', self, 'timezone_method')
+        self.gst.bind('timezone-region', self, 'timezone_region')
+        self.gst.bind('timezone-cities', self, 'timezone_cities')
+        self.gst.bind('found-timezone', self, 'found_timezone')
+        
+        # TODO find some kind of parent widget that can group these together
+        # to make it easier to get them and insert them into places.
+        builder = Builder('camera')
         
         builder = Builder('camera')
         builder.get_object('camera_label').set_text(model)
         
         # GtkScale allows the user to correct the camera's clock.
-        offset = builder.get_object('offset')
-        offset.connect('value-changed', self.offset_handler)
-        offset.connect('format-value', display_offset,
+        offset_scale = builder.get_object('offset')
+        offset_scale.connect('value-changed', self.offset_handler)
+        offset_scale.connect('format-value', display_offset,
             _('Add %dm, %ds to clock.'),
             _('Subtract %dm, %ds from clock.'))
         
@@ -116,20 +154,12 @@ class Camera():
         get_obj('cameras_view').attach_next_to(
             builder.get_object('camera_settings'), None, BOTTOM, 1, 1)
         
-        self.offset    = offset
+        self.offset_scale    = offset_scale
         self.tz_method = timezone
         self.tz_region = tz_region
         self.tz_cities = tz_cities
-        self.camera_id = camera_id
-        self.make      = make
-        self.model     = model
         
-        self.gst = GSettings('camera', camera_id)
-        
-        self.gst.set_string('make', make)
-        self.gst.set_string('model', model)
-        
-        self.gst.bind('offset', offset.get_adjustment(), 'value')
+        self.gst.bind('offset', offset_scale.get_adjustment(), 'value')
         self.gst.bind('timezone-method', timezone, 'active-id')
         self.gst.bind('timezone-region', tz_region, 'active')
         self.gst.bind('timezone-cities', tz_cities, 'active')
@@ -179,5 +209,4 @@ class Camera():
     
     def get_offset(self):
         """Return the currently selected clock offset value."""
-        return int(self.offset.get_value())
-
+        return int(self.offset_scale.get_value())
