@@ -186,18 +186,17 @@ class TrackFile(Coordinates):
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.
         builder = Builder('trackfile')
-        self.colorpicker, self.trash, self.label = builder.get_objects()
+        self.colorpicker = builder.get_object('colorpicker')
+        self.trash = builder.get_object('unload')
+        self.label = builder.get_object('trackfile_label')
         
         self.label.set_text(basename(filename))
         self.colorpicker.set_title(basename(filename))
         self.colorpicker.connect('color-set', track_color_changed, self.polygons)
         self.trash.connect('clicked', self.destroy)
         
-        grid = get_obj('trackfiles_view')
-        grid.attach_next_to(self.label, None, BOTTOM, 2, 1)
-        grid.attach_next_to(self.colorpicker, None, BOTTOM, 1, 1)
-        grid.attach_next_to(self.trash, self.colorpicker, RIGHT, 1, 1)
-        grid.show_all()
+        get_obj('trackfiles_view').attach_next_to(
+            builder.get_object('trackfile_settings'), None, BOTTOM, 1, 1)
         
         self.gst = GSettings('trackfile', basename(filename))
         
