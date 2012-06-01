@@ -1,52 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkLabel" id="camera_label">
+  <object class="GtkGrid" id="camera_settings">
     <property name="visible">True</property>
+    <property name="expand">False</property>
     <property name="can_focus">False</property>
-    <property name="margin_top">12</property>
-    <property name="label">Model Name</property>
-    <property name="single_line_mode">True</property>
-    <attributes>
-      <attribute name="weight" value="heavy"/>
-      <attribute name="size" value="13000"/>
-    </attributes>
-  </object>
-  <object class="GtkScale" id="offset">
-    <property name="visible">True</property>
-    <property name="can_focus">True</property>
-    <property name="adjustment">offset_value</property>
-    <property name="round_digits">1</property>
-    <property name="digits">0</property>
-    <property name="has_origin">False</property>
+    <property name="row-spacing">6</property>
+    <property name="column-spacing">6</property>
+    <property name="halign">center</property>
+    <property name="valign">center</property>
+    <child>
+      <object class="GtkLabel" id="camera_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label">Model Name</property>
+        <property name="single_line_mode">True</property>
+        <attributes>
+          <attribute name="weight" value="heavy"/>
+          <attribute name="size" value="13000"/>
+        </attributes>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBoxText" id="timezone_method">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="entry_text_column">0</property>
+        <property name="id_column">1</property>
+        <items>
+          <item id="system" translatable="yes">Use the system timezone.</item>
+          <item id="lookup" translatable="yes">Use the local timezone.</item>
+          <item id="custom" translatable="yes">Specify the timezone manually.</item>
+        </items>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">1</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBoxText" id="timezone_region">
+        <property name="can_focus">False</property>
+        <property name="no_show_all">True</property>
+        <property name="entry_text_column">1</property>
+        <property name="id_column">0</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBoxText" id="timezone_cities">
+        <property name="can_focus">False</property>
+        <property name="no_show_all">True</property>
+        <property name="entry_text_column">1</property>
+        <property name="id_column">0</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">2</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkScale" id="offset">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="adjustment">offset_value</property>
+        <property name="round_digits">0</property>
+        <property name="digits">0</property>
+        <property name="has_origin">False</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
   </object>
   <object class="GtkAdjustment" id="offset_value">
     <property name="lower">-3600</property>
     <property name="upper">3600</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
-  </object>
-  <object class="GtkComboBoxText" id="timezone_method">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="entry_text_column">0</property>
-    <property name="id_column">1</property>
-    <items>
-      <item translatable="yes" id="system">Use the system timezone.</item>
-      <item translatable="yes" id="lookup">Use the local timezone.</item>
-      <item translatable="yes" id="custom">Specify the timezone manually.</item>
-    </items>
-  </object>
-  <object class="GtkComboBoxText" id="timezone_region">
-    <property name="can_focus">False</property>
-    <property name="no_show_all">True</property>
-    <property name="entry_text_column">1</property>
-    <property name="id_column">0</property>
-  </object>
-  <object class="GtkComboBoxText" id="timezone_cities">
-    <property name="can_focus">False</property>
-    <property name="no_show_all">True</property>
-    <property name="entry_text_column">1</property>
-    <property name="id_column">0</property>
   </object>
 </interface>

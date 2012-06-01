@@ -85,12 +85,8 @@ class Camera():
         
         empty_camera_label.hide()
         
-        # TODO find some kind of parent widget that can group these together
-        # to make it easier to get them and insert them into places.
         builder = Builder('camera')
-        
-        camera_label = builder.get_object('camera_label')
-        camera_label.set_text(model)
+        builder.get_object('camera_label').set_text(model)
         
         # GtkScale allows the user to correct the camera's clock.
         offset = builder.get_object('offset')
@@ -116,14 +112,9 @@ class Camera():
         timezone = builder.get_object('timezone_method')
         timezone.connect('changed', self.method_handler, tz_region, tz_cities)
         
-        # Push all the widgets into the UI and display them to the user.
-        grid = get_obj('cameras_view')
-        grid.attach_next_to(camera_label, None, BOTTOM, 2, 1)
-        grid.attach_next_to(timezone, None, BOTTOM, 2, 1)
-        grid.attach_next_to(tz_region, None, BOTTOM, 1, 1)
-        grid.attach_next_to(tz_cities, tz_region, RIGHT, 1, 1)
-        grid.attach_next_to(offset, None, BOTTOM, 2, 1)
-        grid.show_all()
+        # Push all the widgets into the UI
+        get_obj('cameras_view').attach_next_to(
+            builder.get_object('camera_settings'), None, BOTTOM, 1, 1)
         
         self.offset    = offset
         self.tz_method = timezone
