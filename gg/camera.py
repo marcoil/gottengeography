@@ -45,6 +45,8 @@ RIGHT = Gtk.PositionType.RIGHT
 
 known_cameras = {}
 
+empty_camera_label = get_obj('empty_camera_list')
+
 def get_camera(photo):
     """This method caches Camera instances."""
     names = {'Make': 'Unknown Make', 'Model': 'Unknown Camera'}
@@ -81,7 +83,7 @@ class Camera():
         """Generate Gtk widgets and bind their properties to GSettings."""
         self.photos = set()
         
-        get_obj('empty_camera_list').hide()
+        empty_camera_label.hide()
         
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.

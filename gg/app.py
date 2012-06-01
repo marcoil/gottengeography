@@ -139,8 +139,6 @@ class GottenGeography():
         
         for camera in known_cameras.values():
             camera.set_found_timezone(gpx.timezone)
-        
-        get_obj('empty_trackfile_list').hide()
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""

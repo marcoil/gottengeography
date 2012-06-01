@@ -35,6 +35,8 @@ RIGHT = Gtk.PositionType.RIGHT
 
 known_trackfiles = {}
 
+empty_trackfile_label = get_obj('empty_trackfile_list')
+
 def get_trackfile(uri):
     """This method caches TrackFile instances."""
     if uri not in known_trackfiles:
@@ -172,6 +174,8 @@ class TrackFile(Coordinates):
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         
+        empty_trackfile_label.hide()
+        
         points.update(self.tracks)
         keys = self.tracks.keys()
         self.alpha = min(keys)
@@ -231,7 +235,7 @@ class TrackFile(Coordinates):
             widget.destroy()
         del known_trackfiles[self.filename]
         if not known_trackfiles:
-            get_obj('empty_trackfile_list').show()
+            empty_trackfile_label.show()
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
