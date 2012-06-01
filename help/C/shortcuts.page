@@ -23,67 +23,68 @@
 
     <table frame="all" rules="rowgroups" shade="rows">
       <tbody>
-      <tr>
-        <td><p>Move map view North.</p></td>
-        <td><p><keyseq><key>Alt</key><key>Up</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Move map view East.</p></td>
-        <td><p><keyseq><key>Alt</key><key>Right</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Move map view South.</p></td>
-        <td><p><keyseq><key>Alt</key><key>Down</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Move map view West.</p></td>
-        <td><p><keyseq><key>Alt</key><key>Left</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Zoom map in.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>+</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Zoom map out.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>-</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Go back.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>Left</key></keyseq></p></td>
-      </tr>
-        </tbody><tbody>
-      <tr>
-        <td><p>Open files.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>O</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Select all photos.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>A</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Slap all photos to map center.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>Enter</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Undo / revert selected photos.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>Z</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Save all files.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>S</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Close selected photos.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>W</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Quit <app>GottenGeography</app>.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>Q</key></keyseq></p></td>
-      </tr>
-      <tr>
-        <td><p>Open this help.</p></td>
-        <td><p><keyseq><key>Ctrl</key><key>?</key></keyseq></p></td>
-      </tr>
+        <tr>
+          <td><p>Move map view North.</p></td>
+          <td><p><keyseq><key>Alt</key><key>Up</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Move map view East.</p></td>
+          <td><p><keyseq><key>Alt</key><key>Right</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Move map view South.</p></td>
+          <td><p><keyseq><key>Alt</key><key>Down</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Move map view West.</p></td>
+          <td><p><keyseq><key>Alt</key><key>Left</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Zoom map in.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>+</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Zoom map out.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>-</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Go back.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>Left</key></keyseq></p></td>
+        </tr>
+      </tbody>
+      <tbody>
+        <tr>
+          <td><p>Open files.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>O</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Select all photos.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>A</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Slap all photos to map center.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>Enter</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Undo / revert selected photos.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>Z</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Save all files.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>S</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Close selected photos.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>W</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Quit <app>GottenGeography</app>.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>Q</key></keyseq></p></td>
+        </tr>
+        <tr>
+          <td><p>Open this help.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>?</key></keyseq></p></td>
+        </tr>
       </tbody>
     </table>
 
