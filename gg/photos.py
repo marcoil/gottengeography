@@ -81,10 +81,13 @@ class Photograph(Coordinates):
                 Gio.MemoryInputStream.new_from_data(data, None),
                 self.thm_size, self.thm_size, True, None)
         
-        if self.iter is None and self.thm_size < 250:
-            # thm_size is 300 when we're just making a preview,
-            # and we don't want to add a liststore row for those
-            self.iter = self.liststore.append()
+        # If we're reloading, then hide the label and clear the ListStore,
+        # but if we're loading afresh then we'll need a new iter...
+        if self.label is not None:
+            self.label.hide()
+        if self.thm_size < 250:
+            if self.iter is None:
+                self.iter = self.liststore.append()
             self.liststore.set_row(self.iter,
                 [self.filename, self.long_summary(), self.thumb, self.timestamp])
         
