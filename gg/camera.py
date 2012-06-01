@@ -42,8 +42,6 @@ from version import PACKAGE
 
 known_cameras = {}
 
-empty_camera_label = get_obj('empty_camera_list')
-
 gproperty = GObject.property
 
 class Camera(GObject.GObject):
