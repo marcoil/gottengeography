@@ -1,0 +1,88 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:e="http://projectmallard.org/experimental/"
+      type="topic"
+      id="quickstart">
+
+  <info>
+    <title type="link">Quick Start Guide</title>
+    <title type="text"><app>GottenGeography</app> Quick Start Guide</title>
+    <link type="guide" xref="index"/>
+
+    <revision pkgversion="0.1" version="1.0" date="2012-06-01" status="final"/>
+    <credit type="author">
+      <name>Robert Park</name>
+      <email>rbpark@exolucere.ca</email>
+    </credit>
+    <license>
+      <p>Creative Commons Share Alike 3.0</p>
+    </license>
+  </info>
+  
+  <title>
+    <app>GottenGeography</app> Quick Start Guide
+  </title>
+  <p>Welcome to the <app>GottenGeography</app> quickstart guide.</p>
+
+<!-- TODO Needs screenshots -->
+
+  <section id="introduction">
+    <title>Automatic and Simple to Use</title>
+
+    <p><app>GottenGeography</app> tries to do The Right Thing by default and doesn't require any fiddling around. It can display geotags, and create them automatically or manually.</p>
+  </section>
+
+  <section id="first run">
+    <title>First Run</title>
+
+    <p>The first time you run <app>GottenGeography</app>, you see a map of the world. To navigate the map, click and drag to move around, using the mouse wheel to zoom in and out. You can also search the map by typing the name of a city or town in the search bar.</p>
+
+    <p>Try zooming in on your hometown.</p>
+
+    <p><app>GottenGeography</app> will remember where you left off, and return to the last viewed location on the next launch.</p>
+  </section>
+
+  <section id="tagging files automatically">
+    <title>Easiest way to Geotag Photos</title>
+
+    <p>Just drag your photos directly onto the map, and your photos will show up right where you dropped them! If you want to open your photos without placing them on the map right away, you can drag them to the empty pane at left and they will be opened without being placed on the map.</p>
+
+    <p>You can also click the <gui>Open</gui> button, and select your photos and your GPX files with the more traditional <gui>Open Files</gui> dialog.</p>
+
+    <p>Go ahead and open a GPX or KML file to start.</p>
+
+    <p>The map will automatically zoom in or out so you can see the entire GPS trace. If you load several traces, it zooms out even further to show everything you've loaded.</p>
+
+    <p>The <gui>Back</gui> button becomes available any time the map view changes (such as when loading a GPS trace). This way, you never have to worry about accidentally losing your place on the map.</p>
+
+    <p>Now, try loading some images.</p>
+
+    <p>Ta-da! <app>GottenGeography</app> automatically places your images onto the map based on the information in the GPX file.</p>
+
+    <p>If your camera's clock is wrong, you can correct it using the "Clock Offset" setting in the Cameras tab. The fastest way to change this setting is with the mouse wheel, but you can also do it with the arrow keys, or by clicking and dragging. This change is reflected on the map immediately, so just keep scrolling the mouse wheel until the photos look like they are correctly positioned. If your camera's timezone is not the same as your computer's timezone, you will have to set the timezone manually, and then you can change the minutes and seconds settings until the photos are positioned correctly.</p>
+
+    <p>By clicking "Save All", your photos will forever remember where you took them.</p>
+  </section>
+
+  <section id="tagging files manually">
+    <title>Don't have a GPS? Forgot to bring it?</title>
+
+    <p>No Problem! You can use the <gui>Apply</gui> button to set the position for your photo manually.</p>
+
+    <p>First, navigate the map to the place you took the photo. The black diamond at map center indicates precisely where the photos will be placed. Once you're satisfied you have the right location, click <gui>Apply</gui>. A marker appears on the map exactly where your photo was placed. If you want to fine-tune the location of the marker, you can actually drag the marker around on the map after it is created.</p>
+
+    <p>When a photo has been manually tagged, the automatic tagger respects and preserves the location you've chosen. If you change the "Clock Offset" setting, the photo you've manually tagged stays still, but the rest slide up and down the GPX track. If you want to switch back to automatic tagging, just select the photo and click the <gui>Revert</gui> button.</p>
+  </section>
+
+  <section id="viewing tags">
+    <title>Viewing Tags</title>
+
+    <p>Simply load photos that already have geotag data applied to them, and <app>GottenGeography</app> will display them on the map. That's it!</p>
+  </section>
+
+  <section id="bogs">
+    <title>Reporting Bugs</title>
+
+    <p>If you find a bug in <app>GottenGeography</app>, please mention it in the <link href="http://github.com/robru/GottenGeography/issues">GitHub Issue Tracker</link>. I appreciate all your feedback!</p>
+  </section>
+
+</page>
