@@ -81,6 +81,8 @@ class Camera():
         """Generate Gtk widgets and bind their properties to GSettings."""
         self.photos = set()
         
+        get_obj('empty_camera_list').hide()
+        
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.
         builder = Builder('camera')

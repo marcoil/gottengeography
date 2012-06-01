@@ -113,7 +113,6 @@ class GottenGeography():
         if photo.camera.gst.get_string('timezone-method') == 'lookup':
             photo.calculate_timestamp()
         modified.discard(photo)
-        get_obj('empty_camera_list').hide()
     
     def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""
