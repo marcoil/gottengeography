@@ -85,6 +85,8 @@ class Photograph(Coordinates):
             # thm_size is 300 when we're just making a preview,
             # and we don't want to add a liststore row for those
             self.iter = self.liststore.append()
+            self.liststore.set_row(self.iter,
+                [self.filename, self.long_summary(), self.thumb, self.timestamp])
         
         self.calculate_timestamp()
         try:
@@ -104,9 +106,6 @@ class Photograph(Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
-        
-        self.liststore.set_row(self.iter,
-            [self.filename, self.long_summary(), self.thumb, self.timestamp])
     
     def calculate_timestamp(self):
         """Determine the timestamp based on the currently selected timezone.
