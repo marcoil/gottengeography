@@ -180,11 +180,13 @@
                 <child>
                   <object class="GtkToolbar" id="photo_btn_bar">
                     <property name="can_focus">False</property>
+                    <property name="no_show_all">True</property>
                     <property name="expand">False</property>
                     <property name="border_width">0</property>
                     <property name="icon_size">1</property>
                     <child>
                       <object class="GtkToolButton" id="close_button">
+                        <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="border_width">0</property>
                         <property name="stock_id">gtk-close</property>
@@ -196,6 +198,7 @@
                     </child>
                     <child>
                       <object class="GtkToolButton" id="revert_button">
+                        <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="border_width">0</property>
                         <property name="stock_id">gtk-revert-to-saved</property>
@@ -206,6 +209,7 @@
                     </child>
                     <child>
                       <object class="GtkSeparatorToolItem" id="spacer1">
+                        <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="draw">False</property>
                       </object>
@@ -215,7 +219,7 @@
                     </child>
                     <child>
                       <object class="GtkToolButton" id="save_button">
-                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="has_tooltip">True</property>
@@ -229,6 +233,7 @@
                     </child>
                     <child>
                       <object class="GtkToolButton" id="apply_button">
+                        <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="border_width">0</property>
                         <property name="stock-id">gtk-apply</property>

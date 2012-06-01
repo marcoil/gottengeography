@@ -58,10 +58,6 @@
       <default>true</default>
       <summary>Determines whether or not to show the latitude and longitude atop the map.</summary>
     </key>
-    <key type="b" name="show-buttons">
-      <default>true</default>
-      <summary>Determines whether or not to show the Select All and Apply buttons.</summary>
-    </key>
   </schema>
 
 

@@ -241,7 +241,12 @@ class GottenGeography():
         column.add_attribute(cell_string, 'markup', SUMMARY)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
-        get_obj('photos_view').append_column(column)
+        # Deal with multiple selection drag and drop.
+        self.defer_select = False
+        photos_view = get_obj('photos_view')
+        photos_view.connect('button-press-event', self.photoview_pressed)
+        photos_view.connect('button-release-event', self.photoview_released)
+        photos_view.append_column(column)
         
         self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
@@ -273,14 +278,6 @@ class GottenGeography():
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
         
-        # Deal with multiple selection drag and drop.
-        self.defer_select = False
-        get_obj('photos_view').connect('button-press-event', self.photoview_pressed)
-        get_obj('photos_view').connect('button-release-event', self.photoview_released)
-        
-        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
-                 'gtk-application-prefer-dark-theme')
-        
         accel  = Gtk.AccelGroup()
         window = get_obj('main')
         window.resize(*gst.get('window-size'))
@@ -303,7 +300,8 @@ class GottenGeography():
         
         button = get_obj('apply_button')
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
-        gst.bind('show-buttons', button, 'visible')
+        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
+                 'gtk-application-prefer-dark-theme')
         
         # This bit of magic will only show the apply button when there is
         # at least one photo loaded that is not manually positioned.
@@ -318,6 +316,11 @@ class GottenGeography():
         empty_visible = lambda l, *x: empty.set_visible(l.get_iter_first() is None)
         self.liststore.connect('row-changed', empty_visible)
         self.liststore.connect('row-deleted', empty_visible)
+        
+        toolbar = get_obj('photo_btn_bar')
+        bar_visible = lambda l, *x: toolbar.set_visible(l.get_iter_first() is not None)
+        self.liststore.connect('row-changed', bar_visible)
+        self.liststore.connect('row-deleted', bar_visible)
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview_label'), get_obj('preview_image'))
@@ -334,6 +337,7 @@ class GottenGeography():
         while Gtk.events_pending(): Gtk.main_iteration()
     
     def dismiss_message(self):
+        """Responsible for hiding the GtkInfoBar after a timeout."""
         self.message_timeout_source = None
         self.error.bar.hide()
         return False
@@ -357,17 +361,19 @@ class GottenGeography():
     # to use it with the standard GtkTreeView.
     # http://blog.kevinmehall.net/2010/pygtk_multi_select_drag_drop
     def photoview_pressed(self, tree, event):
+        """Allow the user to drag photos without losing the selection."""
         target = tree.get_path_at_pos(int(event.x), int(event.y))
+        selection = tree.get_selection()
         if (target
             and event.type == Gdk.EventType.BUTTON_PRESS
             and not (event.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK))
-            and tree.get_selection().path_is_selected(target[0])):
+            and selection.path_is_selected(target[0])):
                 # disable selection
-                tree.get_selection().set_select_function(lambda *ignore: False, None)
+                selection.set_select_function(lambda *ignore: False, None)
                 self.defer_select = target[0]
      
     def photoview_released(self, tree, event):
-        # re-enable selection
+        """Restore normal selection behavior while not dragging."""
         tree.get_selection().set_select_function(lambda *ignore: True, None)
         
         target = tree.get_path_at_pos(int(event.x), int(event.y))
