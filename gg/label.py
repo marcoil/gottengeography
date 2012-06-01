@@ -32,10 +32,11 @@ def update_highlights(selection):
             selected.add(photo)
         photo.set_label_highlight(photo in selected, selection_exists)
 
-def selection_sensitivity(selection, close, save, revert):
+def selection_sensitivity(selection, close, save, revert, jump):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
     close.set_sensitive(sensitive)
+    jump.set_sensitive(sensitive)
     save.set_sensitive(len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
@@ -80,7 +81,7 @@ class LabelController():
         self.selection.connect('changed', update_highlights)
         self.selection.connect('changed', selection_sensitivity,
             *[get_obj(name) for name in ('close_button',
-                'save_button', 'revert_button')])
+                'save_button', 'revert_button', 'jump_button')])
     
     def add(self, name):
         """Create a new ChamplainLabel and add it to the map."""

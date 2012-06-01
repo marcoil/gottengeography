@@ -165,6 +165,13 @@ class GottenGeography():
         self.progressbar.hide()
         self.labels.selection.emit('changed')
     
+    def jump_to_photo(self, button):
+        """Center on the first selected photo."""
+        photo = selected.copy().pop()
+        if photo.valid_coords():
+            map_view.emit('realize')
+            map_view.center_on(photo.latitude, photo.longitude)
+    
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
 ################################################################################
@@ -275,6 +282,8 @@ class GottenGeography():
                 [lambda yes, you_can: you_can.run() and you_can.hide(), about],
             'help_button':
                 [lambda *ignore: system('yelp ghelp:gottengeography')],
+            'jump_button':
+                [self.jump_to_photo],
             'apply_button':
                 [self.apply_selected_photos],
         }

@@ -54,6 +54,10 @@
           <td><p>Go back.</p></td>
           <td><p><keyseq><key>Ctrl</key><key>Left</key></keyseq></p></td>
         </tr>
+        <tr>
+          <td><p>Center the map on the selected photo.</p></td>
+          <td><p><keyseq><key>Ctrl</key><key>J</key></keyseq></p></td>
+        </tr>
       </tbody>
       <tbody>
         <tr>
