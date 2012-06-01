@@ -62,7 +62,6 @@ def get_camera(photo):
     if camera_id in known_cameras:
         camera = known_cameras[camera_id]
     else: 
-        print 'Creating new Camera({0})'.format(camera_id)
         camera = Camera(camera_id, names['Make'], names['Model'])
     
     camera.photos.add(photo)
@@ -145,13 +144,12 @@ def display_offset(offset, value, add, subtract):
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
-class CameraView(Gtk.Frame):
+class CameraView(Gtk.Box):
     """A widget to show a camera data."""
     
     def __init__(self, camera):
-        Gtk.Frame.__init__(self)
+        Gtk.Box.__init__(self)
         self.camera = camera
-        self.set_label(camera.model)
         
         # TODO find some kind of parent widget that can group these together
         # to make it easier to get them and insert them into places.

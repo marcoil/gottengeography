@@ -114,9 +114,7 @@ class GottenGeography():
             photo.calculate_timestamp()
         modified.discard(photo)
         get_obj('empty_camera_list').hide()
-        print 'Known cameras: {0}'.format(known_cameras)
         if photo.camera not in known_cameras.values():
-            print 'Creating CameraView for {0}'.format(photo.camera)
             camview = CameraView(photo.camera)
             get_obj('cameras_view').attach_next_to(
                         camview, None, Gtk.PositionType.BOTTOM, 1, 1)
