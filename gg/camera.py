@@ -58,10 +58,10 @@ class Camera(GObject.GObject):
                                 default = 'system')
     found_timezone = gproperty(type = str,
                                default = '')
-    timezone_region = gproperty(type = int,
-                                default = -1)
-    timezone_cities = gproperty(type = int,
-                                default = -1)
+    timezone_region = gproperty(type = str,
+                                default = '')
+    timezone_city = gproperty(type = str,
+                                default = '')
     
     # Class methods
     @staticmethod
@@ -96,10 +96,10 @@ class Camera(GObject.GObject):
         self.gst = GSettings('camera', id)
         self.gst.bind('name', self)
         self.gst.bind('offset', self)
-        self.gst.bind('timezone-method', self, 'timezone-method')
-        self.gst.bind('timezone-region', self, 'timezone-region')
-        self.gst.bind('timezone-cities', self, 'timezone-cities')
-        self.gst.bind('found-timezone', self, 'found-timezone')
+        self.gst.bind('timezone-method', self)
+        self.gst.bind('timezone-region', self)
+        self.gst.bind('timezone-city', self)
+        self.gst.bind('found-timezone', self)
         
         # If we don't have a proper name, build it from the info
         if self.name is '':
@@ -108,7 +108,7 @@ class Camera(GObject.GObject):
         # Get notifications when properties are changed
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
-        self.connect('notify::timezone-cities', self.timezone_handler)
+        self.connect('notify::timezone-city', self.timezone_handler)
     
     def set_found_timezone(self, found):
         """Store discovered timezone in GSettings."""
@@ -122,12 +122,10 @@ class Camera(GObject.GObject):
             # if no timezone has actually been found yet.
             environ['TZ'] = self.gst.get_string('found-timezone')
         elif self.timezone_method == 'custom' and \
-             self.timezone_region is not -1 and \
-             self.timezone_cities is not -1:
-                region = tz_regions[self.timezone_region]
-                city   = get_timezone(region)[self.timezone_cities]
-                if region is not '' and city is not '':
-                    environ['TZ'] = '/'.join([region, city])
+             self.timezone_region is not '' and \
+             self.timezone_city is not '':
+            environ['TZ'] = '/'.join([self.timezone_region, self.timezone_city])
+        
         tzset()
         self.offset_handler()
     
@@ -173,14 +171,14 @@ class CameraView(Gtk.Box):
         self.cities_combo = builder.get_object('timezone_cities')
         for name in tz_regions:
             self.region_combo.append(name, name)
-        self.region_binding = bind_properties(self.region_combo, 'active',
+        self.region_binding = bind_properties(self.region_combo, 'active-id',
                                               camera, 'timezone-region')
         self.region_combo.connect('changed', self.region_handler, self.cities_combo)
-        self.region_combo.set_active(camera.timezone_region)
+        self.region_combo.set_active_id(camera.timezone_region)
         
-        self.cities_binding = bind_properties(self.cities_combo, 'active',
-                                              camera, 'timezone-cities')
-        self.cities_combo.set_active(camera.timezone_cities)
+        self.cities_binding = bind_properties(self.cities_combo, 'active-id',
+                                              camera, 'timezone-city')
+        self.cities_combo.set_active_id(camera.timezone_city)
         
         # TODO we're gonna need some on screen help to explain what it even
         # means to select the method of determining the timezone.
