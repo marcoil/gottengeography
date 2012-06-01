@@ -207,7 +207,8 @@ class Photograph(Coordinates):
         """Agony!"""
         self.label.unmap()
         self.label.destroy()
-        self.camera.photos.discard(self)
+        if self.camera is not None:
+            self.camera.remove_photo(self)
         del photos[self.filename]
         modified.discard(self)
         self.liststore.remove(self.iter)

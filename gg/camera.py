@@ -62,6 +62,8 @@ class Camera(GObject.GObject):
                                 default = '')
     timezone_city = gproperty(type = str,
                                 default = '')
+    num_photos = gproperty(type = int,
+                           default = 0)
     
     # Class methods
     @staticmethod
@@ -133,6 +135,18 @@ class Camera(GObject.GObject):
         """When the offset is changed, update the loaded photos."""
         for photo in self.photos:
             photo.calculate_timestamp(self.offset)
+    
+    def add_photo(self, photo):
+        if photo.camera is not None:
+            photo.camera.remove_photo(photo)
+        photo.camera = self
+        self.photos.add(photo)
+        self.num_photos = self.num_photos + 1
+    
+    def remove_photo(self, photo):
+        photo.camera = None
+        self.photos.discard(photo)
+        self.num_photos = self.num_photos - 1
 
 def display_offset(offset, value, add, subtract):
     """Display the offset spinbutton as M:SS."""
@@ -151,7 +165,8 @@ class CameraView(Gtk.Box):
         builder = Builder('camera')
         self.add(builder.get_object('camera_settings'))
         
-        builder.get_object('camera_label').set_text(camera.name)
+        self.label = builder.get_object('camera_label')
+        self.set_pretty_name(camera, None)
         
         # GtkScale allows the user to correct the camera's clock.
         self.scale = builder.get_object('offset')
@@ -191,6 +206,8 @@ class CameraView(Gtk.Box):
         self.method_combo.connect('changed', self.method_handler)
         self.method_combo.set_active_id(camera.timezone_method)
         
+        camera.connect('notify::num-photos', self.set_pretty_name)
+        
         self.show_all()
     
     def method_handler(self, method):
@@ -204,3 +221,16 @@ class CameraView(Gtk.Box):
         cities.remove_all()
         for city in get_timezone(region.get_active_id(), []):
             cities.append(city, city)
+    
+    def set_pretty_name(self, camera, prop):
+        num = self.camera.num_photos
+        num_text = _('No photos loaded.')
+        if num is 1:
+            num_text = _('One photo.')
+        elif num > 1:
+            num_text = _('%d photos.') % num 
+        text = '<span %s>%s</span>\n<span %s>%s</span>' % (
+            'weight="heavy" size="larger"', self.camera.name,
+            'style="italic" size="smaller"', num_text)
+        self.label.set_markup(text)
+

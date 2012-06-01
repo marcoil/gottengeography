@@ -119,7 +119,7 @@ class GottenGeography():
             camview = CameraView(camera)
             get_obj('cameras_view').attach_next_to(
                         camview, None, Gtk.PositionType.BOTTOM, 1, 1)
-        camera.photos.add(photo)
+        camera.add_photo(photo)
         
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the

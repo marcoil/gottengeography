@@ -14,9 +14,9 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="label">Model Name</property>
-        <property name="single_line_mode">True</property>
+        <property name="justify">center</property>
         <attributes>
-          <attribute name="weight" value="heavy"/>
+          <attribute name="size" value="13000"/>
           <attribute name="size" value="13000"/>
         </attributes>
       </object>
