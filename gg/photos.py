@@ -36,18 +36,18 @@ IPTC = 'Iptc.Application2.'
 
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
+    liststore = get_obj('loaded_photos')
     
-    def __init__(self, filename, callback, thumb_size=200):
+    def __init__(self, filename, thumb_size=200):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
-        self.callback = callback
         self.thm_size = thumb_size
         self.label    = None
-        self.iter     = None
         self.exif     = None
         self.thumb    = None
         self.manual   = None
         self.camera   = None
+        self.iter     = None
     
     def read(self):
         """Load exif data from disk."""
@@ -81,6 +81,11 @@ class Photograph(Coordinates):
                 Gio.MemoryInputStream.new_from_data(data, None),
                 self.thm_size, self.thm_size, True, None)
         
+        if self.iter is None and self.thm_size < 250:
+            # thm_size is 300 when we're just making a preview,
+            # and we don't want to add a liststore row for those
+            self.iter = self.liststore.append()
+        
         self.calculate_timestamp()
         try:
             self.latitude = dms_to_decimal(
@@ -99,6 +104,9 @@ class Photograph(Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
+        
+        self.liststore.set_row(self.iter,
+            [self.filename, self.long_summary(), self.thumb, self.timestamp])
     
     def calculate_timestamp(self):
         """Determine the timestamp based on the currently selected timezone.
@@ -128,6 +136,8 @@ class Photograph(Coordinates):
         self.exif[GPS + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
         self.exif[GPS + 'MapDatum']     = 'WGS-84'
         self.exif.write()
+        modified.discard(self)
+        self.liststore.set_value(self.iter, 1, self.long_summary())
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
@@ -137,7 +147,13 @@ class Photograph(Coordinates):
         self.longitude = lon
         self.position_label()
         self.lookup_geoname()
-        self.callback(self)
+        self.modify_summary()
+    
+    def modify_summary(self):
+        """Update the text displayed in the GtkListStore."""
+        modified.add(self)
+        self.liststore.set_value(self.iter, 1,
+            ('<b>%s</b>' % self.long_summary()))
     
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""
@@ -185,5 +201,5 @@ class Photograph(Coordinates):
         self.camera.photos.discard(self)
         del photos[self.filename]
         modified.discard(self)
-        get_obj('loaded_photos').remove(self.iter)
+        self.liststore.remove(self.iter)
 

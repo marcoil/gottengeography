@@ -129,7 +129,6 @@ class ActorController():
             Clutter.BinAlignment.CENTER, Clutter.BinAlignment.CENTER)
         
         map_source_menu()
-
     
     def animate_in(self, anim=True):
         """Animate the crosshair."""

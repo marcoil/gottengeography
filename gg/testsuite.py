@@ -75,22 +75,20 @@ class GottenGeographyTester(TestCase):
     
     def test_actor_controller(self):
         """Make sure the actors are behaving."""
-        from actor import ActorController
-        control = ActorController()
         link = get_obj('maps_link')
         map_view.center_on(50, 50)
-        self.assertEqual(control.label.get_text(), 'N 50.00000, E 50.00000')
+        self.assertEqual(gui.actors.label.get_text(), 'N 50.00000, E 50.00000')
         self.assertEqual(link.get_current_uri()[:45],
             'http://maps.google.com/maps?ll=50.0,50.0&spn=')
         map_view.center_on(-10, -30)
-        self.assertEqual(control.label.get_text(), 'S 10.00000, W 30.00000')
+        self.assertEqual(gui.actors.label.get_text(), 'S 10.00000, W 30.00000')
         self.assertEqual(link.get_current_uri()[:47],
             'http://maps.google.com/maps?ll=-10.0,-30.0&spn=')
-        for rot in control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
+        for rot in gui.actors.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
             self.assertEqual(rot, 0)
-        control.animate_in(10)
-        self.assertEqual(control.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0], 45)
-        self.assertEqual(control.black.get_width(), map_view.get_width())
+        gui.actors.animate_in(10)
+        self.assertEqual(gui.actors.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0], 45)
+        self.assertEqual(gui.actors.black.get_width(), map_view.get_width())
     
     def test_drag_controller(self):
         """Make sure that we can drag photos around."""
@@ -349,7 +347,7 @@ class GottenGeographyTester(TestCase):
         # Re-read the photos back from disk to make sure that the saving
         # was successful.
         for filename in files:
-            photo = Photograph(filename, lambda x: None)
+            photo = Photograph(filename)
             photo.read()
             self.assertTrue(photo.valid_coords())
             self.assertGreater(photo.altitude, 600)
@@ -364,7 +362,7 @@ class GottenGeographyTester(TestCase):
         label = Struct()
         label.get_text = lambda: DEMOFILES[5]
         label.get_parent = lambda: None
-        photo = Photograph(label.get_text(), lambda x: None)
+        photo = Photograph(label.get_text())
         photo.read()
         photo.label = label
         

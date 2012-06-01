@@ -102,16 +102,17 @@ class GottenGeography():
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = photos.get(uri) or Photograph(uri, self.modify_summary)
+        photo = photos.get(uri) or Photograph(uri)
         photo.read()
         if uri not in photos:
-            photo.iter  = self.liststore.append()
             photo.label = self.labels.add(uri)
             photos[uri] = photo
-        photo.calculate_timestamp()
+        # If the user has selected the lookup method, then the timestamp
+        # was probably calculated incorrectly the first time (before the
+        # timezone was discovered). So call it again to get the correct value.
+        if photo.camera.gst.get_string('timezone-method') == 'lookup':
+            photo.calculate_timestamp()
         modified.discard(photo)
-        self.liststore.set_row(photo.iter,
-            [uri, photo.long_summary(), photo.thumb, photo.timestamp])
         get_obj('empty_camera_list').hide()
     
     def load_gpx_from_file(self, uri):
@@ -163,22 +164,8 @@ class GottenGeography():
                 photo.write()
             except Exception as inst:
                 self.status_message(str(inst))
-            else:
-                modified.discard(photo)
-                self.liststore.set_value(photo.iter, SUMMARY,
-                    photo.long_summary())
         self.progressbar.hide()
         self.labels.selection.emit('changed')
-    
-################################################################################
-# Data manipulation. These methods modify the loaded files in some way.
-################################################################################
-    
-    def modify_summary(self, photo):
-        """Insert the current photo summary into the liststore."""
-        modified.add(photo)
-        self.liststore.set_value(photo.iter, SUMMARY,
-            ('<b>%s</b>' % photo.long_summary()))
     
 ################################################################################
 # Dialogs. Various dialog-related methods for user interaction.
@@ -189,8 +176,7 @@ class GottenGeography():
         label.set_label(self.strings.preview)
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(),
-                               lambda x: None, 300)
+            photo = Photograph(chooser.get_preview_filename(), 300)
             photo.read()
         except IOError:
             return
