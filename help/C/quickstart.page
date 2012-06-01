@@ -23,7 +23,8 @@
   </title>
   <p>Welcome to the <app>GottenGeography</app> quickstart guide.</p>
 
-<!-- TODO Needs screenshots -->
+  <links type="section"/>
+  <!-- TODO Needs screenshots -->
 
   <section id="introduction">
     <title>Automatic and Simple to Use</title>
