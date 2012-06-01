@@ -290,15 +290,17 @@ class GottenGeography():
         for button, handler in click_handlers.items():
             get_obj(button).connect('clicked', *handler)
         
+        # Hide the unused button that appears beside the map source menu.
+        ugly = get_obj('map_source_menu_button').get_child().get_children()[0]
+        ugly.set_no_show_all(True)
+        ugly.hide()
+        
         accel  = Gtk.AccelGroup()
         window = get_obj('main')
         window.resize(*gst.get('window-size'))
         window.connect('delete_event', self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
-        
-        # Hide the unused button that appears beside the map source menu.
-        get_obj('map_source_menu_button').get_child().get_children()[0].set_visible(False)
         
         save_size = lambda v, s, size: gst.set_window_size(size())
         for prop in ['width', 'height']:
