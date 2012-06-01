@@ -307,16 +307,15 @@ class GottenGeography():
         button = get_obj('apply_button')
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
         gst.bind('show-buttons', button, 'visible')
-        button.set_visible(False)
         
         # This bit of magic will only show the apply button when there is
         # at least one photo loaded that is not manually positioned.
         # In effect, it allows you to manually drag & drop some photos,
         # then batch-apply all the rest
-        btn_visible = lambda *x: button.set_visible(
+        btn_sense = lambda *x: button.set_sensitive(
             [photo for photo in photos.values() if not photo.manual])
-        self.liststore.connect('row-changed', btn_visible, button)
-        self.liststore.connect('row-deleted', btn_visible, button)
+        self.liststore.connect('row-changed', btn_sense)
+        self.liststore.connect('row-deleted', btn_sense)
         
         empty = get_obj('empty_photo_list')
         empty_visible = lambda l, *x: empty.set_visible(l.get_iter_first() is None)
