@@ -108,7 +108,7 @@ class Photograph(Coordinates):
             pass
         
         # Get the camera info
-        self.camera_info = {'Make': 'Unknown Make', 'Model': 'Unknown Camera'}
+        self.camera_info = {'Make': '', 'Model': ''}
         keys = ['Exif.Image.' + key for key in self.camera_info.keys()
                     + ['CameraSerialNumber']] + ['Exif.Photo.BodySerialNumber']
         for key in keys:

@@ -51,7 +51,7 @@ class Camera(GObject.GObject):
     
     # Properties definitions
     name = gproperty(type = str,
-                     default = 'Unknown camera')
+                     default = '')
     offset = gproperty(type = int,
                        default = 0,
                        minimum = -3600,
@@ -68,15 +68,27 @@ class Camera(GObject.GObject):
     # Class methods
     @staticmethod
     def generate_id(info):
+        if info['Make'] is '' and info['Model'] is '':
+            return 'unknown_camera'
+        
         # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
         return '_'.join(sorted(info.values())).lower().replace(' ', '_')
     
     @staticmethod
     def build_name(info):
-        return info['Model'] if info['Model'] is not '' else _('Unknown camera')
+        maker = info['Make'].capitalize()
+        model = info['Model']
+        if maker is '' and model is '':
+            return _('Unknown camera')
+        
+        # Sony puts its name in ALL CAPS
+        maker = maker.capitalize()
+       
+        # Some makers put their name twice
+        name = model if model.startswith(maker) else maker + ' ' + model
+        return name
     
     def __init__(self, id, info):
-        print 'Creating Camera(%s, %s)' % (id, info)
         """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)
         self.id = id
