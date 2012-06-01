@@ -33,12 +33,14 @@ from __future__ import division
 from gi.repository import Gio, GObject, Gtk
 from math import modf as split_float
 from gettext import gettext as _
+from os.path import join
 from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from version import PACKAGE
 from common import get_obj, GSettings
+from build_info import PKG_DATA_DIR
+from version import PACKAGE
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -81,13 +83,16 @@ class Camera():
         """Generate Gtk widgets and bind their properties to GSettings."""
         self.photos = set()
         
-        camera_label = Gtk.Label()
-        camera_label.set_property('margin-top', 12)
-        camera_label.set_markup(
-            '<span size="larger" weight="heavy">%s</span>' % model)
+        # TODO find some kind of parent widget that can group these together
+        # to make it easier to get them and insert them into places.
+        builder = Gtk.Builder()
+        builder.add_from_file(join(PKG_DATA_DIR, 'camera.ui'))
         
-        # SpinButton allows the user to correct the camera's clock.
-        offset = Gtk.HScale.new_with_range(-3600, 3600, 1)
+        camera_label = builder.get_object('camera_label')
+        camera_label.set_text(model)
+        
+        # GtkScale allows the user to correct the camera's clock.
+        offset = builder.get_object('offset')
         offset.connect('value-changed', self.offset_handler)
         offset.connect('format-value', display_offset,
             _('Add %dm, %ds to clock.'),
@@ -95,11 +100,8 @@ class Camera():
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
-        tz_region = Gtk.ComboBoxText()
-        tz_cities = Gtk.ComboBoxText()
-        for combo in (tz_region, tz_cities):
-            combo.set_id_column(0)
-            combo.set_property('no-show-all', True)
+        tz_region = builder.get_object('timezone_region')
+        tz_cities = builder.get_object('timezone_cities')
         for name in tz_regions:
             tz_region.append(name, name)
         tz_region.connect('changed', self.region_handler, tz_cities)
@@ -110,13 +112,8 @@ class Camera():
         # Back when this was radio button in a preferences window we had more
         # room for verbosity, but this combobox is *so terse* that I don't
         # really expect anybody to understand it at all.
-        timezone = Gtk.ComboBox.new_with_model(get_obj('timezone_methods'))
-        timezone.set_id_column(0)
+        timezone = builder.get_object('timezone_method')
         timezone.connect('changed', self.method_handler, tz_region, tz_cities)
-        
-        tz_summary = Gtk.CellRendererText()
-        timezone.pack_start(tz_summary, False)
-        timezone.add_attribute(tz_summary, 'markup', 1)
         
         # Push all the widgets into the UI and display them to the user.
         grid = get_obj('cameras_view')
