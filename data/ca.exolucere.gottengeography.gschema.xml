@@ -66,9 +66,9 @@
 
 
   <schema id="ca.exolucere.gottengeography.camera">
-    <key type="s" name="make">
-      <default>'Unknown Make'</default>
-      <summary>The name of the company that manufactured the camera.</summary>
+    <key type="s" name="name">
+      <default>''</default>
+      <summary>The name of the camera.</summary>
     </key>
     <key type="s" name="model">
       <default>'Unknown Model'</default>

@@ -44,39 +44,14 @@ known_cameras = {}
 
 empty_camera_label = get_obj('empty_camera_list')
 
-def get_camera(photo):
-    """This method caches Camera instances."""
-    names = {'Make': 'Unknown Make', 'Model': 'Unknown Camera'}
-    keys = ['Exif.Image.' + key for key in names.keys()
-        + ['CameraSerialNumber']] + ['Exif.Photo.BodySerialNumber']
-    
-    for key in keys:
-        try:
-            names.update({key.split('.')[-1]: photo.exif[key].value})
-        except KeyError:
-            pass
-    
-    # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
-    camera_id = '_'.join(sorted(names.values())).lower().replace(' ', '_')
-    
-    if camera_id in known_cameras:
-        camera = known_cameras[camera_id]
-    else: 
-        camera = Camera(camera_id, names['Make'], names['Model'])
-    
-    camera.photos.add(photo)
-    return camera
-
 gproperty = GObject.property
 
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     
     # Properties definitions
-    make = gproperty(type = str,
-                     default = 'Unknown Make')
-    model = gproperty(type = str,
-                      default = 'Unknown Camera')
+    name = gproperty(type = str,
+                     default = 'Unknown camera')
     offset = gproperty(type = int,
                        default = 0,
                        minimum = -3600,
@@ -90,23 +65,35 @@ class Camera(GObject.GObject):
     timezone_cities = gproperty(type = int,
                                 default = -1)
     
-    def __init__(self, camera_id, make, model):
-        """Generate Gtk widgets and bind their properties to GSettings."""
+    # Class methods
+    @staticmethod
+    def generate_id(info):
+        # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
+        return '_'.join(sorted(info.values())).lower().replace(' ', '_')
+    
+    @staticmethod
+    def build_name(info):
+        return info['Model'] if info['Model'] is not '' else _('Unknown camera')
+    
+    def __init__(self, id, info):
+        print 'Creating Camera(%s, %s)' % (id, info)
+        """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)
-        self.camera_id = camera_id
+        self.id = id
         self.photos = set()
         
         # Bind properties to settings
-        self.gst = GSettings('camera', camera_id)
-        self.gst.bind('make', self)
-        self.gst.bind('model', self)
-        self.make      = make
-        self.model     = model
+        self.gst = GSettings('camera', id)
+        self.gst.bind('name', self)
         self.gst.bind('offset', self)
         self.gst.bind('timezone-method', self, 'timezone-method')
         self.gst.bind('timezone-region', self, 'timezone-region')
         self.gst.bind('timezone-cities', self, 'timezone-cities')
         self.gst.bind('found-timezone', self, 'found-timezone')
+        
+        # If we don't have a proper name, build it from the info
+        if self.name is '':
+            self.name = Camera.build_name(info)
         
         # Get notifications when properties are changed
         self.connect('notify::offset', self.offset_handler)
@@ -137,7 +124,7 @@ class Camera(GObject.GObject):
     def offset_handler(self, object = None, gparamstr = None):
         """When the offset is changed, update the loaded photos."""
         for photo in self.photos:
-            photo.calculate_timestamp()
+            photo.calculate_timestamp(self.offset)
 
 def display_offset(offset, value, add, subtract):
     """Display the offset spinbutton as M:SS."""
@@ -156,7 +143,7 @@ class CameraView(Gtk.Box):
         builder = Builder('camera')
         self.add(builder.get_object('camera_settings'))
         
-        builder.get_object('camera_label').set_text(camera.model)
+        builder.get_object('camera_label').set_text(camera.name)
         
         # GtkScale allows the user to correct the camera's clock.
         self.scale = builder.get_object('offset')
