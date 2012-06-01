@@ -17,25 +17,20 @@
   <title>
     GottenGeography
   </title>
-  <p>Welcome to the <app>GottenGeography</app> help guide.</p>
+  <p>Welcome to the <app>GottenGeography</app> quickstart guide.</p>
 
-<!--
-    TODO: Actually write some documentation.
-  <section id="gedit-working-with-files">
-    <title>Working With Files</title>
-    <links type="topic" groups="first second third fourth fifth sixth last" style="2column"/>
+  <section id="opening files">
+    <title>Opening Files</title>
+    <p>GottenGeography tries to be as flexible as possible so that you can work how you want. You can either click on the familiar <gui>Open</gui> button in the top left corner, or press <keyseq><key>Ctrl</key><key>O</key></keyseq> on your keyboard, and you will presented with the <gui>Open Files</gui> dialog in order to open your photographs.</p>
+    <p>GottenGeography also supports opening files by <gui>drag &amp; drop</gui>, which is quite handy. If you drop your photos onto the map, they will automatically appear right where you dropped them, and then all you have to do is click <gui>Save All</gui> and you're done! If you want to open files without putting them on the map immediately, simply drag them onto the empty pane on the left hand side and they will load without any modifications.</p>
   </section>
 
-  <section id="configure-gedit" style="2column">
-    <title>Configure gedit</title>
-  </section> 
- 
-  <section id="gedit-plugins" style="2column">
-    <title>gedit Plugins</title>
+  <section id="tagging files">
+    <title>Geotagging Files</title>
+    <p>If you own a GPS device, you can load the GPX or KML trace files in the same way that you opened your photos in the previous step. Once you do, you should notice that GottenGeography has automatically placed your photos directly onto the map.</p>
+    <p>GottenGeography uses as much magic as possible to ensure that photos are placed onto the map correctly, but sometimes it can make mistakes. You have a number of options for correcting the locations of your photos on the map.</p>
   </section>
 
-  <section id="gedit-printing-guide" style="2column">
-    <title>Printing with gedit</title>
-  </section>
--->
+<!-- TODO Need more here. -->
+
 </page>
