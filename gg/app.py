@@ -316,15 +316,17 @@ class GottenGeography():
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
-        empty = get_obj('empty_photo_list')
-        empty_visible = lambda l, *x: empty.set_visible(l.get_iter_first() is None)
-        self.liststore.connect('row-changed', empty_visible)
-        self.liststore.connect('row-deleted', empty_visible)
-        
+        placeholder = get_obj('empty_photo_list')
         toolbar = get_obj('photo_btn_bar')
-        bar_visible = lambda l, *x: toolbar.set_visible(l.get_iter_first() is not None)
-        self.liststore.connect('row-changed', bar_visible)
-        self.liststore.connect('row-deleted', bar_visible)
+        
+        def photo_pane_visibility(liststore, *ignore):
+            """Hide the placeholder and show the toolbar when appropriate."""
+            empty = liststore.get_iter_first() is None
+            placeholder.set_visible(empty)
+            toolbar.set_visible(not empty)
+        
+        self.liststore.connect('row-changed', photo_pane_visibility)
+        self.liststore.connect('row-deleted', photo_pane_visibility)
         
         get_obj('open').connect('update-preview', self.update_preview,
             get_obj('preview'))
