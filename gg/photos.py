@@ -38,38 +38,37 @@ class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     liststore = get_obj('loaded_photos')
     
-    def __init__(self, filename, thumb_size=200):
+    def __init__(self, filename):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
-        self.thm_size = thumb_size
         self.label    = None
         self.exif     = None
-        self.thumb    = None
         self.manual   = None
         self.camera   = None
         self.iter     = None
     
-    def read(self):
-        """Load exif data from disk."""
-        self.exif      = ImageMetadata(self.filename)
-        self.timestamp = None
-        self.altitude  = None
-        self.latitude  = None
-        self.longitude = None
-        self.timezone  = None
-        self.manual    = False
+    def fetch_exif(self):
+        """Read the EXIF data from the file."""
+        if self.exif is not None:
+            return
+        self.exif = ImageMetadata(self.filename)
         try:
             self.exif.read()
         except TypeError:
             raise IOError
+    
+    def fetch_thumbnail(self, size=200):
+        """Return the file's thumbnail as best as possible.
         
-        self.camera = get_camera(self)
-        
-        # Try to get a thumbnail.
+        This is used in the preview widget without fully loading the file. It
+        can potentially cause EXIF data to be read, but only if GdkPixbuf
+        fails at generating a thumbnail by itself.
+        """
         try:
-            self.thumb = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    self.filename, self.thm_size, self.thm_size)
+            return GdkPixbuf.Pixbuf.new_from_file_at_size(
+                self.filename, size, size)
         except GObject.GError:
+            self.fetch_exif()
             if len(self.exif.previews) > 0:
                 data = self.exif.previews[-1].data
             elif len(self.exif.exif_thumbnail.data) > 0:
@@ -77,21 +76,30 @@ class Photograph(Coordinates):
             else:
                 raise IOError
             
-            self.thumb = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
+            return GdkPixbuf.Pixbuf.new_from_stream_at_scale(
                 Gio.MemoryInputStream.new_from_data(data, None),
-                self.thm_size, self.thm_size, True, None)
+                size, size, True, None)
+    
+    def read(self):
+        """Discard all state and (re)initialize from disk."""
+        self.exif      = None
+        self.timestamp = None
+        self.altitude  = None
+        self.latitude  = None
+        self.longitude = None
+        self.timezone  = None
+        self.manual    = False
         
-        # If we're reloading, then hide the label and clear the ListStore,
-        # but if we're loading afresh then we'll need a new iter...
+        self.fetch_exif()
+        
+        self.camera = get_camera(self)
+        
+        # If we're re-loading, we'll have to hide the old label
         if self.label is not None:
             self.label.hide()
-        if self.thm_size < 250:
-            if self.iter is None:
-                self.iter = self.liststore.append()
-            self.liststore.set_row(self.iter,
-                [self.filename, self.long_summary(), self.thumb, self.timestamp])
         
         self.calculate_timestamp()
+        
         try:
             self.latitude = dms_to_decimal(
                 *self.exif[GPS + 'Latitude'].value +
@@ -109,6 +117,13 @@ class Photograph(Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
+        
+        if self.iter is None:
+            self.iter = self.liststore.append()
+        self.liststore.set_row(self.iter, [self.filename,
+                                           self.long_summary(),
+                                           self.fetch_thumbnail(),
+                                           self.timestamp])
     
     def calculate_timestamp(self):
         """Determine the timestamp based on the currently selected timezone.

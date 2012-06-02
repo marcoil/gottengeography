@@ -176,18 +176,16 @@ class GottenGeography():
 # Dialogs. Various dialog-related methods for user interaction.
 ################################################################################
     
-    def update_preview(self, chooser, label, image):
+    def update_preview(self, chooser, image):
         """Display photo thumbnail and geotag data in file chooser."""
-        label.set_label(self.strings.preview)
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename(), 300)
-            photo.read()
+            photo = Photograph(chooser.get_preview_filename())
+            image.set_from_pixbuf(photo.fetch_thumbnail(300))
         except IOError:
             return
-        image.set_from_pixbuf(photo.thumb)
-        label.set_label(
-            '\n'.join([photo.short_summary(), photo.maps_link()]))
+        except TypeError:
+            return
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
@@ -228,7 +226,6 @@ class GottenGeography():
         
         self.strings = Struct({
             'quit':    get_obj('quit').get_property('secondary-text'),
-            'preview': get_obj('preview_label').get_text()
         })
         
         self.liststore = get_obj('loaded_photos')
@@ -338,7 +335,7 @@ class GottenGeography():
         self.liststore.connect('row-deleted', bar_visible)
         
         get_obj('open').connect('update-preview', self.update_preview,
-            get_obj('preview_label'), get_obj('preview_image'))
+            get_obj('preview'))
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.

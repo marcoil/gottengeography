@@ -534,41 +534,14 @@
       <action-widget response="-5">open_ok</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkVBox" id="preview">
+  <object class="GtkImage" id="preview">
     <property name="width_request">310</property>
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="spacing">6</property>
-    <child>
-      <object class="GtkImage" id="preview_image">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="xpad">5</property>
-        <property name="ypad">5</property>
-        <property name="stock">gtk-file</property>
-        <property name="icon-size">6</property>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">False</property>
-        <property name="position">0</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkLabel" id="preview_label">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">No preview available</property>
-        <property name="use_markup">True</property>
-        <property name="justify">center</property>
-        <property name="selectable">True</property>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">False</property>
-        <property name="position">1</property>
-      </packing>
-    </child>
+    <property name="xpad">5</property>
+    <property name="ypad">5</property>
+    <property name="stock">gtk-file</property>
+    <property name="icon-size">6</property>
   </object>
   <object class="GtkAboutDialog" id="about">
     <property name="can_focus">False</property>
