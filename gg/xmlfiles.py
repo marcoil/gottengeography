@@ -235,6 +235,11 @@ class TrackFile(Coordinates):
         del known_trackfiles[self.filename]
         if not known_trackfiles:
             empty_trackfile_label.show()
+            metadata.alpha, metadata.omega = float('inf'), float('-inf')
+        else:
+            trackfiles = known_trackfiles.values()
+            metadata.alpha = min([gpx.alpha for gpx in trackfiles])
+            metadata.omega = max([gpx.omega for gpx in trackfiles])
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
