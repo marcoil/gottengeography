@@ -281,7 +281,8 @@ class GottenGeography():
             'about_button':
                 [lambda yes, you_can: you_can.run() and you_can.hide(), about],
             'help_button':
-                [lambda *ignore: system('yelp ghelp:gottengeography')],
+                [lambda *ignore: Gtk.show_uri(Gdk.Screen.get_default(),
+                    'ghelp:gottengeography', Gdk.CURRENT_TIME)],
             'jump_button':
                 [self.jump_to_photo],
             'apply_button':
