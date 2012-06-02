@@ -37,11 +37,10 @@
             <child>
               <object class="GtkToolItem" id="maps_link_container">
                 <child>
-                  <object class="GtkLabel" id="maps_link">
+                  <object class="GtkLinkButton" id="maps_link">
                     <property name="can_focus">False</property>
                     <property name="label">Google</property>
-                    <property name="use_markup">True</property>
-                    <property name="single_line_mode">True</property>
+                    <property name="tooltip_text" translatable="yes">View in Google Maps</property>
                   </object>
                 </child>
               </object>
@@ -178,8 +177,8 @@
                     <child type="overlay">
                       <object class="GtkLabel" id="empty_photo_list">
                         <property name="sensitive">True</property>
-                        <property name="halign">3</property>
-                        <property name="valign">3</property>
+                        <property name="halign">0</property>
+                        <property name="valign">0</property>
                         <property name="can_focus">False</property>
                         <property name="wrap">True</property>
                         <property name="label" translatable="yes">Drag files here to load.</property>

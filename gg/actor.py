@@ -92,9 +92,8 @@ def display(view, param, mlink, label):
     """Display map center coordinates when they change."""
     lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
     label.set_markup(format_coords(lat, lon))
-    mlink.set_markup(
-        '<a title="%s" href="%s?ll=%s,%s&amp;spn=%s,%s">Google</a>'
-        % (_('View in Google Maps'), 'http://maps.google.com/maps', lat, lon,
+    mlink.set_uri('%s?ll=%s,%s&amp;spn=%s,%s'
+        % ('http://maps.google.com/maps', lat, lon,
         lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
 
 
