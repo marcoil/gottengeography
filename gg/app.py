@@ -114,6 +114,7 @@ class GottenGeography():
         if photo.camera.gst.get_string('timezone-method') == 'lookup':
             photo.calculate_timestamp()
         modified.discard(photo)
+        get_obj('apply_button').set_sensitive(True)
     
     def load_gpx_from_file(self, uri):
         """Parse GPX data, drawing each GPS track segment on the map."""
@@ -151,6 +152,7 @@ class GottenGeography():
                 map_view.get_property('latitude'),
                 map_view.get_property('longitude'))
         self.labels.selection.emit('changed')
+        get_obj('apply_button').set_sensitive(False)
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -310,19 +312,9 @@ class GottenGeography():
         self.labels.selection.emit('changed')
         clear_all_gpx()
         
-        button = get_obj('apply_button')
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
-        
-        # This bit of magic will only show the apply button when there is
-        # at least one photo loaded that is not manually positioned.
-        # In effect, it allows you to manually drag & drop some photos,
-        # then batch-apply all the rest
-        btn_sense = lambda *x: button.set_sensitive(
-            [photo for photo in photos.values() if not photo.manual])
-        self.liststore.connect('row-changed', btn_sense)
-        self.liststore.connect('row-deleted', btn_sense)
         
         empty = get_obj('empty_photo_list')
         empty_visible = lambda l, *x: empty.set_visible(l.get_iter_first() is None)
