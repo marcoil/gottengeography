@@ -7,7 +7,6 @@
     <title type="link"><app>GottenGeography</app></title>
     <title type="text"><app>GottenGeography</app></title>
 
-    <revision pkgversion="0.1" version="1.0" date="2012-06-01" status="final"/>
     <credit type="author">
       <name>Robert Park</name>
       <email>rbpark@exolucere.ca</email>
