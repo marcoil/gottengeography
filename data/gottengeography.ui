@@ -71,10 +71,10 @@
                   <object class="GtkEntry" id="search_box">
                     <property name="can_focus">True</property>
                     <property name="has_tooltip">True</property>
-                    <property name="tooltip_text" translatable="yes">Type the name of the city you would like to view.</property>
+                    <property name="placeholder_text" translatable="yes">Type the name of the city you would like to view.</property>
                     <property name="width_chars">30</property>
                     <property name="caps_lock_warning">False</property>
-                    <property name="secondary_icon_stock">gtk-clear</property>
+                    <property name="secondary_icon_stock">gtk-find</property>
                     <property name="completion">search_completion</property>
                     <accelerator key="l" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                   </object>
