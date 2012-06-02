@@ -141,7 +141,7 @@
         </child>
         <child>
           <object class="GtkNotebook" id="photo_camera_gps">
-            <property name="can_focus">True</property>
+            <property name="can_focus">False</property>
             <property name="border_width">3</property>
             <property name="expand">False</property>
             <child>
@@ -156,7 +156,7 @@
                     <property name="border_width">0</property>
                     <child>
                       <object class="GtkScrolledWindow" id="photoscroller">
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
                         <property name="border_width">0</property>
                         <property name="hscrollbar_policy">never</property>
                         <child>
