@@ -78,12 +78,12 @@ class GottenGeographyTester(TestCase):
         link = get_obj('maps_link')
         map_view.center_on(50, 50)
         self.assertEqual(gui.actors.label.get_text(), 'N 50.00000, E 50.00000')
-        self.assertEqual(link.get_current_uri()[:45],
-            'http://maps.google.com/maps?ll=50.0,50.0&spn=')
+        self.assertEqual(link.get_uri()[:49],
+            'http://maps.google.com/maps?ll=50.0,50.0&amp;spn=')
         map_view.center_on(-10, -30)
         self.assertEqual(gui.actors.label.get_text(), 'S 10.00000, W 30.00000')
-        self.assertEqual(link.get_current_uri()[:47],
-            'http://maps.google.com/maps?ll=-10.0,-30.0&spn=')
+        self.assertEqual(link.get_uri()[:51],
+            'http://maps.google.com/maps?ll=-10.0,-30.0&amp;spn=')
         for rot in gui.actors.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
             self.assertEqual(rot, 0)
         gui.actors.animate_in(10)
@@ -397,11 +397,6 @@ S 10.00000, W 10.00000
 <span style="italic" size="smaller">2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000
 600.7m above sea level</span>""")
-        
-        self.assertRegexpMatches(
-            get_obj('maps_link').get_label(),
-            r'href="http://maps.google.com'
-        )
     
     def test_gps_math(self):
         """Test coordinate conversion functions."""
