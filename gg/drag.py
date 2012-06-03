@@ -86,7 +86,7 @@ class DragController():
         self.external_drag = True
         
         if on_map:
-          for filename in files:
+            for filename in files:
                 photo = photos.get(filename)
                 if photo is not None:
                     photo.manual = True

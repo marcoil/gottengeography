@@ -4,9 +4,9 @@
 from gi.repository import Clutter, Champlain
 
 from gg.common import photos, selected
-from gg.label import Label, layer, selection
+from gg.label import Label, selection
 
-from test import gui, get_obj, setup, teardown, random_coord
+from test import get_obj, setup, teardown, random_coord
 
 def test_creatability():
     """ChamplainLabels should exist"""

@@ -1,12 +1,12 @@
 
 """These tests cover loading and saving files."""
 
+from gg.label import selection
 from gg.photos import Photograph
-from gg.label import layer, selection
 from gg.xmlfiles import known_trackfiles, clear_all_gpx
 from gg.common import points, metadata, photos, selected, modified
 
-from test import gui, get_obj, gst, teardown, setup, DEMOFILES
+from test import gui, get_obj, teardown, setup, DEMOFILES
 
 def test_demo_data():
     """Load the demo data and ensure that we're reading it in properly."""

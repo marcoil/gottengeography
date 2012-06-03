@@ -37,15 +37,16 @@ IPTC = 'Iptc.Application2.'
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     liststore = get_obj('loaded_photos')
+    camera_info = None
+    manual = None
+    camera = None
+    label = None
+    exif = None
+    iter = None
     
     def __init__(self, filename):
         """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
-        self.label    = None
-        self.exif     = None
-        self.manual   = None
-        self.camera   = None
-        self.iter     = None
     
     def fetch_exif(self):
         """Read the EXIF data from the file."""
@@ -131,7 +132,8 @@ class Photograph(Coordinates):
                     + ['CameraSerialNumber']] + ['Exif.Photo.BodySerialNumber']
         for key in keys:
             try:
-                self.camera_info.update({key.split('.')[-1]: self.exif[key].value})
+                self.camera_info.update(
+                    {key.split('.')[-1]: self.exif[key].value})
             except KeyError:
                 pass
     
@@ -219,8 +221,10 @@ class Photograph(Coordinates):
         """Override Coordinates.pretty_geoname to read from IPTC."""
         names = []
         for key in [ 'City', 'ProvinceState', 'CountryName' ]:
-            try: names.extend(self.exif[IPTC + key].values)
-            except KeyError: pass
+            try:
+                names.extend(self.exif[IPTC + key].values)
+            except KeyError:
+                pass
         return ', '.join([name for name in names if name])
     
     def destroy(self):

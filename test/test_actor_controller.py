@@ -7,7 +7,7 @@ from gg.common import map_view
 from gg.xmlfiles import Polygon
 from gg.actor import MAP_SOURCES
 
-from test import gui, get_obj, gst, random_coord
+from test import gui, get_obj, gst
 
 def test_strings():
     """Coordinate and Google Maps links should be accurate"""
@@ -51,13 +51,13 @@ def test_polygons():
     polygon = Polygon()
     assert isinstance(polygon, Champlain.PathLayer)
     
-    point = polygon.append_point(0,0,0)
+    point = polygon.append_point(0, 0, 0)
     assert isinstance(point, Champlain.Coordinate)
     assert point.lat == 0
     assert point.lon == 0
     assert point.ele == 0
     
-    point = polygon.append_point(45,90,1000)
+    point = polygon.append_point(45, 90, 1000)
     assert isinstance(point, Champlain.Coordinate)
     assert point.lat == 45
     assert point.lon == 90

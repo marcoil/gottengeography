@@ -28,7 +28,7 @@ is used for most of the photo manipulations (eg, loading, saving, etc).
 from __future__ import division
 
 from gi.repository import GObject, Gtk, Gio, GLib
-from gi.repository import GtkChamplain, Champlain
+from gi.repository import GtkChamplain
 from os.path import join
 
 from build_info import PKG_DATA_DIR
@@ -90,10 +90,10 @@ def auto_timestamp_comparison(photo):
     
     photo.set_location(lat, lon, ele)
 
-# Util function to make it easier to bind properties
 def bind_properties(source, source_prop,
-                    target, target_prop = None,
-                    flags = GObject.BindingFlags.DEFAULT):
+                    target, target_prop=None,
+                    flags=GObject.BindingFlags.DEFAULT):
+    """Make it easier to bind properties between GObjects."""
     if target_prop is None:
         target_prop = source_prop
     return GObject.Binding(source = source,
@@ -126,7 +126,7 @@ class GSettings(Gio.Settings):
         self._ignore_key_changed = False
         self._ignore_prop_changed = True
     
-    def bind(self, key, widget, prop = None, flags=Gio.SettingsBindFlags.DEFAULT):
+    def bind(self, key, widget, prop=None, flags=Gio.SettingsBindFlags.DEFAULT):
         """Don't make me specify the default flags every time."""
         if prop is None:
             prop = key
