@@ -3,6 +3,7 @@
 
 from gg.common import Struct
 from gg.photos import Photograph
+from gg.camera import known_cameras
 
 from test import DEMOFILES, teardown, setup
 
@@ -32,7 +33,8 @@ def test_string_functions():
     photo.timestamp = None
     assert photo.pretty_time() is None
     
-    photo.camera.gst.set_string('timezone-method', 'lookup')
+    camera = known_cameras.values()[0]
+    camera.gst.set_string('timezone-method', 'lookup')
     photo.timestamp = 999999999
     assert photo.pretty_time() == '2001-09-08 07:46:39 PM'
     

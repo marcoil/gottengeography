@@ -38,8 +38,8 @@ def test_manual_timezone():
     assert photos
     camera = known_cameras.values()[0]
     camera.gst.set_string('timezone-method', 'custom')
-    camera.gst.set_int('timezone-region', 1)
-    camera.gst.set_int('timezone-cities', 43)
+    camera.gst.set_string('timezone-region', 'America')
+    camera.gst.set_string('timezone-city', 'Winnipeg')
     
     photo = photos.values()[0]
     assert photo.latitude == 53.52263

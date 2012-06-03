@@ -22,7 +22,6 @@ from pyexiv2 import ImageMetadata
 from time import mktime
 from os import stat
 
-from camera import get_camera
 from common import photos, modified, get_obj
 from common import auto_timestamp_comparison
 from gpsmath import Coordinates, float_to_rational
@@ -92,8 +91,6 @@ class Photograph(Coordinates):
         
         self.fetch_exif()
         
-        self.camera = get_camera(self)
-        
         # If we're re-loading, we'll have to hide the old label
         if self.label is not None:
             self.label.hide()
@@ -124,8 +121,18 @@ class Photograph(Coordinates):
                                            self.long_summary(),
                                            self.fetch_thumbnail(),
                                            self.timestamp])
+        
+        # Get the camera info
+        self.camera_info = {'Make': '', 'Model': ''}
+        keys = ['Exif.Image.' + key for key in self.camera_info.keys()
+                    + ['CameraSerialNumber']] + ['Exif.Photo.BodySerialNumber']
+        for key in keys:
+            try:
+                self.camera_info.update({key.split('.')[-1]: self.exif[key].value})
+            except KeyError:
+                pass
     
-    def calculate_timestamp(self):
+    def calculate_timestamp(self, offset = 0):
         """Determine the timestamp based on the currently selected timezone.
         
         This method relies on the TZ environment variable to be set before
@@ -138,7 +145,7 @@ class Photograph(Coordinates):
                 self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
         except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
-        self.timestamp += self.camera.get_offset()
+        self.timestamp += offset
         if self.label is not None:
             auto_timestamp_comparison(self)
     
@@ -215,7 +222,8 @@ class Photograph(Coordinates):
         """Agony!"""
         self.label.unmap()
         self.label.destroy()
-        self.camera.photos.discard(self)
+        if self.camera is not None:
+            self.camera.remove_photo(self)
         del photos[self.filename]
         modified.discard(self)
         self.liststore.remove(self.iter)

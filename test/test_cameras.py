@@ -9,14 +9,14 @@ def test_camera_offsets():
     assert photos
     assert known_cameras
     
-    spinbutton = known_cameras.values()[0].offset
+    camera = known_cameras.values()[0]
     photo = photos.values()[0]
     
     for delta in (1, 10, 100, 600, -711):
-        start = [photo.timestamp, spinbutton.get_value(),
-                 photo.camera.gst.get_int('offset')]
-        spinbutton.set_value(start[1] + delta)
-        end = [photo.timestamp, spinbutton.get_value(),
+        start = [photo.timestamp, camera.offset,
+                 camera.gst.get_int('offset')]
+        camera.offset += delta
+        end = [photo.timestamp, camera.offset,
                photo.camera.gst.get_int('offset')]
         
         # Check that the photo timestamp, spinbutton value, and gsettings

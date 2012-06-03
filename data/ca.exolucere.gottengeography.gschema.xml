@@ -62,9 +62,9 @@
 
 
   <schema id="ca.exolucere.gottengeography.camera">
-    <key type="s" name="make">
-      <default>'Unknown Make'</default>
-      <summary>The name of the company that manufactured the camera.</summary>
+    <key type="s" name="name">
+      <default>''</default>
+      <summary>The name of the camera.</summary>
     </key>
     <key type="s" name="model">
       <default>'Unknown Model'</default>
@@ -90,13 +90,13 @@
       <summary>The timezone that the camera was last known to be used in.</summary>
       <description>This key is only consulted if timezone-method is 'lookup'.</description>
     </key>
-    <key type="i" name="timezone-region">
-      <default>-1</default>
+    <key type="s" name="timezone-region">
+      <default>''</default>
       <summary>The custom timezone region that the user has selected, if any.</summary>
       <description>This key is only consulted if timezone-method is 'custom'. The value is an int representing the index of the continent selected manually by the user.</description>
     </key>
-    <key type="i" name="timezone-cities">
-      <default>-1</default>
+    <key type="s" name="timezone-city">
+      <default>''</default>
       <summary>The custom timezone city that the user has selected, if any.</summary>
       <description>This key is only consulted if timezone-method is 'custom'. The value is an int representing the index of the city selected manually by the user.</description>
     </key>

@@ -43,7 +43,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from photos import Photograph
-from camera import known_cameras
+from camera import Camera, CameraView, known_cameras
 from common import points, photos
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
@@ -88,7 +88,7 @@ class GottenGeography():
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
         for camera in known_cameras.values():
-            camera.set_timezone()
+            camera.timezone_handler()
         self.progressbar.hide()
         self.labels.selection.emit('changed')
         map_view.emit('animation-completed')
@@ -108,11 +108,25 @@ class GottenGeography():
         if uri not in photos:
             photo.label = self.labels.add(uri)
             photos[uri] = photo
+        
+        get_obj('empty_camera_list').hide()
+        # Create the Camera if necessary
+        camera_id = Camera.generate_id(photo.camera_info)
+        try:
+            camera = known_cameras[camera_id]
+        except KeyError:
+            camera = Camera(camera_id, photo.camera_info)
+            known_cameras[camera_id] = camera
+            camview = CameraView(camera)
+            get_obj('cameras_view').attach_next_to(
+                        camview, None, Gtk.PositionType.BOTTOM, 1, 1)
+        camera.add_photo(photo)
+        
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the
         # timezone was discovered). So call it again to get the correct value.
-        if photo.camera.gst.get_string('timezone-method') == 'lookup':
-            photo.calculate_timestamp()
+        if camera.timezone_method == 'lookup':
+            photo.calculate_timestamp(camera.offset)
         modified.discard(photo)
         get_obj('apply_button').set_sensitive(True)
     
