@@ -78,15 +78,11 @@ class Camera(GObject.GObject):
     def build_name(info):
         maker = info['Make'].capitalize()
         model = info['Model']
-        if maker is '' and model is '':
-            return _('Unknown camera')
+        if not maker + model:
+            return _('Unknown Camera')
         
-        # Sony puts its name in ALL CAPS
-        maker = maker.capitalize()
-       
         # Some makers put their name twice
-        name = model if model.startswith(maker) else maker + ' ' + model
-        return name
+        return model if model.startswith(maker) else maker + ' ' + model
     
     def __init__(self, id, info):
         """Bind self's properties to GSettings."""
@@ -104,7 +100,7 @@ class Camera(GObject.GObject):
         self.gst.bind('found-timezone', self)
         
         # If we don't have a proper name, build it from the info
-        if self.name is '':
+        if not self.name:
             self.name = Camera.build_name(info)
         
         # Get notifications when properties are changed
@@ -116,22 +112,22 @@ class Camera(GObject.GObject):
         """Store discovered timezone in GSettings."""
         self.found_timezone = found
     
-    def timezone_handler(self, object = None, gparamspec = None):
+    def timezone_handler(self, object=None, gparamspec=None):
         """Set the timezone to the chosen zone and update all photos."""
         environ['TZ'] = ''
         if self.timezone_method == 'lookup':
             # Note that this will gracefully fallback on system timezone
             # if no timezone has actually been found yet.
-            environ['TZ'] = self.gst.get_string('found-timezone')
+            environ['TZ'] = self.found_timezone
         elif self.timezone_method == 'custom' and \
-             self.timezone_region is not '' and \
-             self.timezone_city is not '':
+             self.timezone_region and \
+             self.timezone_city:
             environ['TZ'] = '/'.join([self.timezone_region, self.timezone_city])
         
         tzset()
         self.offset_handler()
     
-    def offset_handler(self, object = None, gparamstr = None):
+    def offset_handler(self, widget=None, gparamstr=None):
         """When the offset is changed, update the loaded photos."""
         for photo in self.photos:
             photo.calculate_timestamp(self.offset)
@@ -141,15 +137,15 @@ class Camera(GObject.GObject):
             photo.camera.remove_photo(photo)
         photo.camera = self
         self.photos.add(photo)
-        self.num_photos = self.num_photos + 1
+        self.num_photos += 1
     
     def remove_photo(self, photo):
         photo.camera = None
         self.photos.discard(photo)
-        self.num_photos = self.num_photos - 1
+        self.num_photos -= 1
 
 def display_offset(offset, value, add, subtract):
-    """Display the offset spinbutton as M:SS."""
+    """Display minutes and seconds in the offset GtkScale."""
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
@@ -160,20 +156,22 @@ class CameraView(Gtk.Box):
         Gtk.Box.__init__(self)
         self.camera = camera
         
-        # TODO find some kind of parent widget that can group these together
-        # to make it easier to get them and insert them into places.
         builder = Builder('camera')
         self.add(builder.get_object('camera_settings'))
         
         self.label = builder.get_object('camera_label')
-        self.set_pretty_name(camera, None)
+        self.label.set_text(camera.name)
+        
+        self.counter = builder.get_object('count_label')
+        self.set_counter_text(camera, None)
         
         # GtkScale allows the user to correct the camera's clock.
         self.scale = builder.get_object('offset')
         self.scale.connect('format-value', display_offset,
                            _('Add %dm, %ds to clock.'),
                            _('Subtract %dm, %ds from clock.'))
-            # NOTE: This has to be so verbose because of
+        
+        # NOTE: This has to be so verbose because of
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
         # Also, it seems SYNC_CREATE doesn't really work.
         self.scale.set_value(camera.offset)
@@ -195,18 +193,13 @@ class CameraView(Gtk.Box):
                                               camera, 'timezone-city')
         self.cities_combo.set_active_id(camera.timezone_city)
         
-        # TODO we're gonna need some on screen help to explain what it even
-        # means to select the method of determining the timezone.
-        # Back when this was radio button in a preferences window we had more
-        # room for verbosity, but this combobox is *so terse* that I don't
-        # really expect anybody to understand it at all.
         self.method_combo = builder.get_object('timezone_method')
         self.method_binding = bind_properties(self.method_combo, 'active-id',
                                               camera, 'timezone-method')
         self.method_combo.connect('changed', self.method_handler)
         self.method_combo.set_active_id(camera.timezone_method)
         
-        camera.connect('notify::num-photos', self.set_pretty_name)
+        camera.connect('notify::num-photos', self.set_counter_text)
         
         self.show_all()
     
@@ -222,15 +215,12 @@ class CameraView(Gtk.Box):
         for city in get_timezone(region.get_active_id(), []):
             cities.append(city, city)
     
-    def set_pretty_name(self, camera, prop):
+    def set_counter_text(self, camera, prop):
         num = self.camera.num_photos
-        num_text = _('No photos loaded.')
+        text = _('No photos loaded.')
         if num is 1:
-            num_text = _('One photo.')
+            text = _('One photo loaded.')
         elif num > 1:
-            num_text = _('%d photos.') % num 
-        text = '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'weight="heavy" size="larger"', self.camera.name,
-            'style="italic" size="smaller"', num_text)
-        self.label.set_markup(text)
+            text = _('%d photos loaded.') % num 
+        self.counter.set_text(text)
 
