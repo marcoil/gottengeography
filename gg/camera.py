@@ -30,15 +30,14 @@ taken by that camera.
 
 from __future__ import division
 
-from gi.repository import Gio, GObject, Gtk
+from gi.repository import GObject, Gtk
 from math import modf as split_float
 from gettext import gettext as _
 from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import get_obj, bind_properties, GSettings, Builder
-from version import PACKAGE
+from common import bind_properties, GSettings, Builder
 
 known_cameras = {}
 
@@ -68,30 +67,32 @@ class Camera(GObject.GObject):
     # Class methods
     @staticmethod
     def generate_id(info):
-        if info['Make'] is '' and info['Model'] is '':
-            return 'unknown_camera'
+        """Identifies a camera by serial number, make, and model.
         
-        # Turn a Nikon Wonder Cam with serial# 12345 into '12345_nikon_wonder_cam'
-        return '_'.join(sorted(info.values())).lower().replace(' ', '_')
+        The ids look like: 12345_nikon_wonder_cam
+        """
+        return '_'.join(sorted(info.values())).lower().replace(' ', '_')  \
+            or 'unknown_camera'
     
     @staticmethod
     def build_name(info):
-        maker = info['Make'].capitalize()
-        model = info['Model']
+        """Pretty prints the make and model of the camera."""
+        maker = info.get('Make', '').capitalize()
+        model = info.get('Model', '')
         if not maker + model:
             return _('Unknown Camera')
         
         # Some makers put their name twice
         return model if model.startswith(maker) else maker + ' ' + model
     
-    def __init__(self, id, info):
+    def __init__(self, camera_id, info):
         """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)
-        self.id = id
+        self.id = camera_id
         self.photos = set()
         
         # Bind properties to settings
-        self.gst = GSettings('camera', id)
+        self.gst = GSettings('camera', camera_id)
         self.gst.bind('name', self)
         self.gst.bind('offset', self)
         self.gst.bind('timezone-method', self)
@@ -112,7 +113,7 @@ class Camera(GObject.GObject):
         """Store discovered timezone in GSettings."""
         self.found_timezone = found
     
-    def timezone_handler(self, object=None, gparamspec=None):
+    def timezone_handler(self, *ignore):
         """Set the timezone to the chosen zone and update all photos."""
         environ['TZ'] = ''
         if self.timezone_method == 'lookup':
@@ -120,19 +121,20 @@ class Camera(GObject.GObject):
             # if no timezone has actually been found yet.
             environ['TZ'] = self.found_timezone
         elif self.timezone_method == 'custom' and \
-             self.timezone_region and \
-             self.timezone_city:
-            environ['TZ'] = '/'.join([self.timezone_region, self.timezone_city])
+             self.timezone_region and self.timezone_city:
+            environ['TZ'] = '/'.join(
+                [self.timezone_region, self.timezone_city])
         
         tzset()
         self.offset_handler()
     
-    def offset_handler(self, widget=None, gparamstr=None):
+    def offset_handler(self, *ignore):
         """When the offset is changed, update the loaded photos."""
         for photo in self.photos:
             photo.calculate_timestamp(self.offset)
     
     def add_photo(self, photo):
+        """Adds photo to the list of photos taken by this camera."""
         if photo.camera is not None:
             photo.camera.remove_photo(photo)
         photo.camera = self
@@ -140,6 +142,7 @@ class Camera(GObject.GObject):
         self.num_photos += 1
     
     def remove_photo(self, photo):
+        """Removes photo from the list of photos taken by this camera."""
         photo.camera = None
         self.photos.discard(photo)
         self.num_photos -= 1
@@ -159,24 +162,26 @@ class CameraView(Gtk.Box):
         builder = Builder('camera')
         self.add(builder.get_object('camera_settings'))
         
-        self.label = builder.get_object('camera_label')
-        self.label.set_text(camera.name)
+        label = builder.get_object('camera_label')
+        label.set_text(camera.name)
         
         self.counter = builder.get_object('count_label')
         self.set_counter_text(camera, None)
         
         # GtkScale allows the user to correct the camera's clock.
-        self.scale = builder.get_object('offset')
-        self.scale.connect('format-value', display_offset,
+        scale = builder.get_object('offset')
+        scale.connect('format-value', display_offset,
                            _('Add %dm, %ds to clock.'),
                            _('Subtract %dm, %ds from clock.'))
         
         # NOTE: This has to be so verbose because of
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
         # Also, it seems SYNC_CREATE doesn't really work.
-        self.scale.set_value(camera.offset)
-        self.scale_binding = bind_properties(self.scale.get_adjustment(), 'value',
-                                             camera, 'offset')
+        scale.set_value(camera.offset)
+        self.scale_binding = bind_properties(scale.get_adjustment(),
+                                             'value',
+                                             camera,
+                                             'offset')
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -186,7 +191,8 @@ class CameraView(Gtk.Box):
             self.region_combo.append(name, name)
         self.region_binding = bind_properties(self.region_combo, 'active-id',
                                               camera, 'timezone-region')
-        self.region_combo.connect('changed', self.region_handler, self.cities_combo)
+        self.region_combo.connect('changed', self.region_handler,
+                                  self.cities_combo)
         self.region_combo.set_active_id(camera.timezone_region)
         
         self.cities_binding = bind_properties(self.cities_combo, 'active-id',
@@ -215,7 +221,8 @@ class CameraView(Gtk.Box):
         for city in get_timezone(region.get_active_id(), []):
             cities.append(city, city)
     
-    def set_counter_text(self, camera, prop):
+    def set_counter_text(self, *ignore):
+        """Display to the user how many photos are loaded."""
         num = self.camera.num_photos
         text = _('No photos loaded.')
         if num is 1:

@@ -60,15 +60,13 @@ def track_color_changed(selection, polys):
     for i, polygon in enumerate(polys):
         polygon.set_stroke_color(two if i % 2 else one)
 
-def clear_all_gpx(widget=None):
+def clear_all_gpx(*ignore):
     """Forget all GPX data, start over with a clean slate."""
     for trackfile in known_trackfiles.values():
         trackfile.destroy()
     
     known_trackfiles.clear()
     points.clear()
-    metadata.omega = float('-inf')   # Final GPX track point
-    metadata.alpha = float('inf')    # Initial GPX track point
 
 
 class Polygon(Champlain.PathLayer):
@@ -183,17 +181,18 @@ class TrackFile(Coordinates):
         self.latitude = self.tracks[self.alpha].lat
         self.longitude = self.tracks[self.alpha].lon
         
-        # TODO find some kind of parent widget that can group these together
-        # to make it easier to get them and insert them into places.
         builder = Builder('trackfile')
-        self.colorpicker = builder.get_object('colorpicker')
-        self.trash = builder.get_object('unload')
         self.label = builder.get_object('trackfile_label')
-        
         self.label.set_text(basename(filename))
-        self.colorpicker.set_title(basename(filename))
-        self.colorpicker.connect('color-set', track_color_changed, self.polygons)
+        
+        self.trash = builder.get_object('unload')
         self.trash.connect('clicked', self.destroy)
+        
+        self.colorpicker = builder.get_object('colorpicker')
+        self.colorpicker.set_title(basename(filename))
+        self.colorpicker.connect('color-set',
+                                 track_color_changed,
+                                 self.polygons)
         
         get_obj('trackfiles_view').attach_next_to(
             builder.get_object('trackfile_settings'), None, BOTTOM, 1, 1)
@@ -216,7 +215,7 @@ class TrackFile(Coordinates):
         return False
     
     def element_end(self, name, state):
-        """Occasionally redraw the screen so the user can see what's happening."""
+        """Occasionally redraw the screen so the user can see activity."""
         if clock() - self.clock > .2:
             self.progress.pulse()
             while Gtk.events_pending():
@@ -254,7 +253,7 @@ class GPXFile(TrackFile):
         TrackFile.__init__(self, filename, 'gpx', ['trkseg', 'trkpt'])
     
     def element_start(self, name, attributes):
-        """Adds a new polygon for each new segment, and watches for track points."""
+        """Adds new polygon for each segment, and watches for track points."""
         if name == 'trkseg':
             polygon = Polygon()
             map_view.add_layer(polygon)
@@ -285,7 +284,8 @@ class GPXFile(TrackFile):
             # Better to just give up on this track point and go to the next.
             return
         
-        self.tracks[timestamp] = self.append(lat, lon, float(state.get('ele', 0.0)))
+        self.tracks[timestamp] = self.append(lat, lon,
+                                             float(state.get('ele', 0.0)))
         
         TrackFile.element_end(self, name, state)
 
@@ -301,7 +301,7 @@ class KMLFile(TrackFile):
                            ['gx:Track', 'when', 'gx:coord'])
     
     def element_start(self, name, attributes):
-        """Adds a new polygon for each new gx:Track, and watches for location data."""
+        """Adds new polygon for each gx:Track, and watches for location data."""
         if name == 'gx:Track':
             polygon = Polygon()
             map_view.add_layer(polygon)

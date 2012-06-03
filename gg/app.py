@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-from version import APPNAME, PACKAGE, VERSION
+from version import APPNAME, PACKAGE
 from build_info import PKG_DATA_DIR, REVISION
 
 import gettext
@@ -36,19 +36,17 @@ from gi.repository import Champlain, Pango
 from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
-from os import system
 from sys import argv
 
-# "If I have seen a little further it is by standing on the shoulders of Giants."
+# If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
 
 from label import selection
 from photos import Photograph
-from camera import Camera, CameraView, known_cameras
-from common import points, photos
 from common import metadata, selected, modified
-from common import Struct, get_obj, gst, map_view
+from common import Struct, get_obj, gst, map_view, photos
 from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
+from camera import Camera, CameraView, known_cameras
 
 from drag import DragController
 from actor import ActorController
@@ -58,6 +56,8 @@ from navigation import NavigationController
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 
+CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
+SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
 class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
@@ -78,8 +78,10 @@ class GottenGeography():
         for i, name in enumerate(files, 1):
             self.redraw_interface(i / total, basename(name))
             try:
-                try:            self.load_img_from_file(name)
-                except IOError: self.load_gpx_from_file(name)
+                try:
+                    self.load_img_from_file(name)
+                except IOError:
+                    self.load_gpx_from_file(name)
             except IOError:
                 invalid.append(basename(name))
         if len(invalid) > 0:
@@ -207,7 +209,7 @@ class GottenGeography():
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
-    def confirm_quit_dialog(self, *args):
+    def confirm_quit_dialog(self, *ignore):
         """Teardown method, inform user of unsaved files, if any."""
         if len(modified) == 0:
             Gtk.main_quit()
@@ -217,8 +219,10 @@ class GottenGeography():
         response = dialog.run()
         dialog.hide()
         self.redraw_interface()
-        if response == Gtk.ResponseType.ACCEPT: self.save_all_files()
-        if response != Gtk.ResponseType.CANCEL: Gtk.main_quit()
+        if response == Gtk.ResponseType.ACCEPT:
+            self.save_all_files()
+        if response != Gtk.ResponseType.CANCEL:
+            Gtk.main_quit()
         return True
     
 ################################################################################
@@ -348,9 +352,12 @@ class GottenGeography():
         some dialogs while things are processing in the background. Won't
         modify the progressbar if called with no arguments.
         """
-        if fraction is not None: self.progressbar.set_fraction(fraction)
-        if text is not None:     self.progressbar.set_text(str(text))
-        while Gtk.events_pending(): Gtk.main_iteration()
+        if fraction is not None:
+            self.progressbar.set_fraction(fraction)
+        if text is not None:
+            self.progressbar.set_text(str(text))
+        while Gtk.events_pending():
+            Gtk.main_iteration()
     
     def dismiss_message(self):
         """Responsible for hiding the GtkInfoBar after a timeout."""
@@ -379,30 +386,27 @@ class GottenGeography():
     def photoview_pressed(self, tree, event):
         """Allow the user to drag photos without losing the selection."""
         target = tree.get_path_at_pos(int(event.x), int(event.y))
-        selection = tree.get_selection()
-        if (target
-            and event.type == Gdk.EventType.BUTTON_PRESS
-            and not (event.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK))
-            and selection.path_is_selected(target[0])):
-                # disable selection
-                selection.set_select_function(lambda *ignore: False, None)
-                self.defer_select = target[0]
+        if (target and event.type == Gdk.EventType.BUTTON_PRESS
+                   and not (event.state & (CONTROL_MASK|SHIFT_MASK))
+                   and selection.path_is_selected(target[0])):
+            # disable selection
+            selection.set_select_function(lambda *ignore: False, None)
+            self.defer_select = target[0]
      
     def photoview_released(self, tree, event):
         """Restore normal selection behavior while not dragging."""
-        tree.get_selection().set_select_function(lambda *ignore: True, None)
-        
+        selection.set_select_function(lambda *ignore: True, None)
         target = tree.get_path_at_pos(int(event.x), int(event.y))
-        if (self.defer_select and target
-            and self.defer_select == target[0]
-            and not (event.x == 0 and event.y == 0)): # certain drag and drop
-                tree.set_cursor(target[0], target[1], False)
+        if (target and self.defer_select
+                   and self.defer_select == target[0]
+                   and not (event.x == 0 and event.y == 0)): # certain drag&drop
+            tree.set_cursor(target[0], target[1], False)
     
     def main(self, anim=True):
         """Animate the crosshair and begin user interaction."""
         if argv[1:]:
             self.open_files([abspath(f) for f in argv[1:]])
-            anim=False
+            anim = False
         self.actors.animate_in(anim)
         Gtk.main()
 

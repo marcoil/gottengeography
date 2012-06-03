@@ -45,13 +45,13 @@ def remember_location(view):
         history.append(location)
     gst.set_history(history[-30:])
 
-def go_back(button, view):
+def go_back(*ignore):
     """Return the map view to where the user last set it."""
     history = list(gst.get('history'))
     lat, lon, zoom = history.pop()
     if valid_coords(lat, lon):
-        view.set_zoom_level(zoom)
-        view.center_on(lat, lon)
+        map_view.set_zoom_level(zoom)
+        map_view.center_on(lat, lon)
     if len(history) > 1:
         gst.set_history(history)
     else:
@@ -83,7 +83,7 @@ class NavigationController():
         zoom_out_button = get_obj('zoom_out_button')
         zoom_out_button.connect('clicked', perform_zoom, map_view.zoom_out)
         zoom_in_button.connect('clicked', perform_zoom, map_view.zoom_in)
-        back_button.connect('clicked', go_back, map_view)
+        back_button.connect('clicked', go_back)
         
         for key in ['latitude', 'longitude', 'zoom-level']:
             gst.bind(key, map_view, key)

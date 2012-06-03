@@ -28,7 +28,7 @@ selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 map_view.add_layer(layer)
 
 
-def update_highlights(selection):
+def update_highlights(*ignore):
     """Ensure only the selected labels are highlighted."""
     selection_exists = selection.count_selected_rows() > 0
     selected.clear()
@@ -56,13 +56,15 @@ def clicked(label, event):
     photo = photos[label.get_name()]
     assert photo.filename == label.get_name()
     if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
-        if label.get_selected(): selection.unselect_iter(photo.iter)
-        else:                    selection.select_iter(photo.iter)
+        if label.get_selected():
+            selection.unselect_iter(photo.iter)
+        else:
+            selection.select_iter(photo.iter)
     else:
         selection.unselect_all()
         selection.select_iter(photo.iter)
 
-def drag_finish(label, event):
+def drag_finish(label, *ignore):
     """Update photos with new locations after photos have been dragged."""
     photo = photos[label.get_name()]
     photo.set_location(label.get_latitude(), label.get_longitude())
@@ -76,8 +78,9 @@ def hover(label, event, factor):
 
 
 class Label(Champlain.Label):
+    """Extend Champlain.Label to add itself to the map."""
+    
     def __init__(self, name):
-        """Create a new ChamplainLabel and add it to the map."""
         Champlain.Label.__init__(self)
         self.set_name(name)
         self.set_text(basename(name))
