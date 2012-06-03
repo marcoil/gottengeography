@@ -111,16 +111,14 @@ class GottenGeography():
         
         get_obj('empty_camera_list').hide()
         # Create the Camera if necessary
-        camera_id = Camera.generate_id(photo.camera_info)
-        try:
-            camera = known_cameras[camera_id]
-        except KeyError:
-            camera = Camera(camera_id, photo.camera_info)
-            known_cameras[camera_id] = camera
+        cam_id = Camera.generate_id(photo.camera_info)
+        camera = known_cameras.get(cam_id) or Camera(cam_id, photo.camera_info)
+        camera.add_photo(photo)
+        if cam_id not in known_cameras:
+            known_cameras[cam_id] = camera
             camview = CameraView(camera)
             get_obj('cameras_view').attach_next_to(
-                        camview, None, Gtk.PositionType.BOTTOM, 1, 1)
-        camera.add_photo(photo)
+                camview, None, Gtk.PositionType.BOTTOM, 1, 1)
         
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the
