@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,23 +27,23 @@ from random import random
 from math import floor
 from time import tzset
 
-import app
-from photos import Photograph
-from common import GSettings, Struct, map_view
-from common import points, photos, selected, modified
-from xmlfiles import known_trackfiles, make_clutter_color
-from xmlfiles import Polygon, clear_all_gpx
-from gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
-from gpsmath import Coordinates, valid_coords
-from navigation import move_by_arrow_keys
-from build_info import PKG_DATA_DIR
-from camera import known_cameras
-from actor import MAP_SOURCES
-from version import PACKAGE
+import gg.app
+from gg.photos import Photograph
+from gg.common import GSettings, Struct, map_view
+from gg.common import points, photos, selected, modified
+from gg.xmlfiles import known_trackfiles, make_clutter_color
+from gg.xmlfiles import Polygon, clear_all_gpx
+from gg.gpsmath import decimal_to_dms, dms_to_decimal, float_to_rational
+from gg.gpsmath import Coordinates, valid_coords
+from gg.navigation import move_by_arrow_keys
+from gg.build_info import PKG_DATA_DIR
+from gg.camera import known_cameras
+from gg.actor import MAP_SOURCES
+from gg.version import PACKAGE
 
-gui = app.GottenGeography()
-get_obj = app.get_obj
-gst_get = app.gst.get
+gui = gg.app.GottenGeography()
+get_obj = gg.app.get_obj
+gst_get = gg.app.gst.get
 
 # Disable animations so tests pass more quickly.
 gui.search.slide_to = map_view.center_on
@@ -70,8 +71,8 @@ class GottenGeographyTester(TestCase):
         selected.clear()
         gui.liststore.clear()
         system('git checkout demo')
-        for key in app.gst.list_keys():
-            app.gst.reset(key)
+        for key in gg.app.gst.list_keys():
+            gg.app.gst.reset(key)
     
     def test_actor_controller(self):
         """Make sure the actors are behaving."""
@@ -167,17 +168,17 @@ class GottenGeographyTester(TestCase):
     
     def test_gsettings(self):
         """Make sure that GSettings is storing data correctly."""
-        app.gst.reset('history')
+        gg.app.gst.reset('history')
         self.assertEqual(gst_get('history')[0], (34.5, 15.8, 2))
         map_view.center_on(12.3, 45.6)
-        self.assertEqual(app.gst.get_double('latitude'), 12.3)
-        self.assertEqual(app.gst.get_double('longitude'), 45.6)
+        self.assertEqual(gg.app.gst.get_double('latitude'), 12.3)
+        self.assertEqual(gg.app.gst.get_double('longitude'), 45.6)
         map_view.zoom_in()
         map_view.emit('realize')
         self.assertEqual(list(gst_get('history')),
                          [(34.5, 15.8, 2), (12.3, 45.6, 3)])
         map_view.set_map_source(MAP_SOURCES['osm-cyclemap'])
-        self.assertEqual(app.gst.get_string('map-source-id'), 'osm-cyclemap')
+        self.assertEqual(gg.app.gst.get_string('map-source-id'), 'osm-cyclemap')
     
     def test_camera_offsets(self):
         """Make sure that camera offsets function correctly."""
@@ -230,8 +231,8 @@ class GottenGeographyTester(TestCase):
         """Load the demo data and ensure that we're reading it in properly."""
         self.assertEqual(len(points), 0)
         self.assertEqual(len(known_trackfiles), 0)
-        self.assertEqual(app.metadata.alpha, float('inf'))
-        self.assertEqual(app.metadata.omega, float('-inf'))
+        self.assertEqual(gg.app.metadata.alpha, float('inf'))
+        self.assertEqual(gg.app.metadata.omega, float('-inf'))
         
         # No buttons should be sensitive yet because nothing's loaded.
         buttons = {}
@@ -301,8 +302,8 @@ class GottenGeographyTester(TestCase):
         # Check that the GPX is loaded
         self.assertEqual(len(points), 374)
         self.assertEqual(len(known_trackfiles), 1)
-        self.assertEqual(app.metadata.alpha, 1287259751)
-        self.assertEqual(app.metadata.omega, 1287260756)
+        self.assertEqual(gg.app.metadata.alpha, 1287259751)
+        self.assertEqual(gg.app.metadata.omega, 1287260756)
         
         # The save button should be sensitive because loading GPX modifies
         # photos, but nothing is selected so the others are insensitive.
