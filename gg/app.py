@@ -42,6 +42,7 @@ from sys import argv
 # "If I have seen a little further it is by standing on the shoulders of Giants."
 #                                    --- Isaac Newton
 
+from label import selection
 from photos import Photograph
 from camera import Camera, CameraView, known_cameras
 from common import points, photos
@@ -51,7 +52,6 @@ from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
 
 from drag import DragController
 from actor import ActorController
-from label import LabelController
 from search import SearchController
 from navigation import NavigationController
 
@@ -90,7 +90,7 @@ class GottenGeography():
         for camera in known_cameras.values():
             camera.timezone_handler()
         self.progressbar.hide()
-        self.labels.selection.emit('changed')
+        selection.emit('changed')
         map_view.emit('animation-completed')
     
     def load_img_from_file(self, uri):
@@ -106,7 +106,6 @@ class GottenGeography():
         photo = photos.get(uri) or Photograph(uri)
         photo.read()
         if uri not in photos:
-            photo.label = self.labels.add(uri)
             photos[uri] = photo
         
         get_obj('empty_camera_list').hide()
@@ -163,7 +162,7 @@ class GottenGeography():
             photo.set_location(
                 map_view.get_property('latitude'),
                 map_view.get_property('longitude'))
-        self.labels.selection.emit('changed')
+        selection.emit('changed')
         get_obj('apply_button').set_sensitive(False)
     
     def save_all_files(self, widget=None):
@@ -177,7 +176,7 @@ class GottenGeography():
             except Exception as inst:
                 self.status_message(str(inst))
         self.progressbar.hide()
-        self.labels.selection.emit('changed')
+        selection.emit('changed')
     
     def jump_to_photo(self, button):
         """Center on the first selected photo."""
@@ -270,7 +269,6 @@ class GottenGeography():
         self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
         self.search    = SearchController()
-        self.labels    = LabelController()
         self.actors    = ActorController()
         
         about = get_obj('about')
@@ -321,7 +319,7 @@ class GottenGeography():
         accel.connect(Gdk.keyval_from_name('q'),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
-        self.labels.selection.emit('changed')
+        selection.emit('changed')
         clear_all_gpx()
         
         gst.bind('left-pane-page', get_obj('photo_camera_gps'), 'page')

@@ -4,6 +4,7 @@
 from gi.repository import Clutter, Champlain
 
 from gg.common import photos, selected
+from gg.label import Label, layer, selection
 
 from test import gui, get_obj, setup, teardown, random_coord
 
@@ -12,9 +13,11 @@ def test_creatability():
     lat = random_coord(90)
     lon = random_coord(180)
     
-    label = gui.labels.add('foobar')
+    label = Label('/path/to/foobar')
     label.set_location(lat, lon)
     assert isinstance(label, Champlain.Label)
+    assert label.get_name() == '/path/to/foobar'
+    assert label.get_text() == 'foobar'
     
     assert label.get_latitude() == lat
     assert label.get_longitude() == lon
@@ -37,8 +40,8 @@ def test_clickability():
         for button in ('save', 'revert', 'close'):
             assert get_obj(button + '_button').get_sensitive()
         
-        assert gui.labels.selection.iter_is_selected(photo.iter)
-        assert gui.labels.selection.count_selected_rows() == 1
+        assert selection.iter_is_selected(photo.iter)
+        assert selection.count_selected_rows() == 1
         assert photo in selected
         assert len(selected) == 1
         assert photo.label.get_scale() == (1.1, 1.1)
@@ -49,7 +52,7 @@ def test_clickability():
         for other in photos.values():
             if other.filename == photo.filename:
                 continue
-            assert not gui.labels.selection.iter_is_selected(other.iter)
+            assert not selection.iter_is_selected(other.iter)
             assert other not in selected
             assert other.label.get_scale() == (1, 1)
             assert not other.label.get_selected()

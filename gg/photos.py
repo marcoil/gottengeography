@@ -27,6 +27,7 @@ from common import auto_timestamp_comparison
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
 from territories import get_state, get_country
+from label import Label
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -92,7 +93,9 @@ class Photograph(Coordinates):
         self.fetch_exif()
         
         # If we're re-loading, we'll have to hide the old label
-        if self.label is not None:
+        if self.label is None:
+            self.label = Label(self.filename)
+        else:
             self.label.hide()
         
         self.calculate_timestamp()
@@ -176,8 +179,9 @@ class Photograph(Coordinates):
     def modify_summary(self):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
-        self.liststore.set_value(self.iter, 1,
-            ('<b>%s</b>' % self.long_summary()))
+        if self.iter is not None:
+            self.liststore.set_value(self.iter, 1,
+                ('<b>%s</b>' % self.long_summary()))
     
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""
@@ -208,7 +212,8 @@ class Photograph(Coordinates):
         self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
         self.exif[IPTC + 'CountryCode']   = [country or '']
         self.timezone                     = tz.strip()
-        self.camera.set_found_timezone(self.timezone)
+        if self.camera is not None:
+            self.camera.set_found_timezone(self.timezone)
     
     def pretty_geoname(self):
         """Override Coordinates.pretty_geoname to read from IPTC."""

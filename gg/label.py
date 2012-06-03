@@ -22,6 +22,12 @@ from os.path import basename
 
 from common import get_obj, map_view, selected, modified, photos
 
+layer = Champlain.MarkerLayer()
+selection = get_obj('photos_view').get_selection()
+selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+map_view.add_layer(layer)
+
+
 def update_highlights(selection):
     """Ensure only the selected labels are highlighted."""
     selection_exists = selection.count_selected_rows() > 0
@@ -40,7 +46,7 @@ def selection_sensitivity(selection, close, save, revert, jump):
     save.set_sensitive(len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
-def clicked(label, event, selection):
+def clicked(label, event):
     """When a ChamplainLabel is clicked, select it in the GtkListStore.
     
     The interface defined by this method is consistent with the behavior of
@@ -56,7 +62,7 @@ def clicked(label, event, selection):
         selection.unselect_all()
         selection.select_iter(photo.iter)
 
-def drag_finish(label, event, selection):
+def drag_finish(label, event):
     """Update photos with new locations after photos have been dragged."""
     photo = photos[label.get_name()]
     photo.set_location(label.get_latitude(), label.get_longitude())
@@ -68,34 +74,25 @@ def hover(label, event, factor):
     """Scale a ChamplainLabel by the given factor."""
     label.set_scale(*[scale * factor for scale in label.get_scale()])
 
-
-class LabelController():
-    """Control the behavior and creation of ChamplainLabels."""
-    
-    def __init__(self):
-        self.selection  = get_obj('photos_view').get_selection()
-        self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.layer = Champlain.MarkerLayer()
-        map_view.add_layer(self.layer)
-        
-        self.selection.connect('changed', update_highlights)
-        self.selection.connect('changed', selection_sensitivity,
-            *[get_obj(name) for name in ('close_button',
-                'save_button', 'revert_button', 'jump_button')])
-    
-    def add(self, name):
+class Label(Champlain.Label):
+    def __init__(self, name):
         """Create a new ChamplainLabel and add it to the map."""
-        label = Champlain.Label()
-        label.set_name(name)
-        label.set_text(basename(name))
-        label.set_selectable(True)
-        label.set_draggable(True)
-        label.set_property('reactive', True)
-        label.hide()
-        label.connect('enter-event', hover, 1.05)
-        label.connect('leave-event', hover, 1/1.05)
-        label.connect('drag-finish', drag_finish, self.selection)
-        label.connect('button-press', clicked, self.selection)
-        self.layer.add_marker(label)
-        return label
+        Champlain.Label.__init__(self)
+        self.set_name(name)
+        self.set_text(basename(name))
+        self.set_selectable(True)
+        self.set_draggable(True)
+        self.set_property('reactive', True)
+        self.hide()
+        self.connect('enter-event', hover, 1.05)
+        self.connect('leave-event', hover, 1/1.05)
+        self.connect('drag-finish', drag_finish)
+        self.connect('button-press', clicked)
+        layer.add_marker(self)
+
+
+selection.connect('changed', update_highlights)
+selection.connect('changed', selection_sensitivity,
+    *[get_obj(name) for name in ('close_button',
+        'save_button', 'revert_button', 'jump_button')])
 

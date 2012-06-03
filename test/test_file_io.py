@@ -2,6 +2,7 @@
 """These tests cover loading and saving files."""
 
 from gg.photos import Photograph
+from gg.label import layer, selection
 from gg.xmlfiles import known_trackfiles, clear_all_gpx
 from gg.common import points, metadata, photos, selected, modified
 
@@ -14,7 +15,7 @@ def test_demo_data():
     assert len(known_trackfiles) == 0
     assert metadata.alpha == float('inf')
     assert metadata.omega == float('-inf')
-    gui.labels.selection.emit('changed')
+    selection.emit('changed')
     # No buttons should be sensitive yet because nothing's loaded.
     buttons = {}
     for button in ('jump', 'save', 'revert', 'close'):
@@ -79,7 +80,7 @@ def test_demo_data():
     else:
         assert False # Because it should have raised the exception
     gui.open_files(gpx)
-    gui.labels.selection.emit('changed')
+    selection.emit('changed')
     
     # Check that the GPX is loaded
     assert len(points) == 374
@@ -115,7 +116,7 @@ def test_demo_data():
     for button in ('save', 'revert'):
         assert not buttons[button].get_sensitive()
     
-    gui.labels.selection.select_all()
+    selection.select_all()
     assert len(selected) == 6
     for button in ('save', 'revert'):
         assert not buttons[button].get_sensitive()

@@ -7,10 +7,10 @@ from random import random
 from time import tzset
 
 from gg.app import GottenGeography, get_obj, gst
-from gg.camera import known_cameras
 from gg.common import photos, modified, selected, map_view
 from gg.xmlfiles import clear_all_gpx
 from gg.build_info import PKG_DATA_DIR
+from gg.camera import known_cameras
 
 DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
              for f in listdir('./demo/')]
@@ -38,7 +38,7 @@ def teardown():
     for camera in known_cameras.values():
         camera.photos.clear()
     for photo in photos.values():
-        gui.labels.layer.remove_marker(photo.label)
+        photo.destroy()
     photos.clear()
     modified.clear()
     selected.clear()
