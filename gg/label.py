@@ -42,7 +42,7 @@ def selection_sensitivity(selection, close, save, revert, jump):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
     close.set_sensitive(sensitive)
-    jump.set_sensitive(sensitive)
+    jump.set_sensitive([photo for photo in selected if photo.valid_coords()])
     save.set_sensitive(len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
@@ -73,6 +73,7 @@ def drag_finish(label, event):
 def hover(label, event, factor):
     """Scale a ChamplainLabel by the given factor."""
     label.set_scale(*[scale * factor for scale in label.get_scale()])
+
 
 class Label(Champlain.Label):
     def __init__(self, name):
