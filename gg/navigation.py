@@ -19,7 +19,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import get_obj, gst, map_view
+from common import Widgets, gst, map_view
 from gpsmath import Coordinates, valid_coords
 from version import APPNAME
 
@@ -78,9 +78,9 @@ class NavigationController():
     def __init__(self):
         """Start the map at the previous location, and connect signals."""
         perform_zoom    = lambda button, zoom: zoom()
-        back_button     = get_obj('back_button')
-        zoom_in_button  = get_obj('zoom_in_button')
-        zoom_out_button = get_obj('zoom_out_button')
+        back_button     = Widgets.back_button
+        zoom_in_button  = Widgets.zoom_in_button
+        zoom_out_button = Widgets.zoom_out_button
         zoom_out_button.connect('clicked', perform_zoom, map_view.zoom_out)
         zoom_in_button.connect('clicked', perform_zoom, map_view.zoom_in)
         back_button.connect('clicked', go_back)
@@ -89,8 +89,7 @@ class NavigationController():
             gst.bind(key, map_view, key)
         
         accel = Gtk.AccelGroup()
-        window = get_obj('main')
-        window.add_accel_group(accel)
+        Widgets.main.add_accel_group(accel)
         for key in [ 'Left', 'Right', 'Up', 'Down' ]:
             accel.connect(Gdk.keyval_from_name(key),
                 Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
@@ -99,6 +98,6 @@ class NavigationController():
             zoom_in_button.set_sensitive, zoom_out_button.set_sensitive)
         map_view.connect('realize', remember_location)
         map_view.connect('animation-completed', set_window_title,
-            window.set_title, Coordinates())
+            Widgets.main.set_title, Coordinates())
         map_view.emit('animation-completed')
 

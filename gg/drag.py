@@ -37,7 +37,7 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from common import Struct, get_obj, map_view, selected, modified
+from common import Struct, Widgets, map_view, selected, modified
 from photos import Photograph
 
 class DragController():
@@ -45,19 +45,19 @@ class DragController():
     
     def __init__(self, open_files):
         # Drag source definitons
-        photos_view = get_obj('photos_view')
+        photos_view = Widgets.photos_view
         photos_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,
             [], Gdk.DragAction.COPY)
         photos_view.drag_source_add_text_targets()
         photos_view.connect('drag-data-get', self.photo_drag_start)
         
         # Drag destination defintions
-        notebook = get_obj('photo_camera_gps')
+        notebook = Widgets.photo_camera_gps
         notebook.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         notebook.drag_dest_add_text_targets()
         notebook.connect('drag-data-received', self.photo_drag_end, False)
         
-        container = get_obj('map_container')
+        container = Widgets.map_container
         container.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         container.drag_dest_add_text_targets()
         container.connect('drag-data-received', self.photo_drag_end, True)

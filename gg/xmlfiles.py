@@ -27,13 +27,11 @@ from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import GSettings, Builder, gst, get_obj
+from common import GSettings, Builder, Widgets, gst
 from common import map_view, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
-
-empty_trackfile_label = get_obj('empty_trackfile_list')
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
@@ -166,11 +164,11 @@ class TrackFile(Coordinates):
     def update_range():
         """Ensure that TrackFile.range contains the correct info."""
         if not TrackFile.instances:
-            empty_trackfile_label.show()
+            Widgets.empty_trackfile_list.show()
             TrackFile.range[0] = float('inf')
             TrackFile.range[1] = float('-inf')
         else:
-            empty_trackfile_label.hide()
+            Widgets.empty_trackfile_list.hide()
             files = TrackFile.instances.values()
             TrackFile.range[0] = min([gpx.alpha for gpx in files])
             TrackFile.range[1] = max([gpx.omega for gpx in files])
@@ -186,7 +184,7 @@ class TrackFile(Coordinates):
     
     def __init__(self, filename, root, watch):
         self.filename = filename
-        self.progress = get_obj('progressbar')
+        self.progress = Widgets.progressbar
         self.clock    = clock()
         self.append   = None
         self.tracks   = {}
@@ -203,20 +201,20 @@ class TrackFile(Coordinates):
         self.longitude = self.tracks[self.alpha].lon
         
         builder = Builder('trackfile')
-        self.label = builder.get_object('trackfile_label')
+        self.label = builder.trackfile_label
         self.label.set_text(basename(filename))
         
-        self.trash = builder.get_object('unload')
+        self.trash = builder.unload
         self.trash.connect('clicked', self.destroy)
         
-        self.colorpicker = builder.get_object('colorpicker')
+        self.colorpicker = builder.colorpicker
         self.colorpicker.set_title(basename(filename))
         self.colorpicker.connect('color-set',
                                  track_color_changed,
                                  self.polygons)
         
-        get_obj('trackfiles_view').attach_next_to(
-            builder.get_object('trackfile_settings'), None, BOTTOM, 1, 1)
+        Widgets.trackfiles_view.attach_next_to(
+            builder.trackfile_settings, None, BOTTOM, 1, 1)
         
         self.gst = GSettings('trackfile', basename(filename))
         

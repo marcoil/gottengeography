@@ -20,10 +20,10 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from os.path import basename
 
-from common import get_obj, map_view, selected, modified
+from common import Widgets, map_view, selected, modified
 
 layer = Champlain.MarkerLayer()
-selection = get_obj('photos_view').get_selection()
+selection = Widgets.photos_view.get_selection()
 selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 map_view.add_layer(layer)
 
@@ -107,6 +107,5 @@ class Label(Champlain.Label):
 
 selection.connect('changed', update_highlights)
 selection.connect('changed', selection_sensitivity,
-    *[get_obj(name) for name in ('close_button',
-        'save_button', 'revert_button', 'jump_button')])
+    *[Widgets[b + '_button'] for b in ('close', 'save', 'revert', 'jump')])
 

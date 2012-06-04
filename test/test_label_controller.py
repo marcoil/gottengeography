@@ -3,11 +3,11 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import selected
+from gg.common import Widgets, selected
 from gg.photos import Photograph
 from gg.label import Label, selection
 
-from test import get_obj, setup, teardown, random_coord
+from test import setup, teardown, random_coord
 
 def test_creatability():
     """ChamplainLabels should exist"""
@@ -39,7 +39,7 @@ def test_clickability():
     for photo in Photograph.instances.values():
         photo.label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
-            assert get_obj(button + '_button').get_sensitive()
+            assert Widgets[button + '_button'].get_sensitive()
         
         assert selection.iter_is_selected(photo.iter)
         assert selection.count_selected_rows() == 1

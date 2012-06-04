@@ -4,9 +4,9 @@
 from gg.label import selection
 from gg.photos import Photograph
 from gg.xmlfiles import TrackFile, clear_all_gpx
-from gg.common import points, selected, modified
+from gg.common import Widgets, points, selected, modified
 
-from test import gui, get_obj, teardown, setup, DEMOFILES
+from test import gui, teardown, setup, DEMOFILES
 
 def test_demo_data():
     """Load the demo data and ensure that we're reading it in properly."""
@@ -19,7 +19,7 @@ def test_demo_data():
     # No buttons should be sensitive yet because nothing's loaded.
     buttons = {}
     for button in ('jump', 'save', 'revert', 'close'):
-        buttons[button] = get_obj(button + '_button')
+        buttons[button] = Widgets[button + '_button']
         assert not buttons[button].get_sensitive()
     
     # Load only the photos first.

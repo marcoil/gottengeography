@@ -3,15 +3,15 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import map_view
+from gg.common import Widgets, map_view
 from gg.xmlfiles import Polygon
 from gg.actor import MAP_SOURCES
 
-from test import gui, get_obj, gst
+from test import gui, gst
 
 def test_strings():
     """Coordinate and Google Maps links should be accurate"""
-    link = get_obj('maps_link')
+    link = Widgets.maps_link
     
     map_view.center_on(50, 50)
     assert gui.actors.label.get_text() == 'N 50.00000, E 50.00000'
@@ -40,7 +40,7 @@ def test_map_sources():
     gst.set_string('map-source-id', 'mff-relief')
     assert map_view.get_map_source().get_id() == 'mff-relief'
     
-    menu = get_obj('map_source_menu').get_active().get_group()
+    menu = Widgets.map_source_menu.get_active().get_group()
     assert menu
     for menu_item in menu:
         menu_item.set_active(True)

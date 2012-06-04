@@ -24,7 +24,7 @@ from os import stat
 
 from label import Label
 from xmlfiles import TrackFile
-from common import points, modified, get_obj
+from common import Widgets, points, modified
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
 from territories import get_state, get_country
@@ -73,7 +73,7 @@ def auto_timestamp_comparison(photo):
 
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
-    liststore = get_obj('loaded_photos')
+    liststore = Widgets.loaded_photos
     instances = {}
     camera_info = None
     manual = None
@@ -165,8 +165,8 @@ class Photograph(Coordinates):
             pass
         
         if self.iter is None:
-            self.iter = self.liststore.append()
-        self.liststore.set_row(self.iter, [self.filename,
+            self.iter = Widgets.loaded_photos.append()
+        Widgets.loaded_photos.set_row(self.iter, [self.filename,
                                            self.long_summary(),
                                            self.fetch_thumbnail(),
                                            self.timestamp])
@@ -211,7 +211,7 @@ class Photograph(Coordinates):
         self.exif[GPS + 'MapDatum']     = 'WGS-84'
         self.exif.write()
         modified.discard(self)
-        self.liststore.set_value(self.iter, 1, self.long_summary())
+        Widgets.loaded_photos.set_value(self.iter, 1, self.long_summary())
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
@@ -227,7 +227,7 @@ class Photograph(Coordinates):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
-            self.liststore.set_value(self.iter, 1,
+            Widgets.loaded_photos.set_value(self.iter, 1,
                 ('<b>%s</b>' % self.long_summary()))
     
     def position_label(self):
@@ -273,5 +273,5 @@ class Photograph(Coordinates):
         del Photograph.instances[self.filename]
         modified.discard(self)
         if self.iter:
-            self.liststore.remove(self.iter)
+            Widgets.loaded_photos.remove(self.iter)
 

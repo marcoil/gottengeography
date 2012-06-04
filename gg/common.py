@@ -59,6 +59,16 @@ class Builder(Gtk.Builder):
         
         self.set_translation_domain(PACKAGE)
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
+    
+    def __getattr__(self, widget):
+        """Make calls to Gtk.Builder().get_object() more pythonic."""
+        built = self.get_object(widget)
+        if built:
+            return built
+        else:
+            raise AttributeError('Unknown widget: ' + widget)
+    
+    __getitem__ = __getattr__
 
 
 class GSettings(Gio.Settings):
@@ -120,7 +130,7 @@ class ChamplainEmbedder(GtkChamplain.Embed):
     
     def __init__(self):
         GtkChamplain.Embed.__init__(self)
-        get_obj('map_container').add(self)
+        Widgets.map_container.add(self)
 
 
 class Struct:
@@ -131,7 +141,7 @@ class Struct:
 
 
 # Initialize GtkBuilder, Champlain, and GSettings
-get_obj  = Builder().get_object
+Widgets  = Builder()
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
 

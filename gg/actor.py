@@ -20,7 +20,7 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from common import gst, get_obj, map_view
+from common import Widgets, gst, map_view
 from gpsmath import format_coords
 
 MAP_SOURCES = {}
@@ -69,7 +69,7 @@ for map_desc in [
 def map_source_menu():
     """Load the predefined map sources into a menu the user can use."""
     radio_group = []
-    map_menu = get_obj('map_source_menu')
+    map_menu = Widgets.map_source_menu
     last_source = gst.get_string('map-source-id')
     gst.bind_with_convert('map-source-id', map_view, 'map-source',
         MAP_SOURCES.get, lambda x: x.get_id())
@@ -108,7 +108,7 @@ class ActorController():
             Clutter.Color.new(0, 0, 0, 64))
         for signal in [ 'latitude', 'longitude' ]:
             map_view.connect('notify::' + signal, display,
-                get_obj('maps_link'), self.label)
+                Widgets.maps_link, self.label)
         map_view.connect('notify::width',
             lambda view, param, black:
                 black.set_size(view.get_width(), 30),

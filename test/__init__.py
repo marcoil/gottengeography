@@ -6,7 +6,7 @@ from os.path import abspath, join
 from random import random
 from time import tzset
 
-from gg.app import GottenGeography, get_obj, gst
+from gg.app import GottenGeography, gst
 from gg.common import modified, selected, map_view
 from gg.xmlfiles import clear_all_gpx
 from gg.build_info import PKG_DATA_DIR

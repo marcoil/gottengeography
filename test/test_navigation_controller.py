@@ -3,10 +3,10 @@
 
 from gi.repository import Gdk
 
-from gg.common import map_view
+from gg.common import Widgets, map_view
 from gg.navigation import move_by_arrow_keys
 
-from test import gst, get_obj, random_coord
+from test import gst, random_coord
 
 def test_history():
     """The history should keep track of where we go"""
@@ -16,7 +16,7 @@ def test_history():
     ]]
     map_view.emit('realize')
     map_view.emit('animation-completed')
-    assert len(get_obj('main').get_title()[18:]) > 5
+    assert len(Widgets.main.get_title()[18:]) > 5
     
     lat = random_coord(90)
     lon = random_coord(180)
@@ -32,8 +32,8 @@ def test_zoom_buttons():
     lon = random_coord(170)
     map_view.center_on(lat, lon)
     
-    zoom_in  = get_obj('zoom_in_button')
-    zoom_out = get_obj('zoom_out_button')
+    zoom_in  = Widgets.zoom_in_button
+    zoom_out = Widgets.zoom_out_button
     map_view.set_zoom_level(0)
     assert not zoom_out.get_sensitive()
     assert zoom_in.get_sensitive()
@@ -63,7 +63,7 @@ def test_zoom_buttons():
 
 def test_arrow_keys():
     """The user can navigate by arrow keys"""
-    get_obj('back_button').emit('clicked')
+    Widgets.back_button.emit('clicked')
     
     map_view.set_zoom_level(10)
     

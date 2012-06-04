@@ -1,13 +1,13 @@
 
 """Test that we can search the map."""
 
-from gg.common import map_view
+from gg.common import Widgets, map_view
 
-from test import gui, get_obj
+from test import gui
 
 def test_search():
     """Make sure the search box functions"""
-    entry = get_obj('search_box')
+    entry = Widgets.search_box
     
     assert len(gui.search.results) == 0
     
@@ -17,7 +17,7 @@ def test_search():
     entry.set_text('edm')
     assert len(gui.search.results) == 23
     
-    get_title = get_obj('main').get_title
+    get_title = Widgets.main.get_title
     for result in gui.search.results:
         gui.search.search_completed(entry,
                                     gui.search.results,

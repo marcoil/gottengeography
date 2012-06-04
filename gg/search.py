@@ -20,7 +20,7 @@ from __future__ import division
 from os.path import join
 
 from territories import get_state, get_country
-from common import get_obj, map_view
+from common import Widgets, map_view
 from build_info import PKG_DATA_DIR
 
 # ListStore column names
@@ -34,15 +34,15 @@ class SearchController():
     def __init__(self):
         """Make the search box and insert it into the window."""
         self.search = None
-        self.results = get_obj('search_results')
+        self.results = Widgets.search_results
         self.slide_to = map_view.go_to
-        search = get_obj('search_completion')
+        search = Widgets.search_completion
         search.set_match_func(
             lambda c, s, itr, get:
                 (get(itr, LOCATION) or '').lower().find(self.search) > -1,
             self.results.get_value)
         search.connect('match-selected', self.search_completed, map_view)
-        entry = get_obj('search_box')
+        entry = Widgets.search_box
         entry.connect('changed', self.load_results, self.results.append)
         entry.connect('icon-release', lambda entry, i, e: entry.set_text(''))
         entry.connect('activate', self.repeat_last_search,

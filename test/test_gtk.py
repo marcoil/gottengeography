@@ -1,16 +1,16 @@
 
 """Basic sanity check on low-level Gtk things."""
 
-from gg.common import map_view
+from gg.common import Widgets, map_view
 from gg.label import selection
 
-from test import gui, get_obj, gst
+from test import gui, gst
 
 def test_gtk_builder():
     """GtkBuilder should be creating some widgets for us"""
     assert gui.liststore.get_n_columns() == 4
     assert gui.search.results.get_n_columns() == 3
-    size = get_obj('main').get_size()
+    size = Widgets.main.get_size()
     assert size[1] > 300
     assert size[0] > 400
     assert selection.count_selected_rows() == 0
