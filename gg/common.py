@@ -40,55 +40,6 @@ modified = set()
 points   = {}
 
 
-class metadata:
-    """Records clock offset and times of first/last gps track points.
-    
-    Never instantiated, simply used for static class attributes.
-    """
-    omega = float('-inf')
-    alpha = float('inf')
-
-
-# This function is the embodiment of my applications core logic.
-# Everything else is just implementation details.
-def auto_timestamp_comparison(photo):
-    """Use GPX data to calculate photo coordinates and elevation."""
-    if photo.manual or len(points) < 2:
-        return
-    
-    # Add the user-specified clock offset (metadata.delta) to the photo
-    # timestamp, and then keep it within the range of available GPX points.
-    # The result is in epoch seconds, just like the keys of the 'points' dict.
-    stamp = min(max(
-        photo.timestamp,
-        metadata.alpha),
-        metadata.omega)
-    
-    try:
-        point = points[stamp] # Try to use an exact match,
-        lat   = point.lat     # if such a thing were to exist.
-        lon   = point.lon     # It's more likely than you think. 50%
-        ele   = point.ele     # of the included demo data matches here.
-    
-    except KeyError:
-        # Find the two points that are nearest (in time) to the photo.
-        hi = min([point for point in points if point > stamp])
-        lo = max([point for point in points if point < stamp])
-        hi_point = points[hi]
-        lo_point = points[lo]
-        hi_ratio = (stamp - lo) / (hi - lo)  # Proportional amount of time
-        lo_ratio = (hi - stamp) / (hi - lo)  # between each point & the photo.
-        
-        # Find intermediate values using the proportional ratios.
-        lat = ((lo_point.lat * lo_ratio)  +
-               (hi_point.lat * hi_ratio))
-        lon = ((lo_point.lon * lo_ratio)  +
-               (hi_point.lon * hi_ratio))
-        ele = ((lo_point.ele * lo_ratio)  +
-               (hi_point.ele * hi_ratio))
-    
-    photo.set_location(lat, lon, ele)
-
 def bind_properties(source, source_prop,
                     target, target_prop=None,
                     flags=GObject.BindingFlags.DEFAULT):

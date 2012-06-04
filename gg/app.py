@@ -44,8 +44,8 @@ from sys import argv
 from camera import Camera
 from photos import Photograph
 from xmlfiles import TrackFile, clear_all_gpx
-from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
+from common import selected, modified
 
 from drag import DragController
 from actor import ActorController
@@ -134,9 +134,6 @@ class GottenGeography():
         
         if len(gpx.tracks) < 2:
             return
-        
-        metadata.alpha = min(metadata.alpha, gpx.alpha)
-        metadata.omega = max(metadata.omega, gpx.omega)
         
         map_view.emit('realize')
         map_view.set_zoom_level(map_view.get_max_zoom_level())

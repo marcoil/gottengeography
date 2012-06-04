@@ -28,7 +28,7 @@ from time import clock
 
 from gpsmath import Coordinates
 from common import GSettings, Builder, gst, get_obj
-from common import map_view, points, metadata
+from common import map_view, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -150,6 +150,7 @@ class TrackFile(Coordinates):
     Subclasses must implement element_start and element_end, and call them in
     the base class.
     """
+    range = [float('inf'), float('-inf')]
     instances = {}
     
     @staticmethod
@@ -158,7 +159,21 @@ class TrackFile(Coordinates):
         filetype = GPXFile if filename.lower().endswith('gpx') else KMLFile
         trackfile = TrackFile.instances.get(filename) or filetype(filename)
         TrackFile.instances[filename] = trackfile
+        TrackFile.update_range()
         return trackfile
+    
+    @staticmethod
+    def update_range():
+        """Ensure that TrackFile.range contains the correct info."""
+        if not TrackFile.instances:
+            empty_trackfile_label.show()
+            TrackFile.range[0] = float('inf')
+            TrackFile.range[1] = float('-inf')
+        else:
+            empty_trackfile_label.hide()
+            files = TrackFile.instances.values()
+            TrackFile.range[0] = min([gpx.alpha for gpx in files])
+            TrackFile.range[1] = max([gpx.omega for gpx in files])
     
     def __init__(self, filename, root, watch):
         self.filename = filename
@@ -170,8 +185,6 @@ class TrackFile(Coordinates):
         
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
-        
-        empty_trackfile_label.hide()
         
         points.update(self.tracks)
         keys = self.tracks.keys()
@@ -231,13 +244,7 @@ class TrackFile(Coordinates):
         for widget in (self.label, self.colorpicker, self.trash):
             widget.destroy()
         del TrackFile.instances[self.filename]
-        if not TrackFile.instances:
-            empty_trackfile_label.show()
-            metadata.alpha, metadata.omega = float('inf'), float('-inf')
-        else:
-            trackfiles = TrackFile.instances.values()
-            metadata.alpha = min([gpx.alpha for gpx in trackfiles])
-            metadata.omega = max([gpx.omega for gpx in trackfiles])
+        TrackFile.update_range()
 
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.

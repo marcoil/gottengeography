@@ -4,7 +4,7 @@
 from gg.label import selection
 from gg.photos import Photograph
 from gg.xmlfiles import TrackFile, clear_all_gpx
-from gg.common import points, metadata, selected, modified
+from gg.common import points, selected, modified
 
 from test import gui, get_obj, teardown, setup, DEMOFILES
 
@@ -13,8 +13,8 @@ def test_demo_data():
     teardown()
     assert len(points) == 0
     assert len(TrackFile.instances) == 0
-    assert metadata.alpha == float('inf')
-    assert metadata.omega == float('-inf')
+    assert TrackFile.range[0] == float('inf')
+    assert TrackFile.range[1] == float('-inf')
     selection.emit('changed')
     # No buttons should be sensitive yet because nothing's loaded.
     buttons = {}
@@ -85,8 +85,8 @@ def test_demo_data():
     # Check that the GPX is loaded
     assert len(points) == 374
     assert len(TrackFile.instances) == 1
-    assert metadata.alpha == 1287259751
-    assert metadata.omega == 1287260756
+    assert TrackFile.range[0] == 1287259751
+    assert TrackFile.range[1] == 1287260756
     
     # The save button should be sensitive because loading GPX modifies
     # photos, but nothing is selected so the others are insensitive.
@@ -107,8 +107,8 @@ def test_demo_data():
     clear_all_gpx()
     assert len(points) == 0
     assert len(TrackFile.instances) == 0
-    assert metadata.alpha == float('inf')
-    assert metadata.omega == float('-inf')
+    assert TrackFile.range[0] == float('inf')
+    assert TrackFile.range[1] == float('-inf')
     
     # Save all photos
     buttons['save'].emit('clicked')
