@@ -41,11 +41,11 @@ from sys import argv
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
 
+from camera import Camera
 from photos import Photograph
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
 from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
-from camera import Camera, CameraView, known_cameras
 
 from drag import DragController
 from actor import ActorController
@@ -91,7 +91,7 @@ class GottenGeography():
         
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
-        for camera in known_cameras.values():
+        for camera in Camera.instances.values():
             camera.timezone_handler()
         self.progressbar.hide()
         selection.emit('changed')
@@ -109,21 +109,17 @@ class GottenGeography():
         """
         photo = Photograph.get(uri)
         get_obj('empty_camera_list').hide()
-        # Create the Camera if necessary
-        cam_id = Camera.generate_id(photo.camera_info)
-        camera = known_cameras.get(cam_id) or Camera(cam_id, photo.camera_info)
+        
+        camera_id = Camera.generate_id(photo.camera_info)
+        camera = Camera.get(camera_id, photo.camera_info)
         camera.add_photo(photo)
-        if cam_id not in known_cameras:
-            known_cameras[cam_id] = camera
-            camview = CameraView(camera)
-            get_obj('cameras_view').attach_next_to(
-                camview, None, Gtk.PositionType.BOTTOM, 1, 1)
         
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the
         # timezone was discovered). So call it again to get the correct value.
         if camera.timezone_method == 'lookup':
             photo.calculate_timestamp(camera.offset)
+        
         modified.discard(photo)
         get_obj('apply_button').set_sensitive(True)
     
@@ -150,7 +146,7 @@ class GottenGeography():
                 bounds.compose(polygon.get_bounding_box())
         map_view.ensure_visible(bounds, False)
         
-        for camera in known_cameras.values():
+        for camera in Camera.instances.values():
             camera.set_found_timezone(gpx.timezone)
     
     def apply_selected_photos(self, button):

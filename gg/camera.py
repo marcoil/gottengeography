@@ -37,14 +37,14 @@ from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import bind_properties, GSettings, Builder
-
-known_cameras = {}
+from common import GSettings, Builder, bind_properties, get_obj
 
 gproperty = GObject.property
+cameras_view = get_obj('cameras_view')
 
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
+    instances = {}
     
     # Properties definitions
     name = gproperty(type = str,
@@ -64,7 +64,15 @@ class Camera(GObject.GObject):
     num_photos = gproperty(type = int,
                            default = 0)
     
-    # Class methods
+    @staticmethod
+    def get(camera_id, info):
+        """Find an existing Camera instance, or create a new one."""
+        camera = Camera.instances.get(camera_id) or Camera(camera_id, info)
+        if camera_id not in Camera.instances:
+            CameraView(camera)
+        Camera.instances[camera_id] = camera
+        return camera
+    
     @staticmethod
     def generate_id(info):
         """Identifies a camera by serial number, make, and model.
@@ -207,6 +215,7 @@ class CameraView(Gtk.Box):
         
         camera.connect('notify::num-photos', self.set_counter_text)
         
+        cameras_view.attach_next_to(self, None, Gtk.PositionType.BOTTOM, 1, 1)
         self.show_all()
     
     def method_handler(self, method):

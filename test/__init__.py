@@ -10,8 +10,8 @@ from gg.app import GottenGeography, get_obj, gst
 from gg.common import modified, selected, map_view
 from gg.xmlfiles import clear_all_gpx
 from gg.build_info import PKG_DATA_DIR
-from gg.camera import known_cameras
 from gg.photos import Photograph
+from gg.camera import Camera
 
 DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
              for f in listdir('./demo/')]
@@ -36,7 +36,7 @@ def setup():
 def teardown():
     """Clean it all up."""
     clear_all_gpx()
-    for camera in known_cameras.values():
+    for camera in Camera.instances.values():
         camera.photos.clear()
     for photo in Photograph.instances.values():
         photo.destroy()

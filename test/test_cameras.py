@@ -1,15 +1,15 @@
 
 """Camera objects should be able to independantly remember settings."""
 
-from gg.camera import known_cameras
+from gg.camera import Camera
 from gg.photos import Photograph
 
 def test_camera_offsets():
     """Make sure that camera offsets function correctly"""
     assert Photograph.instances
-    assert known_cameras
+    assert Camera.instances
     
-    camera = known_cameras.values()[0]
+    camera = Camera.instances.values()[0]
     photo = Photograph.instances.values()[0]
     
     for delta in (1, 10, 100, 600, -711):
