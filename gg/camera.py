@@ -209,6 +209,7 @@ class CameraView(Gtk.Box):
         self.cities_combo = builder.get_object('timezone_cities')
         for name in tz_regions:
             self.region_combo.append(name, name)
+        
         self.region_binding = bind_properties(self.region_combo, 'active-id',
                                               camera, 'timezone-region')
         self.region_combo.connect('changed', self.region_handler,
@@ -224,6 +225,10 @@ class CameraView(Gtk.Box):
                                               camera, 'timezone-method')
         self.method_combo.connect('changed', self.method_handler)
         self.method_combo.set_active_id(camera.timezone_method)
+        
+        get_obj('timezone_regions_group').add_widget(self.region_combo)
+        get_obj('timezone_cities_group').add_widget(self.cities_combo)
+        get_obj('cameras_group').add_widget(self.get_children()[0])
         
         camera.connect('notify::num-photos', self.set_counter_text)
         

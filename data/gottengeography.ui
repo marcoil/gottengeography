@@ -734,4 +734,22 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
     <property name="text_column">0</property>
     <property name="inline_completion">True</property>
   </object>
+  <object class="GtkSizeGroup" id="cameras_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="timezone_regions_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="timezone_cities_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
 </interface>
