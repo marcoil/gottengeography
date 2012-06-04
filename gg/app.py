@@ -43,9 +43,9 @@ from sys import argv
 
 from camera import Camera
 from photos import Photograph
+from xmlfiles import TrackFile, clear_all_gpx
 from common import metadata, selected, modified
 from common import Struct, get_obj, gst, map_view
-from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
 
 from drag import DragController
 from actor import ActorController
@@ -127,7 +127,7 @@ class GottenGeography():
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        gpx = get_trackfile(uri)
+        gpx = TrackFile.get(uri)
         
         self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
@@ -141,7 +141,7 @@ class GottenGeography():
         map_view.emit('realize')
         map_view.set_zoom_level(map_view.get_max_zoom_level())
         bounds = Champlain.BoundingBox.new()
-        for trackfile in known_trackfiles.values():
+        for trackfile in TrackFile.instances.values():
             for polygon in trackfile.polygons:
                 bounds.compose(polygon.get_bounding_box())
         map_view.ensure_visible(bounds, False)

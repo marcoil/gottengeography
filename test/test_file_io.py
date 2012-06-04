@@ -3,7 +3,7 @@
 
 from gg.label import selection
 from gg.photos import Photograph
-from gg.xmlfiles import known_trackfiles, clear_all_gpx
+from gg.xmlfiles import TrackFile, clear_all_gpx
 from gg.common import points, metadata, selected, modified
 
 from test import gui, get_obj, teardown, setup, DEMOFILES
@@ -12,7 +12,7 @@ def test_demo_data():
     """Load the demo data and ensure that we're reading it in properly."""
     teardown()
     assert len(points) == 0
-    assert len(known_trackfiles) == 0
+    assert len(TrackFile.instances) == 0
     assert metadata.alpha == float('inf')
     assert metadata.omega == float('-inf')
     selection.emit('changed')
@@ -84,7 +84,7 @@ def test_demo_data():
     
     # Check that the GPX is loaded
     assert len(points) == 374
-    assert len(known_trackfiles) == 1
+    assert len(TrackFile.instances) == 1
     assert metadata.alpha == 1287259751
     assert metadata.omega == 1287260756
     
@@ -106,7 +106,7 @@ def test_demo_data():
     # Unload the GPX data.
     clear_all_gpx()
     assert len(points) == 0
-    assert len(known_trackfiles) == 0
+    assert len(TrackFile.instances) == 0
     assert metadata.alpha == float('inf')
     assert metadata.omega == float('-inf')
     

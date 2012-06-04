@@ -33,17 +33,7 @@ from common import map_view, points, metadata
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
 
-known_trackfiles = {}
-
 empty_trackfile_label = get_obj('empty_trackfile_list')
-
-def get_trackfile(uri):
-    """This method caches TrackFile instances."""
-    if uri not in known_trackfiles:
-        fmt = KMLFile if uri[-3:].lower() == 'kml' else GPXFile
-        known_trackfiles[uri] = fmt(uri)
-    
-    return known_trackfiles[uri]
 
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
@@ -62,10 +52,10 @@ def track_color_changed(selection, polys):
 
 def clear_all_gpx(*ignore):
     """Forget all GPX data, start over with a clean slate."""
-    for trackfile in known_trackfiles.values():
+    for trackfile in TrackFile.instances.values():
         trackfile.destroy()
     
-    known_trackfiles.clear()
+    TrackFile.instances.clear()
     points.clear()
 
 
@@ -160,6 +150,15 @@ class TrackFile(Coordinates):
     Subclasses must implement element_start and element_end, and call them in
     the base class.
     """
+    instances = {}
+    
+    @staticmethod
+    def get(filename):
+        """Find an existing TrackFile instance, or create a new one."""
+        filetype = GPXFile if filename.lower().endswith('gpx') else KMLFile
+        trackfile = TrackFile.instances.get(filename) or filetype(filename)
+        TrackFile.instances[filename] = trackfile
+        return trackfile
     
     def __init__(self, filename, root, watch):
         self.filename = filename
@@ -231,12 +230,12 @@ class TrackFile(Coordinates):
         self.polygons.clear()
         for widget in (self.label, self.colorpicker, self.trash):
             widget.destroy()
-        del known_trackfiles[self.filename]
-        if not known_trackfiles:
+        del TrackFile.instances[self.filename]
+        if not TrackFile.instances:
             empty_trackfile_label.show()
             metadata.alpha, metadata.omega = float('inf'), float('-inf')
         else:
-            trackfiles = known_trackfiles.values()
+            trackfiles = TrackFile.instances.values()
             metadata.alpha = min([gpx.alpha for gpx in trackfiles])
             metadata.omega = max([gpx.omega for gpx in trackfiles])
 
