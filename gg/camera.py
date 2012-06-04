@@ -93,6 +93,18 @@ class Camera(GObject.GObject):
         # Some makers put their name twice
         return model if model.startswith(maker) else maker + ' ' + model
     
+    @staticmethod
+    def set_all_found_timezone(timezone):
+        """"Set all cameras to the given timezone."""
+        for camera in Camera.instances.values():
+            camera.set_found_timezone(timezone)
+    
+    @staticmethod
+    def timezone_handler_all():
+        """Update all of the photos from all of the cameras."""
+        for camera in Camera.instances.values():
+            camera.timezone_handler()
+    
     def __init__(self, camera_id, info):
         """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)

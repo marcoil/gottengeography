@@ -175,6 +175,15 @@ class TrackFile(Coordinates):
             TrackFile.range[0] = min([gpx.alpha for gpx in files])
             TrackFile.range[1] = max([gpx.omega for gpx in files])
     
+    @staticmethod
+    def get_bounding_box():
+        """Determine the smallest box that contains all loaded polygons."""
+        bounds = Champlain.BoundingBox.new()
+        for trackfile in TrackFile.instances.values():
+            for polygon in trackfile.polygons:
+                bounds.compose(polygon.get_bounding_box())
+        return bounds
+    
     def __init__(self, filename, root, watch):
         self.filename = filename
         self.progress = get_obj('progressbar')

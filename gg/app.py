@@ -91,8 +91,7 @@ class GottenGeography():
         
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
-        for camera in Camera.instances.values():
-            camera.timezone_handler()
+        Camera.timezone_handler_all()
         self.progressbar.hide()
         selection.emit('changed')
         map_view.emit('animation-completed')
@@ -137,14 +136,9 @@ class GottenGeography():
         
         map_view.emit('realize')
         map_view.set_zoom_level(map_view.get_max_zoom_level())
-        bounds = Champlain.BoundingBox.new()
-        for trackfile in TrackFile.instances.values():
-            for polygon in trackfile.polygons:
-                bounds.compose(polygon.get_bounding_box())
-        map_view.ensure_visible(bounds, False)
+        map_view.ensure_visible(TrackFile.get_bounding_box(), False)
         
-        for camera in Camera.instances.values():
-            camera.set_found_timezone(gpx.timezone)
+        Camera.set_all_found_timezone(gpx.timezone)
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
