@@ -41,10 +41,9 @@ from sys import argv
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
 
-from label import selection
 from photos import Photograph
 from common import metadata, selected, modified
-from common import Struct, get_obj, gst, map_view, photos
+from common import Struct, get_obj, gst, map_view
 from xmlfiles import clear_all_gpx, get_trackfile, known_trackfiles
 from camera import Camera, CameraView, known_cameras
 
@@ -58,6 +57,9 @@ PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
+
+selection = get_obj('photos_view').get_selection()
+
 
 class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
@@ -105,11 +107,7 @@ class GottenGeography():
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = photos.get(uri) or Photograph(uri)
-        photo.read()
-        if uri not in photos:
-            photos[uri] = photo
-        
+        photo = Photograph.get(uri)
         get_obj('empty_camera_list').hide()
         # Create the Camera if necessary
         cam_id = Camera.generate_id(photo.camera_info)
@@ -157,7 +155,7 @@ class GottenGeography():
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
-        for photo in photos.values():
+        for photo in Photograph.instances.values():
             if photo.manual:
                 continue
             photo.manual = True

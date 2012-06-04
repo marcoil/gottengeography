@@ -22,7 +22,7 @@ from pyexiv2 import ImageMetadata
 from time import mktime
 from os import stat
 
-from common import photos, modified, get_obj
+from common import modified, get_obj
 from common import auto_timestamp_comparison
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
@@ -37,6 +37,7 @@ IPTC = 'Iptc.Application2.'
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     liststore = get_obj('loaded_photos')
+    instances = {}
     camera_info = None
     manual = None
     camera = None
@@ -44,8 +45,15 @@ class Photograph(Coordinates):
     exif = None
     iter = None
     
+    @staticmethod
+    def get(filename):
+        """Find an existing Photograph instance, or create a new one."""
+        photo = Photograph.instances.get(filename) or Photograph(filename)
+        photo.read()
+        Photograph.instances[filename] = photo
+        return photo
+    
     def __init__(self, filename):
-        """Initialize new Photograph object's attributes with default values."""
         self.filename = filename
     
     def fetch_exif(self):
@@ -95,7 +103,7 @@ class Photograph(Coordinates):
         
         # If we're re-loading, we'll have to hide the old label
         if self.label is None:
-            self.label = Label(self.filename)
+            self.label = Label(self)
         else:
             self.label.hide()
         
@@ -197,15 +205,6 @@ class Photograph(Coordinates):
         else:
             self.label.hide()
     
-    def set_label_highlight(self, highlight, transparent):
-        """Set the highlightedness of the given photo's ChamplainLabel."""
-        if self.label.get_property('visible'):
-            self.label.set_scale(*[1.1 if highlight else 1] * 2)
-            self.label.set_selected(highlight)
-            self.label.set_opacity(64 if transparent and not highlight else 255)
-            if highlight:
-                self.label.raise_top()
-    
     def set_geodata(self, data):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
         city, state, country, tz          = data
@@ -229,11 +228,13 @@ class Photograph(Coordinates):
     
     def destroy(self):
         """Agony!"""
-        self.label.unmap()
-        self.label.destroy()
+        if self.label:
+            self.label.unmap()
+            self.label.destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)
-        del photos[self.filename]
+        del Photograph.instances[self.filename]
         modified.discard(self)
-        self.liststore.remove(self.iter)
+        if self.iter:
+            self.liststore.remove(self.iter)
 

@@ -37,7 +37,8 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from common import Struct, get_obj, map_view, selected, modified, photos
+from common import Struct, get_obj, map_view, selected, modified
+from photos import Photograph
 
 class DragController():
     """Control the drag & drop behavior."""
@@ -87,7 +88,7 @@ class DragController():
         
         if on_map:
             for filename in files:
-                photo = photos.get(filename)
+                photo = Photograph.instances.get(filename)
                 if photo is not None:
                     photo.manual = True
                     photo.set_location(

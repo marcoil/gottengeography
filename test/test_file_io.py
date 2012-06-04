@@ -4,7 +4,7 @@
 from gg.label import selection
 from gg.photos import Photograph
 from gg.xmlfiles import known_trackfiles, clear_all_gpx
-from gg.common import points, metadata, photos, selected, modified
+from gg.common import points, metadata, selected, modified
 
 from test import gui, get_obj, teardown, setup, DEMOFILES
 
@@ -41,8 +41,8 @@ def test_demo_data():
     assert len(gui.liststore) == 6
     assert gui.liststore.get_iter_first()
     
-    assert photos
-    for photo in photos.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert not photo in modified
         assert not photo in selected
         
@@ -94,8 +94,8 @@ def test_demo_data():
     for button in ('jump', 'revert', 'close'):
         assert not buttons[button].get_sensitive()
     
-    assert photos
-    for photo in photos.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert photo in modified
         
         assert photo.latitude
@@ -128,7 +128,7 @@ def test_demo_data():
     buttons['close'].emit('clicked')
     for button in ('save', 'revert', 'close'):
         assert not buttons[button].get_sensitive()
-    assert len(photos) == 0
+    assert len(Photograph.instances) == 0
     assert len(modified) == 0
     assert len(selected) == 0
     
@@ -136,8 +136,7 @@ def test_demo_data():
     # was successful.
     assert files
     for filename in files:
-        photo = Photograph(filename)
-        photo.read()
+        photo = Photograph.get(filename)
         assert photo.valid_coords()
         assert photo.altitude > 600
         assert photo.pretty_geoname() == 'Edmonton, Alberta, Canada'

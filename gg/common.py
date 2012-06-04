@@ -38,7 +38,6 @@ from version import PACKAGE
 selected = set()
 modified = set()
 points   = {}
-photos   = {}
 
 
 class metadata:

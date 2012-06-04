@@ -20,7 +20,7 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from os.path import basename
 
-from common import get_obj, map_view, selected, modified, photos
+from common import get_obj, map_view, selected, modified
 
 layer = Champlain.MarkerLayer()
 selection = get_obj('photos_view').get_selection()
@@ -32,11 +32,11 @@ def update_highlights(*ignore):
     """Ensure only the selected labels are highlighted."""
     selection_exists = selection.count_selected_rows() > 0
     selected.clear()
-    for photo in photos.values():
+    for label in layer.get_markers():
         # Maintain the 'selected' set() for easier iterating later.
-        if selection.iter_is_selected(photo.iter):
-            selected.add(photo)
-        photo.set_label_highlight(photo in selected, selection_exists)
+        if label.photo.iter and selection.iter_is_selected(label.photo.iter):
+            selected.add(label.photo)
+        label.set_highlight(label.photo in selected, selection_exists)
 
 def selection_sensitivity(selection, close, save, revert, jump):
     """Control the sensitivity of various widgets."""
@@ -53,7 +53,7 @@ def clicked(label, event):
     the GtkListStore itself in the sense that a normal click will select
     just one item, but Ctrl+clicking allows you to select multiple.
     """
-    photo = photos[label.get_name()]
+    photo = label.photo
     assert photo.filename == label.get_name()
     if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
         if label.get_selected():
@@ -66,7 +66,7 @@ def clicked(label, event):
 
 def drag_finish(label, *ignore):
     """Update photos with new locations after photos have been dragged."""
-    photo = photos[label.get_name()]
+    photo = label.photo
     photo.set_location(label.get_latitude(), label.get_longitude())
     photo.manual = True
     selection.emit('changed')
@@ -80,10 +80,11 @@ def hover(label, event, factor):
 class Label(Champlain.Label):
     """Extend Champlain.Label to add itself to the map."""
     
-    def __init__(self, name):
+    def __init__(self, photo):
         Champlain.Label.__init__(self)
-        self.set_name(name)
-        self.set_text(basename(name))
+        self.photo = photo
+        self.set_name(photo.filename)
+        self.set_text(basename(photo.filename))
         self.set_selectable(True)
         self.set_draggable(True)
         self.set_property('reactive', True)
@@ -93,6 +94,15 @@ class Label(Champlain.Label):
         self.connect('drag-finish', drag_finish)
         self.connect('button-press', clicked)
         layer.add_marker(self)
+    
+    def set_highlight(self, highlight, transparent):
+        """Set the highlightedness of the given ChamplainLabel."""
+        if self.get_property('visible'):
+            self.set_scale(*[1.1 if highlight else 1] * 2)
+            self.set_selected(highlight)
+            self.set_opacity(64 if transparent and not highlight else 255)
+            if highlight:
+                self.raise_top()
 
 
 selection.connect('changed', update_highlights)

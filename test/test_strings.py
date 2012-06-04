@@ -10,13 +10,9 @@ from test import DEMOFILES, teardown, setup
 def test_string_functions():
     """Ensure that strings print properly."""
     teardown()
-    # Make a photo with a dummy ChamplainLabel.
-    label = Struct()
-    label.get_text = lambda: DEMOFILES[5]
-    label.get_parent = lambda: None
-    photo = Photograph(label.get_text())
+    
+    photo = Photograph(DEMOFILES[5])
     photo.read()
-    photo.label = label
     
     photo.latitude  = None
     photo.longitude = None
@@ -47,7 +43,6 @@ def test_string_functions():
     photo.altitude = 600.71
     assert photo.pretty_elevation() == '600.7m above sea level'
     
-    print photo.short_summary()
     assert photo.short_summary() == \
 """2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000

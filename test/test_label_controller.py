@@ -3,7 +3,8 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import photos, selected
+from gg.common import selected
+from gg.photos import Photograph
 from gg.label import Label, selection
 
 from test import get_obj, setup, teardown, random_coord
@@ -13,7 +14,7 @@ def test_creatability():
     lat = random_coord(90)
     lon = random_coord(180)
     
-    label = Label('/path/to/foobar')
+    label = Label(Photograph('/path/to/foobar'))
     label.set_location(lat, lon)
     assert isinstance(label, Champlain.Label)
     assert label.get_name() == '/path/to/foobar'
@@ -24,8 +25,8 @@ def test_creatability():
 
 def test_hoverability():
     """Labels should grow when hovered"""
-    assert photos
-    for photo in photos.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert photo.label.get_scale() == (1, 1)
         photo.label.emit('enter-event', Clutter.Event())
         assert photo.label.get_scale() == (1.05, 1.05)
@@ -34,8 +35,8 @@ def test_hoverability():
 
 def test_clickability():
     """Labels become selected when clicked"""
-    assert photos
-    for photo in photos.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         photo.label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
             assert get_obj(button + '_button').get_sensitive()
@@ -49,7 +50,7 @@ def test_clickability():
         assert photo.label.get_property('opacity') == 255
         
         # Make sure the Labels that we didn't click on are deselected.
-        for other in photos.values():
+        for other in Photograph.instances.values():
             if other.filename == photo.filename:
                 continue
             assert not selection.iter_is_selected(other.iter)
