@@ -91,6 +91,7 @@ class Photograph(Coordinates):
         return photo
     
     def __init__(self, filename):
+        Coordinates.__init__(self)
         self.filename = filename
     
     def fetch_exif(self):
@@ -129,11 +130,6 @@ class Photograph(Coordinates):
     def read(self):
         """Discard all state and (re)initialize from disk."""
         self.exif      = None
-        self.timestamp = None
-        self.altitude  = None
-        self.latitude  = None
-        self.longitude = None
-        self.timezone  = None
         self.manual    = False
         
         self.fetch_exif()
@@ -143,6 +139,9 @@ class Photograph(Coordinates):
             self.label = Label(self)
         else:
             self.label.hide()
+        
+        # Stop 'notify' signal until we've loaded everything
+        self.freeze_notify()
         
         self.calculate_timestamp()
         
@@ -164,10 +163,12 @@ class Photograph(Coordinates):
         except KeyError:
             pass
         
+        self.thaw_notify()
+        
         if self.iter is None:
             self.iter = self.liststore.append()
         self.liststore.set_row(self.iter, [self.filename,
-                                           self.long_summary(),
+                                           self.markup_summary,
                                            self.fetch_thumbnail(),
                                            self.timestamp])
         
@@ -181,6 +182,8 @@ class Photograph(Coordinates):
                     {key.split('.')[-1]: self.exif[key].value})
             except KeyError:
                 pass
+        
+        self.connect('notify::geotimezone', self.update_camera_geotimezone)
     
     def calculate_timestamp(self, offset = 0):
         """Determine the timestamp based on the currently selected timezone.
@@ -209,18 +212,24 @@ class Photograph(Coordinates):
         self.exif[GPS + 'Longitude']    = decimal_to_dms(self.longitude)
         self.exif[GPS + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
         self.exif[GPS + 'MapDatum']     = 'WGS-84'
+        self.exif[IPTC + 'City']          = [city or '']
+        self.exif[IPTC + 'ProvinceState'] = [get_state(country, state) or '']
+        self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
+        self.exif[IPTC + 'CountryCode']   = [country or '']
         self.exif.write()
         modified.discard(self)
         self.liststore.set_value(self.iter, 1, self.long_summary())
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
+        self.freeze_notify()
         if ele is not None:
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
+        self.thaw_notify()
+        
         self.position_label()
-        self.lookup_geoname()
         self.modify_summary()
     
     def modify_summary(self):
@@ -228,7 +237,7 @@ class Photograph(Coordinates):
         modified.add(self)
         if self.iter is not None:
             self.liststore.set_value(self.iter, 1,
-                ('<b>%s</b>' % self.long_summary()))
+                ('<b>%s</b>' % self.markup_summary))
     
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""
@@ -242,26 +251,10 @@ class Photograph(Coordinates):
         else:
             self.label.hide()
     
-    def set_geodata(self, data):
+    def update_camera_geotimezone(self, object = None, property = None):
         """Override Coordinates.set_geodata to apply directly into IPTC."""
-        city, state, country, tz          = data
-        self.exif[IPTC + 'City']          = [city or '']
-        self.exif[IPTC + 'ProvinceState'] = [get_state(country, state) or '']
-        self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
-        self.exif[IPTC + 'CountryCode']   = [country or '']
-        self.timezone                     = tz.strip()
         if self.camera is not None:
-            self.camera.set_found_timezone(self.timezone)
-    
-    def pretty_geoname(self):
-        """Override Coordinates.pretty_geoname to read from IPTC."""
-        names = []
-        for key in [ 'City', 'ProvinceState', 'CountryName' ]:
-            try:
-                names.extend(self.exif[IPTC + key].values)
-            except KeyError:
-                pass
-        return ', '.join([name for name in names if name])
+            self.camera.set_found_timezone(self.geotimezone)
     
     def destroy(self):
         """Agony!"""
@@ -274,4 +267,3 @@ class Photograph(Coordinates):
         modified.discard(self)
         if self.iter:
             self.liststore.remove(self.iter)
-

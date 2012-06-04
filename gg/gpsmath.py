@@ -24,6 +24,7 @@ from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
+from gi.repository import GObject
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
@@ -66,8 +67,9 @@ def format_coords(lat, lon):
         _('E') if lon >= 0 else _('W'), abs(lon)
     )
 
+gproperty = GObject.property
 
-class Coordinates():
+class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates.
     
     This class is inherited by Photograph and TrackFile and contains methods
@@ -82,35 +84,50 @@ class Coordinates():
     looked up by another instance of any subclass.
     """
     
-    provincestate = None
-    countrycode   = None
-    countryname   = None
-    city          = None
-    
-    filename  = ''
-    altitude  = None
-    latitude  = None
-    longitude = None
-    timestamp = None
-    timezone  = None
+    # Class variable, keeps the geocoding cache
     geodata   = {}
     
+    # GObject properties
+    filename  = gproperty(type=str, default='')
+    latitude  = gproperty(type=float, default=0.0)
+    longitude = gproperty(type=float, default=0.0)
+    altitude  = gproperty(type=float, default=0.0)
+    timestamp = gproperty(type=int, default=0)
+    
+    # Properties found from geocoding
+    provincestate = gproperty(type=str, default='')
+    countrycode   = gproperty(type=str, default='')
+    countryname   = gproperty(type=str, default='')
+    city          = gproperty(type=str, default='')
+    # The timezone at our coordinates, in 'Zone/City' format
+    geotimezone   = gproperty(type=str, default='')
+    
+    # Convenience properties calculated from the other ones
+    plain_summary  = gproperty(type=str, default='')
+    markup_summary = gproperty(type=str, default='')
+    
+    def __init__(self, **props):
+        GObject.GObject.__init__(self, **props)
+        self.connect('notify::latitude', self.update_properties, True)
+        self.connect('notify::longitude', self.update_properties, True)
+        self.connect('notify::altitude', self.update_properties, False)
+        self.connect('notify::timestamp', self.update_properties, False)
+        
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
-        return valid_coords(self.latitude, self.longitude)
+        return abs(self.latitude) <= 90 and abs(self.longitude) <= 180
     
     def maps_link(self, link=_('View in Google Maps')):
         """Return a link to Google Maps if this object has valid coordinates."""
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
             self.latitude, self.longitude, link) if self.valid_coords() else ''
     
-    def lookup_geoname(self):
+    def lookup_geodata(self):
         """Search cities.txt for nearest city."""
         if not self.valid_coords():
             return
-        assert self.geodata is Coordinates.geodata
         key = '%.2f,%.2f' % (self.latitude, self.longitude)
-        if key in self.geodata:
+        if key in Coordinates.geodata:
             return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
@@ -127,7 +144,7 @@ class Coordinates():
                 if delta < dist:
                     dist = delta
                     near = [name, state, country, tz]
-        self.geodata[key] = near
+        Coordinates.geodata[key] = near
         return self.set_geodata(near)
     
     def set_geodata(self, data):
@@ -135,8 +152,8 @@ class Coordinates():
         self.city, state, self.countrycode, tz = data
         self.provincestate = get_state(self.countrycode, state)
         self.countryname   = get_country(self.countrycode)
-        self.timezone      = tz.strip()
-        return self.timezone
+        self.geotimezone      = tz.strip()
+        return self.geotimezone
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
@@ -153,23 +170,30 @@ class Coordinates():
         return ', '.join(
             [s for s in (self.city, self.provincestate, self.countryname) if s])
     
-    def pretty_elevation(self):
+    def pretty_altitude(self):
         """Convert elevation into a human readable format."""
-        if type(self.altitude) in (float, int):
+        if self.altitude <> 0.0:
             return '%.1f%s' % (abs(self.altitude), _('m above sea level')
                         if self.altitude >= 0 else _('m below sea level'))
+        return ''
     
-    def short_summary(self):
+    def build_plain_summary(self):
         """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in [self.pretty_geoname(),
+        self.plain_summary =  '\n'.join([s for s in [self.pretty_geoname(),
                                       self.pretty_time(),
                                       self.pretty_coords(),
-                                      self.pretty_elevation()] if s])
+                                      self.pretty_altitude()] if s])
     
-    def long_summary(self):
+    def build_markup_summary(self):
         """Longer summary with Pango markup."""
-        return '<span %s>%s</span>\n<span %s>%s</span>' % (
+        self.markup_summary = '<span %s>%s</span>\n<span %s>%s</span>' % (
             'size="larger"', basename(self.filename),
-            'style="italic" size="smaller"', self.short_summary()
+            'style="italic" size="smaller"', self.plain_summary
         )
+    
+    def update_properties(self, object, property, lookup = False):
+        if lookup:
+            self.lookup_geodata()
+        self.build_plain_summary()
+        self.build_markup_summary()
 
