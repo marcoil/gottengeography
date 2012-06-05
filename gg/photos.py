@@ -91,8 +91,7 @@ class Photograph(Coordinates):
         return photo
     
     def __init__(self, filename):
-        Coordinates.__init__(self)
-        self.filename = filename
+        Coordinates.__init__(self, filename=filename if filename else '')
     
     def fetch_exif(self):
         """Read the EXIF data from the file."""
@@ -140,9 +139,6 @@ class Photograph(Coordinates):
         else:
             self.label.hide()
         
-        # Stop 'notify' signal until we've loaded everything
-        self.freeze_notify()
-        
         self.calculate_timestamp()
         
         try:
@@ -162,8 +158,6 @@ class Photograph(Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
-        
-        self.thaw_notify()
         
         if self.iter is None:
             self.iter = self.liststore.append()
@@ -222,13 +216,11 @@ class Photograph(Coordinates):
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
-        self.freeze_notify()
         if ele is not None:
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
-        self.thaw_notify()
-        
+        # Build the summaries immediately
         self.position_label()
         self.modify_summary()
     
@@ -252,7 +244,6 @@ class Photograph(Coordinates):
             self.label.hide()
     
     def update_camera_geotimezone(self, object = None, property = None):
-        """Override Coordinates.set_geodata to apply directly into IPTC."""
         if self.camera is not None:
             self.camera.set_found_timezone(self.geotimezone)
     

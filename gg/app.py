@@ -138,7 +138,7 @@ class GottenGeography():
         map_view.set_zoom_level(map_view.get_max_zoom_level())
         map_view.ensure_visible(TrackFile.get_bounding_box(), False)
         
-        Camera.set_all_found_timezone(gpx.timezone)
+        Camera.set_all_found_timezone(gpx.start.geotimezone)
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
