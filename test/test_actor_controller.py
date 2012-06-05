@@ -5,7 +5,7 @@ from gi.repository import Clutter, Champlain
 
 from gg.common import Widgets, map_view
 from gg.xmlfiles import Polygon
-from gg.actor import MAP_SOURCES
+from gg.actor import MAP_SOURCES, black, xhair, scale, animate_in
 
 from test import gui, gst
 
@@ -14,23 +14,18 @@ def test_strings():
     link = Widgets.maps_link
     
     map_view.center_on(50, 50)
-    assert gui.actors.label.get_text() == 'N 50.00000, E 50.00000'
     assert link.get_uri().startswith(
         'http://maps.google.com/maps?ll=50.0,50.0&amp;spn=')
     
     map_view.center_on(-10, -30)
-    assert gui.actors.label.get_text() == 'S 10.00000, W 30.00000'
     assert link.get_uri().startswith(
         'http://maps.google.com/maps?ll=-10.0,-30.0&amp;spn=')
 
-def test_crosshair_rotation():
-    """Ensure crosshair is properly rotated"""
-    for rot in gui.actors.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS):
-        assert rot == 0
-    
-    gui.actors.animate_in(20)
-    assert gui.actors.black.get_width() == map_view.get_width()
-    assert gui.actors.xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0] == 45
+def test_configuration():
+    """Reticulating splines"""
+    animate_in(20)
+    assert black.get_width() == map_view.get_width()
+    assert xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0] == 45
 
 def test_map_sources():
     """The map should have multiple sources"""

@@ -46,9 +46,9 @@ from photos import Photograph
 from xmlfiles import TrackFile, clear_all_gpx
 from common import Struct, Widgets, gst, map_view
 from common import selected, modified
+from actor import animate_in
 
 from drag import DragController
-from actor import ActorController
 from search import SearchController
 from navigation import NavigationController
 
@@ -258,7 +258,6 @@ class GottenGeography():
         self.drag      = DragController(self.open_files)
         self.navigator = NavigationController()
         self.search    = SearchController()
-        self.actors    = ActorController()
         
         about = Widgets.about
         about.set_version(REVISION)
@@ -392,6 +391,6 @@ class GottenGeography():
         if argv[1:]:
             self.open_files([abspath(f) for f in argv[1:]])
             anim = False
-        self.actors.animate_in(anim)
+        animate_in(anim)
         Gtk.main()
 
