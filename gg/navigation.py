@@ -19,7 +19,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import get_obj, gst, map_view
+from common import get_obj, gst, map_view, bind_properties
 from gpsmath import Coordinates, valid_coords
 from version import APPNAME
 
@@ -58,18 +58,15 @@ def go_back(*ignore):
         gst.reset('history')
     map_view.emit('animation-completed')
 
-def set_window_title(view, set_title, center):
+def set_window_title(object, property, set_title):
     """Add the current location we are looking at into the titlebar."""
-    center.latitude  = view.get_center_latitude()
-    center.longitude = view.get_center_longitude()
-    set_title('%s - %s' % (APPNAME, center.pretty_geoname()))
+    set_title('%s - %s' % (APPNAME, object.geoname))
 
 def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     """Ensure zoom buttons are only sensitive when they need to be."""
     zoom = view.get_zoom_level()
     out_sensitive(view.get_min_zoom_level() != zoom)
     in_sensitive( view.get_max_zoom_level() != zoom)
-
 
 class NavigationController():
     """Controls how users navigate the map."""
@@ -97,7 +94,11 @@ class NavigationController():
         map_view.connect('notify::zoom-level', zoom_button_sensitivity,
             zoom_in_button.set_sensitive, zoom_out_button.set_sensitive)
         map_view.connect('realize', remember_location)
-        map_view.connect('animation-completed', set_window_title,
-            window.set_title, Coordinates())
-        map_view.emit('animation-completed')
+        
+        self.center = Coordinates()
+        self.center.connect('notify::geoname', set_window_title, window.set_title)
+        self.center.latitude = map_view.get_center_latitude()
+        self.center.longitude = map_view.get_center_longitude()
+        self.lat_binding = bind_properties(map_view, 'latitude', self.center)
+        self.lon_binding = bind_properties(map_view, 'longitude', self.center)
 

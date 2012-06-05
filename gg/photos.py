@@ -162,7 +162,7 @@ class Photograph(Coordinates):
         if self.iter is None:
             self.iter = self.liststore.append()
         self.liststore.set_row(self.iter, [self.filename,
-                                           self.markup_summary,
+                                           self.markup_summary(),
                                            self.fetch_thumbnail(),
                                            self.timestamp])
         
@@ -229,7 +229,7 @@ class Photograph(Coordinates):
         modified.add(self)
         if self.iter is not None:
             self.liststore.set_value(self.iter, 1,
-                ('<b>%s</b>' % self.markup_summary))
+                ('<b>%s</b>' % self.markup_summary()))
     
     def position_label(self):
         """Maintain correct position and visibility of ChamplainLabel."""

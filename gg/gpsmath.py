@@ -101,17 +101,19 @@ class Coordinates(GObject.GObject):
         return self._latitude
     @latitude.setter
     def latitude(self, value):
+        if abs(value) > 90:
+            return
         self._latitude = value
-        self._positioned = True
-        self.do_modified()
+        self.do_modified(True)
     @GObject.property(type=float, default=0.0)
     def longitude(self):
         return self._longitude
     @longitude.setter
     def longitude(self, value):
+        if abs(value) > 180:
+            return
         self._longitude = value
-        self._positioned = True
-        self.do_modified()
+        self.do_modified(True)
     @GObject.property(type=float, default=0.0)
     def altitude(self):
         return self._altitude
@@ -127,41 +129,16 @@ class Coordinates(GObject.GObject):
         self._timestamp = value
         self.do_modified()
     
-    # Properties found from geocoding, read-only
-    @GObject.property(type=str, default='')
-    def provincestate(self):
-        self.update_derived_properties()
-        return self._provincestate
-    @GObject.property(type=str, default='')
-    def contrycode(self):
-        self.update_derived_properties()
-        return self._countrycode
-    @GObject.property(type=str, default='')
-    def countryname(self):
-        self.update_derived_properties()
-        return self._countryname
-    @GObject.property(type=str, default='')
-    def city(self):
-        self.update_derived_properties()
-        return self._city
-    # The timezone at our coordinates, in 'Zone/City' format
-    @GObject.property(type=str, default='')
-    def geotimezone(self):
-        self.update_derived_properties()
-        return self._provincestate
-    
     # Convenience properties calculated from the other ones
+    # Has it been positioned, or is it uninitialized?
     @GObject.property(type=bool, default=False)
     def positioned(self):
         return self._positioned and self.valid_coords()
+    # The city / state / country location
     @GObject.property(type=str, default='')
-    def plain_summary(self):
+    def geoname(self):
         self.update_derived_properties()
-        return self._plain_summary
-    @GObject.property(type=str, default='')
-    def markup_summary(self):
-        self.update_derived_properties()
-        return self._markup_summary
+        return self._geoname
     
     def __init__(self, **props):
         # Initialize the 'real' values
@@ -171,10 +148,12 @@ class Coordinates(GObject.GObject):
         self._altitude = 0.0
         self._timestamp = 0
         self._positioned = False
-        for propname in ['provincestate', 'countrycode', 'countryname',
-                          'city', 'geotimezone', 'plain_summary',
-                          'markup_summary']:
-            self.__dict__['_' + propname] = ''
+        self._geoname = ''
+        
+        self.city = ''
+        self.provincestate = ''
+        self.countryname = ''
+        self.geotimezone = ''
         
         self.modified = False
         self.modified_timeout = None
@@ -194,11 +173,11 @@ class Coordinates(GObject.GObject):
         """Search cities.txt for nearest city."""
         if not self.positioned:
             return
-        key = '%.2f,%.2f' % (self._latitude, self._longitude)
+        key = '%.2f,%.2f' % (self.latitude, self.longitude)
         if key in Coordinates.geodata:
             return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
-        lat1, lon1 = radians(self._latitude), radians(self._longitude)
+        lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
             for city in cities:
                 name, lat, lon, country, state, tz = city.split('\t')
@@ -217,50 +196,60 @@ class Coordinates(GObject.GObject):
     
     def set_geodata(self, data):
         """Apply geodata to internal attributes."""
-        self._city, state, self._countrycode, tz = data
-        self._provincestate = get_state(self._countrycode, state)
-        self._countryname   = get_country(self._countrycode)
-        self._geotimezone      = tz.strip()
-        return self._geotimezone
+        city, state, countrycode, tz = data
+        provincestate = get_state(countrycode, state)
+        countryname = get_country(countrycode)
+        if (city is not self.city) or \
+           (provincestate is not self.provincestate) or \
+           (countryname is not self.countryname):
+            self.notify('geoname')
+        self.city = city
+        self.provincestate = provincestate
+        self.countryname   = countryname
+        self.geotimezone      = tz.strip()
+        return self.geotimezone
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
-        if type(self._timestamp) is int:
-            return strftime('%Y-%m-%d %X', localtime(self._timestamp))
+        if type(self.timestamp) is int:
+            return strftime('%Y-%m-%d %X', localtime(self.timestamp))
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
-        return format_coords(self._latitude, self._longitude) \
+        return format_coords(self.latitude, self.longitude) \
             if self.positioned else _('Not geotagged')
-    
-    def pretty_geoname(self):
-        """Display city, state, and country, if present."""
-        return ', '.join(
-            [s for s in (self._city, self._provincestate, self._countryname) if s])
     
     def pretty_altitude(self):
         """Convert elevation into a human readable format."""
-        if self._altitude <> 0.0:
-            return '%.1f%s' % (abs(self._altitude), _('m above sea level')
-                        if self._altitude >= 0 else _('m below sea level'))
+        if self.altitude <> 0.0:
+            return '%.1f%s' % (abs(self.altitude), _('m above sea level')
+                        if self.altitude >= 0 else _('m below sea level'))
         return ''
     
-    def build_plain_summary(self):
+    def plain_summary(self):
         """Plaintext summary of photo metadata."""
-        self._plain_summary =  '\n'.join([s for s in [self.pretty_geoname(),
-                                                  self.pretty_time(),
-                                                  self.pretty_coords(),
-                                                  self.pretty_altitude()] if s])
+        return '\n'.join([s for s in [self.geoname,
+                                      self.pretty_time(),
+                                      self.pretty_coords(),
+                                      self.pretty_altitude()] if s])
     
-    def build_markup_summary(self):
+    def markup_summary(self):
         """Longer summary with Pango markup."""
-        self._markup_summary = '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'size="larger"', basename(self._filename),
-            'style="italic" size="smaller"', self._plain_summary
-        )
+        return '<span %s>%s</span>\n<span %s>%s</span>' % (
+                        'size="larger"', basename(self.filename),
+                        'style="italic" size="smaller"', self.plain_summary()
+                        )
     
-    def do_modified(self):
+    def build_geoname(self):
+        """Display city, state, and country, if present."""
+        self._geoname = ', '.join(
+            [s for s in (self.city, self.provincestate, self.countryname) if s])
+    
+    def do_modified(self, positioned = False):
         self.modified = True
+        if not self._positioned and positioned:
+            self._positioned = True
+            self.notify('positioned')
         if not self.modified_timeout:
             self.modified_timeout = GLib.idle_add(self.update_derived_properties)
     
@@ -270,8 +259,7 @@ class Coordinates(GObject.GObject):
         if self.modified_timeout:
             GLib.source_remove(self.modified_timeout)
         self.lookup_geodata()
-        self.build_plain_summary()
-        self.build_markup_summary()
+        self.build_geoname()
         
         self.modified = False
         self.modified_timeout = None
