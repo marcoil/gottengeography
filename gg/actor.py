@@ -69,28 +69,44 @@ for map_desc in [
     c.push(Champlain.MemoryCache.new_full(100,     Champlain.ImageRenderer()))
     MAP_SOURCES[mapid] = c
 
-gst.bind_with_convert('map-source-id', map_view, 'map-source',
-    MAP_SOURCES.get, lambda x: x.get_id())
 
-menu_item_clicked = (lambda item, mapid: item.get_active() and
-    map_view.set_map_source(MAP_SOURCES[mapid]))
+class Sources:
+    """Set up the source menu and link to GSettings."""
+    
+    def __init__(self):
+        last_source = gst.get_string('map-source-id')
+        gst.bind_with_convert('map-source-id', map_view, 'map-source',
+            MAP_SOURCES.get, lambda x: x.get_id())
+        
+        for source_id in sorted(MAP_SOURCES.keys()):
+            menu_item = RadioMenuItem(MAP_SOURCES[source_id])
+            if last_source == source_id:
+                menu_item.set_active(True)
+        
+        Widgets.map_source_menu.show_all()
 
-radio_group = []
-last_source = gst.get_string('map-source-id')
 
-for i, source_id in enumerate(sorted(MAP_SOURCES.keys())):
-    source = MAP_SOURCES[source_id]
-    menu_item = Gtk.RadioMenuItem.new_with_label(radio_group,
-                                                 source.get_name())
-    radio_group.append(menu_item)
-    if last_source == source_id:
-        menu_item.set_active(True)
-    menu_item.connect('activate', menu_item_clicked, source_id)
-    Widgets.map_source_menu.attach(menu_item, 0, 1, i, i+1)
+class RadioMenuItem(Gtk.RadioMenuItem):
+    """Create the individual menu items for choosing map sources."""
+    instances = []
+    
+    def __init__(self, source):
+        Gtk.RadioMenuItem.__init__(self)
+        if self.instances:
+            self.set_property('group', self.instances[0])
+        self.instances.append(self)
+        self.set_label(source.get_name())
+        self.connect('activate', self.menu_item_clicked, source.get_id())
+        Widgets.map_source_menu.append(self)
+    
+    def menu_item_clicked(self, item, mapid):
+        if item.get_active():
+            map_view.set_map_source(MAP_SOURCES[mapid])
 
-Widgets.map_source_menu.show_all()
 
 class Crosshair(Clutter.Rectangle):
+    """Display a target at map center for placing photos."""
+    
     def __init__(self):
         Clutter.Rectangle.__init__(self)
         self.set_color(Clutter.Color.new(0, 0, 0, 64))
@@ -100,6 +116,8 @@ class Crosshair(Clutter.Rectangle):
 
 
 class Scale(Champlain.Scale):
+    """Display a distance scale on the map."""
+    
     def __init__(self):
         Champlain.Scale.__init__(self)
         self.connect_view(map_view)
@@ -108,6 +126,8 @@ class Scale(Champlain.Scale):
 
 
 class Box(Clutter.Box):
+    """Draw the black coordinate display bar atop map."""
+    
     def __init__(self):
         Clutter.Box.__init__(self)
         self.set_layout_manager(Clutter.BinLayout())
@@ -120,6 +140,8 @@ class Box(Clutter.Box):
 
 
 class CoordLabel(Clutter.Text):
+    """Put the current map coordinates into the black coordinate bar."""
+    
     def __init__(self):
         Clutter.Text.__init__(self)
         self.set_color(Clutter.Color.new(255, 255, 255, 255))
@@ -135,9 +157,10 @@ class CoordLabel(Clutter.Text):
             lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
 
 
-black = Box()
+srces = Sources()
 xhair = Crosshair()
 scale = Scale()
+black = Box()
 
 
 def animate_in(anim=True):
