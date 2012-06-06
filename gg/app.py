@@ -42,7 +42,7 @@ from sys import argv
 #                                    --- Isaac Newton
 
 from camera import Camera
-from photos import Photograph
+from photos import Photograph, fetch_thumbnail
 from xmlfiles import TrackFile, GPXFile, KMLFile, clear_all_gpx
 from common import Struct, Widgets, gst, map_view
 from common import selected, modified
@@ -183,8 +183,8 @@ class GottenGeography():
         """Display photo thumbnail and geotag data in file chooser."""
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
-            photo = Photograph(chooser.get_preview_filename())
-            image.set_from_pixbuf(photo.thumb)
+            image.set_from_pixbuf(fetch_thumbnail(
+                chooser.get_preview_filename(), 300))
         except IOError:
             return
         except TypeError:
