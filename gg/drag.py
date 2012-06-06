@@ -90,7 +90,6 @@ class DragController():
             for filename in files:
                 photo = Photograph.instances.get(filename)
                 if photo is not None:
-                    photo.manual = True
                     photo.set_location(
                         map_view.y_to_latitude(y),
                         map_view.x_to_longitude(x))

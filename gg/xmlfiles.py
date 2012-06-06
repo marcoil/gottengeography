@@ -142,7 +142,7 @@ class XMLSimpleParser:
         self.parser.EndElementHandler = None
 
 
-class TrackFile(Coordinates):
+class TrackFile():
     """Parent class for all types of GPS track files.
     
     Subclasses must implement element_start and element_end, and call them in
@@ -188,8 +188,8 @@ class TrackFile(Coordinates):
         keys = self.tracks.keys()
         self.alpha = min(keys)
         self.omega = max(keys)
-        self.latitude = self.tracks[self.alpha].lat
-        self.longitude = self.tracks[self.alpha].lon
+        self.start = Coordinates(latitude = self.tracks[self.alpha].lat,
+                                 longitude = self.tracks[self.alpha].lon)
         
         builder = Builder('trackfile')
         self.label = builder.trackfile_label
@@ -215,7 +215,7 @@ class TrackFile(Coordinates):
             # track color instead of using the schema-defined default
             self.gst.set_value('track-color', gst.get_value('track-color'))
         
-        self.gst.set_string('start-timezone', self.lookup_geoname())
+        self.gst.set_string('start-timezone', self.start.lookup_geodata())
         self.gst.bind_with_convert('track-color', self.colorpicker, 'color',
             lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
         self.colorpicker.emit('color-set')

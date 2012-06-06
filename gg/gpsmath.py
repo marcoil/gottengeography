@@ -24,6 +24,7 @@ from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
+from gi.repository import GLib, GObject
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
@@ -66,8 +67,9 @@ def format_coords(lat, lon):
         _('E') if lon >= 0 else _('W'), abs(lon)
     )
 
+gproperty = GObject.property
 
-class Coordinates():
+class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates.
     
     This class is inherited by Photograph and TrackFile and contains methods
@@ -82,35 +84,97 @@ class Coordinates():
     looked up by another instance of any subclass.
     """
     
-    provincestate = None
-    countrycode   = None
-    countryname   = None
-    city          = None
-    
-    filename  = ''
-    altitude  = None
-    latitude  = None
-    longitude = None
-    timestamp = None
-    timezone  = None
+    # Class variable, keeps the geocoding cache
     geodata   = {}
+    
+    # GObject properties
+    # Modifiable, non-derived properties
+    @GObject.property(type=str, default='')
+    def filename(self):
+        return self._filename
+    @filename.setter
+    def filename(self, value):
+        self._filename = value
+        self.do_modified()
+    @GObject.property(type=float, default=0.0)
+    def latitude(self):
+        return self._latitude
+    @latitude.setter
+    def latitude(self, value):
+        if abs(value) > 90:
+            return
+        self._latitude = value
+        self.do_modified(True)
+    @GObject.property(type=float, default=0.0)
+    def longitude(self):
+        return self._longitude
+    @longitude.setter
+    def longitude(self, value):
+        if abs(value) > 180:
+            return
+        self._longitude = value
+        self.do_modified(True)
+    @GObject.property(type=float, default=0.0)
+    def altitude(self):
+        return self._altitude
+    @altitude.setter
+    def altitude(self, value):
+        self._altitude = value
+        self.do_modified()
+    @GObject.property(type=int, default=0)
+    def timestamp(self):
+        return self._timestamp
+    @timestamp.setter
+    def timestamp(self, value):
+        self._timestamp = value
+        self.do_modified()
+    
+    # Convenience properties calculated from the other ones
+    # Has it been positioned, or is it uninitialized?
+    @GObject.property(type=bool, default=False)
+    def positioned(self):
+        return self._positioned and self.valid_coords()
+    # The city / state / country location
+    @GObject.property(type=str, default='')
+    def geoname(self):
+        self.update_derived_properties()
+        return self._geoname
+    
+    def __init__(self, **props):
+        # Initialize the 'real' values
+        self._filename = ''
+        self._latitude = 0.0
+        self._longitude = 0.0
+        self._altitude = 0.0
+        self._timestamp = 0
+        self._positioned = False
+        self._geoname = ''
+        
+        self.city = ''
+        self.provincestate = ''
+        self.countryname = ''
+        self.geotimezone = ''
+        
+        self.modified = False
+        self.modified_timeout = None
+        
+        GObject.GObject.__init__(self, **props)
     
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
-        return valid_coords(self.latitude, self.longitude)
+        return abs(self._latitude) <= 90 and abs(self._longitude) <= 180
     
     def maps_link(self, link=_('View in Google Maps')):
         """Return a link to Google Maps if this object has valid coordinates."""
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
-            self.latitude, self.longitude, link) if self.valid_coords() else ''
+            self._latitude, self._longitude, link) if self.positioned else ''
     
-    def lookup_geoname(self):
+    def lookup_geodata(self):
         """Search cities.txt for nearest city."""
-        if not self.valid_coords():
+        if not self.positioned:
             return
-        assert self.geodata is Coordinates.geodata
         key = '%.2f,%.2f' % (self.latitude, self.longitude)
-        if key in self.geodata:
+        if key in Coordinates.geodata:
             return self.set_geodata(self.geodata[key])
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
@@ -127,16 +191,23 @@ class Coordinates():
                 if delta < dist:
                     dist = delta
                     near = [name, state, country, tz]
-        self.geodata[key] = near
+        Coordinates.geodata[key] = near
         return self.set_geodata(near)
     
     def set_geodata(self, data):
         """Apply geodata to internal attributes."""
-        self.city, state, self.countrycode, tz = data
-        self.provincestate = get_state(self.countrycode, state)
-        self.countryname   = get_country(self.countrycode)
-        self.timezone      = tz.strip()
-        return self.timezone
+        city, state, countrycode, tz = data
+        provincestate = get_state(countrycode, state)
+        countryname = get_country(countrycode)
+        if (city is not self.city) or \
+           (provincestate is not self.provincestate) or \
+           (countryname is not self.countryname):
+            self.notify('geoname')
+        self.city = city
+        self.provincestate = provincestate
+        self.countryname   = countryname
+        self.geotimezone      = tz.strip()
+        return self.geotimezone
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
@@ -146,30 +217,51 @@ class Coordinates():
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
         return format_coords(self.latitude, self.longitude) \
-            if self.valid_coords() else _('Not geotagged')
+            if self.positioned else _('Not geotagged')
     
-    def pretty_geoname(self):
-        """Display city, state, and country, if present."""
-        return ', '.join(
-            [s for s in (self.city, self.provincestate, self.countryname) if s])
-    
-    def pretty_elevation(self):
+    def pretty_altitude(self):
         """Convert elevation into a human readable format."""
-        if type(self.altitude) in (float, int):
+        if self.altitude <> 0.0:
             return '%.1f%s' % (abs(self.altitude), _('m above sea level')
                         if self.altitude >= 0 else _('m below sea level'))
+        return ''
     
-    def short_summary(self):
+    def plain_summary(self):
         """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in [self.pretty_geoname(),
+        return '\n'.join([s for s in [self.geoname,
                                       self.pretty_time(),
                                       self.pretty_coords(),
-                                      self.pretty_elevation()] if s])
+                                      self.pretty_altitude()] if s])
     
-    def long_summary(self):
+    def markup_summary(self):
         """Longer summary with Pango markup."""
         return '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'size="larger"', basename(self.filename),
-            'style="italic" size="smaller"', self.short_summary()
-        )
-
+                        'size="larger"', basename(self.filename),
+                        'style="italic" size="smaller"', self.plain_summary()
+                        )
+    
+    def build_geoname(self):
+        """Display city, state, and country, if present."""
+        self._geoname = ', '.join(
+            [s for s in (self.city, self.provincestate, self.countryname) if s])
+    
+    def do_modified(self, positioned = False):
+        self.modified = True
+        if positioned and self.valid_coords:
+            self._positioned = True
+            self.notify('positioned')
+        if not self.modified_timeout:
+            self.modified_timeout = GLib.idle_add(self.update_derived_properties,
+                                                priority=GLib.PRIORITY_LOW)
+    
+    def update_derived_properties(self):
+        if not self.modified:
+            return False
+        if self.modified_timeout:
+            GLib.source_remove(self.modified_timeout)
+        self.lookup_geodata()
+        self.build_geoname()
+        
+        self.modified = False
+        self.modified_timeout = None
+        return False
