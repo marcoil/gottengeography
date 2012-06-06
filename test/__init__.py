@@ -31,6 +31,7 @@ def setup():
     system('git checkout demo')
     environ['TZ'] = 'America/Edmonton'
     tzset()
+    print DEMOFILES
     gui.open_files(DEMOFILES)
 
 def teardown():

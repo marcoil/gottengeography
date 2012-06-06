@@ -88,7 +88,10 @@ class DragController():
         
         if on_map:
             for filename in files:
-                photo = Photograph.instances.get(filename)
+                try:
+                    photo = Photograph(filename)
+                except IOError:
+                    continue
                 if photo is not None:
                     photo.manual = True
                     photo.set_location(

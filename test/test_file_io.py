@@ -136,7 +136,7 @@ def test_demo_data():
     # was successful.
     assert files
     for filename in files:
-        photo = Photograph.get(filename)
+        photo = Photograph(filename)
         assert photo.valid_coords()
         assert photo.altitude > 600
         assert photo.pretty_geoname() == 'Edmonton, Alberta, Canada'

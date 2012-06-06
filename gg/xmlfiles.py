@@ -28,7 +28,7 @@ from time import clock
 
 from gpsmath import Coordinates
 from common import GSettings, Builder, Widgets, gst
-from common import map_view, points
+from common import memoize, map_view, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -152,15 +152,6 @@ class TrackFile(Coordinates):
     instances = {}
     
     @staticmethod
-    def get(filename):
-        """Find an existing TrackFile instance, or create a new one."""
-        filetype = GPXFile if filename.lower().endswith('gpx') else KMLFile
-        trackfile = TrackFile.instances.get(filename) or filetype(filename)
-        TrackFile.instances[filename] = trackfile
-        TrackFile.update_range()
-        return trackfile
-    
-    @staticmethod
     def update_range():
         """Ensure that TrackFile.range contains the correct info."""
         if not TrackFile.instances:
@@ -199,6 +190,7 @@ class TrackFile(Coordinates):
         self.omega = max(keys)
         self.latitude = self.tracks[self.alpha].lat
         self.longitude = self.tracks[self.alpha].lon
+        TrackFile.update_range()
         
         builder = Builder('trackfile')
         self.label = builder.trackfile_label
@@ -259,6 +251,7 @@ class TrackFile(Coordinates):
 split = re_compile(r'[:TZ-]').split
 
 
+@memoize
 class GPXFile(TrackFile):
     """Parse a GPX file."""
     
@@ -303,6 +296,7 @@ class GPXFile(TrackFile):
         TrackFile.element_end(self, name, state)
 
 
+@memoize
 class KMLFile(TrackFile):
     """Parse a KML file."""
     

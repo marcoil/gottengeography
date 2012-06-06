@@ -39,6 +39,19 @@ selected = set()
 modified = set()
 points   = {}
 
+def memoize(cls):
+    """Cache instances of a class. Decorate the class with @memoize to use.
+    
+    Note, this rudimentary implementation is incompatible with keyword
+    arguments, so don't use those. Most of the classes that I memoize just
+    take a single argument and it's a filename, so this isn't a big deal.
+    """
+    def memoized(*args):
+        key = '//'.join(map(str, args))
+        if key not in cls.instances:
+            cls.instances[key] = cls(*args)
+        return cls.instances[key]
+    return memoized
 
 def bind_properties(source, source_prop,
                     target, target_prop=None,

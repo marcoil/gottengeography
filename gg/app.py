@@ -43,7 +43,7 @@ from sys import argv
 
 from camera import Camera
 from photos import Photograph
-from xmlfiles import TrackFile, clear_all_gpx
+from xmlfiles import TrackFile, GPXFile, KMLFile, clear_all_gpx
 from common import Struct, Widgets, gst, map_view
 from common import selected, modified
 from actor import animate_in
@@ -106,7 +106,9 @@ class GottenGeography():
         
         Raises IOError if filename refers to a file that is not a photograph.
         """
-        photo = Photograph.get(uri)
+        photo = Photograph(uri)
+        photo.read()
+        
         Widgets.empty_camera_list.hide()
         
         camera_id = Camera.generate_id(photo.camera_info)
@@ -126,7 +128,7 @@ class GottenGeography():
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        gpx = TrackFile.get(uri)
+        gpx = (GPXFile if uri.lower().endswith('gpx') else KMLFile)(uri)
         
         self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
@@ -181,7 +183,7 @@ class GottenGeography():
         image.set_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.DIALOG)
         try:
             photo = Photograph(chooser.get_preview_filename())
-            image.set_from_pixbuf(photo.fetch_thumbnail(300))
+            image.set_from_pixbuf(photo.thumb)
         except IOError:
             return
         except TypeError:

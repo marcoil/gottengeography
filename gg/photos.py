@@ -24,10 +24,10 @@ from os import stat
 
 from label import Label
 from xmlfiles import TrackFile
-from common import Widgets, points, modified
+from territories import get_state, get_country
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
-from territories import get_state, get_country
+from common import Widgets, memoize, points, modified
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -71,6 +71,7 @@ def auto_timestamp_comparison(photo):
     photo.set_location(lat, lon, ele)
 
 
+@memoize
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     liststore = Widgets.loaded_photos
@@ -82,16 +83,9 @@ class Photograph(Coordinates):
     exif = None
     iter = None
     
-    @staticmethod
-    def get(filename):
-        """Find an existing Photograph instance, or create a new one."""
-        photo = Photograph.instances.get(filename) or Photograph(filename)
-        photo.read()
-        Photograph.instances[filename] = photo
-        return photo
-    
     def __init__(self, filename):
         self.filename = filename
+        self.thumb = self.fetch_thumbnail()
     
     def fetch_exif(self):
         """Read the EXIF data from the file."""
