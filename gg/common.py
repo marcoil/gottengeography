@@ -56,9 +56,7 @@ class memoize(object):
         of the Photograph class.
         """
         if type(cls) is FunctionType:
-            # Let's just pretend that the function you gave us is a class.
-            cls.instances = {}
-            cls.__init__ = cls
+            raise TypeError('This is for classes only.')
         self.cls = cls
         self.__dict__.update(cls.__dict__)
         
@@ -70,8 +68,8 @@ class memoize(object):
     def __call__(self, *args, **kwargs):
         """Return a cached instance of the appropriate class if it exists.
         
-        This uses inspect.getcallargs in order to allow f(foo=1) to return
-        the *same* cached result as if you had called f(1). dicts are passed
+        This uses inspect.getcallargs in order to allow F(foo=1) to return
+        the *same* cached result as if you had called F(1). dicts are passed
         along to your method but not used for generating the cache lookup
         key, so if your method expects a dict as an argument, you'll need to
         ensure that your method signature is unique without the dict, otherwise
