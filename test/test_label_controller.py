@@ -3,25 +3,26 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import selected
+from gg.common import Widgets, selected
 from gg.photos import Photograph
 from gg.label import Label, selection
 
-from test import get_obj, setup, teardown, random_coord
+from test import setup, teardown, random_coord
 
 def test_creatability():
     """ChamplainLabels should exist"""
     lat = random_coord(90)
     lon = random_coord(180)
     
-    label = Label(Photograph('/path/to/foobar'))
+    label = Label(Photograph('demo/IMG_2411.JPG'))
     label.set_location(lat, lon)
     assert isinstance(label, Champlain.Label)
-    assert label.get_name() == '/path/to/foobar'
-    assert label.get_text() == 'foobar'
+    assert label.get_name() == 'demo/IMG_2411.JPG'
+    assert label.get_text() == 'IMG_2411.JPG'
     
     assert label.get_latitude() == lat
     assert label.get_longitude() == lon
+    label.photo.destroy()
 
 def test_hoverability():
     """Labels should grow when hovered"""
@@ -39,7 +40,7 @@ def test_clickability():
     for photo in Photograph.instances.values():
         photo.label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
-            assert get_obj(button + '_button').get_sensitive()
+            assert Widgets[button + '_button'].get_sensitive()
         
         assert selection.iter_is_selected(photo.iter)
         assert selection.count_selected_rows() == 1

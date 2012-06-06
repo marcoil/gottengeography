@@ -20,15 +20,13 @@ are frequently used for iteration and membership testing throughout the app.
 
 The `points` dict maps epoch seconds to ChamplainCoordinate() instances. This
 is used to place photos on the map by looking up their timestamps.
-
-The `photos` dict maps absolute filename paths to Photograph() instances, and
-is used for most of the photo manipulations (eg, loading, saving, etc).
 """
 
 from __future__ import division
 
 from gi.repository import GObject, Gtk, Gio, GLib
 from gi.repository import GtkChamplain
+from types import FunctionType
 from os.path import join
 
 from build_info import PKG_DATA_DIR
@@ -38,6 +36,43 @@ from version import PACKAGE
 selected = set()
 modified = set()
 points   = {}
+
+
+class memoize(object):
+    """Cache instances of a class. Decorate the class with @memoize to use.
+    
+    Note, I have added support for keyword arguments, but the key used for
+    cache lookups is only the first non-keyword argument. In order for this
+    to function correctly, whatever function or class you are memoizing
+    MUST take a unique identifier as its first non-keyword argument. For
+    Photograph, GPXFile, and KMLFile, that's an absolute filename, and for
+    Camera that's a unique ID including the make and model and possibly serial
+    number if known.
+    """
+    
+    def __init__(self, cls):
+        """Expose the cached class's attributes as our own.
+        
+        This allows Photograph.instances to work even though when you
+        say 'Photograph' you're really getting a memoize instance instead
+        of the Photograph class.
+        """
+        if type(cls) is FunctionType:
+            cls.instances = {}
+        self.cls = cls
+        self.__dict__.update(cls.__dict__)
+        
+        # This bit allows staticmethods to work as you would expect.
+        for attr, val in cls.__dict__.items():
+            if type(val) is staticmethod:
+                self.__dict__[attr] = val.__func__
+    
+    def __call__(self, *args, **kwargs):
+        """Return a cached instance of the appropriate class if it exists."""
+        key = args[0]
+        if key not in self.cls.instances:
+            self.cls.instances[key] = self.cls(*args, **kwargs)
+        return self.cls.instances[key]
 
 
 def bind_properties(source, source_prop,
@@ -59,6 +94,16 @@ class Builder(Gtk.Builder):
         
         self.set_translation_domain(PACKAGE)
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
+    
+    def __getattr__(self, widget):
+        """Make calls to Gtk.Builder().get_object() more pythonic."""
+        built = self.get_object(widget)
+        if built:
+            return built
+        else:
+            raise AttributeError('Unknown widget: ' + widget)
+    
+    __getitem__ = __getattr__
 
 
 class GSettings(Gio.Settings):
@@ -120,7 +165,7 @@ class ChamplainEmbedder(GtkChamplain.Embed):
     
     def __init__(self):
         GtkChamplain.Embed.__init__(self)
-        get_obj('map_container').add(self)
+        Widgets.map_container.add(self)
 
 
 class Struct:
@@ -131,7 +176,7 @@ class Struct:
 
 
 # Initialize GtkBuilder, Champlain, and GSettings
-get_obj  = Builder().get_object
+Widgets  = Builder()
 map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
 

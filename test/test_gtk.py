@@ -1,19 +1,20 @@
 
 """Basic sanity check on low-level Gtk things."""
 
-from gg.common import map_view
+from gg.common import Widgets, map_view
 from gg.label import selection
 
-from test import gui, get_obj, gst
+from test import gui, gst
 
 def test_gtk_builder():
     """GtkBuilder should be creating some widgets for us"""
-    assert gui.liststore.get_n_columns() == 4
-    assert gui.search.results.get_n_columns() == 3
-    size = get_obj('main').get_size()
+    assert Widgets.loaded_photos.get_n_columns() == 4
+    assert Widgets.search_results.get_n_columns() == 3
+    size = Widgets.main.get_size()
     assert size[1] > 300
     assert size[0] > 400
     assert selection.count_selected_rows() == 0
+    assert Widgets.error_message is Widgets['error_message']
 
 def test_gsettings():
     """GSettings should be storing data correctly"""

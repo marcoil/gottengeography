@@ -37,11 +37,12 @@ from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import GSettings, Builder, bind_properties, get_obj
+from common import GSettings, Builder, Widgets, memoize, bind_properties
 
 gproperty = GObject.property
-cameras_view = get_obj('cameras_view')
+cameras_view = Widgets.cameras_view
 
+@memoize
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     instances = {}
@@ -63,15 +64,6 @@ class Camera(GObject.GObject):
                                 default = '')
     num_photos = gproperty(type = int,
                            default = 0)
-    
-    @staticmethod
-    def get(camera_id, info):
-        """Find an existing Camera instance, or create a new one."""
-        camera = Camera.instances.get(camera_id) or Camera(camera_id, info)
-        if camera_id not in Camera.instances:
-            CameraView(camera)
-        Camera.instances[camera_id] = camera
-        return camera
     
     @staticmethod
     def generate_id(info):
@@ -128,6 +120,8 @@ class Camera(GObject.GObject):
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
         self.connect('notify::timezone-city', self.timezone_handler)
+        
+        CameraView(self)
     
     def set_found_timezone(self, found):
         """Store discovered timezone in GSettings."""
@@ -180,16 +174,16 @@ class CameraView(Gtk.Box):
         self.camera = camera
         
         builder = Builder('camera')
-        self.add(builder.get_object('camera_settings'))
+        self.add(builder.camera_settings)
         
-        label = builder.get_object('camera_label')
+        label = builder.camera_label
         label.set_text(camera.name)
         
-        self.counter = builder.get_object('count_label')
+        self.counter = builder.count_label
         self.set_counter_text(camera, None)
         
         # GtkScale allows the user to correct the camera's clock.
-        scale = builder.get_object('offset')
+        scale = builder.offset
         scale.connect('format-value', display_offset,
                            _('Add %dm, %ds to clock.'),
                            _('Subtract %dm, %ds from clock.'))
@@ -205,10 +199,11 @@ class CameraView(Gtk.Box):
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
-        self.region_combo = builder.get_object('timezone_region')
-        self.cities_combo = builder.get_object('timezone_cities')
+        self.region_combo = builder.timezone_region
+        self.cities_combo = builder.timezone_cities
         for name in tz_regions:
             self.region_combo.append(name, name)
+        
         self.region_binding = bind_properties(self.region_combo, 'active-id',
                                               camera, 'timezone-region')
         self.region_combo.connect('changed', self.region_handler,
@@ -219,11 +214,15 @@ class CameraView(Gtk.Box):
                                               camera, 'timezone-city')
         self.cities_combo.set_active_id(camera.timezone_city)
         
-        self.method_combo = builder.get_object('timezone_method')
+        self.method_combo = builder.timezone_method
         self.method_binding = bind_properties(self.method_combo, 'active-id',
                                               camera, 'timezone-method')
         self.method_combo.connect('changed', self.method_handler)
         self.method_combo.set_active_id(camera.timezone_method)
+        
+        Widgets.timezone_regions_group.add_widget(self.region_combo)
+        Widgets.timezone_cities_group.add_widget(self.cities_combo)
+        Widgets.cameras_group.add_widget(self.get_children()[0])
         
         camera.connect('notify::num-photos', self.set_counter_text)
         

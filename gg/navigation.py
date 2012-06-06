@@ -19,7 +19,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import get_obj, gst, map_view, bind_properties
+from common import Widgets, gst, map_view, bind_properties
 from gpsmath import Coordinates, valid_coords
 from version import APPNAME
 
@@ -68,37 +68,25 @@ def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     out_sensitive(view.get_min_zoom_level() != zoom)
     in_sensitive( view.get_max_zoom_level() != zoom)
 
-class NavigationController():
-    """Controls how users navigate the map."""
-    
-    def __init__(self):
-        """Start the map at the previous location, and connect signals."""
-        perform_zoom    = lambda button, zoom: zoom()
-        back_button     = get_obj('back_button')
-        zoom_in_button  = get_obj('zoom_in_button')
-        zoom_out_button = get_obj('zoom_out_button')
-        zoom_out_button.connect('clicked', perform_zoom, map_view.zoom_out)
-        zoom_in_button.connect('clicked', perform_zoom, map_view.zoom_in)
-        back_button.connect('clicked', go_back)
-        
-        for key in ['latitude', 'longitude', 'zoom-level']:
-            gst.bind(key, map_view, key)
-        
-        accel = Gtk.AccelGroup()
-        window = get_obj('main')
-        window.add_accel_group(accel)
-        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            accel.connect(Gdk.keyval_from_name(key),
-                Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
-        
-        map_view.connect('notify::zoom-level', zoom_button_sensitivity,
-            zoom_in_button.set_sensitive, zoom_out_button.set_sensitive)
-        map_view.connect('realize', remember_location)
-        
-        self.center = Coordinates()
-        self.center.connect('notify::geoname', set_window_title, window.set_title)
-        self.center.latitude = map_view.get_center_latitude()
-        self.center.longitude = map_view.get_center_longitude()
-        self.lat_binding = bind_properties(map_view, 'latitude', self.center)
-        self.lon_binding = bind_properties(map_view, 'longitude', self.center)
+Widgets.zoom_in_button.connect('clicked', lambda *ignore: map_view.zoom_in())
+Widgets.zoom_out_button.connect('clicked', lambda *ignore: map_view.zoom_out())
+Widgets.back_button.connect('clicked', go_back)
 
+for key in ['latitude', 'longitude', 'zoom-level']:
+    gst.bind(key, map_view, key)
+
+accel = Gtk.AccelGroup()
+Widgets.main.add_accel_group(accel)
+for key in [ 'Left', 'Right', 'Up', 'Down' ]:
+    accel.connect(Gdk.keyval_from_name(key),
+        Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
+
+map_view.connect('notify::zoom-level', zoom_button_sensitivity,
+    Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
+map_view.connect('realize', remember_location)
+center = Coordinates()
+center.connect('notify::geoname', set_window_title, Widgets.main.set_title)
+center.latitude = map_view.get_center_latitude()
+center.longitude = map_view.get_center_longitude()
+lat_binding = bind_properties(map_view, 'latitude', center)
+lon_binding = bind_properties(map_view, 'longitude', center)

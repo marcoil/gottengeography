@@ -24,10 +24,10 @@ from os import stat
 
 from label import Label
 from xmlfiles import TrackFile
-from common import points, modified, get_obj
+from territories import get_state, get_country
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
-from territories import get_state, get_country
+from common import Widgets, memoize, points, modified
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -70,10 +70,35 @@ def auto_timestamp_comparison(photo):
     
     photo.set_location(lat, lon, ele)
 
+def fetch_exif(filename):
+    """Load EXIF data from disk."""
+    exif = ImageMetadata(filename)
+    try:
+        exif.read()
+    except TypeError:
+        raise IOError
+    return exif
 
+def fetch_thumbnail(filename, size=200):
+    """Load a photo's thumbnail from disk, avoiding EXIF data if possible."""
+    try:
+        return GdkPixbuf.Pixbuf.new_from_file_at_size(filename, size, size)
+    except GObject.GError:
+        exif = fetch_exif(filename)
+        if len(exif.previews) > 0:
+            data = exif.previews[-1].data
+        elif len(exif.exif_thumbnail.data) > 0:
+            data = exif.exif_thumbnail.data
+        else:
+            raise IOError
+        
+        return GdkPixbuf.Pixbuf.new_from_stream_at_scale(
+            Gio.MemoryInputStream.new_from_data(data, None),
+            size, size, True, None)
+
+@memoize
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
-    liststore = get_obj('loaded_photos')
     instances = {}
     camera_info = None
     manual = None
@@ -82,56 +107,19 @@ class Photograph(Coordinates):
     exif = None
     iter = None
     
-    @staticmethod
-    def get(filename):
-        """Find an existing Photograph instance, or create a new one."""
-        photo = Photograph.instances.get(filename) or Photograph(filename)
-        photo.read()
-        Photograph.instances[filename] = photo
-        return photo
-    
     def __init__(self, filename):
-        Coordinates.__init__(self, filename=filename if filename else '')
-    
-    def fetch_exif(self):
-        """Read the EXIF data from the file."""
-        if self.exif is not None:
-            return
-        self.exif = ImageMetadata(self.filename)
-        try:
-            self.exif.read()
-        except TypeError:
-            raise IOError
-    
-    def fetch_thumbnail(self, size=200):
-        """Return the file's thumbnail as best as possible.
+        """Raises IOError for invalid file types.
         
-        This is used in the preview widget without fully loading the file. It
-        can potentially cause EXIF data to be read, but only if GdkPixbuf
-        fails at generating a thumbnail by itself.
-        """
-        try:
-            return GdkPixbuf.Pixbuf.new_from_file_at_size(
-                self.filename, size, size)
-        except GObject.GError:
-            self.fetch_exif()
-            if len(self.exif.previews) > 0:
-                data = self.exif.previews[-1].data
-            elif len(self.exif.exif_thumbnail.data) > 0:
-                data = self.exif.exif_thumbnail.data
-            else:
-                raise IOError
-            
-            return GdkPixbuf.Pixbuf.new_from_stream_at_scale(
-                Gio.MemoryInputStream.new_from_data(data, None),
-                size, size, True, None)
+        This MUST be the case in order to avoid the @memoize cache getting
+        filled up with invalid Photograph instances."""
+        Coordinates.__init__(self, filename=filename if filename else '')
+        self.thumb = fetch_thumbnail(filename)
+        self.filename = filename
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
-        self.exif      = None
+        self.exif      = fetch_exif(self.filename)
         self.manual    = False
-        
-        self.fetch_exif()
         
         # If we're re-loading, we'll have to hide the old label
         if self.label is None:
@@ -160,10 +148,10 @@ class Photograph(Coordinates):
             pass
         
         if self.iter is None:
-            self.iter = self.liststore.append()
-        self.liststore.set_row(self.iter, [self.filename,
+            self.iter = Widgets.loaded_photos.append()
+        Widgets.loaded_photos.set_row(self.iter, [self.filename,
                                            self.markup_summary(),
-                                           self.fetch_thumbnail(),
+                                           self.thumb,
                                            self.timestamp])
         
         # Get the camera info
@@ -212,7 +200,7 @@ class Photograph(Coordinates):
         self.exif[IPTC + 'CountryCode']   = [country or '']
         self.exif.write()
         modified.discard(self)
-        self.liststore.set_value(self.iter, 1, self.long_summary())
+        Widgets.loaded_photos.set_value(self.iter, 1, self.long_summary())
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
@@ -228,7 +216,7 @@ class Photograph(Coordinates):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
-            self.liststore.set_value(self.iter, 1,
+            Widgets.loaded_photos.set_value(self.iter, 1,
                 ('<b>%s</b>' % self.markup_summary()))
     
     def position_label(self):
@@ -257,4 +245,4 @@ class Photograph(Coordinates):
         del Photograph.instances[self.filename]
         modified.discard(self)
         if self.iter:
-            self.liststore.remove(self.iter)
+            Widgets.loaded_photos.remove(self.iter)
