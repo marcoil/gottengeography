@@ -41,9 +41,13 @@ points   = {}
 class memoize(object):
     """Cache instances of a class. Decorate the class with @memoize to use.
     
-    Note, this rudimentary implementation is incompatible with keyword
-    arguments, so don't use those. Most of the classes that I memoize just
-    take a single argument and it's a filename, so this isn't a big deal.
+    Note, I have added support for keyword arguments, but the key used for
+    cache lookups is only the first non-keyword argument. In order for this
+    to function correctly, whatever function or class you are memoizing
+    MUST take a unique identifier as its first non-keyword argument. For
+    Photograph, GPXFile, and KMLFile, that's an absolute filename, and for
+    Camera that's a unique ID including the make and model and possibly serial
+    number if known.
     """
     
     def __init__(self, cls):
@@ -63,11 +67,11 @@ class memoize(object):
             if type(val) is staticmethod:
                 self.__dict__[attr] = val.__func__
     
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         """Return a cached instance of the appropriate class if it exists."""
-        key = '//'.join(map(str, args))
+        key = args[0]
         if key not in self.cls.instances:
-            self.cls.instances[key] = self.cls(*args)
+            self.cls.instances[key] = self.cls(*args, **kwargs)
         return self.cls.instances[key]
 
 
