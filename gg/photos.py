@@ -187,13 +187,12 @@ class Photograph(Coordinates):
         self.exif[GPS + 'Longitude']    = decimal_to_dms(self.longitude)
         self.exif[GPS + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
         self.exif[GPS + 'MapDatum']     = 'WGS-84'
-        self.exif[IPTC + 'City']          = [city or '']
-        self.exif[IPTC + 'ProvinceState'] = [get_state(country, state) or '']
-        self.exif[IPTC + 'CountryName']   = [get_country(country) or '']
-        self.exif[IPTC + 'CountryCode']   = [country or '']
+        self.exif[IPTC + 'City']          = [self.city or '']
+        self.exif[IPTC + 'ProvinceState'] = [self.provincestate or '']
+        self.exif[IPTC + 'CountryName']   = [self.countryname or '']
         self.exif.write()
         modified.discard(self)
-        Widgets.loaded_photos.set_value(self.iter, 1, self.long_summary())
+        Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
