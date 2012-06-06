@@ -72,7 +72,6 @@ def hover(label, event, factor):
 @memoize
 class Label(Champlain.Label):
     """Extend Champlain.Label to add itself to the map."""
-    
     instances = {}
     
     def __init__(self, photo):
@@ -106,6 +105,12 @@ class Label(Champlain.Label):
             self.set_opacity(64 if transparent and not highlight else 255)
             if highlight:
                 self.raise_top()
+    
+    def destroy(self):
+        """Remove from map and unload."""
+        del Label.instances[str(self.photo)]
+        self.unmap()
+        #Champlain.Label.destroy(self)
 
 
 selection.connect('changed', update_highlights)
