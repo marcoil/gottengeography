@@ -20,9 +20,6 @@ are frequently used for iteration and membership testing throughout the app.
 
 The `points` dict maps epoch seconds to ChamplainCoordinate() instances. This
 is used to place photos on the map by looking up their timestamps.
-
-The `photos` dict maps absolute filename paths to Photograph() instances, and
-is used for most of the photo manipulations (eg, loading, saving, etc).
 """
 
 from __future__ import division
