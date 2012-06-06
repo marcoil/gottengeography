@@ -26,23 +26,23 @@ def test_timezone_lookups():
     # Opening a photo should place it on the map.
     gui.open_files([DEMOFILES[0]])
     assert gst.get_string('found-timezone') == 'America/Edmonton'
-    assert Photograph().instances
+    assert Photograph.instances
     assert Camera.instances
     
-    photo = Photograph().instances.values()[0]
+    photo = Photograph.instances.values()[0]
     assert photo.latitude == 53.530476
     assert photo.longitude == -113.450635
 
 def test_manual_timezone():
     """The wrong timezone will clamp the photo to the end of the track"""
     assert Camera.instances
-    assert Photograph().instances
+    assert Photograph.instances
     camera = Camera.instances.values()[0]
     camera.gst.set_string('timezone-method', 'custom')
     camera.gst.set_string('timezone-region', 'America')
     camera.gst.set_string('timezone-city', 'Winnipeg')
     
-    photo = Photograph().instances.values()[0]
+    photo = Photograph.instances.values()[0]
     assert photo.latitude == 53.52263
     assert photo.longitude == -113.448979
 

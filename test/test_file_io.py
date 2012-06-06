@@ -41,8 +41,8 @@ def test_demo_data():
     assert len(gui.liststore) == 6
     assert gui.liststore.get_iter_first()
     
-    assert Photograph().instances
-    for photo in Photograph().instances.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert not photo in modified
         assert not photo in selected
         
@@ -94,8 +94,8 @@ def test_demo_data():
     for button in ('jump', 'revert', 'close'):
         assert not buttons[button].get_sensitive()
     
-    assert Photograph().instances
-    for photo in Photograph().instances.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert photo in modified
         
         assert photo.latitude
@@ -128,7 +128,7 @@ def test_demo_data():
     buttons['close'].emit('clicked')
     for button in ('save', 'revert', 'close'):
         assert not buttons[button].get_sensitive()
-    assert len(Photograph().instances) == 0
+    assert len(Photograph.instances) == 0
     assert len(modified) == 0
     assert len(selected) == 0
     

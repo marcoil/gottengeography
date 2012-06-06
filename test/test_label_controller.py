@@ -26,8 +26,8 @@ def test_creatability():
 
 def test_hoverability():
     """Labels should grow when hovered"""
-    assert Photograph().instances
-    for photo in Photograph().instances.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         assert photo.label.get_scale() == (1, 1)
         photo.label.emit('enter-event', Clutter.Event())
         assert photo.label.get_scale() == (1.05, 1.05)
@@ -36,8 +36,8 @@ def test_hoverability():
 
 def test_clickability():
     """Labels become selected when clicked"""
-    assert Photograph().instances
-    for photo in Photograph().instances.values():
+    assert Photograph.instances
+    for photo in Photograph.instances.values():
         photo.label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
             assert Widgets[button + '_button'].get_sensitive()
@@ -51,7 +51,7 @@ def test_clickability():
         assert photo.label.get_property('opacity') == 255
         
         # Make sure the Labels that we didn't click on are deselected.
-        for other in Photograph().instances.values():
+        for other in Photograph.instances.values():
             if other.filename == photo.filename:
                 continue
             assert not selection.iter_is_selected(other.iter)

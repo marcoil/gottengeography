@@ -39,27 +39,32 @@ selected = set()
 modified = set()
 points   = {}
 
-def memoize(cls):
+
+class memoize(object):
     """Cache instances of a class. Decorate the class with @memoize to use.
     
     Note, this rudimentary implementation is incompatible with keyword
     arguments, so don't use those. Most of the classes that I memoize just
     take a single argument and it's a filename, so this isn't a big deal.
-    
-    Also, memoization of classes effectively hides the class behind this
-    function, meaning that when you try to say 'Photograph.instances' what
-    you're really saying is 'memoized.instances', and it's invalid. This
-    implementation of memoization allows you to get at the class by
-    instantiating with no arguments, eg, 'Photograph().instances'.
     """
-    def memoized(*args):
-        if not args:
-            return cls
+    
+    def __init__(self, cls):
+        """Expose the cached class's attributes as our own.
+        
+        This allows Photograph.instances to work even though when you
+        say 'Photograph' you're really getting a memoize instance instead
+        of the Photograph class.
+        """
+        self.cls = cls
+        self.__dict__.update(cls.__dict__)
+    
+    def __call__(self, *args):
+        """Return a cached instance of the appropriate class if it exists."""
         key = '//'.join(map(str, args))
-        if key not in cls.instances:
-            cls.instances[key] = cls(*args)
-        return cls.instances[key]
-    return memoized
+        if key not in self.cls.instances:
+            self.cls.instances[key] = self.cls(*args)
+        return self.cls.instances[key]
+
 
 def bind_properties(source, source_prop,
                     target, target_prop=None,

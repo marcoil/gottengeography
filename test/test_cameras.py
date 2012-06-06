@@ -6,11 +6,11 @@ from gg.photos import Photograph
 
 def test_camera_offsets():
     """Make sure that camera offsets function correctly"""
-    assert Photograph().instances
+    assert Photograph.instances
     assert Camera.instances
     
     camera = Camera.instances.values()[0]
-    photo = Photograph().instances.values()[0]
+    photo = Photograph.instances.values()[0]
     
     for delta in (1, 10, 100, 600, -711):
         start = [photo.timestamp, camera.offset,
