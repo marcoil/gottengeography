@@ -27,37 +27,38 @@ def test_creatability():
 def test_hoverability():
     """Labels should grow when hovered"""
     assert Photograph.instances
-    for photo in Photograph.instances.values():
-        assert photo.label.get_scale() == (1, 1)
-        photo.label.emit('enter-event', Clutter.Event())
-        assert photo.label.get_scale() == (1.05, 1.05)
-        photo.label.emit('leave-event', Clutter.Event())
-        assert photo.label.get_scale() == (1, 1)
+    assert Label.instances
+    for label in Label.instances.values():
+        assert label.get_scale() == (1, 1)
+        label.emit('enter-event', Clutter.Event())
+        assert label.get_scale() == (1.05, 1.05)
+        label.emit('leave-event', Clutter.Event())
+        assert label.get_scale() == (1, 1)
 
 def test_clickability():
     """Labels become selected when clicked"""
     assert Photograph.instances
-    for photo in Photograph.instances.values():
-        photo.label.emit('button-press', Clutter.Event())
+    assert Label.instances
+    for label in Label.instances.values():
+        label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
             assert Widgets[button + '_button'].get_sensitive()
         
-        assert selection.iter_is_selected(photo.iter)
+        assert selection.iter_is_selected(label.photo.iter)
         assert selection.count_selected_rows() == 1
-        assert photo in selected
+        assert label.photo in selected
         assert len(selected) == 1
-        assert photo.label.get_scale() == (1.1, 1.1)
-        assert photo.label.get_selected()
-        assert photo.label.get_property('opacity') == 255
+        assert label.get_scale() == (1.1, 1.1)
+        assert label.get_selected()
+        assert label.get_property('opacity') == 255
         
         # Make sure the Labels that we didn't click on are deselected.
-        for other in Photograph.instances.values():
-            if other.filename == photo.filename:
+        for other in Label.instances.values():
+            if other.get_name() == label.get_name():
                 continue
-            assert not selection.iter_is_selected(other.iter)
-            assert other not in selected
-            assert other.label.get_scale() == (1, 1)
-            assert not other.label.get_selected()
-            assert other.label.get_property('opacity') == 64
-
+            assert not selection.iter_is_selected(other.photo.iter)
+            assert other.photo not in selected
+            assert other.get_scale() == (1, 1)
+            assert not other.get_selected()
+            assert other.get_property('opacity') == 64
 

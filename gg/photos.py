@@ -216,7 +216,7 @@ class Photograph(Coordinates):
     def destroy(self):
         """Agony!"""
         # TODO: Disconnect this from here
-        if Label.instances[str(self)]:
+        if str(self) in Label.instances:
             Label(self).destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)

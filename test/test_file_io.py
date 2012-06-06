@@ -47,9 +47,10 @@ def test_demo_data():
         assert not photo in selected
         
         # Pristine demo data shouldn't have any tags.
-        assert photo.altitude is None
-        assert photo.latitude is None
-        assert photo.longitude is None
+        assert photo.altitude == 0.0
+        print photo.latitude, photo.longitude
+        assert photo.latitude == 0.0
+        assert photo.longitude == 0.0
         assert not photo.manual
         
         # Add some crap
@@ -64,9 +65,9 @@ def test_demo_data():
         # and it would load data from disk without discarding old data.
         photo.read()
         assert photo.pretty_geoname() == ''
-        assert photo.altitude is None
-        assert photo.latitude is None
-        assert photo.longitude is None
+        assert photo.altitude == 0.0
+        assert photo.latitude == 0.0
+        assert photo.longitude == 0.0
         assert not photo.valid_coords()
         assert not photo.manual
         assert photo.filename == photo.label.get_name()
