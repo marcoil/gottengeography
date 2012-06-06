@@ -50,7 +50,8 @@ from actor import animate_in
 
 from drag import DragController
 from search import SearchController
-from navigation import NavigationController
+
+import navigation
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -259,7 +260,6 @@ class GottenGeography():
         photos_view.append_column(column)
         
         self.drag      = DragController(self.open_files)
-        self.navigator = NavigationController()
         self.search    = SearchController()
         
         about = Widgets.about

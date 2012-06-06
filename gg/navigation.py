@@ -72,32 +72,23 @@ def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     in_sensitive( view.get_max_zoom_level() != zoom)
 
 
-class NavigationController():
-    """Controls how users navigate the map."""
-    
-    def __init__(self):
-        """Start the map at the previous location, and connect signals."""
-        perform_zoom    = lambda button, zoom: zoom()
-        back_button     = Widgets.back_button
-        zoom_in_button  = Widgets.zoom_in_button
-        zoom_out_button = Widgets.zoom_out_button
-        zoom_out_button.connect('clicked', perform_zoom, map_view.zoom_out)
-        zoom_in_button.connect('clicked', perform_zoom, map_view.zoom_in)
-        back_button.connect('clicked', go_back)
-        
-        for key in ['latitude', 'longitude', 'zoom-level']:
-            gst.bind(key, map_view, key)
-        
-        accel = Gtk.AccelGroup()
-        Widgets.main.add_accel_group(accel)
-        for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-            accel.connect(Gdk.keyval_from_name(key),
-                Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
-        
-        map_view.connect('notify::zoom-level', zoom_button_sensitivity,
-            zoom_in_button.set_sensitive, zoom_out_button.set_sensitive)
-        map_view.connect('realize', remember_location)
-        map_view.connect('animation-completed', set_window_title,
-            Widgets.main.set_title, Coordinates())
-        map_view.emit('animation-completed')
+Widgets.zoom_in_button.connect('clicked', lambda *ignore: map_view.zoom_in())
+Widgets.zoom_out_button.connect('clicked', lambda *ignore: map_view.zoom_out())
+Widgets.back_button.connect('clicked', go_back)
+
+for key in ['latitude', 'longitude', 'zoom-level']:
+    gst.bind(key, map_view, key)
+
+accel = Gtk.AccelGroup()
+Widgets.main.add_accel_group(accel)
+for key in [ 'Left', 'Right', 'Up', 'Down' ]:
+    accel.connect(Gdk.keyval_from_name(key),
+        Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
+
+map_view.connect('notify::zoom-level', zoom_button_sensitivity,
+    Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
+map_view.connect('realize', remember_location)
+map_view.connect('animation-completed', set_window_title,
+    Widgets.main.set_title, Coordinates())
+map_view.emit('animation-completed')
 

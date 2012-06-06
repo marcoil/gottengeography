@@ -76,7 +76,7 @@ def test_arrow_keys():
     
     move_by_arrow_keys(None, None, Gdk.keyval_from_name('Right'), None)
     assert lat - map_view.get_center_latitude() < 1e-6
-    assert lon - map_view.get_center_longitude() < 1e-3
+    assert lon - map_view.get_center_longitude() < 1e-2
     
     move_by_arrow_keys(None, None, Gdk.keyval_from_name('Right'), None)
     assert lon < map_view.get_center_longitude()
