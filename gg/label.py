@@ -17,10 +17,11 @@
 
 from __future__ import division
 
-from gi.repository import Gtk, Champlain, Clutter
+from gi.repository import GObject, Gtk, Champlain, Clutter
 from os.path import basename
 
 from common import Widgets, map_view, selected, modified
+from common import bind_properties, memoize
 
 layer = Champlain.MarkerLayer()
 selection = Widgets.photos_view.get_selection()
@@ -64,21 +65,15 @@ def clicked(label, event):
         selection.unselect_all()
         selection.select_iter(photo.iter)
 
-def drag_finish(label, *ignore):
-    """Update photos with new locations after photos have been dragged."""
-    photo = label.photo
-    photo.set_location(label.get_latitude(), label.get_longitude())
-    photo.manual = True
-    selection.emit('changed')
-    map_view.emit('animation-completed')
-
 def hover(label, event, factor):
     """Scale a ChamplainLabel by the given factor."""
     label.set_scale(*[scale * factor for scale in label.get_scale()])
 
-
+@memoize
 class Label(Champlain.Label):
     """Extend Champlain.Label to add itself to the map."""
+    
+    instances = {}
     
     def __init__(self, photo):
         Champlain.Label.__init__(self)
@@ -88,11 +83,19 @@ class Label(Champlain.Label):
         self.set_selectable(True)
         self.set_draggable(True)
         self.set_property('reactive', True)
-        self.hide()
         self.connect('enter-event', hover, 1.05)
         self.connect('leave-event', hover, 1/1.05)
-        self.connect('drag-finish', drag_finish)
         self.connect('button-press', clicked)
+        
+        self.show() if photo.positioned else self.hide()
+        self.visible_binding = bind_properties(photo, 'positioned', self, 'visible')
+        if photo.positioned:
+            self.set_location(photo.latitude, photo.longitude)
+        self.lat_binding = bind_properties(photo, 'latitude', self,
+                        flags=GObject.BindingFlags.BIDIRECTIONAL)
+        self.lon_binding = bind_properties(photo, 'longitude', self,
+                        flags=GObject.BindingFlags.BIDIRECTIONAL)
+        
         layer.add_marker(self)
     
     def set_highlight(self, highlight, transparent):

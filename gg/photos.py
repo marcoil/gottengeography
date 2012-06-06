@@ -38,7 +38,7 @@ IPTC = 'Iptc.Application2.'
 # Everything else is just implementation details.
 def auto_timestamp_comparison(photo):
     """Use GPX data to calculate photo coordinates and elevation."""
-    if photo.manual or len(points) < 2:
+    if photo.positioned or len(points) < 2:
         return
     
     # Clamp the timestamp within the range of available GPX points.
@@ -101,7 +101,6 @@ class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     instances = {}
     camera_info = None
-    manual = None
     camera = None
     label = None
     exif = None
@@ -119,13 +118,6 @@ class Photograph(Coordinates):
     def read(self):
         """Discard all state and (re)initialize from disk."""
         self.exif      = fetch_exif(self.filename)
-        self.manual    = False
-        
-        # If we're re-loading, we'll have to hide the old label
-        if self.label is None:
-            self.label = Label(self)
-        else:
-            self.label.hide()
         
         self.calculate_timestamp()
         
@@ -165,7 +157,8 @@ class Photograph(Coordinates):
             except KeyError:
                 pass
         
-        self.connect('notify::geotimezone', self.update_camera_geotimezone)
+        self.connect('notify::positioned', self.update_positioned)
+        self.connect('notify::geoname', self.update_geoname)
     
     def calculate_timestamp(self, offset = 0):
         """Determine the timestamp based on the currently selected timezone.
@@ -208,38 +201,24 @@ class Photograph(Coordinates):
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
-        # Build the summaries immediately
-        self.position_label()
-        self.modify_summary()
     
-    def modify_summary(self):
+    def update_positioned(self, object, property):
+        modified.add(self)
+    
+    def update_geoname(self, object, property):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
             Widgets.loaded_photos.set_value(self.iter, 1,
                 ('<b>%s</b>' % self.markup_summary()))
-    
-    def position_label(self):
-        """Maintain correct position and visibility of ChamplainLabel."""
-        if self.label.get_parent() is None:
-            return
-        if self.valid_coords():
-            self.label.set_location(self.latitude, self.longitude)
-            self.label.show()
-            if self.label.get_selected():
-                self.label.raise_top()
-        else:
-            self.label.hide()
-    
-    def update_camera_geotimezone(self, object = None, property = None):
-        if self.camera is not None:
+        if self.camera and self.camera.found_timezone is not self.geotimezone:
             self.camera.set_found_timezone(self.geotimezone)
     
     def destroy(self):
         """Agony!"""
-        if self.label:
-            self.label.unmap()
-            self.label.destroy()
+        # TODO: Disconnect this from here
+        if Label.instances[self]:
+            Label(self).destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)
         del Photograph.instances[self.filename]

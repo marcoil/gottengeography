@@ -47,6 +47,7 @@ from xmlfiles import TrackFile, GPXFile, KMLFile, clear_all_gpx
 from common import Struct, Widgets, gst, map_view
 from common import selected, modified
 from actor import animate_in
+from label import Label
 
 from drag import DragController
 from search import SearchController
@@ -116,6 +117,8 @@ class GottenGeography():
         camera = Camera(camera_id, photo.camera_info)
         camera.add_photo(photo)
         
+        label = Label(photo)
+        
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the
         # timezone was discovered). So call it again to get the correct value.
@@ -147,9 +150,8 @@ class GottenGeography():
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
         for photo in Photograph.instances.values():
-            if photo.manual:
+            if photo.positioned:
                 continue
-            photo.manual = True
             photo.set_location(
                 map_view.get_property('latitude'),
                 map_view.get_property('longitude'))

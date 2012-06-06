@@ -247,7 +247,7 @@ class Coordinates(GObject.GObject):
     
     def do_modified(self, positioned = False):
         self.modified = True
-        if not self._positioned and positioned:
+        if positioned and self.valid_coords:
             self._positioned = True
             self.notify('positioned')
         if not self.modified_timeout:
