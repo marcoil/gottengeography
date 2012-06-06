@@ -37,8 +37,7 @@ def test_drags_on_map():
         assert label.get_latitude() == label.photo.latitude
         assert label.get_longitude() == label.photo.longitude
         label.photo.lookup_geodata()
-        print label.photo.__dict__
-        assert len(label.photo.city) > 5
+        assert len(label.photo._geoname) > 5
 
 def test_drags_from_liststore():
     """Drag from the GtkListStore to the map"""
@@ -53,8 +52,7 @@ def test_drags_from_liststore():
         assert Label(photo).get_latitude() == photo.latitude
         assert Label(photo).get_longitude() == photo.longitude
         photo.lookup_geodata()
-        print dir(photo)
-        assert len(photo.city) > 5
+        assert len(photo._geoname) > 5
         assert photo.latitude != old[0]
         assert photo.longitude != old[1]
 

@@ -1,8 +1,8 @@
 
 """These tests cover loading and saving files."""
 
-from gg.label import selection
 from gg.photos import Photograph
+from gg.label import Label, selection
 from gg.xmlfiles import TrackFile, clear_all_gpx
 from gg.common import Widgets, points, selected, modified
 
@@ -48,13 +48,10 @@ def test_demo_data():
         
         # Pristine demo data shouldn't have any tags.
         assert photo.altitude == 0.0
-        print photo.latitude, photo.longitude
         assert photo.latitude == 0.0
         assert photo.longitude == 0.0
-        assert not photo.manual
         
         # Add some crap
-        photo.manual    = True
         photo.latitude  = 10.0
         photo.altitude  = 650
         photo.longitude = 45.0
@@ -64,13 +61,14 @@ def test_demo_data():
         # This is in response to a bug where I was using pyexiv2 wrongly
         # and it would load data from disk without discarding old data.
         photo.read()
-        assert photo.pretty_geoname() == ''
+        photo.build_geoname()
+        assert photo._geoname == ''
         assert photo.altitude == 0.0
         assert photo.latitude == 0.0
         assert photo.longitude == 0.0
-        assert not photo.valid_coords()
-        assert not photo.manual
-        assert photo.filename == photo.label.get_name()
+        assert photo.valid_coords()
+        assert photo.filename == Label(photo).get_name()
+        assert Label(photo).photo.filename == Label(photo).get_name()
     
     # Load the GPX
     gpx = [filename for filename in DEMOFILES if filename.endswith('gpx')]
@@ -99,6 +97,7 @@ def test_demo_data():
     for photo in Photograph.instances.values():
         assert photo in modified
         
+        print photo.latitude, photo.longitude
         assert photo.latitude
         assert photo.longitude
         assert photo.valid_coords()

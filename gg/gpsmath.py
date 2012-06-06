@@ -256,7 +256,7 @@ class Coordinates(GObject.GObject):
         self._geoname = ', '.join(
             [s for s in (self.city, self.provincestate, self.countryname) if s])
     
-    def do_modified(self, positioned = False):
+    def do_modified(self, positioned=False):
         self.modified = True
         if positioned and self.valid_coords:
             self._positioned = True
