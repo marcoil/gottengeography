@@ -96,38 +96,47 @@ class Coordinates(GObject.GObject):
     @GObject.property(type=str, default='')
     def filename(self):
         return self._filename
+    
     @filename.setter
     def filename(self, value):
         self._filename = value
         self.do_modified()
+    
     @GObject.property(type=float, default=0.0)
     def latitude(self):
         return self._latitude
+    
     @latitude.setter
     def latitude(self, value):
         if abs(value) > 90:
             return
         self._latitude = value
         self.do_modified(True)
+    
     @GObject.property(type=float, default=0.0)
     def longitude(self):
         return self._longitude
+    
     @longitude.setter
     def longitude(self, value):
         if abs(value) > 180:
             return
         self._longitude = value
         self.do_modified(True)
+    
     @GObject.property(type=float, default=0.0)
     def altitude(self):
         return self._altitude
+    
     @altitude.setter
     def altitude(self, value):
         self._altitude = value
         self.do_modified()
+    
     @GObject.property(type=int, default=0)
     def timestamp(self):
         return self._timestamp
+    
     @timestamp.setter
     def timestamp(self, value):
         self._timestamp = value
@@ -138,6 +147,7 @@ class Coordinates(GObject.GObject):
     @GObject.property(type=bool, default=False)
     def positioned(self):
         return self._positioned and self.valid_coords()
+    
     # The city / state / country location
     @GObject.property(type=str, default='')
     def geoname(self):
@@ -266,3 +276,4 @@ class Coordinates(GObject.GObject):
         self.modified = False
         self.modified_timeout = None
         return False
+
