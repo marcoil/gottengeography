@@ -29,6 +29,7 @@ from __future__ import division
 
 from gi.repository import GObject, Gtk, Gio, GLib
 from gi.repository import GtkChamplain
+from types import FunctionType
 from os.path import join
 
 from build_info import PKG_DATA_DIR
@@ -55,6 +56,8 @@ class memoize(object):
         say 'Photograph' you're really getting a memoize instance instead
         of the Photograph class.
         """
+        if type(cls) is FunctionType:
+            cls.instances = {}
         self.cls = cls
         self.__dict__.update(cls.__dict__)
         
