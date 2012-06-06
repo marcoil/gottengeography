@@ -31,6 +31,13 @@ from build_info import PKG_DATA_DIR
 
 EARTH_RADIUS = 6371 #km
 
+def memoize(func, cache={}):
+    """A simpler memoizer for functions only."""
+    def memoized(*args):
+        result = cache[args] = cache.get(args) or func(*args)
+        return result
+    return memoized
+
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
     """Convert degrees, minutes, seconds into decimal degrees."""
     return (-1 if sign[0] in 'SWsw' else 1) * (
@@ -83,9 +90,6 @@ class Coordinates(GObject.GObject):
     self.lookup_geoname() and receive cached data if it was already
     looked up by another instance of any subclass.
     """
-    
-    # Class variable, keeps the geocoding cache
-    geodata   = {}
     
     # GObject properties
     # Modifiable, non-derived properties
@@ -169,13 +173,8 @@ class Coordinates(GObject.GObject):
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
             self._latitude, self._longitude, link) if self.positioned else ''
     
-    def lookup_geodata(self):
-        """Search cities.txt for nearest city."""
-        if not self.positioned:
-            return
-        key = '%.2f,%.2f' % (self.latitude, self.longitude)
-        if key in Coordinates.geodata:
-            return self.set_geodata(self.geodata[key])
+    @memoize
+    def do_cached_lookup(self, key):
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
@@ -191,12 +190,14 @@ class Coordinates(GObject.GObject):
                 if delta < dist:
                     dist = delta
                     near = [name, state, country, tz]
-        Coordinates.geodata[key] = near
-        return self.set_geodata(near)
+        return near
     
-    def set_geodata(self, data):
-        """Apply geodata to internal attributes."""
-        city, state, countrycode, tz = data
+    def lookup_geodata(self):
+        """Search cities.txt for nearest city."""
+        if not self.positioned:
+            return
+        key = '%.2f,%.2f' % (self.latitude, self.longitude)
+        city, state, countrycode, tz = self.do_cached_lookup(key)
         provincestate = get_state(countrycode, state)
         countryname = get_country(countrycode)
         if (city is not self.city) or \
@@ -206,7 +207,7 @@ class Coordinates(GObject.GObject):
         self.city = city
         self.provincestate = provincestate
         self.countryname   = countryname
-        self.geotimezone      = tz.strip()
+        self.geotimezone   = tz.strip()
         return self.geotimezone
     
     def pretty_time(self):
