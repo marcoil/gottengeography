@@ -41,7 +41,7 @@ from sys import argv
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
 
-from camera import Camera
+from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
 from xmlfiles import TrackFile, GPXFile, KMLFile, clear_all_gpx
 from common import Struct, Widgets, gst, map_view
@@ -116,6 +116,7 @@ class GottenGeography():
         camera_id = Camera.generate_id(photo.camera_info)
         camera = Camera(camera_id, photo.camera_info)
         camera.add_photo(photo)
+        CameraView(camera)
         
         label = Label(photo)
         

@@ -120,8 +120,6 @@ class Camera(GObject.GObject):
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
         self.connect('notify::timezone-city', self.timezone_handler)
-        
-        CameraView(self)
     
     def set_found_timezone(self, found):
         """Store discovered timezone in GSettings."""
@@ -166,8 +164,10 @@ def display_offset(offset, value, add, subtract):
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
+@memoize
 class CameraView(Gtk.Box):
     """A widget to show a camera data."""
+    instances = {}
     
     def __init__(self, camera):
         Gtk.Box.__init__(self)
