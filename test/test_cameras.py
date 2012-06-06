@@ -24,3 +24,9 @@ def test_camera_offsets():
         for i, num in enumerate(start):
             assert end[i] - num == delta
 
+def test_memoization():
+    """Memoization shouldn't get in the way of things"""
+    assert Camera.instances is Camera.cls.instances
+    assert Camera.generate_id({}) is 'unknown_camera'
+    assert Camera.generate_id({'Make': 'Nikon'}) == 'nikon'
+

@@ -37,11 +37,12 @@ from time import tzset
 from os import environ
 
 from territories import tz_regions, get_timezone
-from common import GSettings, Builder, Widgets, bind_properties
+from common import GSettings, Builder, Widgets, memoize, bind_properties
 
 gproperty = GObject.property
 cameras_view = Widgets.cameras_view
 
+@memoize
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     instances = {}
@@ -63,15 +64,6 @@ class Camera(GObject.GObject):
                                 default = '')
     num_photos = gproperty(type = int,
                            default = 0)
-    
-    @staticmethod
-    def get(camera_id, info):
-        """Find an existing Camera instance, or create a new one."""
-        camera = Camera.instances.get(camera_id) or Camera(camera_id, info)
-        if camera_id not in Camera.instances:
-            CameraView(camera)
-        Camera.instances[camera_id] = camera
-        return camera
     
     @staticmethod
     def generate_id(info):
@@ -128,6 +120,8 @@ class Camera(GObject.GObject):
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
         self.connect('notify::timezone-city', self.timezone_handler)
+        
+        CameraView(self)
     
     def set_found_timezone(self, found):
         """Store discovered timezone in GSettings."""

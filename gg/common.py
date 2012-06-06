@@ -57,6 +57,11 @@ class memoize(object):
         """
         self.cls = cls
         self.__dict__.update(cls.__dict__)
+        
+        # This bit allows staticmethods to work as you would expect.
+        for attr, val in cls.__dict__.items():
+            if type(val) is staticmethod:
+                self.__dict__[attr] = val.__func__
     
     def __call__(self, *args):
         """Return a cached instance of the appropriate class if it exists."""

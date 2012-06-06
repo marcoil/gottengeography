@@ -112,7 +112,7 @@ class GottenGeography():
         Widgets.empty_camera_list.hide()
         
         camera_id = Camera.generate_id(photo.camera_info)
-        camera = Camera.get(camera_id, photo.camera_info)
+        camera = Camera(camera_id, photo.camera_info)
         camera.add_photo(photo)
         
         # If the user has selected the lookup method, then the timestamp
