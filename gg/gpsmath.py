@@ -32,9 +32,9 @@ from build_info import PKG_DATA_DIR
 EARTH_RADIUS = 6371 #km
 
 def memoize(func, cache={}):
-    """A simpler memoizer for functions only."""
+    """A simpler memoizer for methods only."""
     def memoized(*args):
-        result = cache[args] = cache.get(args) or func(*args)
+        result = cache[args[1:]] = cache.get(args[1:]) or func(*args)
         return result
     return memoized
 
