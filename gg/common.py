@@ -26,6 +26,7 @@ from __future__ import division
 
 from gi.repository import GObject, Gtk, Gio, GLib
 from gi.repository import GtkChamplain
+from inspect import getcallargs
 from types import FunctionType
 from os.path import join
 
@@ -41,13 +42,10 @@ points   = {}
 class memoize(object):
     """Cache instances of a class. Decorate the class with @memoize to use.
     
-    Note, I have added support for keyword arguments, but the key used for
-    cache lookups is only the first non-keyword argument. In order for this
-    to function correctly, whatever function or class you are memoizing
-    MUST take a unique identifier as its first non-keyword argument. For
-    Photograph, GPXFile, and KMLFile, that's an absolute filename, and for
-    Camera that's a unique ID including the make and model and possibly serial
-    number if known.
+    This is the only implementation of memoization I am aware of that
+    allows you to use keyword arguments and still get cached results, ie,
+    Photograph('/file/name') will give you the *same* Photograph instance
+    as Photograph(filename='/file/name').
     """
     
     def __init__(self, cls):
@@ -58,7 +56,9 @@ class memoize(object):
         of the Photograph class.
         """
         if type(cls) is FunctionType:
+            # Let's just pretend that the function you gave us is a class.
             cls.instances = {}
+            cls.__init__ = cls
         self.cls = cls
         self.__dict__.update(cls.__dict__)
         
@@ -68,8 +68,18 @@ class memoize(object):
                 self.__dict__[attr] = val.__func__
     
     def __call__(self, *args, **kwargs):
-        """Return a cached instance of the appropriate class if it exists."""
-        key = args[0]
+        """Return a cached instance of the appropriate class if it exists.
+        
+        This uses inspect.getcallargs in order to allow f(foo=1) to return
+        the *same* cached result as if you had called f(1). dicts are passed
+        along to your method but not used for generating the cache lookup
+        key, so if your method expects a dict as an argument, you'll need to
+        ensure that your method signature is unique without the dict, otherwise
+        you'll get cache collisions.
+        """
+        signature = getcallargs(self.cls.__init__, None, *args, **kwargs)
+        key = '//'.join([str(signature[key]) for key in sorted(signature)
+            if signature[key] and type(signature[key]) is not dict])
         if key not in self.cls.instances:
             self.cls.instances[key] = self.cls(*args, **kwargs)
         return self.cls.instances[key]
