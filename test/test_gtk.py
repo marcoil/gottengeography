@@ -8,12 +8,13 @@ from test import gui, gst
 
 def test_gtk_builder():
     """GtkBuilder should be creating some widgets for us"""
-    assert gui.liststore.get_n_columns() == 4
-    assert gui.search.results.get_n_columns() == 3
+    assert Widgets.loaded_photos.get_n_columns() == 4
+    assert Widgets.search_results.get_n_columns() == 3
     size = Widgets.main.get_size()
     assert size[1] > 300
     assert size[0] > 400
     assert selection.count_selected_rows() == 0
+    assert Widgets.error_message is Widgets['error_message']
 
 def test_gsettings():
     """GSettings should be storing data correctly"""
