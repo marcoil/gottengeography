@@ -45,8 +45,16 @@ def memoize(cls):
     Note, this rudimentary implementation is incompatible with keyword
     arguments, so don't use those. Most of the classes that I memoize just
     take a single argument and it's a filename, so this isn't a big deal.
+    
+    Also, memoization of classes effectively hides the class behind this
+    function, meaning that when you try to say 'Photograph.instances' what
+    you're really saying is 'memoized.instances', and it's invalid. This
+    implementation of memoization allows you to get at the class by
+    instantiating with no arguments, eg, 'Photograph().instances'.
     """
     def memoized(*args):
+        if not args:
+            return cls
         key = '//'.join(map(str, args))
         if key not in cls.instances:
             cls.instances[key] = cls(*args)

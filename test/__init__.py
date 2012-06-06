@@ -39,9 +39,9 @@ def teardown():
     clear_all_gpx()
     for camera in Camera.instances.values():
         camera.photos.clear()
-    for photo in Photograph.instances.values():
+    for photo in Photograph().instances.values():
         photo.destroy()
-    Photograph.instances.clear()
+    Photograph().instances.clear()
     modified.clear()
     selected.clear()
     gui.liststore.clear()

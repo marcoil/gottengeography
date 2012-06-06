@@ -190,7 +190,6 @@ class TrackFile(Coordinates):
         self.omega = max(keys)
         self.latitude = self.tracks[self.alpha].lat
         self.longitude = self.tracks[self.alpha].lon
-        TrackFile.update_range()
         
         builder = Builder('trackfile')
         self.label = builder.trackfile_label

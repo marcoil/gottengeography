@@ -264,7 +264,7 @@ class Photograph(Coordinates):
             self.label.destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)
-        del Photograph.instances[self.filename]
+        del Photograph().instances[self.filename]
         modified.discard(self)
         if self.iter:
             Widgets.loaded_photos.remove(self.iter)
