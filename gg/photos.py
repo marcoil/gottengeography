@@ -38,7 +38,7 @@ IPTC = 'Iptc.Application2.'
 # Everything else is just implementation details.
 def auto_timestamp_comparison(photo):
     """Use GPX data to calculate photo coordinates and elevation."""
-    if photo.manual or len(points) < 2:
+    if photo.manual or len(TrackFile.range) < 2:
         return
     
     # Clamp the timestamp within the range of available GPX points.

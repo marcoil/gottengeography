@@ -13,8 +13,7 @@ def test_demo_data():
     teardown()
     assert len(points) == 0
     assert len(TrackFile.instances) == 0
-    assert TrackFile.range[0] == float('inf')
-    assert TrackFile.range[1] == float('-inf')
+    assert len(TrackFile.range) == 0
     selection.emit('changed')
     # No buttons should be sensitive yet because nothing's loaded.
     buttons = {}
@@ -107,8 +106,7 @@ def test_demo_data():
     clear_all_gpx()
     assert len(points) == 0
     assert len(TrackFile.instances) == 0
-    assert TrackFile.range[0] == float('inf')
-    assert TrackFile.range[1] == float('-inf')
+    assert len(TrackFile.range) == 0
     
     # Save all photos
     buttons['save'].emit('clicked')

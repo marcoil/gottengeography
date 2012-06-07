@@ -148,21 +148,22 @@ class TrackFile():
     Subclasses must implement element_start and element_end, and call them in
     the base class.
     """
-    range = [float('inf'), float('-inf')]
+    range = []
     instances = {}
     
     @staticmethod
     def update_range():
         """Ensure that TrackFile.range contains the correct info."""
+        while TrackFile.range:
+            TrackFile.range.pop()
         if not TrackFile.instances:
             Widgets.empty_trackfile_list.show()
-            TrackFile.range[0] = float('inf')
-            TrackFile.range[1] = float('-inf')
         else:
             Widgets.empty_trackfile_list.hide()
             files = TrackFile.instances.values()
-            TrackFile.range[0] = min([gpx.alpha for gpx in files])
-            TrackFile.range[1] = max([gpx.omega for gpx in files])
+            TrackFile.range.extend([
+                min([gpx.alpha for gpx in files]),
+                max([gpx.omega for gpx in files])])
     
     @staticmethod
     def get_bounding_box():
