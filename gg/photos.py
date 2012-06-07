@@ -27,7 +27,7 @@ from xmlfiles import TrackFile
 from territories import get_state, get_country
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
-from common import Widgets, memoize, points, modified
+from common import Widgets, memoize, points, modified, gst
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -79,7 +79,7 @@ def fetch_exif(filename):
         raise IOError
     return exif
 
-def fetch_thumbnail(filename, size=200):
+def fetch_thumbnail(filename, size=gst.get_int('thumbnail-size')):
     """Load a photo's thumbnail from disk, avoiding EXIF data if possible."""
     try:
         return GdkPixbuf.Pixbuf.new_from_file_at_size(filename, size, size)
