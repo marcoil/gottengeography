@@ -89,8 +89,8 @@ class DragController():
         if on_map:
             for filename in files:
                 photo = Photograph.instances.get(filename)
-                photo.disable_auto_position()
                 if photo is not None:
+                    photo.disable_auto_position()
                     photo.set_location(
                         map_view.y_to_latitude(y),
                         map_view.x_to_longitude(x))
