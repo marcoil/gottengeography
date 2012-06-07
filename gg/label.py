@@ -85,6 +85,8 @@ class Label(Champlain.Label):
         self.connect('enter-event', hover, 1.05)
         self.connect('leave-event', hover, 1/1.05)
         self.connect('button-press', clicked)
+        self.connect('drag-finish',
+            lambda *ignore: photo.disable_auto_position())
         
         self.show() if photo.positioned else self.hide()
         self.visible_binding = bind_properties(photo, 'positioned', self, 'visible')

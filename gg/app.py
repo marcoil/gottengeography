@@ -153,6 +153,7 @@ class GottenGeography():
         for photo in Photograph.instances.values():
             if photo.positioned:
                 continue
+            photo.disable_auto_position()
             photo.set_location(
                 map_view.get_property('latitude'),
                 map_view.get_property('longitude'))

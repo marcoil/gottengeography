@@ -38,7 +38,7 @@ IPTC = 'Iptc.Application2.'
 # Everything else is just implementation details.
 def auto_timestamp_comparison(photo):
     """Use GPX data to calculate photo coordinates and elevation."""
-    if photo.positioned or len(points) < 2:
+    if photo.manual or len(points) < 2:
         return
     
     # Clamp the timestamp within the range of available GPX points.
@@ -101,6 +101,7 @@ class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     instances = {}
     camera_info = None
+    manual = False
     camera = None
     label = None
     exif = None
@@ -118,6 +119,7 @@ class Photograph(Coordinates):
     def read(self):
         """Discard all state and (re)initialize from disk."""
         self.exif = fetch_exif(self.filename)
+        self.manual = False
         self._latitude = 0.0
         self._longitude = 0.0
         self._altitude = 0.0
@@ -190,8 +192,7 @@ class Photograph(Coordinates):
         except KeyError:
             self.timestamp = int(stat(self.filename).st_mtime)
         self.timestamp += offset
-        if self.label is not None:
-            auto_timestamp_comparison(self)
+        auto_timestamp_comparison(self)
     
     def write(self):
         """Save exif data to photo file on disk."""
@@ -209,6 +210,13 @@ class Photograph(Coordinates):
         self.exif.write()
         modified.discard(self)
         Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
+    
+    def disable_auto_position(self):
+        """Indicate that the user has manually positioned the photo.
+        
+        This prevents it from snapping to any available GPS data automatically.
+        """
+        self.manual = True
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
