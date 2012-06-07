@@ -115,10 +115,10 @@ class GottenGeography():
         
         Widgets.empty_camera_list.hide()
         
-        camera_id = Camera.generate_id(photo.camera_info)
-        camera = Camera(camera_id, photo.camera_info)
+        camera_id, camera_name = Camera.generate_id(photo.camera_info)
+        camera = Camera(camera_id)
         camera.add_photo(photo)
-        CameraView(camera)
+        CameraView(camera, camera_name)
         
         label = Label(photo)
         

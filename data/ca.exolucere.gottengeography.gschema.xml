@@ -67,14 +67,6 @@
 
 
   <schema id="ca.exolucere.gottengeography.camera">
-    <key type="s" name="name">
-      <default>''</default>
-      <summary>The name of the camera.</summary>
-    </key>
-    <key type="s" name="model">
-      <default>'Unknown Model'</default>
-      <summary>The name of the camera as identified by the manufacturer.</summary>
-    </key>
     <key type="i" name="offset">
       <range min="-3600" max="3600"/>
       <default>0</default>

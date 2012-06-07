@@ -45,10 +45,6 @@ class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     instances = {}
     
-    name = GObject.property(
-        type = str,
-        default = '')
-    
     offset = GObject.property(
         type = int,
         default = 0,
@@ -80,20 +76,18 @@ class Camera(GObject.GObject):
         """Identifies a camera by serial number, make, and model.
         
         The ids look like: 12345_nikon_wonder_cam
+        The names look like: 'Nikon Wonder Cam'
         """
-        return '_'.join(sorted(info.values())).lower().replace(' ', '_')  \
-            or 'unknown_camera'
-    
-    @staticmethod
-    def build_name(info):
-        """Pretty prints the make and model of the camera."""
         maker = info.get('Make', '').capitalize()
         model = info.get('Model', '')
-        if not maker + model:
-            return _('Unknown Camera')
         
         # Some makers put their name twice
-        return model if model.startswith(maker) else maker + ' ' + model
+        model = model if model.startswith(maker) else maker + ' ' + model
+        
+        camera_id = '_'.join(sorted(info.values())).lower().replace(' ', '_')
+        
+        return (camera_id.strip(' _') or 'unknown_camera',
+                model.strip() or _('Unknown Camera'))
     
     @staticmethod
     def set_all_found_timezone(timezone):
@@ -107,7 +101,7 @@ class Camera(GObject.GObject):
         for camera in Camera.instances.values():
             camera.timezone_handler()
     
-    def __init__(self, camera_id, info):
+    def __init__(self, camera_id):
         """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)
         self.id = camera_id
@@ -115,13 +109,9 @@ class Camera(GObject.GObject):
         
         # Bind properties to settings
         self.gst = GSettings('camera', camera_id)
-        for prop in ('name', 'offset', 'timezone-method', 'timezone-region',
+        for prop in ('offset', 'timezone-method', 'timezone-region',
                      'timezone-city', 'found-timezone'):
             self.gst.bind(prop, self)
-        
-        # If we don't have a proper name, build it from the info
-        if not self.name:
-            self.name = Camera.build_name(info)
         
         # Get notifications when properties are changed
         self.connect('notify::offset', self.offset_handler)
@@ -176,7 +166,7 @@ class CameraView(Gtk.Box):
     """A widget to show a camera data."""
     instances = {}
     
-    def __init__(self, camera):
+    def __init__(self, camera, name):
         Gtk.Box.__init__(self)
         self.camera = camera
         
@@ -184,7 +174,7 @@ class CameraView(Gtk.Box):
         self.add(builder.camera_settings)
         
         label = builder.camera_label
-        label.set_text(camera.name)
+        label.set_text(name)
         
         self.counter = builder.count_label
         self.set_counter_text(camera, None)
@@ -192,8 +182,8 @@ class CameraView(Gtk.Box):
         # GtkScale allows the user to correct the camera's clock.
         scale = builder.offset
         scale.connect('format-value', display_offset,
-                           _('Add %dm, %ds to clock.'),
-                           _('Subtract %dm, %ds from clock.'))
+                      _('Add %dm, %ds to clock.'),
+                      _('Subtract %dm, %ds from clock.'))
         
         # NOTE: This has to be so verbose because of
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
