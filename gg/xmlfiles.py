@@ -48,14 +48,6 @@ def track_color_changed(selection, polys):
     for i, polygon in enumerate(polys):
         polygon.set_stroke_color(two if i % 2 else one)
 
-def clear_all_gpx(*ignore):
-    """Forget all GPX data, start over with a clean slate."""
-    for trackfile in TrackFile.instances.values():
-        trackfile.destroy()
-    
-    TrackFile.instances.clear()
-    points.clear()
-
 
 class Polygon(Champlain.PathLayer):
     """Extend a Champlain.PathLayer to do things more the way I like them."""
@@ -173,6 +165,15 @@ class TrackFile():
             for polygon in trackfile.polygons:
                 bounds.compose(polygon.get_bounding_box())
         return bounds
+    
+    @staticmethod
+    def clear_all(*ignore):
+        """Forget all GPX data, start over with a clean slate."""
+        for trackfile in TrackFile.instances.values():
+            trackfile.destroy()
+        
+        TrackFile.instances.clear()
+        points.clear()
     
     def __init__(self, filename, root, watch):
         self.filename = filename

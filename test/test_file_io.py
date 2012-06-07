@@ -2,8 +2,8 @@
 """These tests cover loading and saving files."""
 
 from gg.photos import Photograph
+from gg.xmlfiles import TrackFile
 from gg.label import Label, selection
-from gg.xmlfiles import TrackFile, clear_all_gpx
 from gg.common import Widgets, points, selected, modified
 
 from test import gui, teardown, setup, DEMOFILES
@@ -103,7 +103,7 @@ def test_demo_data():
         assert photo.label.get_property('visible')
     
     # Unload the GPX data.
-    clear_all_gpx()
+    TrackFile.clear_all()
     assert len(points) == 0
     assert len(TrackFile.instances) == 0
     assert len(TrackFile.range) == 0

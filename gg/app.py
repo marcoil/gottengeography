@@ -43,7 +43,7 @@ from sys import argv
 
 from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
-from xmlfiles import TrackFile, GPXFile, KMLFile, clear_all_gpx
+from xmlfiles import TrackFile, GPXFile, KMLFile
 from common import Struct, Widgets, gst, map_view
 from common import selected, modified
 from actor import animate_in
@@ -317,7 +317,7 @@ class GottenGeography():
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
         selection.emit('changed')
-        clear_all_gpx()
+        TrackFile.clear_all()
         
         gst.bind('left-pane-page', Widgets.photo_camera_gps, 'page')
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),

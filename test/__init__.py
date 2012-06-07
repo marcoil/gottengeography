@@ -8,8 +8,8 @@ from time import tzset
 
 from gg.app import GottenGeography, gst
 from gg.common import modified, selected, map_view
-from gg.xmlfiles import clear_all_gpx
 from gg.build_info import PKG_DATA_DIR
+from gg.xmlfiles import TrackFile
 from gg.photos import Photograph
 from gg.camera import Camera
 
@@ -35,7 +35,7 @@ def setup():
 
 def teardown():
     """Clean it all up."""
-    clear_all_gpx()
+    TrackFile.clear_all()
     for camera in Camera.instances.values():
         camera.photos.clear()
     for photo in Photograph.instances.values():
