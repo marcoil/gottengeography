@@ -39,31 +39,41 @@ from os import environ
 from territories import tz_regions, get_timezone
 from common import GSettings, Builder, Widgets, memoize, bind_properties
 
-gproperty = GObject.property
-cameras_view = Widgets.cameras_view
 
 @memoize
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     instances = {}
     
-    # Properties definitions
-    name = gproperty(type = str,
-                     default = '')
-    offset = gproperty(type = int,
-                       default = 0,
-                       minimum = -3600,
-                       maximum = 3600)
-    timezone_method = gproperty(type = str,
-                                default = 'system')
-    found_timezone = gproperty(type = str,
-                               default = '')
-    timezone_region = gproperty(type = str,
-                                default = '')
-    timezone_city = gproperty(type = str,
-                                default = '')
-    num_photos = gproperty(type = int,
-                           default = 0)
+    name = GObject.property(
+        type = str,
+        default = '')
+    
+    offset = GObject.property(
+        type = int,
+        default = 0,
+        minimum = -3600,
+        maximum = 3600)
+    
+    timezone_method = GObject.property(
+        type = str,
+        default = 'system')
+    
+    found_timezone = GObject.property(
+        type = str,
+        default = '')
+    
+    timezone_region = GObject.property(
+        type = str,
+        default = '')
+    
+    timezone_city = GObject.property(
+        type = str,
+        default = '')
+    
+    num_photos = GObject.property(
+        type = int,
+        default = 0)
     
     @staticmethod
     def generate_id(info):
@@ -223,7 +233,8 @@ class CameraView(Gtk.Box):
         
         camera.connect('notify::num-photos', self.set_counter_text)
         
-        cameras_view.attach_next_to(self, None, Gtk.PositionType.BOTTOM, 1, 1)
+        Widgets.cameras_view.attach_next_to(self, None,
+                                            Gtk.PositionType.BOTTOM, 1, 1)
         self.show_all()
     
     def method_handler(self, method):
