@@ -20,7 +20,7 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from common import Widgets, gst, map_view
+from common import Widgets, memoize, gst, map_view
 from gpsmath import format_coords
 
 START  = Clutter.BinAlignment.START
@@ -78,7 +78,7 @@ class Sources:
         gst.bind_with_convert('map-source-id', map_view, 'map-source',
             MAP_SOURCES.get, lambda x: x.get_id())
         
-        for source_id in sorted(MAP_SOURCES.keys()):
+        for source_id in sorted(MAP_SOURCES):
             menu_item = RadioMenuItem(MAP_SOURCES[source_id])
             if last_source == source_id:
                 menu_item.set_active(True)
@@ -86,15 +86,15 @@ class Sources:
         Widgets.map_source_menu.show_all()
 
 
+@memoize
 class RadioMenuItem(Gtk.RadioMenuItem):
     """Create the individual menu items for choosing map sources."""
-    instances = []
+    instances = {}
     
     def __init__(self, source):
         Gtk.RadioMenuItem.__init__(self)
         if self.instances:
-            self.set_property('group', self.instances[0])
-        self.instances.append(self)
+            self.set_property('group', self.instances.values()[0])
         self.set_label(source.get_name())
         self.connect('activate', self.menu_item_clicked, source.get_id())
         Widgets.map_source_menu.append(self)
