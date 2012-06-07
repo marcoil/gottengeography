@@ -44,9 +44,8 @@
     </key>
     <key type="i" name="thumbnail-size">
       <range min="48" max="500"/>
-      <default>200</default>
+      <default>128</default>
       <summary>Width in pixels for the thumbnails in the photo pane.</summary>
-      <description>Unlike all the others, you must restart GottenGeography for this setting to take effect.</description>
     </key>
     <key type="b" name="use-dark-theme">
       <default>true</default>

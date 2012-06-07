@@ -107,6 +107,18 @@ class Photograph(Coordinates):
     exif = None
     iter = None
     
+    @staticmethod
+    def resize_all_photos(*ignore):
+        """Reload all the thumbnails when the GSetting changes."""
+        # TODO: There's probably a more GObjecty way to do this with properties
+        # TODO: Is it necessary to reload every time? Probably could just load
+        # the max size to start and then scale it down to the requested size on
+        # the fly. But this works for now. 
+        for photo in Photograph.instances.values():
+            size = gst.get_int('thumbnail-size')
+            photo.thumb = fetch_thumbnail(photo.filename, size)
+            Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)
+    
     def __init__(self, filename):
         """Raises IOError for invalid file types.
         
@@ -160,9 +172,9 @@ class Photograph(Coordinates):
         if self.iter is None:
             self.iter = Widgets.loaded_photos.append()
         Widgets.loaded_photos.set_row(self.iter, [self.filename,
-                                           self.markup_summary(),
-                                           self.thumb,
-                                           self.timestamp])
+                                                  self.markup_summary(),
+                                                  self.thumb,
+                                                  self.timestamp])
         
         # Get the camera info
         self.camera_info = {'Make': '', 'Model': ''}

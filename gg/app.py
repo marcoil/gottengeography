@@ -323,6 +323,8 @@ class GottenGeography():
         gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
+        gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
+        
         placeholder = Widgets.empty_photo_list
         toolbar = Widgets.photo_btn_bar
         
