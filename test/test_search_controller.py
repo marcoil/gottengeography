@@ -26,9 +26,6 @@ def test_search():
         loc, lat, lon = result
         assert lat == map_view.get_property('latitude')
         assert lon == map_view.get_property('longitude')
-        
-        map_view.emit('animation-completed')
-        assert get_title() == 'GottenGeography - ' + loc
     
     entry.set_text('calg')
     assert len(gui.search.results) == 652

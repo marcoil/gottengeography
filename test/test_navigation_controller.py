@@ -15,7 +15,6 @@ def test_history():
         map_view.get_center_longitude()
     ]]
     map_view.emit('realize')
-    map_view.emit('animation-completed')
     assert len(Widgets.main.get_title()[18:]) > 5
     
     lat = random_coord(90)

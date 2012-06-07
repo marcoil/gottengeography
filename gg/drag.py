@@ -97,5 +97,3 @@ class DragController():
                     modified.add(photo)
         
         self.selection.emit('changed')
-        map_view.emit('animation-completed')
-

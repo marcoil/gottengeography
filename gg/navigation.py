@@ -56,7 +56,6 @@ def go_back(*ignore):
         gst.set_history(history)
     else:
         gst.reset('history')
-    map_view.emit('animation-completed')
 
 def set_window_title(object, property, set_title):
     """Add the current location we are looking at into the titlebar."""

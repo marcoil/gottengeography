@@ -25,6 +25,8 @@ def test_timezone_lookups():
     
     # Opening a photo should place it on the map.
     gui.open_files([DEMOFILES[0]])
+    print Camera.instances
+    print gst.get_string('found-timezone')
     assert gst.get_string('found-timezone') == 'America/Edmonton'
     assert Photograph.instances
     assert Camera.instances

@@ -16,8 +16,10 @@ def test_string_functions():
     
     photo.latitude  = 200
     photo.longitude = 200
+    print photo.pretty_coords()
     assert photo.pretty_coords() == 'Not geotagged'
     
+    photo.positioned = 0
     photo.latitude  = 10.0
     photo.longitude = 10.0
     assert photo.pretty_coords() == 'N 10.00000, E 10.00000'
