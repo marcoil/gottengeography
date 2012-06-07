@@ -105,12 +105,9 @@ class Camera(GObject.GObject):
         
         # Bind properties to settings
         self.gst = GSettings('camera', camera_id)
-        self.gst.bind('name', self)
-        self.gst.bind('offset', self)
-        self.gst.bind('timezone-method', self)
-        self.gst.bind('timezone-region', self)
-        self.gst.bind('timezone-city', self)
-        self.gst.bind('found-timezone', self)
+        for prop in ('name', 'offset', 'timezone-method', 'timezone-region',
+                     'timezone-city', 'found-timezone'):
+            self.gst.bind(prop, self)
         
         # If we don't have a proper name, build it from the info
         if not self.name:
