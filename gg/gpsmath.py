@@ -171,6 +171,7 @@ class Coordinates(GObject.GObject):
         
         self.modified = False
         self.modified_timeout = None
+        self.timeout_seconds = 1
         
         GObject.GObject.__init__(self, **props)
     
@@ -262,8 +263,8 @@ class Coordinates(GObject.GObject):
             self._positioned = True
             self.notify('positioned')
         if not self.modified_timeout:
-            self.modified_timeout = GLib.idle_add(self.update_derived_properties,
-                                                priority=GLib.PRIORITY_LOW)
+            self.modified_timeout = GLib.timeout_add_seconds(
+                self.timeout_seconds, self.update_derived_properties)
     
     def update_derived_properties(self):
         if not self.modified:

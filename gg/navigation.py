@@ -83,9 +83,12 @@ for key in [ 'Left', 'Right', 'Up', 'Down' ]:
 map_view.connect('notify::zoom-level', zoom_button_sensitivity,
     Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
 map_view.connect('realize', remember_location)
+
 center = Coordinates()
 center.connect('notify::geoname', set_window_title, Widgets.main.set_title)
 center.latitude = map_view.get_center_latitude()
 center.longitude = map_view.get_center_longitude()
 lat_binding = bind_properties(map_view, 'latitude', center)
 lon_binding = bind_properties(map_view, 'longitude', center)
+center.timeout_seconds = 60
+
