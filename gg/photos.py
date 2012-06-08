@@ -238,7 +238,7 @@ class Photograph(Coordinates):
             Widgets.loaded_photos.set_value(self.iter, 1,
                 ('<b>%s</b>' % self.markup_summary()))
         if self.camera and self.camera.found_timezone is not self.geotimezone:
-            self.camera.set_found_timezone(self.geotimezone)
+            self.camera.found_timezone = self.geotimezone
     
     def destroy(self):
         """Agony!"""

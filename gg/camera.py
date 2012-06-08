@@ -95,7 +95,7 @@ class Camera(GObject.GObject):
     def set_all_found_timezone(timezone):
         """"Set all cameras to the given timezone."""
         for camera in Camera.cameras:
-            camera.set_found_timezone(timezone)
+            camera.found_timezone = timezone
     
     @staticmethod
     def timezone_handler_all():
@@ -119,10 +119,6 @@ class Camera(GObject.GObject):
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
         self.connect('notify::timezone-city', self.timezone_handler)
-    
-    def set_found_timezone(self, found):
-        """Store discovered timezone in GSettings."""
-        self.found_timezone = found
     
     def timezone_handler(self, *ignore):
         """Set the timezone to the chosen zone and update all photos."""
