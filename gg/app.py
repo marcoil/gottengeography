@@ -60,8 +60,6 @@ PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
-selection = Widgets.photos_view.get_selection()
-
 
 class GottenGeography():
     """Provides a graphical interface to automagically geotag photos.
@@ -98,7 +96,7 @@ class GottenGeography():
                 TrackFile.instances.values()[0].start.geotimezone)
         Camera.timezone_handler_all()
         self.progressbar.hide()
-        selection.emit('changed')
+        Widgets.photos_selection.emit('changed')
     
     def load_img_from_file(self, uri):
         """Create or update a row in the ListStore.
@@ -159,7 +157,7 @@ class GottenGeography():
             photo.set_location(
                 map_view.get_property('latitude'),
                 map_view.get_property('longitude'))
-        selection.emit('changed')
+        Widgets.photos_selection.emit('changed')
         Widgets.apply_button.set_sensitive(False)
     
     def save_all_files(self, widget=None):
@@ -173,7 +171,7 @@ class GottenGeography():
             except Exception as inst:
                 self.status_message(str(inst))
         self.progressbar.hide()
-        selection.emit('changed')
+        Widgets.photos_selection.emit('changed')
     
     def jump_to_photo(self, button):
         """Center on the first selected photo."""
@@ -316,7 +314,7 @@ class GottenGeography():
         accel.connect(Gdk.keyval_from_name('q'),
             Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
-        selection.emit('changed')
+        Widgets.photos_selection.emit('changed')
         TrackFile.clear_all()
         
         gst.bind('left-pane-page', Widgets.photo_camera_gps, 'page')
@@ -383,14 +381,15 @@ class GottenGeography():
         target = tree.get_path_at_pos(int(event.x), int(event.y))
         if (target and event.type == Gdk.EventType.BUTTON_PRESS
                    and not (event.state & (CONTROL_MASK|SHIFT_MASK))
-                   and selection.path_is_selected(target[0])):
+                   and Widgets.photos_selection.path_is_selected(target[0])):
             # disable selection
-            selection.set_select_function(lambda *ignore: False, None)
+            Widgets.photos_selection.set_select_function(
+                lambda *ignore: False, None)
             self.defer_select = target[0]
      
     def photoview_released(self, tree, event):
         """Restore normal selection behavior while not dragging."""
-        selection.set_select_function(lambda *ignore: True, None)
+        Widgets.photos_selection.set_select_function(lambda *ignore: True, None)
         target = tree.get_path_at_pos(int(event.x), int(event.y))
         if (target and self.defer_select
                    and self.defer_select == target[0]
