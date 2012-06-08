@@ -85,14 +85,22 @@ class memoize(object):
         return self.cls.instances[key]
 
 
-def memoize_method(func, cache={}):
-    """A simpler memoizer for methods only."""
-    def memoized(*args):
-        key = args[1:]
-        if key not in cache:
-            cache[key] = func(*args)
-        return cache[key]
-    return memoized
+def memoize_method(share=False):
+    """Build a memoizer that can either share cache between instances or not."""
+    def method_memoizer(func):
+        """Decorate the method with @memoize_method(share=True/False) to use.
+        
+        Pick True if you want different instances sharing cache, or False
+        if you need different instances to have unique caches."""
+        cache = {}
+        def memoized(*args):
+            """Fetch the result from the cache."""
+            key = args[1:] if share else args
+            if key not in cache:
+                cache[key] = func(*args)
+            return cache[key]
+        return memoized
+    return method_memoizer
 
 
 def bind_properties(source, source_prop,
@@ -114,7 +122,7 @@ class Builder(Gtk.Builder):
         self.set_translation_domain(PACKAGE)
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
     
-    @memoize_method
+    @memoize_method(share=False)
     def __getattr__(self, widget):
         """Make calls to Gtk.Builder().get_object() more pythonic.
         

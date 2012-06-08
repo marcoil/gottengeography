@@ -179,7 +179,7 @@ class Coordinates(GObject.GObject):
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
             self._latitude, self._longitude, link) if self.positioned else ''
     
-    @memoize_method
+    @memoize_method(share=True)
     def do_cached_lookup(self, key):
         """Scan cities.txt for the nearest town."""
         near, dist = None, float('inf')
