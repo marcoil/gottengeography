@@ -61,7 +61,7 @@ def test_demo_data():
         # This is in response to a bug where I was using pyexiv2 wrongly
         # and it would load data from disk without discarding old data.
         photo.read()
-        photo.build_geoname()
+        photo.lookup_geodata()
         assert photo._geoname == ''
         assert photo.altitude == 0.0
         assert photo.latitude == 0.0

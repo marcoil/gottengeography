@@ -33,16 +33,8 @@ def test_st_johns():
     stjohns = Coordinates()
     stjohns.latitude = 47.56494
     stjohns.longitude = -52.70931
-    stjohns.update_derived_properties()
+    stjohns.lookup_geodata()
     assert stjohns.city == "St. John's"
-    
-    # Test that missing the provincestate doesn't break the geoname.
-    assert stjohns._geoname == \
-        "St. John's, Newfoundland and Labrador, Canada"
-    stjohns.provincestate = ''
-    stjohns.build_geoname()
-    assert stjohns._geoname == "St. John's, Canada"
-    assert stjohns.geotimezone == 'America/St_Johns'
 
 def test_math():
     """Test coordinate conversion functions."""

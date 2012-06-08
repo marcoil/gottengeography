@@ -57,10 +57,6 @@ def go_back(*ignore):
     else:
         gst.reset('history')
 
-def set_window_title(object, property, set_title):
-    """Add the current location we are looking at into the titlebar."""
-    set_title('%s - %s' % (APPNAME, object.geoname))
-
 def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     """Ensure zoom buttons are only sensitive when they need to be."""
     zoom = view.get_zoom_level()
@@ -85,10 +81,9 @@ map_view.connect('notify::zoom-level', zoom_button_sensitivity,
 map_view.connect('realize', remember_location)
 
 center = Coordinates()
-center.connect('notify::geoname', set_window_title, Widgets.main.set_title)
-center.latitude = map_view.get_center_latitude()
-center.longitude = map_view.get_center_longitude()
 lat_binding = bind_properties(map_view, 'latitude', center)
 lon_binding = bind_properties(map_view, 'longitude', center)
-center.timeout_seconds = 60
+center.do_modified(True)
+center_binding = bind_properties(center, 'geoname', Widgets.main, 'title')
+center.timeout_seconds = 10 # Reduces the rate that the titlebar updates
 
