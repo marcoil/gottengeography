@@ -85,6 +85,16 @@ class memoize(object):
         return self.cls.instances[key]
 
 
+def memoize_method(func, cache={}):
+    """A simpler memoizer for methods only."""
+    def memoized(*args):
+        key = args[1:]
+        if key not in cache:
+            cache[key] = func(*args)
+        return cache[key]
+    return memoized
+
+
 def bind_properties(source, source_prop,
                     target, target_prop=None,
                     flags=GObject.BindingFlags.DEFAULT):
@@ -104,13 +114,15 @@ class Builder(Gtk.Builder):
         self.set_translation_domain(PACKAGE)
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
     
+    @memoize_method
     def __getattr__(self, widget):
         """Make calls to Gtk.Builder().get_object() more pythonic.
         
         Here is a quick comparison of execution performance:
         
-        Executing this method:              6.50 microseconds
+        Executing this method, no memoize:  6.50 microseconds
         Calling get_object directly:        4.35 microseconds
+        Executing this method with memoize: 1.34 microseconds
         Accessing an instance attribute:    0.08 microseconds
         Accessing a local variable:         0.03 microseconds
         
@@ -118,7 +130,8 @@ class Builder(Gtk.Builder):
         
         Considering that this method is 3 orders of magnitude slower than
         accessing variables, you should avoid it inside performance-critical
-        inner loops.
+        inner loops, however thanks to memoization, it's faster than calling
+        get_object() directly, so don't sweat it.
         """
         return self.get_object(widget)
     

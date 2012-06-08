@@ -28,15 +28,9 @@ from gi.repository import GLib, GObject
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
+from common import memoize_method
 
 EARTH_RADIUS = 6371 #km
-
-def memoize(func, cache={}):
-    """A simpler memoizer for methods only."""
-    def memoized(*args):
-        result = cache[args[1:]] = cache.get(args[1:]) or func(*args)
-        return result
-    return memoized
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
     """Convert degrees, minutes, seconds into decimal degrees."""
@@ -185,7 +179,7 @@ class Coordinates(GObject.GObject):
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
             self._latitude, self._longitude, link) if self.positioned else ''
     
-    @memoize
+    @memoize_method
     def do_cached_lookup(self, key):
         """Scan cities.txt for the nearest town."""
         near, dist = None, float('inf')
