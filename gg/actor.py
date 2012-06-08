@@ -99,9 +99,10 @@ class RadioMenuItem(Gtk.RadioMenuItem):
         self.connect('activate', self.menu_item_clicked, source.get_id())
         Widgets.map_source_menu.append(self)
     
-    def menu_item_clicked(self, item, mapid):
-        if item.get_active():
-            map_view.set_map_source(MAP_SOURCES[mapid])
+    def menu_item_clicked(self, item, map_id):
+        """Switch to the clicked map source."""
+        if self.get_active():
+            map_view.set_map_source(MAP_SOURCES[map_id])
 
 
 class Crosshair(Clutter.Rectangle):

@@ -169,17 +169,15 @@ class CameraView(Gtk.Box):
         Gtk.Box.__init__(self)
         self.camera = camera
         
-        builder = Builder('camera')
-        self.add(builder.camera_settings)
+        self.widgets = Builder('camera')
+        self.add(self.widgets.camera_settings)
         
-        label = builder.camera_label
-        label.set_text(name)
+        self.widgets.camera_label.set_text(name)
         
-        self.counter = builder.count_label
-        self.set_counter_text(camera, None)
+        self.set_counter_text()
         
         # GtkScale allows the user to correct the camera's clock.
-        scale = builder.offset
+        scale = self.widgets.offset
         scale.connect('format-value', display_offset,
                       _('Add %dm, %ds to clock.'),
                       _('Subtract %dm, %ds from clock.'))
@@ -195,42 +193,40 @@ class CameraView(Gtk.Box):
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
-        self.region_combo = builder.timezone_region
-        self.cities_combo = builder.timezone_cities
+        region_combo = self.widgets.timezone_region
+        cities_combo = self.widgets.timezone_cities
         for name in tz_regions:
-            self.region_combo.append(name, name)
+            region_combo.append(name, name)
         
-        self.region_binding = bind_properties(self.region_combo, 'active-id',
+        self.region_binding = bind_properties(region_combo, 'active-id',
                                               camera, 'timezone-region')
-        self.region_combo.connect('changed', self.region_handler,
-                                  self.cities_combo)
-        self.region_combo.set_active_id(camera.timezone_region)
+        region_combo.connect('changed', self.region_handler, cities_combo)
+        region_combo.set_active_id(camera.timezone_region)
         
-        self.cities_binding = bind_properties(self.cities_combo, 'active-id',
+        self.cities_binding = bind_properties(cities_combo, 'active-id',
                                               camera, 'timezone-city')
-        self.cities_combo.set_active_id(camera.timezone_city)
+        cities_combo.set_active_id(camera.timezone_city)
         
-        self.method_combo = builder.timezone_method
-        self.method_binding = bind_properties(self.method_combo, 'active-id',
+        method_combo = self.widgets.timezone_method
+        self.method_binding = bind_properties(method_combo, 'active-id',
                                               camera, 'timezone-method')
-        self.method_combo.connect('changed', self.method_handler)
-        self.method_combo.set_active_id(camera.timezone_method)
+        method_combo.connect('changed', self.method_handler)
+        method_combo.set_active_id(camera.timezone_method)
         
-        Widgets.timezone_regions_group.add_widget(self.region_combo)
-        Widgets.timezone_cities_group.add_widget(self.cities_combo)
-        Widgets.cameras_group.add_widget(self.get_children()[0])
+        Widgets.timezone_regions_group.add_widget(region_combo)
+        Widgets.timezone_cities_group.add_widget(cities_combo)
+        Widgets.cameras_group.add_widget(self.widgets.camera_settings)
         
         camera.connect('notify::num-photos', self.set_counter_text)
         
-        Widgets.cameras_view.attach_next_to(self, None,
-                                            Gtk.PositionType.BOTTOM, 1, 1)
+        Widgets.cameras_view.add(self)
         self.show_all()
     
     def method_handler(self, method):
         """Only show manual tz selectors when necessary."""
         visible = method.get_active_id() == 'custom'
-        self.region_combo.set_visible(visible)
-        self.cities_combo.set_visible(visible)
+        self.widgets.timezone_region.set_visible(visible)
+        self.widgets.timezone_cities.set_visible(visible)
     
     def region_handler(self, region, cities):
         """Populate the list of cities when a continent is selected."""
@@ -246,5 +242,5 @@ class CameraView(Gtk.Box):
             text = _('One photo loaded.')
         elif num > 1:
             text = _('%d photos loaded.') % num 
-        self.counter.set_text(text)
+        self.widgets.count_label.set_text(text)
 

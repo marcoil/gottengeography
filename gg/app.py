@@ -31,8 +31,7 @@ GObject.set_prgname(PACKAGE)
 GtkClutter.init([])
 
 from gi.repository import Gtk, Gdk
-from gi.repository import GdkPixbuf
-from gi.repository import Champlain, Pango
+from gi.repository import GdkPixbuf, Pango
 from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
@@ -116,9 +115,9 @@ class GottenGeography():
         camera_id, camera_name = Camera.generate_id(photo.camera_info)
         camera = Camera(camera_id)
         camera.add_photo(photo)
-        CameraView(camera, camera_name)
         
-        label = Label(photo)
+        CameraView(camera, camera_name)
+        Label(photo)
         
         # If the user has selected the lookup method, then the timestamp
         # was probably calculated incorrectly the first time (before the

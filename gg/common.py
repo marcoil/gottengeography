@@ -104,12 +104,22 @@ class Builder(Gtk.Builder):
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
     
     def __getattr__(self, widget):
-        """Make calls to Gtk.Builder().get_object() more pythonic."""
-        built = self.get_object(widget)
-        if built:
-            return built
-        else:
-            raise AttributeError('Unknown widget: ' + widget)
+        """Make calls to Gtk.Builder().get_object() more pythonic.
+        
+        Here is a quick comparison of execution performance:
+        
+        Executing this method:              6.50 microseconds
+        Calling get_object directly:        4.35 microseconds
+        Accessing an instance attribute:    0.08 microseconds
+        Accessing a local variable:         0.03 microseconds
+        
+        (averaged over a million executions with the timeit package)
+        
+        Considering that this method is 3 orders of magnitude slower than
+        accessing variables, you should avoid it inside performance-critical
+        inner loops.
+        """
+        return self.get_object(widget)
     
     __getitem__ = __getattr__
 

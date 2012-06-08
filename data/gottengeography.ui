@@ -302,6 +302,7 @@
                 <property name="column-homogeneous">True</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
+                <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkLabel" id="empty_camera_list">
                     <property name="sensitive">True</property>

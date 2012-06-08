@@ -5,7 +5,7 @@ from gi.repository import Clutter, Champlain
 
 from gg.common import Widgets, selected
 from gg.photos import Photograph
-from gg.label import Label, selection
+from gg.label import Label
 
 from test import setup, teardown, random_coord
 
@@ -44,8 +44,8 @@ def test_clickability():
         for button in ('save', 'revert', 'close'):
             assert Widgets[button + '_button'].get_sensitive()
         
-        assert selection.iter_is_selected(label.photo.iter)
-        assert selection.count_selected_rows() == 1
+        assert Widgets.photos_selection.iter_is_selected(label.photo.iter)
+        assert Widgets.photos_selection.count_selected_rows() == 1
         assert label.photo in selected
         assert len(selected) == 1
         assert label.get_scale() == (1.1, 1.1)
@@ -56,7 +56,7 @@ def test_clickability():
         for other in Label.instances.values():
             if other.get_name() == label.get_name():
                 continue
-            assert not selection.iter_is_selected(other.photo.iter)
+            assert not Widgets.photos_selection.iter_is_selected(other.photo.iter)
             assert other.photo not in selected
             assert other.get_scale() == (1, 1)
             assert not other.get_selected()
