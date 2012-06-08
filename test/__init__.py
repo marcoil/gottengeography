@@ -38,7 +38,7 @@ def teardown():
     TrackFile.clear_all()
     for camera in Camera.cameras:
         camera.photos.clear()
-    for photo in Photograph.files:
+    for photo in Photograph.instances.values():
         photo.destroy()
     Photograph.instances.clear()
     modified.clear()

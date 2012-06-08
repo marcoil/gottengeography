@@ -169,7 +169,7 @@ class TrackFile():
     @staticmethod
     def clear_all(*ignore):
         """Forget all GPX data, start over with a clean slate."""
-        for trackfile in TrackFile.files:
+        for trackfile in TrackFile.instances.values():
             trackfile.destroy()
         
         TrackFile.instances.clear()
