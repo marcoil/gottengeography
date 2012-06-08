@@ -191,22 +191,21 @@ class CameraView(Gtk.Box):
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
         region_combo = self.widgets.timezone_region
-        cities_combo = self.widgets.timezone_cities
+        cities_combo = self.widgets.timezone_city
         for name in tz_regions:
             region_combo.append(name, name)
         
-        self.region_binding = bind_properties(region_combo, 'active-id',
-                                              camera, 'timezone-region')
+        self.bindings = {}
+        for setting in ('region', 'city', 'method'):
+            name = 'timezone_' + setting
+            self.bindings[setting] = bind_properties(
+                self.widgets[name], 'active-id', camera, name.replace('_', '-'))
+        
         region_combo.connect('changed', self.region_handler, cities_combo)
         region_combo.set_active_id(camera.timezone_region)
-        
-        self.cities_binding = bind_properties(cities_combo, 'active-id',
-                                              camera, 'timezone-city')
         cities_combo.set_active_id(camera.timezone_city)
         
         method_combo = self.widgets.timezone_method
-        self.method_binding = bind_properties(method_combo, 'active-id',
-                                              camera, 'timezone-method')
         method_combo.connect('changed', self.method_handler)
         method_combo.set_active_id(camera.timezone_method)
         
@@ -223,7 +222,7 @@ class CameraView(Gtk.Box):
         """Only show manual tz selectors when necessary."""
         visible = method.get_active_id() == 'custom'
         self.widgets.timezone_region.set_visible(visible)
-        self.widgets.timezone_cities.set_visible(visible)
+        self.widgets.timezone_city.set_visible(visible)
     
     def region_handler(self, region, cities):
         """Populate the list of cities when a continent is selected."""
