@@ -76,8 +76,10 @@ class memoize(object):
         you'll get cache collisions.
         """
         signature = getcallargs(self.cls.__init__, None, *args, **kwargs)
-        key = '//'.join([str(signature[key]) for key in sorted(signature)
-            if signature[key] and type(signature[key]) is not dict])
+        del signature['self']
+        key = tuple(signature[key] for key in sorted(signature)
+            if signature[key] and type(signature[key]) not in (dict, list))
+        key = key[0] if len(key) is 1 else key
         if key not in self.cls.instances:
             self.cls.instances[key] = self.cls(*args, **kwargs)
         return self.cls.instances[key]
@@ -141,9 +143,7 @@ class GSettings(Gio.Settings):
     
     def bind(self, key, widget, prop=None, flags=Gio.SettingsBindFlags.DEFAULT):
         """Don't make me specify the default flags every time."""
-        if prop is None:
-            prop = key
-        Gio.Settings.bind(self, key, widget, prop, flags)
+        Gio.Settings.bind(self, key, widget, prop or key, flags)
     
     def set_history(self, value):
         """Convert the map history to an array of tuples."""

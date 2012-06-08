@@ -110,7 +110,7 @@ class Label(Champlain.Label):
     
     def destroy(self):
         """Remove from map and unload."""
-        del Label.instances[str(self.photo)]
+        del Label.instances[self.photo]
         self.unmap()
         #Champlain.Label.destroy(self)
 
