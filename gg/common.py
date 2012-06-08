@@ -89,13 +89,12 @@ def bind_properties(source, source_prop,
                     target, target_prop=None,
                     flags=GObject.BindingFlags.DEFAULT):
     """Make it easier to bind properties between GObjects."""
-    if target_prop is None:
-        target_prop = source_prop
     return GObject.Binding(source = source,
                            source_property = source_prop,
                            target = target,
-                           target_property = target_prop,
+                           target_property = target_prop or source_prop,
                            flags = flags)
+
 
 class Builder(Gtk.Builder):
     """Load GottenGeography's UI definitions."""
