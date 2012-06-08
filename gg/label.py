@@ -24,18 +24,18 @@ from common import Widgets, map_view, selected, modified
 from common import bind_properties, memoize
 
 layer = Champlain.MarkerLayer()
-selection = Widgets.photos_view.get_selection()
-selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+Widgets.photos_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 map_view.add_layer(layer)
 
 
 def update_highlights(*ignore):
     """Ensure only the selected labels are highlighted."""
-    selection_exists = selection.count_selected_rows() > 0
+    selection_exists = Widgets.photos_selection.count_selected_rows() > 0
     selected.clear()
     for label in layer.get_markers():
         # Maintain the 'selected' set() for easier iterating later.
-        if label.photo.iter and selection.iter_is_selected(label.photo.iter):
+        if label.photo.iter and Widgets.photos_selection.iter_is_selected(
+                                label.photo.iter):
             selected.add(label.photo)
         label.set_highlight(label.photo in selected, selection_exists)
 
@@ -58,12 +58,12 @@ def clicked(label, event):
     assert photo.filename == label.get_name()
     if event.get_state() & Clutter.ModifierType.CONTROL_MASK:
         if label.get_selected():
-            selection.unselect_iter(photo.iter)
+            Widgets.photos_selection.unselect_iter(photo.iter)
         else:
-            selection.select_iter(photo.iter)
+            Widgets.photos_selection.select_iter(photo.iter)
     else:
-        selection.unselect_all()
-        selection.select_iter(photo.iter)
+        Widgets.photos_selection.unselect_all()
+        Widgets.photos_selection.select_iter(photo.iter)
 
 def hover(label, event, factor):
     """Scale a ChamplainLabel by the given factor."""
@@ -115,7 +115,7 @@ class Label(Champlain.Label):
         #Champlain.Label.destroy(self)
 
 
-selection.connect('changed', update_highlights)
-selection.connect('changed', selection_sensitivity,
+Widgets.photos_selection.connect('changed', update_highlights)
+Widgets.photos_selection.connect('changed', selection_sensitivity,
     *[Widgets[b + '_button'] for b in ('close', 'save', 'revert', 'jump')])
 
