@@ -55,6 +55,7 @@ class Polygon(Champlain.PathLayer):
     def __init__(self):
         Champlain.PathLayer.__init__(self)
         self.set_stroke_width(4)
+        map_view.add_layer(self)
     
     def append_point(self, latitude, longitude, elevation):
         """Simplify appending a point onto a polygon."""
@@ -261,7 +262,6 @@ class GPXFile(TrackFile):
         """Adds new polygon for each segment, and watches for track points."""
         if name == 'trkseg':
             polygon = Polygon()
-            map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
             self.widgets.colorpicker.emit('color-set')
@@ -311,7 +311,6 @@ class KMLFile(TrackFile):
         """Adds new polygon for each gx:Track, and watches for location data."""
         if name == 'gx:Track':
             polygon = Polygon()
-            map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
             self.widgets.colorpicker.emit('color-set')
