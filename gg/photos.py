@@ -96,6 +96,7 @@ def fetch_thumbnail(filename, size=gst.get_int('thumbnail-size')):
             Gio.MemoryInputStream.new_from_data(data, None),
             size, size, True, None)
 
+
 @memoize
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
@@ -246,7 +247,8 @@ class Photograph(Coordinates):
             Label(self).destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)
-        del Photograph.instances[self.filename]
         modified.discard(self)
         if self.iter:
             Widgets.loaded_photos.remove(self.iter)
+        del Photograph.instances[self.filename]
+

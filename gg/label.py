@@ -112,7 +112,7 @@ class Label(Champlain.Label):
         """Remove from map and unload."""
         del Label.instances[self.photo]
         self.unmap()
-        #Champlain.Label.destroy(self)
+        Champlain.Label.destroy(self)
 
 
 Widgets.photos_selection.connect('changed', update_highlights)
