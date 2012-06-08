@@ -118,7 +118,7 @@ class XMLSimpleParser:
         
         Expat can call this handler multiple times with data chunks.
         """
-        if not data or data.strip() == '':
+        if not data.strip():
             return
         self.state[self.element] += data
     
@@ -183,6 +183,29 @@ class TrackFile():
         self.tracks   = {}
         self.polygons = set()
         
+        self.widgets = Builder('trackfile')
+        
+        self.gst = GSettings('trackfile', basename(filename))
+        if self.gst.get_string('start-timezone') is '':
+            # Then this is the first time this file has been loaded
+            # and we should honor the user-selected global default
+            # track color instead of using the schema-defined default
+            self.gst.set_value('track-color', gst.get_value('track-color'))
+        
+        self.gst.bind_with_convert(
+            'track-color',
+            self.widgets.colorpicker,
+            'color',
+            lambda x: Gdk.Color(*x),
+            lambda x: (x.red, x.green, x.blue))
+        
+        self.widgets.trackfile_label.set_text(basename(filename))
+        self.widgets.unload.connect('clicked', self.destroy)
+        self.widgets.colorpicker.set_title(basename(filename))
+        self.widgets.colorpicker.connect('color-set',
+                                         track_color_changed,
+                                         self.polygons)
+        
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         
@@ -193,34 +216,9 @@ class TrackFile():
         self.start = Coordinates(latitude = self.tracks[self.alpha].lat,
                                  longitude = self.tracks[self.alpha].lon)
         
-        builder = Builder('trackfile')
-        self.label = builder.trackfile_label
-        self.label.set_text(basename(filename))
-        
-        self.trash = builder.unload
-        self.trash.connect('clicked', self.destroy)
-        
-        self.colorpicker = builder.colorpicker
-        self.colorpicker.set_title(basename(filename))
-        self.colorpicker.connect('color-set',
-                                 track_color_changed,
-                                 self.polygons)
-        
-        Widgets.trackfiles_view.attach_next_to(
-            builder.trackfile_settings, None, BOTTOM, 1, 1)
-        
-        self.gst = GSettings('trackfile', basename(filename))
-        
-        if self.gst.get_string('start-timezone') is '':
-            # Then this is the first time this file has been loaded
-            # and we should honor the user-selected global default
-            # track color instead of using the schema-defined default
-            self.gst.set_value('track-color', gst.get_value('track-color'))
-        
         self.gst.set_string('start-timezone', self.start.lookup_geodata())
-        self.gst.bind_with_convert('track-color', self.colorpicker, 'color',
-            lambda x: Gdk.Color(*x), lambda x: (x.red, x.green, x.blue))
-        self.colorpicker.emit('color-set')
+        
+        Widgets.trackfiles_view.add(self.widgets.trackfile_settings)
     
     def element_start(self, name, attributes):
         """Placeholder for a method that gets overridden in subclasses."""
@@ -241,8 +239,8 @@ class TrackFile():
         for timestamp in self.tracks:
             del points[timestamp]
         self.polygons.clear()
-        for widget in (self.label, self.colorpicker, self.trash):
-            widget.destroy()
+        for widget in ('trackfile_label', 'unload', 'colorpicker'):
+            self.widgets[widget].destroy()
         del TrackFile.instances[self.filename]
         TrackFile.update_range()
 
@@ -266,6 +264,7 @@ class GPXFile(TrackFile):
             map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
+            self.widgets.colorpicker.emit('color-set')
         if name == 'trkpt':
             return True
         return False
@@ -315,6 +314,7 @@ class KMLFile(TrackFile):
             map_view.add_layer(polygon)
             self.polygons.add(polygon)
             self.append = polygon.append_point
+            self.widgets.colorpicker.emit('color-set')
             return False
         return True
     
