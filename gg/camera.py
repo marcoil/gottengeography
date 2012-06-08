@@ -145,8 +145,6 @@ class Camera(GObject.GObject):
     
     def add_photo(self, photo):
         """Adds photo to the list of photos taken by this camera."""
-        if photo.camera is not None:
-            photo.camera.remove_photo(photo)
         photo.camera = self
         self.photos.add(photo)
         self.num_photos += 1
