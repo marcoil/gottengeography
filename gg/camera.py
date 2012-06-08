@@ -68,9 +68,10 @@ class Camera(GObject.GObject):
         type = str,
         default = '')
     
-    num_photos = GObject.property(
-        type = int,
-        default = 0)
+    @GObject.property(type=int, default=0)
+    def num_photos(self):
+        """Read-only count of the loaded photos taken by this camera."""
+        return len(self.photos)
     
     @staticmethod
     def generate_id(info):
@@ -147,13 +148,13 @@ class Camera(GObject.GObject):
         """Adds photo to the list of photos taken by this camera."""
         photo.camera = self
         self.photos.add(photo)
-        self.num_photos += 1
+        self.notify('num_photos')
     
     def remove_photo(self, photo):
         """Removes photo from the list of photos taken by this camera."""
         photo.camera = None
         self.photos.discard(photo)
-        self.num_photos -= 1
+        self.notify('num_photos')
 
 def display_offset(offset, value, add, subtract):
     """Display minutes and seconds in the offset GtkScale."""
@@ -237,10 +238,8 @@ class CameraView(Gtk.Box):
     def set_counter_text(self, *ignore):
         """Display to the user how many photos are loaded."""
         num = self.camera.num_photos
-        text = _('No photos loaded.')
-        if num is 1:
-            text = _('One photo loaded.')
-        elif num > 1:
-            text = _('%d photos loaded.') % num 
-        self.widgets.count_label.set_text(text)
+        self.widgets.count_label.set_text(
+            {0:   _('No photos loaded.'),
+             1:   _('One photo loaded.')}.get(
+             num, _('%d photos loaded.') % num))
 
