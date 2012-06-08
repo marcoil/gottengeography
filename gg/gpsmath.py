@@ -154,8 +154,16 @@ class Coordinates(GObject.GObject):
         return self._geoname
     
     def __init__(self, **props):
-        # Initialize the 'real' values
         self._filename = ''
+        self.modified = False
+        self.modified_timeout = None
+        self.timeout_seconds = 0
+        self.reset_properties()
+        
+        GObject.GObject.__init__(self, **props)
+    
+    def reset_properties(self):
+        """Reset/reinitialize everything to the factory defaults."""
         self._latitude = 0.0
         self._longitude = 0.0
         self._altitude = 0.0
@@ -167,12 +175,6 @@ class Coordinates(GObject.GObject):
         self.provincestate = ''
         self.countryname = ''
         self.geotimezone = ''
-        
-        self.modified = False
-        self.modified_timeout = None
-        self.timeout_seconds = 0
-        
-        GObject.GObject.__init__(self, **props)
     
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
@@ -185,6 +187,7 @@ class Coordinates(GObject.GObject):
     
     @memoize
     def do_cached_lookup(self, key):
+        """Scan cities.txt for the nearest town."""
         near, dist = None, float('inf')
         lat1, lon1 = radians(self.latitude), radians(self.longitude)
         with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
@@ -203,7 +206,7 @@ class Coordinates(GObject.GObject):
         return near
     
     def lookup_geodata(self):
-        """Search cities.txt for nearest city."""
+        """Check the cache for geonames, and notify of any changes."""
         if not self.positioned:
             return
         key = '%.2f,%.2f' % (self.latitude, self.longitude)
@@ -218,6 +221,8 @@ class Coordinates(GObject.GObject):
         self.provincestate = provincestate
         self.countryname   = countryname
         self.geotimezone   = tz.strip()
+        self._geoname = ', '.join(
+            [s for s in (city, provincestate, countryname) if s])
         return self.geotimezone
     
     def pretty_time(self):
@@ -251,11 +256,6 @@ class Coordinates(GObject.GObject):
                         'style="italic" size="smaller"', self.plain_summary()
                         )
     
-    def build_geoname(self):
-        """Display city, state, and country, if present."""
-        self._geoname = ', '.join(
-            [s for s in (self.city, self.provincestate, self.countryname) if s])
-    
     def do_modified(self, positioned=False):
         self.modified = True
         if positioned and self.valid_coords:
@@ -271,7 +271,6 @@ class Coordinates(GObject.GObject):
         if self.modified_timeout:
             GLib.source_remove(self.modified_timeout)
         self.lookup_geodata()
-        self.build_geoname()
         
         self.modified = False
         self.modified_timeout = None

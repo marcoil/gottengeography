@@ -133,20 +133,9 @@ class Photograph(Coordinates):
         """Discard all state and (re)initialize from disk."""
         self.exif = fetch_exif(self.filename)
         self.manual = False
-        self._latitude = 0.0
-        self._longitude = 0.0
-        self._altitude = 0.0
-        self._timestamp = 0
-        self._positioned = False
-        self._geoname = ''
-        
-        self.city = ''
-        self.provincestate = ''
-        self.countryname = ''
-        self.geotimezone = ''
-        
         self.modified = False
         self.modified_timeout = None
+        self.reset_properties()
         
         Label(self).hide()
         
