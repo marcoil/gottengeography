@@ -100,6 +100,7 @@ def fetch_thumbnail(filename, size=gst.get_int('thumbnail-size')):
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
     instances = {}
+    files = instances.viewvalues()
     camera_info = None
     manual = False
     camera = None
@@ -114,7 +115,7 @@ class Photograph(Coordinates):
         # TODO: Is it necessary to reload every time? Probably could just load
         # the max size to start and then scale it down to the requested size on
         # the fly. But this works for now. 
-        for photo in Photograph.instances.values():
+        for photo in Photograph.files:
             size = gst.get_int('thumbnail-size')
             photo.thumb = fetch_thumbnail(photo.filename, size)
             Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)

@@ -142,6 +142,7 @@ class TrackFile():
     """
     range = []
     instances = {}
+    files = instances.viewvalues()
     
     @staticmethod
     def update_range():
@@ -152,16 +153,15 @@ class TrackFile():
             Widgets.empty_trackfile_list.show()
         else:
             Widgets.empty_trackfile_list.hide()
-            files = TrackFile.instances.values()
             TrackFile.range.extend([
-                min([gpx.alpha for gpx in files]),
-                max([gpx.omega for gpx in files])])
+                min([gpx.alpha for gpx in TrackFile.files]),
+                max([gpx.omega for gpx in TrackFile.files])])
     
     @staticmethod
     def get_bounding_box():
         """Determine the smallest box that contains all loaded polygons."""
         bounds = Champlain.BoundingBox.new()
-        for trackfile in TrackFile.instances.values():
+        for trackfile in TrackFile.files:
             for polygon in trackfile.polygons:
                 bounds.compose(polygon.get_bounding_box())
         return bounds
@@ -169,7 +169,7 @@ class TrackFile():
     @staticmethod
     def clear_all(*ignore):
         """Forget all GPX data, start over with a clean slate."""
-        for trackfile in TrackFile.instances.values():
+        for trackfile in TrackFile.files:
             trackfile.destroy()
         
         TrackFile.instances.clear()

@@ -43,7 +43,7 @@ def test_drags_from_liststore():
     """Drag from the GtkListStore to the map"""
     assert Photograph.instances
     assert Label.instances
-    for photo in Photograph.instances.values():
+    for photo in Photograph.files:
         old = [photo.latitude, photo.longitude]
         selected.add(photo)
         data = Struct({'get_text': lambda: photo.filename})

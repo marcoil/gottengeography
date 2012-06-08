@@ -152,8 +152,8 @@ class GottenGeography():
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
-        for photo in Photograph.instances.values():
-            if photo.positioned:
+        for photo in Photograph.files:
+            if photo.manual:
                 continue
             photo.disable_auto_position()
             photo.set_location(

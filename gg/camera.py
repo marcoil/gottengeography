@@ -44,6 +44,7 @@ from common import GSettings, Builder, Widgets, memoize, bind_properties
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
     instances = {}
+    cameras = instances.viewvalues()
     
     offset = GObject.property(
         type = int,
@@ -92,13 +93,13 @@ class Camera(GObject.GObject):
     @staticmethod
     def set_all_found_timezone(timezone):
         """"Set all cameras to the given timezone."""
-        for camera in Camera.instances.values():
+        for camera in Camera.cameras:
             camera.set_found_timezone(timezone)
     
     @staticmethod
     def timezone_handler_all():
         """Update all of the photos from all of the cameras."""
-        for camera in Camera.instances.values():
+        for camera in Camera.cameras:
             camera.timezone_handler()
     
     def __init__(self, camera_id):

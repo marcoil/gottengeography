@@ -42,7 +42,7 @@ def test_demo_data():
     assert gui.liststore.get_iter_first()
     
     assert Photograph.instances
-    for photo in Photograph.instances.values():
+    for photo in Photograph.files:
         assert not photo in modified
         assert not photo in selected
         
@@ -94,7 +94,7 @@ def test_demo_data():
         assert not buttons[button].get_sensitive()
     
     assert Photograph.instances
-    for photo in Photograph.instances.values():
+    for photo in Photograph.files:
         assert photo in modified
         
         print photo.latitude, photo.longitude

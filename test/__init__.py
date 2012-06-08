@@ -36,9 +36,9 @@ def setup():
 def teardown():
     """Clean it all up."""
     TrackFile.clear_all()
-    for camera in Camera.instances.values():
+    for camera in Camera.cameras:
         camera.photos.clear()
-    for photo in Photograph.instances.values():
+    for photo in Photograph.files:
         photo.destroy()
     Photograph.instances.clear()
     modified.clear()
