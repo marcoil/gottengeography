@@ -17,7 +17,7 @@
 
 from __future__ import division
 
-from gi.repository import Gio, GObject, GdkPixbuf
+from gi.repository import Gio, GLib, GObject, GdkPixbuf
 from pyexiv2 import ImageMetadata
 from time import mktime
 from os import stat

@@ -14,9 +14,8 @@ def test_string_functions():
     photo = Photograph(DEMOFILES[5])
     photo.read()
     
-    photo.latitude  = 200
-    photo.longitude = 200
-    print photo.pretty_coords()
+    photo._latitude  = 200
+    photo._longitude = 200
     assert photo.pretty_coords() == 'Not geotagged'
     
     photo.positioned = 0
@@ -40,13 +39,15 @@ def test_string_functions():
     assert photo.pretty_altitude() == '600.7m above sea level'
     
     assert photo.plain_summary() == \
-"""2001-09-08 07:46:39 PM
+"""Georgetown, Ascension, Saint Helena
+2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000
 600.7m above sea level"""
     
     assert photo.markup_summary() == \
 """<span size="larger">IMG_2411.JPG</span>
-<span style="italic" size="smaller">2001-09-08 07:46:39 PM
+<span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
+2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000
 600.7m above sea level</span>"""
 

@@ -74,7 +74,6 @@ def format_coords(lat, lon):
         _('E') if lon >= 0 else _('W'), abs(lon)
     )
 
-gproperty = GObject.property
 
 class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates.
@@ -171,7 +170,7 @@ class Coordinates(GObject.GObject):
         
         self.modified = False
         self.modified_timeout = None
-        self.timeout_seconds = 1
+        self.timeout_seconds = 0
         
         GObject.GObject.__init__(self, **props)
     

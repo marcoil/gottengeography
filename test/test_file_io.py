@@ -34,6 +34,7 @@ def test_demo_data():
     
     # Nothing is yet selected or modified, so buttons still insensitive.
     for button in buttons.values():
+        # TODO fix this test here.
         assert not button.get_sensitive()
     
     # Something loaded in the liststore?
@@ -100,7 +101,7 @@ def test_demo_data():
         assert photo.latitude
         assert photo.longitude
         assert photo.valid_coords()
-        assert photo.label.get_property('visible')
+        assert Label(photo).get_property('visible')
     
     # Unload the GPX data.
     TrackFile.clear_all()
