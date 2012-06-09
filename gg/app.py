@@ -85,9 +85,10 @@ class GottenGeography(Gtk.Application):
         
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
-        if TrackFile.instances:
-            Camera.set_all_found_timezone(
-                TrackFile.instances.values()[0].start.geotimezone)
+        likely_zone = TrackFile.query_all_timezones()
+        if likely_zone:
+            print likely_zone
+            Camera.set_all_found_timezone(likely_zone)
         Camera.timezone_handler_all()
         Widgets.progressbar.hide()
         Widgets.photos_selection.emit('changed')

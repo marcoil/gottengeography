@@ -168,6 +168,21 @@ class TrackFile():
         return bounds
     
     @staticmethod
+    def query_all_timezones():
+        """Try to determine the most likely timezone the user is in.
+        
+        First we check all loaded GPX/KML files for the timezone at their
+        starting point, and if those timezones are all identical, we report it.
+        If they do not match, then the user must travel a lot, and then we
+        simply have no idea what timezone is likely to be the one that their
+        camera is set to.
+        """
+        zones = {}
+        for trackfile in TrackFile.instances.values():
+            zones[trackfile.start.geotimezone] = True
+        return None if len(zones) != 1 else zones.keys()[0]
+    
+    @staticmethod
     def clear_all(*ignore):
         """Forget all GPX data, start over with a clean slate."""
         for trackfile in TrackFile.instances.values():
