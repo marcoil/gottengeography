@@ -33,8 +33,10 @@ from time import clock
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
 
-GLib.set_application_name(APPNAME)
-GObject.set_prgname(PACKAGE)
+if not GLib.get_application_name():
+    GLib.set_application_name(APPNAME)
+    GObject.set_prgname(PACKAGE)
+
 GtkClutter.init([])
 
 from camera import Camera, CameraView
@@ -78,7 +80,7 @@ class GottenGeography(Gtk.Application):
     message_timeout_source = None
     defer_select = False
     
-    def __init__(self):
+    def __init__(self, do_fade_in=True):
         Gtk.Application.__init__(
             self, application_id='ca.exolucere.' + APPNAME,
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -86,6 +88,8 @@ class GottenGeography(Gtk.Application):
         self.connect('activate', lambda *ignore: None) #TODO
         self.connect('command-line', command_line)
         self.connect('startup', self.launch_main_window)
+        
+        self.do_fade_in = do_fade_in
     
     def open_files(self, files):
         """Attempt to load all of the specified files."""
@@ -335,7 +339,7 @@ class GottenGeography(Gtk.Application):
         Widgets.error_bar.connect('response',
             lambda widget, signal: widget.hide())
         
-        animate_in()
+        animate_in(self.do_fade_in)
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.

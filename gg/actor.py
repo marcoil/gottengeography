@@ -165,8 +165,8 @@ black = Box()
 
 
 def animate_in(anim=True):
-    """Animate the crosshair."""
-    for i in xrange(gst.get_int('animation-steps'), 7, -1):
+    """Fade in all the map actors."""
+    for i in xrange(gst.get_int('animation-steps') if anim else 8, 7, -1):
         opacity = 0.6407035175879398 * (400 - i) # don't ask
         for actor in (xhair, black, scale):
             actor.set_opacity(opacity)
