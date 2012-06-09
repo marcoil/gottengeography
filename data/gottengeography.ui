@@ -85,7 +85,7 @@
                     <property name="caps_lock_warning">False</property>
                     <property name="secondary_icon_stock">gtk-find</property>
                     <property name="completion">search_completion</property>
-                    <accelerator key="l" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                    <accelerator key="l" signal="grab_focus" modifiers="GDK_CONTROL_MASK"/>
                   </object>
                 </child>
               </object>
