@@ -25,7 +25,7 @@ def test_configuration():
     """Reticulating splines"""
     animate_in(20)
     assert black.get_width() == map_view.get_width()
-    assert xhair.get_rotation(Clutter.RotateAxis.Z_AXIS)[0] == 45
+    assert isinstance(xhair, Champlain.Point)
 
 def test_map_sources():
     """The map should have multiple sources"""

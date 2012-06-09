@@ -105,14 +105,13 @@ class RadioMenuItem(Gtk.RadioMenuItem):
             map_view.set_map_source(MAP_SOURCES[map_id])
 
 
-class Crosshair(Clutter.Rectangle):
+class Crosshair(Champlain.Point):
     """Display a target at map center for placing photos."""
     
     def __init__(self):
-        Clutter.Rectangle.__init__(self)
-        self.set_size(7, 7)
+        Champlain.Point.__init__(self)
+        self.set_size(4)
         self.set_color(Clutter.Color.new(0, 0, 0, 64))
-        self.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
         gst.bind('show-map-center', self, 'visible')
         map_view.bin_layout_add(self, CENTER, CENTER)
 
