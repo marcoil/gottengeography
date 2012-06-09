@@ -215,7 +215,7 @@ class GottenGeography(Gtk.Application):
     def confirm_quit_dialog(self, *ignore):
         """Teardown method, inform user of unsaved files, if any."""
         if not modified:
-            self.remove_window(Widgets.main)
+            self.quit()
             return True
         Widgets.quit.format_secondary_markup(self.quit_message % len(modified))
         response = Widgets.quit.run()
@@ -224,7 +224,7 @@ class GottenGeography(Gtk.Application):
         if response == Gtk.ResponseType.ACCEPT:
             self.save_all_files()
         if response != Gtk.ResponseType.CANCEL:
-            self.remove_window(Widgets.main)
+            self.quit()
         return True
     
     def launch_main_window(self, alsoself):
