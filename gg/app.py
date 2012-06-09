@@ -56,6 +56,17 @@ PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
+def command_line(self, commands):
+    """Open the files passed in at the commandline.
+    
+    This method collects any commandline arguments from any invocation of
+    GottenGeography and reports them to the primary instance for opening.
+    """
+    files = commands.get_arguments()[1:]
+    if files:
+        self.open_files([abspath(f) for f in files])
+    return 0
+
 
 class GottenGeography(Gtk.Application):
     """Provides a graphical interface to automagically geotag photos.
@@ -68,12 +79,13 @@ class GottenGeography(Gtk.Application):
     defer_select = False
     
     def __init__(self):
-        Gtk.Application.__init__(self, application_id='ca.exolucere.' + APPNAME,
-                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        Gtk.Application.__init__(
+            self, application_id='ca.exolucere.' + APPNAME,
+            flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        
         self.connect('activate', lambda *ignore: None) #TODO
-        self.connect('open', lambda *ignore: None) #TODO
+        self.connect('command-line', command_line)
         self.connect('startup', self.launch_main_window)
-        self.register(None)
     
     def open_files(self, files):
         """Attempt to load all of the specified files."""
@@ -95,7 +107,6 @@ class GottenGeography(Gtk.Application):
         # that the GPX/KML files were loaded in.
         likely_zone = TrackFile.query_all_timezones()
         if likely_zone:
-            print likely_zone
             Camera.set_all_found_timezone(likely_zone)
         Camera.timezone_handler_all()
         Widgets.progressbar.hide()
