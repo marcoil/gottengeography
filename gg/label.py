@@ -88,14 +88,19 @@ class Label(Champlain.Label):
         self.connect('drag-finish',
             lambda *ignore: photo.disable_auto_position())
         
-        self.show() if photo.positioned else self.hide()
-        self.visible_binding = bind_properties(photo, 'positioned', self, 'visible')
         if photo.positioned:
             self.set_location(photo.latitude, photo.longitude)
-        self.lat_binding = bind_properties(photo, 'latitude', self,
-                        flags=GObject.BindingFlags.BIDIRECTIONAL)
-        self.lon_binding = bind_properties(photo, 'longitude', self,
-                        flags=GObject.BindingFlags.BIDIRECTIONAL)
+            self.show()
+        else:
+            self.hide()
+        
+        self.bindings = {}
+        for prop in ('latitude', 'longitude'):
+            self.bindings[prop] = bind_properties(
+                photo, prop, self,
+                flags=GObject.BindingFlags.BIDIRECTIONAL)
+        self.bindings['visible'] = bind_properties(
+            photo, 'positioned', self, 'visible')
         
         layer.add_marker(self)
     

@@ -83,6 +83,9 @@ class Coordinates(GObject.GObject):
     self.lookup_geoname() and receive cached data if it was already
     looked up by another instance of any subclass.
     """
+    modified_timeout = None
+    timeout_seconds = 1
+    modified = False
     
     # GObject properties
     # Modifiable, non-derived properties
@@ -149,9 +152,6 @@ class Coordinates(GObject.GObject):
     
     def __init__(self, **props):
         self._filename = ''
-        self.modified = False
-        self.modified_timeout = None
-        self.timeout_seconds = 0
         self.reset_properties()
         
         GObject.GObject.__init__(self, **props)
@@ -231,7 +231,7 @@ class Coordinates(GObject.GObject):
     
     def pretty_altitude(self):
         """Convert elevation into a human readable format."""
-        if self.altitude <> 0.0:
+        if self.altitude != 0.0:
             return '%.1f%s' % (abs(self.altitude), _('m above sea level')
                         if self.altitude >= 0 else _('m below sea level'))
         return ''
@@ -251,8 +251,9 @@ class Coordinates(GObject.GObject):
                         )
     
     def do_modified(self, positioned=False):
+        """Notify that position has changed and set timer to update geoname."""
         self.modified = True
-        if positioned and self.valid_coords:
+        if positioned and self.valid_coords():
             self._positioned = True
             self.notify('positioned')
         if not self.modified_timeout:
@@ -260,6 +261,7 @@ class Coordinates(GObject.GObject):
                 self.timeout_seconds, self.update_derived_properties)
     
     def update_derived_properties(self):
+        """Do expensive geodata lookups after the timeout."""
         if not self.modified:
             return False
         if self.modified_timeout:

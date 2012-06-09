@@ -37,7 +37,7 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from common import Struct, Widgets, map_view, selected, modified
+from common import Widgets, map_view, selected, modified
 from photos import Photograph
 
 class DragController():

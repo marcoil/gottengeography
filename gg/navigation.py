@@ -21,7 +21,6 @@ from gi.repository import Gtk, Gdk
 
 from common import Widgets, gst, map_view, bind_properties
 from gpsmath import Coordinates, valid_coords
-from version import APPNAME
 
 def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):
     """Move the map view by 5% of its length in the given direction."""

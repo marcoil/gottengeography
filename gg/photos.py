@@ -17,14 +17,13 @@
 
 from __future__ import division
 
-from gi.repository import Gio, GLib, GObject, GdkPixbuf
+from gi.repository import Gio, GObject, GdkPixbuf
 from pyexiv2 import ImageMetadata
 from time import mktime
 from os import stat
 
 from label import Label
 from xmlfiles import TrackFile
-from territories import get_state, get_country
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
 from common import Widgets, memoize, points, modified, gst
@@ -228,10 +227,10 @@ class Photograph(Coordinates):
         self.latitude  = lat
         self.longitude = lon
     
-    def update_positioned(self, object, property):
+    def update_positioned(self, *ignore):
         modified.add(self)
     
-    def update_geoname(self, object, property):
+    def update_geoname(self, *ignore):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
