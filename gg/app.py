@@ -241,26 +241,20 @@ class GottenGeography(Gtk.Application):
         Widgets.loaded_photos.set_sort_column_id(
             TIMESTAMP, Gtk.SortType.ASCENDING)
         
-        cell_string = Gtk.CellRendererText()
-        cell_string.set_property('wrap-mode', Pango.WrapMode.WORD)
-        cell_string.set_property('wrap-width', 200)
-        cell_thumb  = Gtk.CellRendererPixbuf()
-        cell_thumb.set_property('stock-id', Gtk.STOCK_MISSING_IMAGE)
-        cell_thumb.set_property('ypad', 6)
-        cell_thumb.set_property('xpad', 12)
+        Widgets.photos_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        Widgets.photos_thumb_renderer.set_property('ypad', 6)
+        Widgets.photos_thumb_renderer.set_property('xpad', 12)
+        Widgets.photos_thumb_renderer.set_property('stock-id',
+                                                   Gtk.STOCK_MISSING_IMAGE)
         
-        column = Gtk.TreeViewColumn('Photos')
-        column.pack_start(cell_thumb, False)
-        column.add_attribute(cell_thumb, 'pixbuf', THUMB)
-        column.pack_start(cell_string, False)
-        column.add_attribute(cell_string, 'markup', SUMMARY)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        Widgets.photos_summary_renderer.set_property('wrap-width', 200)
+        Widgets.photos_summary_renderer.set_property('wrap-mode',
+                                                     Pango.WrapMode.WORD)
         
         # Deal with multiple selection drag and drop.
         photos_view = Widgets.photos_view
         photos_view.connect('button-press-event', self.photoview_pressed)
         photos_view.connect('button-release-event', self.photoview_released)
-        photos_view.append_column(column)
         
         self.drag      = DragController(self.open_files)
         self.search    = SearchController()

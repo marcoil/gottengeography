@@ -181,6 +181,23 @@
                             <child internal-child="selection">
                               <object class="GtkTreeSelection" id="photos_selection"/>
                             </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="photos_column">
+                                <property name="title">Photos</property>
+                                <child>
+                                  <object class="GtkCellRendererPixbuf" id="photos_thumb_renderer"/>
+                                  <attributes>
+                                    <attribute name="pixbuf">2</attribute>
+                                  </attributes>
+                                </child>
+                                <child>
+                                  <object class="GtkCellRendererText" id="photos_summary_renderer"/>
+                                  <attributes>
+                                    <attribute name="markup">1</attribute>
+                                  </attributes>
+                                </child>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
