@@ -67,6 +67,14 @@ class GottenGeography(Gtk.Application):
     message_timeout_source = None
     defer_select = False
     
+    def __init__(self):
+        Gtk.Application.__init__(self, application_id='ca.exolucere.' + APPNAME,
+                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        self.connect('activate', lambda *ignore: None) #TODO
+        self.connect('open', lambda *ignore: None) #TODO
+        self.connect('startup', self.launch_main_window)
+        self.register(None)
+    
     def open_files(self, files):
         """Attempt to load all of the specified files."""
         Widgets.progressbar.show()
@@ -207,14 +215,6 @@ class GottenGeography(Gtk.Application):
         if response != Gtk.ResponseType.CANCEL:
             self.remove_window(Widgets.main)
         return True
-    
-    def __init__(self):
-        Gtk.Application.__init__(self, application_id='ca.exolucere.' + APPNAME,
-                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
-        self.connect('activate', lambda *ignore: None) #TODO
-        self.connect('open', lambda *ignore: None) #TODO
-        self.connect('startup', self.launch_main_window)
-        self.register(None)
     
     def launch_main_window(self, alsoself):
         """Tie together all the app components, but only once.
