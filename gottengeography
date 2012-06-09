@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sys import exit
+from sys import exit, argv
 
 def need(dependency):
     """Exit the program and tell the user what dependency was missing."""
@@ -62,4 +62,5 @@ except:
 # Time to launch the app.
 
 from gg.app import GottenGeography
-GottenGeography().main()
+GottenGeography().run(argv)
+

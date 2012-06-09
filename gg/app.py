@@ -24,21 +24,18 @@ import gettext
 gettext.bindtextdomain(PACKAGE)
 gettext.textdomain(PACKAGE)
 
-from gi.repository import GLib, GObject, GtkClutter
-
-GObject.threads_init()
-GObject.set_prgname(PACKAGE)
-GtkClutter.init([])
-
-from gi.repository import Gtk, Gdk
-from gi.repository import GdkPixbuf, Pango
+from gi.repository import GLib, GObject, GtkClutter, Gtk
+from gi.repository import Gdk, Gio, GdkPixbuf, Pango
 from os.path import join, basename, abspath
 from gettext import gettext as _
 from time import clock
-from sys import argv
 
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
+
+GLib.set_application_name(APPNAME)
+GObject.set_prgname(PACKAGE)
+GtkClutter.init([])
 
 from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
@@ -60,7 +57,7 @@ CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
 
-class GottenGeography():
+class GottenGeography(Gtk.Application):
     """Provides a graphical interface to automagically geotag photos.
     
     Just load your photos, and load a GPX file, and GottenGeography will
@@ -204,7 +201,7 @@ class GottenGeography():
     def confirm_quit_dialog(self, *ignore):
         """Teardown method, inform user of unsaved files, if any."""
         if len(modified) == 0:
-            Gtk.main_quit()
+            self.remove_window(Widgets.main)
             return True
         dialog = Widgets.quit
         dialog.format_secondary_markup(self.strings.quit % len(modified))
@@ -214,7 +211,7 @@ class GottenGeography():
         if response == Gtk.ResponseType.ACCEPT:
             self.save_all_files()
         if response != Gtk.ResponseType.CANCEL:
-            Gtk.main_quit()
+            self.remove_window(Widgets.main)
         return True
     
 ################################################################################
@@ -222,6 +219,14 @@ class GottenGeography():
 ################################################################################
     
     def __init__(self):
+        Gtk.Application.__init__(self, application_id='ca.exolucere.' + APPNAME,
+                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        self.connect('activate', lambda *ignore: None)
+        self.connect('open', lambda *ignore: None)
+        self.connect('startup',
+            lambda *ignore: (self.add_window(Widgets.main), animate_in()))
+        self.register(None)
+        
         self.message_timeout_source = None
         self.progressbar = Widgets.progressbar
         
@@ -394,12 +399,4 @@ class GottenGeography():
                    and self.defer_select == target[0]
                    and not (event.x == 0 and event.y == 0)): # certain drag&drop
             tree.set_cursor(target[0], target[1], False)
-    
-    def main(self, anim=True):
-        """Animate the crosshair and begin user interaction."""
-        if argv[1:]:
-            self.open_files([abspath(f) for f in argv[1:]])
-            anim = False
-        animate_in(anim)
-        Gtk.main()
 
