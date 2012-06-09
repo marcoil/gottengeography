@@ -110,6 +110,7 @@ class Crosshair(Clutter.Rectangle):
     
     def __init__(self):
         Clutter.Rectangle.__init__(self)
+        self.set_size(7, 7)
         self.set_color(Clutter.Color.new(0, 0, 0, 64))
         self.set_z_rotation_from_gravity(45, Clutter.Gravity.CENTER)
         gst.bind('show-map-center', self, 'visible')
@@ -166,10 +167,9 @@ black = Box()
 
 def animate_in(anim=True):
     """Animate the crosshair."""
-    for i in xrange(8, 7, -1):
-        xhair.set_size(i, i)
+    for i in xrange(gst.get_int('animation-steps'), 7, -1):
         opacity = 0.6407035175879398 * (400 - i) # don't ask
-        for actor in (xhair, black):
+        for actor in (xhair, black, scale):
             actor.set_opacity(opacity)
         while Gtk.events_pending():
             Gtk.main_iteration()

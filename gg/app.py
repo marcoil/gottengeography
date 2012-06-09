@@ -64,14 +64,12 @@ class GottenGeography(Gtk.Application):
     automatically cross-reference the timestamps on the photos to the timestamps
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
-    
-################################################################################
-# File data handling. These methods interact with files (loading, saving, etc)
-################################################################################
+    message_timeout_source = None
+    defer_select = False
     
     def open_files(self, files):
         """Attempt to load all of the specified files."""
-        self.progressbar.show()
+        Widgets.progressbar.show()
         invalid, total = [], len(files)
         for i, name in enumerate(files, 1):
             self.redraw_interface(i / total, basename(name))
@@ -91,7 +89,7 @@ class GottenGeography(Gtk.Application):
             Camera.set_all_found_timezone(
                 TrackFile.instances.values()[0].start.geotimezone)
         Camera.timezone_handler_all()
-        self.progressbar.hide()
+        Widgets.progressbar.hide()
         Widgets.photos_selection.emit('changed')
     
     def load_img_from_file(self, uri):
@@ -158,7 +156,7 @@ class GottenGeography(Gtk.Application):
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
-        self.progressbar.show()
+        Widgets.progressbar.show()
         total = len(modified)
         for i, photo in enumerate(list(modified), 1):
             self.redraw_interface(i / total, basename(photo.filename))
@@ -166,7 +164,7 @@ class GottenGeography(Gtk.Application):
                 photo.write()
             except Exception as inst:
                 self.status_message(str(inst))
-        self.progressbar.hide()
+        Widgets.progressbar.hide()
         Widgets.photos_selection.emit('changed')
     
     def jump_to_photo(self, button):
@@ -175,10 +173,6 @@ class GottenGeography(Gtk.Application):
         if photo.valid_coords():
             map_view.emit('realize')
             map_view.center_on(photo.latitude, photo.longitude)
-    
-################################################################################
-# Dialogs. Various dialog-related methods for user interaction.
-################################################################################
     
     def update_preview(self, chooser, image):
         """Display photo thumbnail and geotag data in file chooser."""
@@ -214,36 +208,29 @@ class GottenGeography(Gtk.Application):
             self.remove_window(Widgets.main)
         return True
     
-################################################################################
-# Initialization and Gtk boilerplate/housekeeping type stuff and such.
-################################################################################
-    
     def __init__(self):
         Gtk.Application.__init__(self, application_id='ca.exolucere.' + APPNAME,
                                  flags=Gio.ApplicationFlags.HANDLES_OPEN)
-        self.connect('activate', lambda *ignore: None)
-        self.connect('open', lambda *ignore: None)
-        self.connect('startup',
-            lambda *ignore: (self.add_window(Widgets.main), animate_in()))
+        self.connect('activate', lambda *ignore: None) #TODO
+        self.connect('open', lambda *ignore: None) #TODO
+        self.connect('startup', self.launch_main_window)
         self.register(None)
+    
+    def launch_main_window(self, alsoself):
+        """Tie together all the app components, but only once.
         
-        self.message_timeout_source = None
-        self.progressbar = Widgets.progressbar
-        
-        self.error = Struct({
-            'message': Widgets.error_message,
-            'icon': Widgets.error_icon,
-            'bar': Widgets.error_bar
-        })
-        
-        self.error.bar.connect('response', lambda widget, signal: widget.hide())
+        GtkApplication specifically prevents this method from executing more
+        than once, meaning that it's only possible to run one instance of
+        GottenGeography at a time.
+        """
+        assert self is alsoself #Then why is this even an instance method? hmmmm
         
         self.strings = Struct({
             'quit':    Widgets.quit.get_property('secondary-text'),
         })
         
-        self.liststore = Widgets.loaded_photos
-        self.liststore.set_sort_column_id(TIMESTAMP, Gtk.SortType.ASCENDING)
+        Widgets.loaded_photos.set_sort_column_id(
+            TIMESTAMP, Gtk.SortType.ASCENDING)
         
         cell_string = Gtk.CellRendererText()
         cell_string.set_property('wrap-mode', Pango.WrapMode.WORD)
@@ -261,7 +248,6 @@ class GottenGeography(Gtk.Application):
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         # Deal with multiple selection drag and drop.
-        self.defer_select = False
         photos_view = Widgets.photos_view
         photos_view.connect('button-press-event', self.photoview_pressed)
         photos_view.connect('button-release-event', self.photoview_released)
@@ -277,27 +263,27 @@ class GottenGeography(Gtk.Application):
             join(PKG_DATA_DIR, PACKAGE + '.svg'), 192, 192))
         
         click_handlers = {
-            'open_button':
+            'open':
                 [self.add_files_dialog, Widgets.open],
-            'save_button':
+            'save':
                 [self.save_all_files],
-            'close_button':
+            'close':
                 [lambda btn: [p.destroy() for p in selected.copy()]],
-            'revert_button':
+            'revert':
                 [lambda btn: self.open_files(
                     [p.filename for p in modified & selected])],
-            'about_button':
+            'about':
                 [lambda yes, you_can: you_can.run() and you_can.hide(), about],
-            'help_button':
+            'help':
                 [lambda *ignore: Gtk.show_uri(Gdk.Screen.get_default(),
                     'ghelp:gottengeography', Gdk.CURRENT_TIME)],
-            'jump_button':
+            'jump':
                 [self.jump_to_photo],
-            'apply_button':
+            'apply':
                 [self.apply_selected_photos],
         }
         for button, handler in click_handlers.items():
-            Widgets[button].connect('clicked', *handler)
+            Widgets[button + '_button'].connect('clicked', *handler)
         
         # Hide the unused button that appears beside the map source menu.
         ugly = Widgets.map_source_menu_button.get_child().get_children()[0]
@@ -305,18 +291,19 @@ class GottenGeography(Gtk.Application):
         ugly.hide()
         
         accel  = Gtk.AccelGroup()
+        accel.connect(Gdk.keyval_from_name('q'),
+            Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
+        
         window = Widgets.main
         window.resize(*gst.get('window-size'))
         window.connect('delete_event', self.confirm_quit_dialog)
         window.add_accel_group(accel)
         window.show_all()
+        self.add_window(window)
         
         save_size = lambda v, s, size: gst.set_window_size(size())
         for prop in ['width', 'height']:
             map_view.connect('notify::' + prop, save_size, window.get_size)
-        
-        accel.connect(Gdk.keyval_from_name('q'),
-            Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
         
         Widgets.photos_selection.emit('changed')
         TrackFile.clear_all()
@@ -336,11 +323,16 @@ class GottenGeography(Gtk.Application):
             placeholder.set_visible(empty)
             toolbar.set_visible(not empty)
         
-        self.liststore.connect('row-changed', photo_pane_visibility)
-        self.liststore.connect('row-deleted', photo_pane_visibility)
+        Widgets.loaded_photos.connect('row-changed', photo_pane_visibility)
+        Widgets.loaded_photos.connect('row-deleted', photo_pane_visibility)
         
         Widgets.open.connect('update-preview', self.update_preview,
             Widgets.preview)
+        
+        Widgets.error_bar.connect('response',
+            lambda widget, signal: widget.hide())
+        
+        animate_in()
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.
@@ -350,32 +342,33 @@ class GottenGeography(Gtk.Application):
         modify the progressbar if called with no arguments.
         """
         if fraction is not None:
-            self.progressbar.set_fraction(fraction)
+            Widgets.progressbar.set_fraction(fraction)
         if text is not None:
-            self.progressbar.set_text(str(text))
+            Widgets.progressbar.set_text(str(text))
         while Gtk.events_pending():
             Gtk.main_iteration()
     
     def dismiss_message(self):
         """Responsible for hiding the GtkInfoBar after a timeout."""
         self.message_timeout_source = None
-        self.error.bar.hide()
+        Widgets.error_bar.hide()
         return False
     
     def status_message(self, message, info=False):
         """Display a message with the GtkInfoBar."""
-        self.error.message.set_markup('<b>%s</b>' % message)
-        self.error.bar.set_message_type(
+        Widgets.error_message.set_markup('<b>%s</b>' % message)
+        Widgets.error_bar.set_message_type(
             Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
-        self.error.icon.set_from_stock(
+        Widgets.error_icon.set_from_stock(
             Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
-        self.error.bar.show()
+        Widgets.error_bar.show()
+        
         # Remove any previous message timeout
         if self.message_timeout_source is not None:
             GLib.source_remove(self.message_timeout_source)
         if info:
             self.message_timeout_source = \
-                GLib.timeout_add_seconds(5, self.dismiss_message)
+                GLib.timeout_add_seconds(10, self.dismiss_message)
     
     # Multiple selection drag and drop copied from Kevin Mehall, adapted
     # to use it with the standard GtkTreeView.

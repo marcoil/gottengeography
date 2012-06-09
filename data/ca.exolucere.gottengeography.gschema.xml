@@ -38,7 +38,7 @@
     </key>
     <key type="i" name="animation-steps">
       <range min="15" max="400"/>
-      <default>200</default>
+      <default>400</default>
       <summary>How many steps the initial fade-in animation should play at app launch.</summary>
       <description>Set this number lower in order to speed app launch.</description>
     </key>

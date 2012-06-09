@@ -38,8 +38,8 @@ def test_demo_data():
         assert not button.get_sensitive()
     
     # Something loaded in the liststore?
-    assert len(gui.liststore) == 6
-    assert gui.liststore.get_iter_first()
+    assert len(Widgets.loaded_photos) == 6
+    assert Widgets.loaded_photos.get_iter_first()
     
     assert Photograph.instances
     for photo in Photograph.files:

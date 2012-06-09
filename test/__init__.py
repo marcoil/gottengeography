@@ -7,7 +7,7 @@ from random import random
 from time import tzset
 
 from gg.app import GottenGeography, gst
-from gg.common import modified, selected, map_view
+from gg.common import Widgets, modified, selected, map_view
 from gg.build_info import PKG_DATA_DIR
 from gg.xmlfiles import TrackFile
 from gg.photos import Photograph
@@ -43,7 +43,7 @@ def teardown():
     Photograph.instances.clear()
     modified.clear()
     selected.clear()
-    gui.liststore.clear()
+    Widgets.loaded_photos.clear()
     system('git checkout demo')
     for key in gst.list_keys():
         gst.reset(key)
