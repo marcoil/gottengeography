@@ -195,13 +195,12 @@ class GottenGeography(Gtk.Application):
     
     def confirm_quit_dialog(self, *ignore):
         """Teardown method, inform user of unsaved files, if any."""
-        if len(modified) == 0:
+        if not modified:
             self.remove_window(Widgets.main)
             return True
-        dialog = Widgets.quit
-        dialog.format_secondary_markup(self.strings.quit % len(modified))
-        response = dialog.run()
-        dialog.hide()
+        Widgets.quit.format_secondary_markup(self.quit_message % len(modified))
+        response = Widgets.quit.run()
+        Widgets.quit.hide()
         self.redraw_interface()
         if response == Gtk.ResponseType.ACCEPT:
             self.save_all_files()
@@ -226,9 +225,7 @@ class GottenGeography(Gtk.Application):
         """
         assert self is alsoself #Then why is this even an instance method? hmmmm
         
-        self.strings = Struct({
-            'quit':    Widgets.quit.get_property('secondary-text'),
-        })
+        self.quit_message = Widgets.quit.get_property('secondary-text')
         
         Widgets.loaded_photos.set_sort_column_id(
             TIMESTAMP, Gtk.SortType.ASCENDING)
