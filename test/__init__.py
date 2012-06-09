@@ -16,7 +16,8 @@ from gg.camera import Camera
 DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
              for f in listdir('./demo/')]
 
-gui = GottenGeography()
+gui = GottenGeography(do_fade_in=False)
+gui.launch_main_window(gui)
 
 # Disable animation for speed.
 gst.set_int('animation-steps', 15)
