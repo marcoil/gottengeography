@@ -171,7 +171,7 @@ class GottenGeography(Gtk.Application):
     def jump_to_photo(self, button):
         """Center on the first selected photo."""
         photo = selected.copy().pop()
-        if photo.valid_coords():
+        if photo.positioned:
             map_view.emit('realize')
             map_view.center_on(photo.latitude, photo.longitude)
     

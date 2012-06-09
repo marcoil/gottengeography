@@ -43,7 +43,7 @@ def selection_sensitivity(selection, close, save, revert, jump):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
     close.set_sensitive(sensitive)
-    jump.set_sensitive([photo for photo in selected if photo.valid_coords()])
+    jump.set_sensitive([photo for photo in selected if photo.positioned])
     save.set_sensitive(len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
 
