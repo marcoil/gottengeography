@@ -66,6 +66,7 @@ def command_line(self, commands):
     """
     files = commands.get_arguments()[1:]
     if files:
+        self.activate()
         self.open_files([abspath(f) for f in files])
     return 0
 
@@ -85,7 +86,7 @@ class GottenGeography(Gtk.Application):
             self, application_id='ca.exolucere.' + APPNAME,
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
         
-        self.connect('activate', lambda *ignore: None) #TODO
+        self.connect('activate', lambda *ignore: Widgets.main.present())
         self.connect('command-line', command_line)
         self.connect('startup', self.launch_main_window)
         
