@@ -178,7 +178,7 @@ class Photograph(Coordinates):
             except KeyError:
                 pass
         
-        self.connect('notify::positioned', self.update_positioned)
+        self.connect('notify::positioned', lambda *ignore: modified.add(self))
         self.connect('notify::geoname', self.update_geoname)
     
     def calculate_timestamp(self, offset = 0):
@@ -227,9 +227,6 @@ class Photograph(Coordinates):
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
-    
-    def update_positioned(self, *ignore):
-        modified.add(self)
     
     def update_geoname(self, *ignore):
         """Update the text displayed in the GtkListStore."""
