@@ -55,19 +55,14 @@ class memoize(object):
     def __init__(self, cls):
         """Expose the cached class's attributes as our own.
         
-        This allows Photograph.instances to work even though when you
-        say 'Photograph' you're really getting a memoize instance instead
-        of the Photograph class.
+        Allows class attributes and static methods to work as expected.
         """
         if type(cls) is FunctionType:
             raise TypeError('This is for classes only.')
         self.cls = cls
-        self.__dict__.update(cls.__dict__)
         
-        # This bit allows staticmethods to work as you would expect.
-        for attr, val in cls.__dict__.items():
-            if type(val) is staticmethod:
-                self.__dict__[attr] = val.__func__
+        for k, v in cls.__dict__.items():
+            self.__dict__[k] = v.__func__ if type(v) is staticmethod else v
     
     def __call__(self, *args, **kwargs):
         """Return a cached instance of the appropriate class if it exists.
