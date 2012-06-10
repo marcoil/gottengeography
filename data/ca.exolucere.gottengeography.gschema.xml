@@ -37,8 +37,8 @@
       <summary>Indicates whether the Photos, Cameras, or GPS tab is currently visible.</summary>
     </key>
     <key type="i" name="animation-steps">
-      <range min="15" max="400"/>
-      <default>400</default>
+      <range min="1" max="256"/>
+      <default>256</default>
       <summary>How many steps the initial fade-in animation should play at app launch.</summary>
       <description>Set this number lower in order to speed app launch.</description>
     </key>

@@ -163,10 +163,9 @@ class Box(Clutter.Box):
 
 def animate_in(anim=True):
     """Fade in all the map actors."""
-    for i in xrange(Gst.get_int('animation-steps') if anim else 8, 7, -1):
-        opacity = 0.6407035175879398 * (400 - i) # don't ask
+    for i in xrange(Gst.get_int('animation-steps') if anim else 1, 0, -1):
         for actor in (Crosshair, Box, Scale):
-            actor.set_opacity(opacity)
+            actor.set_opacity(256 - i)
         while Gtk.events_pending():
             Gtk.main_iteration()
         sleep(0.01)
