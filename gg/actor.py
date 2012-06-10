@@ -20,9 +20,9 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from common import Gst, memoize
 from gpsmath import format_coords
 from widgets import Widgets, MapView
+from common import Gst, singleton, memoize
 
 START  = Clutter.BinAlignment.START
 CENTER = Clutter.BinAlignment.CENTER
@@ -71,22 +71,6 @@ for map_desc in [
     MAP_SOURCES[mapid] = c
 
 
-class Sources:
-    """Set up the source menu and link to GSettings."""
-    
-    def __init__(self):
-        last_source = Gst.get_string('map-source-id')
-        Gst.bind_with_convert('map-source-id', MapView, 'map-source',
-            MAP_SOURCES.get, lambda x: x.get_id())
-        
-        for source_id in sorted(MAP_SOURCES):
-            menu_item = RadioMenuItem(MAP_SOURCES[source_id])
-            if last_source == source_id:
-                menu_item.set_active(True)
-        
-        Widgets.map_source_menu.show_all()
-
-
 @memoize
 class RadioMenuItem(Gtk.RadioMenuItem):
     """Create the individual menu items for choosing map sources."""
@@ -106,6 +90,24 @@ class RadioMenuItem(Gtk.RadioMenuItem):
             MapView.set_map_source(MAP_SOURCES[map_id])
 
 
+@singleton
+class Sources:
+    """Set up the source menu and link to GSettings."""
+    
+    def __init__(self):
+        last_source = Gst.get_string('map-source-id')
+        Gst.bind_with_convert('map-source-id', MapView, 'map-source',
+            MAP_SOURCES.get, lambda x: x.get_id())
+        
+        for source_id in sorted(MAP_SOURCES):
+            menu_item = RadioMenuItem(MAP_SOURCES[source_id])
+            if last_source == source_id:
+                menu_item.set_active(True)
+        
+        Widgets.map_source_menu.show_all()
+
+
+@singleton
 class Crosshair(Champlain.Point):
     """Display a target at map center for placing photos."""
     
@@ -117,6 +119,7 @@ class Crosshair(Champlain.Point):
         MapView.bin_layout_add(self, CENTER, CENTER)
 
 
+@singleton
 class Scale(Champlain.Scale):
     """Display a distance scale on the map."""
     
@@ -127,20 +130,7 @@ class Scale(Champlain.Scale):
         MapView.bin_layout_add(self, START, END)
 
 
-class Box(Clutter.Box):
-    """Draw the black coordinate display bar atop map."""
-    
-    def __init__(self):
-        Clutter.Box.__init__(self)
-        self.set_layout_manager(Clutter.BinLayout())
-        self.set_color(Clutter.Color.new(0, 0, 0, 96))
-        Gst.bind('show-map-coords', self, 'visible')
-        MapView.bin_layout_add(self, START, START)
-        self.get_layout_manager().add(CoordLabel(), CENTER, CENTER)
-        MapView.connect('notify::width',
-            lambda *ignore: self.set_size(MapView.get_width(), 30))
-
-
+@singleton
 class CoordLabel(Clutter.Text):
     """Put the current map coordinates into the black coordinate bar."""
     
@@ -159,17 +149,26 @@ class CoordLabel(Clutter.Text):
             lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
 
 
-srces = Sources()
-xhair = Crosshair()
-scale = Scale()
-black = Box()
+@singleton
+class Box(Clutter.Box):
+    """Draw the black coordinate display bar atop map."""
+    
+    def __init__(self):
+        Clutter.Box.__init__(self)
+        self.set_layout_manager(Clutter.BinLayout())
+        self.set_color(Clutter.Color.new(0, 0, 0, 96))
+        Gst.bind('show-map-coords', self, 'visible')
+        MapView.bin_layout_add(self, START, START)
+        self.get_layout_manager().add(CoordLabel, CENTER, CENTER)
+        MapView.connect('notify::width',
+            lambda *ignore: self.set_size(MapView.get_width(), 30))
 
 
 def animate_in(anim=True):
     """Fade in all the map actors."""
     for i in xrange(Gst.get_int('animation-steps') if anim else 8, 7, -1):
         opacity = 0.6407035175879398 * (400 - i) # don't ask
-        for actor in (xhair, black, scale):
+        for actor in (Crosshair, Box, Scale):
             actor.set_opacity(opacity)
         while Gtk.events_pending():
             Gtk.main_iteration()
