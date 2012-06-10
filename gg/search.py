@@ -45,6 +45,7 @@ class SearchController():
         entry = Widgets.search_box
         entry.connect('changed', self.load_results, self.results.append)
         entry.connect('icon-release', lambda entry, i, e: entry.set_text(''))
+        entry.connect('icon-release', lambda *ignore: entry.emit('grab_focus'))
         entry.connect('activate', self.repeat_last_search,
                       self.results, MapView)
     
