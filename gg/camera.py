@@ -153,14 +153,16 @@ class Camera(GObject.GObject):
         self.photos.discard(photo)
         self.notify('num_photos')
 
+
 def display_offset(offset, value, add, subtract):
     """Display minutes and seconds in the offset GtkScale."""
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 
+
 @memoize
 class CameraView(Gtk.Box):
-    """A widget to show a camera data."""
+    """A widget to show camera settings."""
     instances = {}
     
     def __init__(self, camera, name):
