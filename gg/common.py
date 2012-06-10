@@ -57,9 +57,9 @@ class memoize(object):
     def __call__(self, *args):
         """Return a cached instance of the appropriate class if it exists."""
         key = args[0] if len(args) is 1 else args
-        if key not in self.cls.instances:
-            self.cls.instances[key] = self.cls(*args)
-        return self.cls.instances[key]
+        if key not in self.instances:
+            self.instances[key] = self.cls(*args)
+        return self.instances[key]
 
 
 def memoize_method(share=False):
