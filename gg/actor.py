@@ -140,13 +140,10 @@ class CoordLabel(Clutter.Text):
         for signal in ('latitude', 'longitude'):
             MapView.connect('notify::' + signal, self.display)
     
-    def display(self, view, param, mlink=Widgets.maps_link):
+    def display(self, view, param):
         """Display map center coordinates when they change."""
         lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
         self.set_markup(format_coords(lat, lon))
-        mlink.set_uri('%s?ll=%s,%s&amp;spn=%s,%s'
-            % ('http://maps.google.com/maps', lat, lon,
-            lon - view.x_to_longitude(0), view.y_to_latitude(0) - lat))
 
 
 @singleton

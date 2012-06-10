@@ -37,21 +37,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolItem" id="maps_link_container">
-                <child>
-                  <object class="GtkLinkButton" id="maps_link">
-                    <property name="can_focus">False</property>
-                    <property name="label">Google</property>
-                    <property name="tooltip_text" translatable="yes">View in Google Maps</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
               <object class="GtkMenuToolButton" id="map_source_menu_button">
                 <property name="menu">map_source_menu</property>
+                <property name="is_important">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Change Map</property>
+                <property name="tooltip_text" translatable="yes">Change map view (Google opens in your browser)</property>
+                <property name="label">Google</property>
                 <child type="menu">
                   <object class="GtkMenu" id="map_source_menu">
                     <property name="can_focus">False</property>

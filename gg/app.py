@@ -78,6 +78,8 @@ def startup(self):
     self.drag   = DragController(self.open_files)
     self.search = SearchController()
     
+    screen = Gdk.Screen.get_default()
+    
     click_handlers = {
         'open':
             [self.add_files_dialog, Widgets.open],
@@ -92,12 +94,18 @@ def startup(self):
             [lambda yes, you_can: you_can.run() and you_can.hide(),
                 Widgets.about],
         'help':
-            [lambda *ignore: Gtk.show_uri(Gdk.Screen.get_default(),
+            [lambda *ignore: Gtk.show_uri(screen,
                 'ghelp:gottengeography', Gdk.CURRENT_TIME)],
         'jump':
             [self.jump_to_photo],
         'apply':
             [self.apply_selected_photos],
+        'map_source_menu':
+            [lambda *ignore: Gtk.show_uri(
+                screen, 'http://maps.google.com/maps?q=%s,%s' % (
+                MapView.get_center_latitude(),
+                MapView.get_center_longitude()),
+                Gdk.CURRENT_TIME)],
     }
     for button, handler in click_handlers.items():
         Widgets[button + '_button'].connect('clicked', *handler)

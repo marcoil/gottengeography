@@ -62,11 +62,6 @@ class Widgets(Builder):
         self.about.set_logo(GdkPixbuf.Pixbuf.new_from_file_at_size(
             join(PKG_DATA_DIR, PACKAGE + '.svg'), 192, 192))
         
-        # Hide the unused button that appears beside the map source menu.
-        ugly = self.map_source_menu_button.get_child().get_children()[0]
-        ugly.set_no_show_all(True)
-        ugly.hide()
-        
         self.main.resize(*Gst.get('window-size'))
         self.main.show_all()
         
