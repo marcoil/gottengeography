@@ -55,10 +55,7 @@ class Widgets(Builder):
         Ideally this method would not exist. If you see something here that
         can be done directly in the GtkBuilder XML, please let me know.
         """
-        self.photos_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.loaded_photos.set_sort_column_id(3, Gtk.SortType.ASCENDING)
-        
-        self.photos_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         
         self.about.set_version(REVISION)
         self.about.set_program_name(APPNAME)
