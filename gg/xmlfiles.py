@@ -27,8 +27,8 @@ from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from common import GSettings, Builder, Widgets, gst
-from common import memoize, map_view, points
+from widgets import Widgets, Builder, map_view
+from common import GSettings, gst, memoize, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT

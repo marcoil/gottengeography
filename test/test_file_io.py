@@ -2,9 +2,10 @@
 """These tests cover loading and saving files."""
 
 from gg.label import Label
+from gg.widgets import Widgets
 from gg.photos import Photograph
 from gg.xmlfiles import TrackFile
-from gg.common import Widgets, points, selected, modified
+from gg.common import points, selected, modified
 
 from test import gui, teardown, setup, DEMOFILES
 

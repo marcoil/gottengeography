@@ -18,15 +18,13 @@
 from __future__ import division
 
 from version import APPNAME, PACKAGE
-from build_info import PKG_DATA_DIR, REVISION
 
 import gettext
 gettext.bindtextdomain(PACKAGE)
 gettext.textdomain(PACKAGE)
 
-from gi.repository import GLib, GObject, GtkClutter, Gtk
-from gi.repository import Gdk, Gio, GdkPixbuf, Pango
-from os.path import join, basename, abspath
+from gi.repository import GLib, GObject, GtkClutter, Gtk, Gdk, Gio
+from os.path import basename, abspath
 from gettext import gettext as _
 from time import clock
 
@@ -39,13 +37,13 @@ if not GLib.get_application_name():
 
 GtkClutter.init([])
 
+from label import Label
+from actor import animate_in
+from widgets import Widgets, map_view
 from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
 from xmlfiles import TrackFile, GPXFile, KMLFile
-from common import Struct, Widgets, gst, map_view
-from common import selected, modified
-from actor import animate_in
-from label import Label
+from common import gst, selected, modified
 
 from drag import DragController
 from search import SearchController
@@ -58,6 +56,9 @@ PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
+# Just pretend these functions are actually GottenGeography() instance methods.
+# The 'self' argument gets passed in by GtkApplication instead of Python.
+
 def command_line(self, commands):
     """Open the files passed in at the commandline.
     
@@ -69,6 +70,62 @@ def command_line(self, commands):
         self.activate()
         self.open_files([abspath(f) for f in files])
     return 0
+
+def startup(self):
+    """Display the primary window and connect some signals."""
+    self.quit_message = Widgets.quit.get_property('secondary-text')
+    
+    self.drag   = DragController(self.open_files)
+    self.search = SearchController()
+    
+    click_handlers = {
+        'open':
+            [self.add_files_dialog, Widgets.open],
+        'save':
+            [self.save_all_files],
+        'close':
+            [lambda btn: [p.destroy() for p in selected.copy()]],
+        'revert':
+            [lambda btn: self.open_files(
+                [p.filename for p in modified & selected])],
+        'about':
+            [lambda yes, you_can: you_can.run() and you_can.hide(),
+                Widgets.about],
+        'help':
+            [lambda *ignore: Gtk.show_uri(Gdk.Screen.get_default(),
+                'ghelp:gottengeography', Gdk.CURRENT_TIME)],
+        'jump':
+            [self.jump_to_photo],
+        'apply':
+            [self.apply_selected_photos],
+    }
+    for button, handler in click_handlers.items():
+        Widgets[button + '_button'].connect('clicked', *handler)
+    
+    # Deal with multiple selection drag and drop.
+    Widgets.photos_view.connect('button-press-event', self.photoview_pressed)
+    Widgets.photos_view.connect('button-release-event', self.photoview_released)
+    
+    Widgets.open.connect('update-preview', self.update_preview, Widgets.preview)
+    
+    accel  = Gtk.AccelGroup()
+    accel.connect(Gdk.keyval_from_name('q'),
+        Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
+    
+    Widgets.main.add_accel_group(accel)
+    Widgets.main.connect('delete_event', self.confirm_quit_dialog)
+    self.add_window(Widgets.main)
+    
+    save_size = lambda v, s, size: gst.set_window_size(size())
+    for prop in ['width', 'height']:
+        map_view.connect('notify::' + prop, save_size, Widgets.main.get_size)
+    
+    Widgets.photos_selection.emit('changed')
+    
+    gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
+    
+    Widgets.launch()
+    animate_in(self.do_fade_in)
 
 
 class GottenGeography(Gtk.Application):
@@ -88,7 +145,7 @@ class GottenGeography(Gtk.Application):
         
         self.connect('activate', lambda *ignore: Widgets.main.present())
         self.connect('command-line', command_line)
-        self.connect('startup', self.launch_main_window)
+        self.connect('startup', startup)
         
         self.do_fade_in = do_fade_in
     
@@ -231,116 +288,6 @@ class GottenGeography(Gtk.Application):
         if response != Gtk.ResponseType.CANCEL:
             self.quit()
         return True
-    
-    def launch_main_window(self, alsoself):
-        """Tie together all the app components, but only once.
-        
-        GtkApplication specifically prevents this method from executing more
-        than once, meaning that it's only possible to run one instance of
-        GottenGeography at a time.
-        """
-        assert self is alsoself #Then why is this even an instance method? hmmmm
-        
-        self.quit_message = Widgets.quit.get_property('secondary-text')
-        
-        Widgets.loaded_photos.set_sort_column_id(
-            TIMESTAMP, Gtk.SortType.ASCENDING)
-        
-        Widgets.photos_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        Widgets.photos_thumb_renderer.set_property('ypad', 6)
-        Widgets.photos_thumb_renderer.set_property('xpad', 12)
-        Widgets.photos_thumb_renderer.set_property('stock-id',
-                                                   Gtk.STOCK_MISSING_IMAGE)
-        
-        Widgets.photos_summary_renderer.set_property('wrap-width', 200)
-        Widgets.photos_summary_renderer.set_property('wrap-mode',
-                                                     Pango.WrapMode.WORD)
-        
-        # Deal with multiple selection drag and drop.
-        photos_view = Widgets.photos_view
-        photos_view.connect('button-press-event', self.photoview_pressed)
-        photos_view.connect('button-release-event', self.photoview_released)
-        
-        self.drag      = DragController(self.open_files)
-        self.search    = SearchController()
-        
-        about = Widgets.about
-        about.set_version(REVISION)
-        about.set_program_name(APPNAME)
-        about.set_logo(GdkPixbuf.Pixbuf.new_from_file_at_size(
-            join(PKG_DATA_DIR, PACKAGE + '.svg'), 192, 192))
-        
-        click_handlers = {
-            'open':
-                [self.add_files_dialog, Widgets.open],
-            'save':
-                [self.save_all_files],
-            'close':
-                [lambda btn: [p.destroy() for p in selected.copy()]],
-            'revert':
-                [lambda btn: self.open_files(
-                    [p.filename for p in modified & selected])],
-            'about':
-                [lambda yes, you_can: you_can.run() and you_can.hide(), about],
-            'help':
-                [lambda *ignore: Gtk.show_uri(Gdk.Screen.get_default(),
-                    'ghelp:gottengeography', Gdk.CURRENT_TIME)],
-            'jump':
-                [self.jump_to_photo],
-            'apply':
-                [self.apply_selected_photos],
-        }
-        for button, handler in click_handlers.items():
-            Widgets[button + '_button'].connect('clicked', *handler)
-        
-        # Hide the unused button that appears beside the map source menu.
-        ugly = Widgets.map_source_menu_button.get_child().get_children()[0]
-        ugly.set_no_show_all(True)
-        ugly.hide()
-        
-        accel  = Gtk.AccelGroup()
-        accel.connect(Gdk.keyval_from_name('q'),
-            Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
-        
-        window = Widgets.main
-        window.resize(*gst.get('window-size'))
-        window.connect('delete_event', self.confirm_quit_dialog)
-        window.add_accel_group(accel)
-        window.show_all()
-        self.add_window(window)
-        
-        save_size = lambda v, s, size: gst.set_window_size(size())
-        for prop in ['width', 'height']:
-            map_view.connect('notify::' + prop, save_size, window.get_size)
-        
-        Widgets.photos_selection.emit('changed')
-        TrackFile.clear_all()
-        
-        gst.bind('left-pane-page', Widgets.photo_camera_gps, 'page')
-        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
-                 'gtk-application-prefer-dark-theme')
-        
-        gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
-        
-        placeholder = Widgets.empty_photo_list
-        toolbar = Widgets.photo_btn_bar
-        
-        def photo_pane_visibility(liststore, *ignore):
-            """Hide the placeholder and show the toolbar when appropriate."""
-            empty = liststore.get_iter_first() is None
-            placeholder.set_visible(empty)
-            toolbar.set_visible(not empty)
-        
-        Widgets.loaded_photos.connect('row-changed', photo_pane_visibility)
-        Widgets.loaded_photos.connect('row-deleted', photo_pane_visibility)
-        
-        Widgets.open.connect('update-preview', self.update_preview,
-            Widgets.preview)
-        
-        Widgets.error_bar.connect('response',
-            lambda widget, signal: widget.hide())
-        
-        animate_in(self.do_fade_in)
     
     def redraw_interface(self, fraction=None, text=None):
         """Tell Gtk to redraw the user interface, so it doesn't look hung.

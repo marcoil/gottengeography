@@ -3,7 +3,8 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import Widgets, selected
+from gg.common import selected
+from gg.widgets import Widgets
 from gg.photos import Photograph
 from gg.label import Label
 

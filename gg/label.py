@@ -17,14 +17,14 @@
 
 from __future__ import division
 
-from gi.repository import GObject, Gtk, Champlain, Clutter
+from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 
-from common import Widgets, map_view, selected, modified
+from widgets import Widgets, map_view
+from common import selected, modified
 from common import bind_properties, memoize
 
 layer = Champlain.MarkerLayer()
-Widgets.photos_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 map_view.add_layer(layer)
 
 

@@ -3,7 +3,7 @@
 
 from gi.repository import Gdk
 
-from gg.common import Widgets, map_view
+from gg.widgets import Widgets, map_view
 from gg.navigation import move_by_arrow_keys
 
 from test import gst, random_coord

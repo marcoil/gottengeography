@@ -23,10 +23,11 @@ from time import mktime
 from os import stat
 
 from label import Label
+from widgets import Widgets
 from xmlfiles import TrackFile
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
-from common import Widgets, memoize, points, modified, gst
+from common import memoize, points, modified, gst
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'

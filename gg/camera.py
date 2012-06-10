@@ -36,8 +36,9 @@ from gettext import gettext as _
 from time import tzset
 from os import environ
 
+from widgets import Builder, Widgets
 from territories import tz_regions, get_timezone
-from common import GSettings, Builder, Widgets, memoize, bind_properties
+from common import GSettings, memoize, bind_properties
 
 
 @memoize

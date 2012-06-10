@@ -1,7 +1,7 @@
 
 """Basic sanity check on low-level Gtk things."""
 
-from gg.common import Widgets, map_view
+from gg.widgets import Widgets, map_view
 
 from test import gui, gst
 

@@ -3,7 +3,7 @@
 
 from gi.repository import Clutter, Champlain
 
-from gg.common import Widgets, map_view
+from gg.widgets import Widgets, map_view
 from gg.xmlfiles import Polygon
 from gg.actor import MAP_SOURCES, black, xhair, scale, animate_in
 

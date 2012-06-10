@@ -19,7 +19,8 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from common import Widgets, gst, map_view, bind_properties
+from widgets import Widgets, map_view
+from common import gst, bind_properties
 from gpsmath import Coordinates, valid_coords
 
 def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):

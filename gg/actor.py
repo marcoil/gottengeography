@@ -20,8 +20,9 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from common import Widgets, memoize, gst, map_view
+from common import memoize, gst
 from gpsmath import format_coords
+from widgets import Widgets, map_view
 
 START  = Clutter.BinAlignment.START
 CENTER = Clutter.BinAlignment.CENTER

@@ -24,13 +24,10 @@ is used to place photos on the map by looking up their timestamps.
 
 from __future__ import division
 
-from gi.repository import GObject, Gtk, Gio, GLib
-from gi.repository import GtkChamplain
+from gi.repository import GObject, Gio, GLib
 from inspect import getcallargs
 from types import FunctionType
-from os.path import join
 
-from build_info import PKG_DATA_DIR
 from version import PACKAGE
 
 # These variables are used for sharing data between classes
@@ -114,38 +111,6 @@ def bind_properties(source, source_prop,
                            flags = flags)
 
 
-class Builder(Gtk.Builder):
-    """Load GottenGeography's UI definitions."""
-    def __init__(self, filename=PACKAGE):
-        Gtk.Builder.__init__(self)
-        
-        self.set_translation_domain(PACKAGE)
-        self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
-    
-    @memoize_method(share=False)
-    def __getattr__(self, widget):
-        """Make calls to Gtk.Builder().get_object() more pythonic.
-        
-        Here is a quick comparison of execution performance:
-        
-        Executing this method, no memoize:  6.50 microseconds
-        Calling get_object directly:        4.35 microseconds
-        Executing this method with memoize: 1.34 microseconds
-        Accessing an instance attribute:    0.08 microseconds
-        Accessing a local variable:         0.03 microseconds
-        
-        (averaged over a million executions with the timeit package)
-        
-        Considering that this method is 3 orders of magnitude slower than
-        accessing variables, you should avoid it inside performance-critical
-        inner loops, however thanks to memoization, it's faster than calling
-        get_object() directly, so don't sweat it.
-        """
-        return self.get_object(widget)
-    
-    __getitem__ = __getattr__
-
-
 class GSettings(Gio.Settings):
     """Override GSettings to be more useful to me."""
     get = Gio.Settings.get_value
@@ -198,14 +163,6 @@ class GSettings(Gio.Settings):
         key_changed(self, key) # init default state
 
 
-class ChamplainEmbedder(GtkChamplain.Embed):
-    """Put the map view onto the main window."""
-    
-    def __init__(self):
-        GtkChamplain.Embed.__init__(self)
-        Widgets.map_container.add(self)
-
-
 class Struct:
     """This is a generic object which can be assigned arbitrary attributes."""
     
@@ -213,8 +170,5 @@ class Struct:
         self.__dict__.update(attributes)
 
 
-# Initialize GtkBuilder, Champlain, and GSettings
-Widgets  = Builder()
-map_view = ChamplainEmbedder().get_view()
 gst      = GSettings()
 

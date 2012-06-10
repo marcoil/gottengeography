@@ -6,8 +6,9 @@ from os.path import abspath, join
 from random import random
 from time import tzset
 
-from gg.app import GottenGeography, gst
-from gg.common import Widgets, modified, selected, map_view
+from gg.app import GottenGeography, startup, gst
+from gg.widgets import Widgets, map_view
+from gg.common import modified, selected
 from gg.build_info import PKG_DATA_DIR
 from gg.xmlfiles import TrackFile
 from gg.photos import Photograph
@@ -17,7 +18,7 @@ DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
              for f in listdir('./demo/')]
 
 gui = GottenGeography(do_fade_in=False)
-gui.launch_main_window(gui)
+startup(gui)
 
 # Disable animation for speed.
 gst.set_int('animation-steps', 15)

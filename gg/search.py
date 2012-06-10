@@ -20,7 +20,7 @@ from __future__ import division
 from os.path import join
 
 from territories import get_state, get_country
-from common import Widgets, map_view
+from widgets import Widgets, map_view
 from build_info import PKG_DATA_DIR
 
 # ListStore column names

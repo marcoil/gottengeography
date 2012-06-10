@@ -1,7 +1,7 @@
 
 """Test that we can search the map."""
 
-from gg.common import Widgets, map_view
+from gg.widgets import Widgets, map_view
 
 from test import gui
 
