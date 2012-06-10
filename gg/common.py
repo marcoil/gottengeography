@@ -36,6 +36,13 @@ modified = set()
 points   = {}
 
 
+def singleton(cls):
+    """Decorate a class with @singleton when There Can Be Only One."""
+    instance = cls()
+    instance.__call__ = lambda: instance
+    return instance
+
+
 class memoize(object):
     """Cache instances of a class. Decorate the class with @memoize to use.
     
@@ -130,14 +137,6 @@ class GSettings(Gio.Settings):
         """Don't make me specify the default flags every time."""
         Gio.Settings.bind(self, key, widget, prop or key, flags)
     
-    def set_history(self, value):
-        """Convert the map history to an array of tuples."""
-        Gio.Settings.set_value(self, 'history', GLib.Variant('a(ddi)', value))
-    
-    def set_window_size(self, value):
-        """Convert the window size to a pair of ints."""
-        Gio.Settings.set_value(self, 'window-size', GLib.Variant('(ii)', value))
-    
     def bind_with_convert(self, key, widget, prop, key_to_prop, prop_to_key):
         """Recreate g_settings_bind_with_mapping from scratch.
         
@@ -163,12 +162,29 @@ class GSettings(Gio.Settings):
         key_changed(self, key) # init default state
 
 
+@singleton
+class Gst(GSettings):
+    """This is the primary GSettings instance for main app settings only.
+    
+    It cannot be used to access the relocatable schema, for that you'll have
+    to create a new GSettings() instance.
+    """
+    
+    def __init__(self):
+        GSettings.__init__(self)
+    
+    def set_history(self, value):
+        """Convert the map history to an array of tuples."""
+        Gio.Settings.set_value(self, 'history', GLib.Variant('a(ddi)', value))
+    
+    def set_window_size(self, value):
+        """Convert the window size to a pair of ints."""
+        Gio.Settings.set_value(self, 'window-size', GLib.Variant('(ii)', value))
+
+
 class Struct:
     """This is a generic object which can be assigned arbitrary attributes."""
     
     def __init__(self, attributes={}):
         self.__dict__.update(attributes)
-
-
-gst      = GSettings()
 

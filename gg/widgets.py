@@ -7,7 +7,7 @@ from os.path import join
 
 from version import APPNAME, PACKAGE
 from build_info import PKG_DATA_DIR, REVISION
-from common import memoize_method, gst
+from common import Gst, singleton, memoize_method
 
 
 class Builder(Gtk.Builder):
@@ -41,6 +41,8 @@ class Builder(Gtk.Builder):
     
     __getitem__ = __getattr__
 
+
+@singleton
 class Widgets(Builder):
     """Tweak the GtkBuilder results specifically for the main window."""
     
@@ -76,11 +78,11 @@ class Widgets(Builder):
         ugly.set_no_show_all(True)
         ugly.hide()
         
-        self.main.resize(*gst.get('window-size'))
+        self.main.resize(*Gst.get('window-size'))
         self.main.show_all()
         
-        gst.bind('left-pane-page', self.photo_camera_gps, 'page')
-        gst.bind('use-dark-theme', Gtk.Settings.get_default(),
+        Gst.bind('left-pane-page', self.photo_camera_gps, 'page')
+        Gst.bind('use-dark-theme', Gtk.Settings.get_default(),
                  'gtk-application-prefer-dark-theme')
         
         placeholder = self.empty_photo_list
@@ -99,6 +101,7 @@ class Widgets(Builder):
             lambda widget, signal: widget.hide())
 
 
+@singleton
 class ChamplainEmbedder(GtkChamplain.Embed):
     """Put the map view onto the main window."""
     
@@ -107,6 +110,7 @@ class ChamplainEmbedder(GtkChamplain.Embed):
         Widgets.map_container.add(self)
 
 
-Widgets  = Widgets() # Pretend this is a singleton for now.
-map_view = ChamplainEmbedder().get_view()
+# Just pretend that MapView is also a singleton...
+MapView = ChamplainEmbedder.get_view()
+MapView.__call__ = lambda: MapView
 

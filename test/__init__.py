@@ -6,9 +6,9 @@ from os.path import abspath, join
 from random import random
 from time import tzset
 
-from gg.app import GottenGeography, startup, gst
-from gg.widgets import Widgets, map_view
-from gg.common import modified, selected
+from gg.app import GottenGeography, startup
+from gg.common import Gst, modified, selected
+from gg.widgets import Widgets, MapView
 from gg.build_info import PKG_DATA_DIR
 from gg.xmlfiles import TrackFile
 from gg.photos import Photograph
@@ -21,8 +21,8 @@ gui = GottenGeography(do_fade_in=False)
 startup(gui)
 
 # Disable animation for speed.
-gst.set_int('animation-steps', 15)
-gui.search.slide_to = map_view.center_on
+Gst.set_int('animation-steps', 15)
+gui.search.slide_to = MapView.center_on
 
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
@@ -47,6 +47,6 @@ def teardown():
     selected.clear()
     Widgets.loaded_photos.clear()
     system('git checkout demo')
-    for key in gst.list_keys():
-        gst.reset(key)
+    for key in Gst.list_keys():
+        Gst.reset(key)
 

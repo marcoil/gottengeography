@@ -19,13 +19,13 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 
-from widgets import Widgets, map_view
-from common import gst, bind_properties
+from widgets import Widgets, MapView
+from common import Gst, bind_properties
 from gpsmath import Coordinates, valid_coords
 
 def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):
     """Move the map view by 5% of its length in the given direction."""
-    key, view = Gdk.keyval_name(keyval), map_view
+    key, view = Gdk.keyval_name(keyval), MapView
     factor    = (0.45 if key in ('Up', 'Left') else 0.55)
     lat       = view.get_center_latitude()
     lon       = view.get_center_longitude()
@@ -38,24 +38,24 @@ def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):
 
 def remember_location(view):
     """Add current location to history stack."""
-    history = list(gst.get('history'))
+    history = list(Gst.get('history'))
     location = tuple([view.get_property(x) for x in
         ('latitude', 'longitude', 'zoom-level')])
     if history[-1] != location:
         history.append(location)
-    gst.set_history(history[-30:])
+    Gst.set_history(history[-30:])
 
 def go_back(*ignore):
     """Return the map view to where the user last set it."""
-    history = list(gst.get('history'))
+    history = list(Gst.get('history'))
     lat, lon, zoom = history.pop()
     if valid_coords(lat, lon):
-        map_view.set_zoom_level(zoom)
-        map_view.center_on(lat, lon)
+        MapView.set_zoom_level(zoom)
+        MapView.center_on(lat, lon)
     if len(history) > 1:
-        gst.set_history(history)
+        Gst.set_history(history)
     else:
-        gst.reset('history')
+        Gst.reset('history')
 
 def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     """Ensure zoom buttons are only sensitive when they need to be."""
@@ -63,12 +63,12 @@ def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     out_sensitive(view.get_min_zoom_level() != zoom)
     in_sensitive( view.get_max_zoom_level() != zoom)
 
-Widgets.zoom_in_button.connect('clicked', lambda *ignore: map_view.zoom_in())
-Widgets.zoom_out_button.connect('clicked', lambda *ignore: map_view.zoom_out())
+Widgets.zoom_in_button.connect('clicked', lambda *ignore: MapView.zoom_in())
+Widgets.zoom_out_button.connect('clicked', lambda *ignore: MapView.zoom_out())
 Widgets.back_button.connect('clicked', go_back)
 
 for key in ['latitude', 'longitude', 'zoom-level']:
-    gst.bind(key, map_view, key)
+    Gst.bind(key, MapView, key)
 
 accel = Gtk.AccelGroup()
 Widgets.main.add_accel_group(accel)
@@ -76,13 +76,13 @@ for key in [ 'Left', 'Right', 'Up', 'Down' ]:
     accel.connect(Gdk.keyval_from_name(key),
         Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
 
-map_view.connect('notify::zoom-level', zoom_button_sensitivity,
+MapView.connect('notify::zoom-level', zoom_button_sensitivity,
     Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
-map_view.connect('realize', remember_location)
+MapView.connect('realize', remember_location)
 
 center = Coordinates()
-lat_binding = bind_properties(map_view, 'latitude', center)
-lon_binding = bind_properties(map_view, 'longitude', center)
+lat_binding = bind_properties(MapView, 'latitude', center)
+lon_binding = bind_properties(MapView, 'longitude', center)
 center.do_modified(True)
 center_binding = bind_properties(center, 'geoname', Widgets.main, 'title')
 center.timeout_seconds = 10 # Reduces the rate that the titlebar updates

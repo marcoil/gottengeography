@@ -1,9 +1,9 @@
 
 """Basic sanity check on low-level Gtk things."""
 
-from gg.widgets import Widgets, map_view
+from gg.widgets import Widgets, MapView
 
-from test import gui, gst
+from test import Gst, gui
 
 def test_gtk_builder():
     """GtkBuilder should be creating some widgets for us"""
@@ -19,15 +19,15 @@ def test_gtk_builder():
 
 def test_gsettings():
     """GSettings should be storing data correctly"""
-    gst.reset('history')
-    assert gst.get('history')[0] == (34.5, 15.8, 2)
+    Gst.reset('history')
+    assert Gst.get('history')[0] == (34.5, 15.8, 2)
     
-    map_view.set_zoom_level(2)
-    map_view.center_on(12.3, 45.6)
-    assert gst.get_double('latitude') == 12.3
-    assert gst.get_double('longitude') == 45.6
+    MapView.set_zoom_level(2)
+    MapView.center_on(12.3, 45.6)
+    assert Gst.get_double('latitude') == 12.3
+    assert Gst.get_double('longitude') == 45.6
     
-    map_view.zoom_in()
-    map_view.emit('realize')
-    assert list(gst.get('history')) == [(34.5, 15.8, 2), (12.3, 45.6, 3)]
+    MapView.zoom_in()
+    MapView.emit('realize')
+    assert list(Gst.get('history')) == [(34.5, 15.8, 2), (12.3, 45.6, 3)]
 

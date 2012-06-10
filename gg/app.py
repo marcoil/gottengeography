@@ -39,11 +39,11 @@ GtkClutter.init([])
 
 from label import Label
 from actor import animate_in
-from widgets import Widgets, map_view
+from widgets import Widgets, MapView
 from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
 from xmlfiles import TrackFile, GPXFile, KMLFile
-from common import gst, selected, modified
+from common import Gst, selected, modified
 
 from drag import DragController
 from search import SearchController
@@ -116,13 +116,13 @@ def startup(self):
     Widgets.main.connect('delete_event', self.confirm_quit_dialog)
     self.add_window(Widgets.main)
     
-    save_size = lambda v, s, size: gst.set_window_size(size())
+    save_size = lambda v, s, size: Gst.set_window_size(size())
     for prop in ['width', 'height']:
-        map_view.connect('notify::' + prop, save_size, Widgets.main.get_size)
+        MapView.connect('notify::' + prop, save_size, Widgets.main.get_size)
     
     Widgets.photos_selection.emit('changed')
     
-    gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
+    Gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
     
     Widgets.launch()
     animate_in(self.do_fade_in)
@@ -217,9 +217,9 @@ class GottenGeography(Gtk.Application):
         if len(gpx.tracks) < 2:
             return
         
-        map_view.emit('realize')
-        map_view.set_zoom_level(map_view.get_max_zoom_level())
-        map_view.ensure_visible(TrackFile.get_bounding_box(), False)
+        MapView.emit('realize')
+        MapView.set_zoom_level(MapView.get_max_zoom_level())
+        MapView.ensure_visible(TrackFile.get_bounding_box(), False)
         
         TrackFile.update_range()
         Camera.set_all_found_timezone(gpx.start.geotimezone)
@@ -231,8 +231,8 @@ class GottenGeography(Gtk.Application):
                 continue
             photo.disable_auto_position()
             photo.set_location(
-                map_view.get_property('latitude'),
-                map_view.get_property('longitude'))
+                MapView.get_property('latitude'),
+                MapView.get_property('longitude'))
         Widgets.photos_selection.emit('changed')
         Widgets.apply_button.set_sensitive(False)
     
@@ -253,8 +253,8 @@ class GottenGeography(Gtk.Application):
         """Center on the first selected photo."""
         photo = selected.copy().pop()
         if photo.positioned:
-            map_view.emit('realize')
-            map_view.center_on(photo.latitude, photo.longitude)
+            MapView.emit('realize')
+            MapView.center_on(photo.latitude, photo.longitude)
     
     def update_preview(self, chooser, image):
         """Display photo thumbnail and geotag data in file chooser."""

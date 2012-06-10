@@ -20,12 +20,12 @@ from __future__ import division
 from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 
-from widgets import Widgets, map_view
+from widgets import Widgets, MapView
 from common import selected, modified
 from common import bind_properties, memoize
 
 layer = Champlain.MarkerLayer()
-map_view.add_layer(layer)
+MapView.add_layer(layer)
 
 
 def update_highlights(*ignore):

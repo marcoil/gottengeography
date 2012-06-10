@@ -37,7 +37,7 @@ from __future__ import division
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 
-from widgets import Widgets, map_view
+from widgets import Widgets, MapView
 from common import selected, modified
 from photos import Photograph
 
@@ -93,8 +93,8 @@ class DragController():
                 if photo is not None:
                     photo.disable_auto_position()
                     photo.set_location(
-                        map_view.y_to_latitude(y),
-                        map_view.x_to_longitude(x))
+                        MapView.y_to_latitude(y),
+                        MapView.x_to_longitude(x))
                     modified.add(photo)
         
         self.selection.emit('changed')

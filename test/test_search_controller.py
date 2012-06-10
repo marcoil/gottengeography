@@ -1,7 +1,7 @@
 
 """Test that we can search the map."""
 
-from gg.widgets import Widgets, map_view
+from gg.widgets import Widgets, MapView
 
 from test import gui
 
@@ -22,10 +22,10 @@ def test_search():
         gui.search.search_completed(entry,
                                     gui.search.results,
                                     result.iter,
-                                    map_view)
+                                    MapView)
         loc, lat, lon = result
-        assert lat == map_view.get_property('latitude')
-        assert lon == map_view.get_property('longitude')
+        assert lat == MapView.get_property('latitude')
+        assert lon == MapView.get_property('longitude')
     
     entry.set_text('calg')
     assert len(gui.search.results) == 652

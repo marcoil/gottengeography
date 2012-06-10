@@ -20,9 +20,9 @@ from __future__ import division
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from common import memoize, gst
+from common import Gst, memoize
 from gpsmath import format_coords
-from widgets import Widgets, map_view
+from widgets import Widgets, MapView
 
 START  = Clutter.BinAlignment.START
 CENTER = Clutter.BinAlignment.CENTER
@@ -75,8 +75,8 @@ class Sources:
     """Set up the source menu and link to GSettings."""
     
     def __init__(self):
-        last_source = gst.get_string('map-source-id')
-        gst.bind_with_convert('map-source-id', map_view, 'map-source',
+        last_source = Gst.get_string('map-source-id')
+        Gst.bind_with_convert('map-source-id', MapView, 'map-source',
             MAP_SOURCES.get, lambda x: x.get_id())
         
         for source_id in sorted(MAP_SOURCES):
@@ -103,7 +103,7 @@ class RadioMenuItem(Gtk.RadioMenuItem):
     def menu_item_clicked(self, item, map_id):
         """Switch to the clicked map source."""
         if self.get_active():
-            map_view.set_map_source(MAP_SOURCES[map_id])
+            MapView.set_map_source(MAP_SOURCES[map_id])
 
 
 class Crosshair(Champlain.Point):
@@ -113,8 +113,8 @@ class Crosshair(Champlain.Point):
         Champlain.Point.__init__(self)
         self.set_size(4)
         self.set_color(Clutter.Color.new(0, 0, 0, 64))
-        gst.bind('show-map-center', self, 'visible')
-        map_view.bin_layout_add(self, CENTER, CENTER)
+        Gst.bind('show-map-center', self, 'visible')
+        MapView.bin_layout_add(self, CENTER, CENTER)
 
 
 class Scale(Champlain.Scale):
@@ -122,9 +122,9 @@ class Scale(Champlain.Scale):
     
     def __init__(self):
         Champlain.Scale.__init__(self)
-        self.connect_view(map_view)
-        gst.bind('show-map-scale', self, 'visible')
-        map_view.bin_layout_add(self, START, END)
+        self.connect_view(MapView)
+        Gst.bind('show-map-scale', self, 'visible')
+        MapView.bin_layout_add(self, START, END)
 
 
 class Box(Clutter.Box):
@@ -134,11 +134,11 @@ class Box(Clutter.Box):
         Clutter.Box.__init__(self)
         self.set_layout_manager(Clutter.BinLayout())
         self.set_color(Clutter.Color.new(0, 0, 0, 96))
-        gst.bind('show-map-coords', self, 'visible')
-        map_view.bin_layout_add(self, START, START)
+        Gst.bind('show-map-coords', self, 'visible')
+        MapView.bin_layout_add(self, START, START)
         self.get_layout_manager().add(CoordLabel(), CENTER, CENTER)
-        map_view.connect('notify::width',
-            lambda *ignore: self.set_size(map_view.get_width(), 30))
+        MapView.connect('notify::width',
+            lambda *ignore: self.set_size(MapView.get_width(), 30))
 
 
 class CoordLabel(Clutter.Text):
@@ -148,7 +148,7 @@ class CoordLabel(Clutter.Text):
         Clutter.Text.__init__(self)
         self.set_color(Clutter.Color.new(255, 255, 255, 255))
         for signal in ('latitude', 'longitude'):
-            map_view.connect('notify::' + signal, self.display)
+            MapView.connect('notify::' + signal, self.display)
     
     def display(self, view, param, mlink=Widgets.maps_link):
         """Display map center coordinates when they change."""
@@ -167,7 +167,7 @@ black = Box()
 
 def animate_in(anim=True):
     """Fade in all the map actors."""
-    for i in xrange(gst.get_int('animation-steps') if anim else 8, 7, -1):
+    for i in xrange(Gst.get_int('animation-steps') if anim else 8, 7, -1):
         opacity = 0.6407035175879398 * (400 - i) # don't ask
         for actor in (xhair, black, scale):
             actor.set_opacity(opacity)

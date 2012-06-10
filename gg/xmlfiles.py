@@ -27,8 +27,8 @@ from calendar import timegm
 from time import clock
 
 from gpsmath import Coordinates
-from widgets import Widgets, Builder, map_view
-from common import GSettings, gst, memoize, points
+from widgets import Widgets, Builder, MapView
+from common import GSettings, Gst, memoize, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -41,7 +41,7 @@ def make_clutter_color(color):
 def track_color_changed(selection, polys):
     """Update the color of any loaded GPX tracks."""
     color = selection.get_color()
-    gst.set_value('track-color',
+    Gst.set_value('track-color',
         GLib.Variant('(iii)', (color.red, color.green, color.blue)))
     one = make_clutter_color(color)
     two = one.lighten().lighten()
@@ -55,7 +55,7 @@ class Polygon(Champlain.PathLayer):
     def __init__(self):
         Champlain.PathLayer.__init__(self)
         self.set_stroke_width(4)
-        map_view.add_layer(self)
+        MapView.add_layer(self)
     
     def append_point(self, latitude, longitude, elevation):
         """Simplify appending a point onto a polygon."""
@@ -206,7 +206,7 @@ class TrackFile():
             # Then this is the first time this file has been loaded
             # and we should honor the user-selected global default
             # track color instead of using the schema-defined default
-            self.gst.set_value('track-color', gst.get_value('track-color'))
+            self.gst.set_value('track-color', Gst.get_value('track-color'))
         
         self.gst.bind_with_convert(
             'track-color',
@@ -251,7 +251,7 @@ class TrackFile():
     def destroy(self, button=None):
         """Die a horrible death."""
         for polygon in self.polygons:
-            map_view.remove_layer(polygon)
+            MapView.remove_layer(polygon)
         for timestamp in self.tracks:
             del points[timestamp]
         self.polygons.clear()

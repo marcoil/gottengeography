@@ -20,7 +20,7 @@ from __future__ import division
 from os.path import join
 
 from territories import get_state, get_country
-from widgets import Widgets, map_view
+from widgets import Widgets, MapView
 from build_info import PKG_DATA_DIR
 
 # ListStore column names
@@ -35,18 +35,18 @@ class SearchController():
         """Make the search box and insert it into the window."""
         self.search = None
         self.results = Widgets.search_results
-        self.slide_to = map_view.go_to
+        self.slide_to = MapView.go_to
         search = Widgets.search_completion
         search.set_match_func(
             lambda c, s, itr, get:
                 (get(itr, LOCATION) or '').lower().find(self.search) > -1,
             self.results.get_value)
-        search.connect('match-selected', self.search_completed, map_view)
+        search.connect('match-selected', self.search_completed, MapView)
         entry = Widgets.search_box
         entry.connect('changed', self.load_results, self.results.append)
         entry.connect('icon-release', lambda entry, i, e: entry.set_text(''))
         entry.connect('activate', self.repeat_last_search,
-                      self.results, map_view)
+                      self.results, MapView)
     
     def load_results(self, entry, append, searched=set()):
         """Load a few search results based on what's been typed.
@@ -76,7 +76,7 @@ class SearchController():
     def search_completed(self, entry, model, itr, view):
         """Go to the selected location."""
         self.last_search = itr.copy()
-        map_view.emit('realize')
+        MapView.emit('realize')
         view.set_zoom_level(11)
         self.slide_to(*model.get(itr, LATITUDE, LONGITUDE))
     

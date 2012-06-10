@@ -27,7 +27,7 @@ from widgets import Widgets
 from xmlfiles import TrackFile
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
-from common import memoize, points, modified, gst
+from common import Gst, memoize, points, modified
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -79,7 +79,7 @@ def fetch_exif(filename):
         raise IOError
     return exif
 
-def fetch_thumbnail(filename, size=gst.get_int('thumbnail-size')):
+def fetch_thumbnail(filename, size=Gst.get_int('thumbnail-size')):
     """Load a photo's thumbnail from disk, avoiding EXIF data if possible."""
     try:
         return GdkPixbuf.Pixbuf.new_from_file_at_size(filename, size, size)
@@ -117,7 +117,7 @@ class Photograph(Coordinates):
         # the max size to start and then scale it down to the requested size on
         # the fly. But this works for now. 
         for photo in Photograph.files:
-            size = gst.get_int('thumbnail-size')
+            size = Gst.get_int('thumbnail-size')
             photo.thumb = fetch_thumbnail(photo.filename, size)
             Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)
     
