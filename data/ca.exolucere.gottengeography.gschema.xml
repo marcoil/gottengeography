@@ -44,7 +44,7 @@
     </key>
     <key type="i" name="thumbnail-size">
       <range min="48" max="500"/>
-      <default>128</default>
+      <default>200</default>
       <summary>Width in pixels for the thumbnails in the photo pane.</summary>
     </key>
     <key type="b" name="use-dark-theme">

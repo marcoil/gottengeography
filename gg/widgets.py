@@ -59,14 +59,6 @@ class Widgets(Builder):
         self.loaded_photos.set_sort_column_id(3, Gtk.SortType.ASCENDING)
         
         self.photos_column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.photos_thumb_renderer.set_property('ypad', 6)
-        self.photos_thumb_renderer.set_property('xpad', 12)
-        self.photos_thumb_renderer.set_property('stock-id',
-                                                Gtk.STOCK_MISSING_IMAGE)
-        
-        self.photos_summary_renderer.set_property('wrap-width', 200)
-        self.photos_summary_renderer.set_property('wrap-mode',
-                                                  Pango.WrapMode.WORD)
         
         self.about.set_version(REVISION)
         self.about.set_program_name(APPNAME)
