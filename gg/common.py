@@ -25,8 +25,6 @@ is used to place photos on the map by looking up their timestamps.
 from __future__ import division
 
 from gi.repository import GObject, Gio, GLib
-from inspect import getcallargs
-from types import FunctionType
 
 from version import PACKAGE
 
@@ -44,43 +42,23 @@ def singleton(cls):
 
 
 class memoize(object):
-    """Cache instances of a class. Decorate the class with @memoize to use.
-    
-    This is the only implementation of memoization I am aware of that
-    allows you to use keyword arguments and still get cached results, ie,
-    Photograph('/file/name') will give you the *same* Photograph instance
-    as Photograph(filename='/file/name').
-    """
+    """Cache instances of a class. Decorate the class with @memoize to use."""
     
     def __init__(self, cls):
         """Expose the cached class's attributes as our own.
         
         Allows class attributes and static methods to work as expected.
         """
-        if type(cls) is FunctionType:
-            raise TypeError('This is for classes only.')
         self.cls = cls
         
         for k, v in cls.__dict__.items():
             self.__dict__[k] = v.__func__ if type(v) is staticmethod else v
     
-    def __call__(self, *args, **kwargs):
-        """Return a cached instance of the appropriate class if it exists.
-        
-        This uses inspect.getcallargs in order to allow F(foo=1) to return
-        the *same* cached result as if you had called F(1). dicts are passed
-        along to your method but not used for generating the cache lookup
-        key, so if your method expects a dict as an argument, you'll need to
-        ensure that your method signature is unique without the dict, otherwise
-        you'll get cache collisions.
-        """
-        signature = getcallargs(self.cls.__init__, None, *args, **kwargs)
-        del signature['self']
-        key = tuple(signature[key] for key in sorted(signature)
-            if signature[key] and type(signature[key]) not in (dict, list))
-        key = key[0] if len(key) is 1 else key
+    def __call__(self, *args):
+        """Return a cached instance of the appropriate class if it exists."""
+        key = args[0] if len(args) is 1 else args
         if key not in self.cls.instances:
-            self.cls.instances[key] = self.cls(*args, **kwargs)
+            self.cls.instances[key] = self.cls(*args)
         return self.cls.instances[key]
 
 
