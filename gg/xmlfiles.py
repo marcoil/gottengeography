@@ -235,8 +235,14 @@ class TrackFile():
         Widgets.trackfiles_view.add(self.widgets.trackfile_settings)
     
     def element_start(self, name, attributes):
-        """Placeholder for a method that gets overridden in subclasses."""
-        return False
+        """Determine when new tracks start and create a new Polygon."""
+        if name == self.parser.watchlist[0]:
+            polygon = Polygon()
+            self.polygons.add(polygon)
+            self.append = polygon.append_point
+            self.widgets.colorpicker.emit('color-set')
+            return False
+        return True
     
     def element_end(self, name, state):
         """Occasionally redraw the screen so the user can see activity."""
@@ -269,17 +275,6 @@ class GPXFile(TrackFile):
     
     def __init__(self, filename):
         TrackFile.__init__(self, filename, 'gpx', ['trkseg', 'trkpt'])
-    
-    def element_start(self, name, attributes):
-        """Adds new polygon for each segment, and watches for track points."""
-        if name == 'trkseg':
-            polygon = Polygon()
-            self.polygons.add(polygon)
-            self.append = polygon.append_point
-            self.widgets.colorpicker.emit('color-set')
-        if name == 'trkpt':
-            return True
-        return False
     
     def element_end(self, name, state):
         """Collect and use all the parsed data.
@@ -318,16 +313,6 @@ class KMLFile(TrackFile):
         
         TrackFile.__init__(self, filename, 'kml',
                            ['gx:Track', 'when', 'gx:coord'])
-    
-    def element_start(self, name, attributes):
-        """Adds new polygon for each gx:Track, and watches for location data."""
-        if name == 'gx:Track':
-            polygon = Polygon()
-            self.polygons.add(polygon)
-            self.append = polygon.append_point
-            self.widgets.colorpicker.emit('color-set')
-            return False
-        return True
     
     def element_end(self, name, state):
         """Watch for complete pairs of when and gx:coord tags.
