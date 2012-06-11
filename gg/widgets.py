@@ -1,3 +1,5 @@
+# Author: Robert Park <rbpark@exolucere.ca>, (C) 2012
+# Copyright: See COPYING file included with this distribution.
 
 """Orchestrate the construction of widgets with GtkBuilder."""
 

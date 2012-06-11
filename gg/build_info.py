@@ -1,4 +1,5 @@
-# Copyright (C) 2012 Robert Park <rbpark@exolucere.ca>
+# Author: Robert Park <rbpark@exolucere.ca>, (C) 2012
+# Copyright: See COPYING file included with this distribution.
 
 """Determine the location of GottenGeography's data files.
 
