@@ -28,7 +28,7 @@ from gi.repository import GLib, GObject
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
-from common import memoize_method
+from common import memoize
 
 EARTH_RADIUS = 6371 #km
 
@@ -179,7 +179,7 @@ class Coordinates(GObject.GObject):
         return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
             self._latitude, self._longitude, link) if self.positioned else ''
     
-    @memoize_method(share=True)
+    @memoize
     def do_cached_lookup(self, key):
         """Scan cities.txt for the nearest town."""
         near, dist = None, float('inf')

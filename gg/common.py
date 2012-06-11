@@ -25,6 +25,7 @@ is used to place photos on the map by looking up their timestamps.
 from __future__ import division
 
 from gi.repository import GObject, Gio, GLib
+from types import FunctionType
 
 from version import PACKAGE
 
@@ -41,43 +42,32 @@ def singleton(cls):
     return instance
 
 
-class memoize(object):
-    """Cache instances of a class. Decorate the class with @memoize to use."""
+def memoize(obj):
+    """Cache class instances and methods. Decorate with @memoize to use.
     
-    def __init__(self, cls):
-        """Expose the cached class's attributes as our own.
-        
-        Allows class attributes and static methods to work as expected.
-        """
-        self.cls = cls
-        
-        for k, v in cls.__dict__.items():
-            self.__dict__[k] = v.__func__ if type(v) is staticmethod else v
+    Classes should define 'instances = {}' to store their instances.
+    """
+    share = obj.__name__ == 'do_cached_lookup'
     
-    def __call__(self, *args):
-        """Return a cached instance of the appropriate class if it exists."""
-        key = args[0] if len(args) is 1 else args
-        if key not in self.instances:
-            self.instances[key] = self.cls(*args)
-        return self.instances[key]
-
-
-def memoize_method(share=False):
-    """Build a memoizer that can either share cache between instances or not."""
-    def method_memoizer(func):
-        """Decorate the method with @memoize_method(share=True/False) to use.
-        
-        Pick True if you want different instances sharing cache, or False
-        if you need different instances to have unique caches."""
-        cache = {}
-        def memoized(*args):
-            """Fetch the result from the cache."""
-            key = args[1:] if share else args
-            if key not in cache:
-                cache[key] = func(*args)
-            return cache[key]
-        return memoized
-    return method_memoizer
+    if type(obj) is FunctionType:
+        obj.instances = {}
+    
+    def memoizer(*args):
+        """Do cache lookups and populate the cache in the case of misses."""
+        # The first argument is 'self' for both class instantiations and method
+        # calls, so we need to discard that for do_cached_lookup in order for
+        # Coordinates instances to share cache with Photograph instances.
+        key = args[1:] if share else args
+        key = key[0] if len(key) is 1 else key
+        if key not in obj.instances:
+            obj.instances[key] = obj(*args)
+        return obj.instances[key]
+    
+    # Make the memoizer func masquerade as the object we are memoizing.
+    # This makes class attributes and static methods behave as expected.
+    for k, v in obj.__dict__.items():
+        memoizer.__dict__[k] = v.__func__ if type(v) is staticmethod else v
+    return memoizer
 
 
 def bind_properties(source, source_prop,

@@ -7,7 +7,7 @@ from os.path import join
 
 from version import APPNAME, PACKAGE
 from build_info import PKG_DATA_DIR, REVISION
-from common import Gst, singleton, memoize_method
+from common import Gst, singleton, memoize
 
 
 class Builder(Gtk.Builder):
@@ -18,7 +18,7 @@ class Builder(Gtk.Builder):
         self.set_translation_domain(PACKAGE)
         self.add_from_file(join(PKG_DATA_DIR, filename + '.ui'))
     
-    @memoize_method(share=False)
+    @memoize
     def __getattr__(self, widget):
         """Make calls to Gtk.Builder().get_object() more pythonic.
         
