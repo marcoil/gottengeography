@@ -18,9 +18,8 @@
 from __future__ import division
 
 from xml.parsers.expat import ParserCreate, ExpatError
+from gi.repository import Champlain, Clutter, Gtk, Gdk
 from dateutil.parser import parse as parse_date
-from gi.repository import Champlain, Clutter
-from gi.repository import Gtk, Gdk, GLib
 from re import compile as re_compile
 from os.path import basename
 from calendar import timegm
@@ -41,8 +40,7 @@ def make_clutter_color(color):
 def track_color_changed(selection, polys):
     """Update the color of any loaded GPX tracks."""
     color = selection.get_color()
-    Gst.set_value('track-color',
-        GLib.Variant('(iii)', (color.red, color.green, color.blue)))
+    Gst.set_color(color)
     one = make_clutter_color(color)
     two = one.lighten().lighten()
     for i, polygon in enumerate(polys):

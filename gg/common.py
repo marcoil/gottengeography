@@ -143,6 +143,11 @@ class Gst(GSettings):
     def set_window_size(self, value):
         """Convert the window size to a pair of ints."""
         Gio.Settings.set_value(self, 'window-size', GLib.Variant('(ii)', value))
+    
+    def set_color(self, color):
+        """Convert the GdkColor to a three-int tuple."""
+        Gio.Settings.set_value(self, 'track-color',
+            GLib.Variant('(iii)', (color.red, color.green, color.blue)))
 
 
 class Struct:
