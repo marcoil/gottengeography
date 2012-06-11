@@ -140,9 +140,7 @@ class TrackFile():
             Widgets.empty_trackfile_list.show()
         else:
             Widgets.empty_trackfile_list.hide()
-            TrackFile.range.extend([
-                min([gpx.alpha for gpx in TrackFile.files]),
-                max([gpx.omega for gpx in TrackFile.files])])
+            TrackFile.range.extend([min(points), max(points)])
     
     @staticmethod
     def get_bounding_box():
