@@ -20,10 +20,6 @@ DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
 gui = GottenGeography(do_fade_in=False)
 startup(gui)
 
-# Disable animation for speed.
-Gst.set_int('animation-steps', 15)
-gui.search.slide_to = MapView.center_on
-
 def random_coord(maximum=180):
     """Generate a random number -maximum <= x <= maximum."""
     return (random() * maximum * 2) - maximum
