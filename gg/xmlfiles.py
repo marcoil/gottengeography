@@ -253,8 +253,7 @@ class TrackFile():
         for timestamp in self.tracks:
             del points[timestamp]
         self.polygons.clear()
-        for widget in ('trackfile_label', 'unload', 'colorpicker'):
-            self.widgets[widget].destroy()
+        self.widgets.trackfile_settings.destroy()
         del TrackFile.instances[self.filename]
         TrackFile.update_range()
 
