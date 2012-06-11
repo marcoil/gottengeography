@@ -771,4 +771,22 @@ Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
       <placeholder />
     </widgets>
   </object>
+  <object class="GtkSizeGroup" id="trackfiles_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="trackfile_colors_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="trackfile_unloads_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
 </interface>

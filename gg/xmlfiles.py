@@ -220,6 +220,10 @@ class TrackFile():
                                          track_color_changed,
                                          self.polygons)
         
+        Widgets.trackfile_unloads_group.add_widget(self.widgets.unload)
+        Widgets.trackfile_colors_group.add_widget(self.widgets.colorpicker)
+        Widgets.trackfiles_group.add_widget(self.widgets.trackfile_label)
+        
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         

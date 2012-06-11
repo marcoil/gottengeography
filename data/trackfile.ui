@@ -3,7 +3,7 @@
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkGrid" id="trackfile_settings">
     <property name="visible">True</property>
-    <property name="expand">False</property>
+    <property name="expand">True</property>
     <property name="can_focus">False</property>
     <property name="row-spacing">6</property>
     <property name="column-spacing">6</property>
