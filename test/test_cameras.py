@@ -26,7 +26,7 @@ def test_camera_offsets():
 
 def test_memoization():
     """Memoization shouldn't get in the way of things"""
-    assert Camera.instances is Camera.cls.instances
+    assert Camera.instances is not None
     assert Camera.generate_id({}) == ('unknown_camera', 'Unknown Camera')
     assert Camera.generate_id({'Make': 'Nikon'}) == ('nikon', 'Nikon')
     

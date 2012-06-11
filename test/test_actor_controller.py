@@ -9,18 +9,6 @@ from gg.actor import MAP_SOURCES, Box, Crosshair, animate_in
 
 from test import Gst, gui
 
-def test_strings():
-    """Coordinate and Google Maps links should be accurate"""
-    link = Widgets.maps_link
-    
-    MapView.center_on(50, 50)
-    assert link.get_uri().startswith(
-        'http://maps.google.com/maps?ll=50.0,50.0&amp;spn=')
-    
-    MapView.center_on(-10, -30)
-    assert link.get_uri().startswith(
-        'http://maps.google.com/maps?ll=-10.0,-30.0&amp;spn=')
-
 def test_configuration():
     """Reticulating splines"""
     animate_in(20)

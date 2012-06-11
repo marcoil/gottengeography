@@ -21,8 +21,7 @@ def test_search():
     for result in gui.search.results:
         gui.search.search_completed(entry,
                                     gui.search.results,
-                                    result.iter,
-                                    MapView)
+                                    result.iter)
         loc, lat, lon = result
         assert lat == MapView.get_property('latitude')
         assert lon == MapView.get_property('longitude')
