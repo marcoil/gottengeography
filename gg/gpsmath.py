@@ -207,9 +207,9 @@ class Coordinates(GObject.GObject):
         countryname = get_country(countrycode)
         self._geoname = ', '.join(
             [s for s in (city, provincestate, countryname) if s])
-        if (city is not self.city) or \
-           (provincestate is not self.provincestate) or \
-           (countryname is not self.countryname):
+        if (city != self.city) or \
+           (provincestate != self.provincestate) or \
+           (countryname != self.countryname):
             self.notify('geoname')
         self.city = city
         self.provincestate = provincestate

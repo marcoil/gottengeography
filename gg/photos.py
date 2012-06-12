@@ -119,7 +119,6 @@ class Photograph(Coordinates):
         self.filename = filename
         
         self.connect('notify::geoname', self.update_liststore_summary)
-        self.connect('notify::positioned', self.update_liststore_summary)
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
