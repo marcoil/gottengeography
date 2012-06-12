@@ -205,6 +205,8 @@ class Coordinates(GObject.GObject):
             GeoCacheKey(self._latitude, self._longitude))
         provincestate = get_state(countrycode, state)
         countryname = get_country(countrycode)
+        self._geoname = ', '.join(
+            [s for s in (city, provincestate, countryname) if s])
         if (city is not self.city) or \
            (provincestate is not self.provincestate) or \
            (countryname is not self.countryname):
@@ -213,8 +215,6 @@ class Coordinates(GObject.GObject):
         self.provincestate = provincestate
         self.countryname   = countryname
         self.geotimezone   = tz.strip()
-        self._geoname = ', '.join(
-            [s for s in (city, provincestate, countryname) if s])
         return self.geotimezone
     
     def pretty_time(self):
@@ -236,7 +236,7 @@ class Coordinates(GObject.GObject):
     
     def plain_summary(self):
         """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in [self.geoname,
+        return '\n'.join([s for s in [self._geoname,
                                       self.pretty_time(),
                                       self.pretty_coords(),
                                       self.pretty_altitude()] if s])

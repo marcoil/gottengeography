@@ -118,7 +118,8 @@ class Photograph(Coordinates):
         self.thumb = fetch_thumbnail(filename)
         self.filename = filename
         
-        self.connect('notify::geoname', self.update_geoname)
+        self.connect('notify::geoname', self.update_liststore_summary)
+        self.connect('notify::positioned', self.update_liststore_summary)
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
@@ -212,7 +213,7 @@ class Photograph(Coordinates):
         self.latitude  = lat
         self.longitude = lon
     
-    def update_geoname(self, *ignore):
+    def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
