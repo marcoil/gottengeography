@@ -60,16 +60,8 @@ def format_coords(lat, lon):
 class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates.
     
-    This class is inherited by Photograph and TrackFile and contains methods
-    required by both of those classes.
-    
-    The geodata attribute of this class is shared across all instances of
-    all subclasses of this class. When it is modified by any instance, the
-    changes are immediately available to all other instances. It serves as
-    a cache for data read from cities.txt, which contains geocoding data
-    provided by geonames.org. All subclasses of this class can call
-    self.lookup_geoname() and receive cached data if it was already
-    looked up by another instance of any subclass.
+    Different instances of this class and it's subclass Photograph can
+    call self.lookup_geodata() and receive cached geoname data.
     """
     modified_timeout = None
     timeout_seconds = 1
@@ -161,11 +153,6 @@ class Coordinates(GObject.GObject):
     def valid_coords(self):
         """Check if this object contains valid coordinates."""
         return abs(self._latitude) <= 90 and abs(self._longitude) <= 180
-    
-    def maps_link(self, link=_('View in Google Maps')):
-        """Return a link to Google Maps if this object has valid coordinates."""
-        return '<a href="%s?q=%s,%s">%s</a>' % ('http://maps.google.com/maps',
-            self._latitude, self._longitude, link) if self.positioned else ''
     
     @memoize
     def do_cached_lookup(self, key):
