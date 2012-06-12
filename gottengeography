@@ -62,5 +62,5 @@ except:
 # Time to launch the app.
 
 from gg.app import GottenGeography
-GottenGeography().run(argv)
+GottenGeography(not argv[1:]).run(argv)
 
