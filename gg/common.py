@@ -35,18 +35,12 @@ def memoize(obj):
     
     Classes should define 'instances = {}' to store their instances.
     """
-    share = obj.__name__ == 'do_cached_lookup'
-    
     if type(obj) is FunctionType:
         obj.instances = {}
     
     def memoizer(*args):
         """Do cache lookups and populate the cache in the case of misses."""
-        # The first argument is 'self' for both class instantiations and method
-        # calls, so we need to discard that for do_cached_lookup in order for
-        # Coordinates instances to share cache with Photograph instances.
-        key = args[1:] if share else args
-        key = key[0] if len(key) is 1 else key
+        key = args[0] if len(args) is 1 else args
         if key not in obj.instances:
             obj.instances[key] = obj(*args)
         return obj.instances[key]

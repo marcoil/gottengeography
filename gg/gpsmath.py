@@ -56,13 +56,65 @@ def format_coords(lat, lon):
         _('E') if lon >= 0 else _('W'), abs(lon)
     )
 
+@memoize
+def do_cached_lookup(key):
+    """Scan cities.txt for the nearest town.
+    
+    The key argument should be a GeoCacheKey instance so that we can sneak the
+    precise lat,lon pair past the memoizer.
+    """
+    near, dist = None, float('inf')
+    lat1, lon1 = radians(key.lat), radians(key.lon)
+    with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
+        for city in cities:
+            name, lat, lon, country, state, tz = city.split('\t')
+            lat2, lon2 = radians(float(lat)), radians(float(lon))
+            try:
+                delta = acos(sin(lat1) * sin(lat2) +
+                             cos(lat1) * cos(lat2) *
+                             cos(lon2  - lon1))    * EARTH_RADIUS
+            except ValueError:
+                delta = 0
+            if delta < dist:
+                dist = delta
+                near = [name, state, country, tz]
+    return near
+
+
+class GeoCacheKey:
+    """This class allows fuzzy geodata cache lookups.
+    
+    The magic here is that different instances of this class will compare
+    equally if they have the same key (ie, if the lat,lon pair are equal to
+    within 2 decimal places), and as a result of this, a dict() entry created
+    by one instance of this class can be retrieved by a different instance, as
+    long as self.key is equal between them.
+    
+    This allows me to pass in the precise lat,lon pair to the do_cached_lookup
+    method above, without the memoizer caching too specifically. If we just
+    cached the full lat,lon pair, there'd never be any cache hits and we'd
+    be doing expensive geodata lookups way too often, so this makes the cache
+    lookups 'fuzzy', allowing you to get get a cached result even if you're
+    only just *nearby* a previously cached result.
+    """
+    
+    def __init__(self, lat, lon):
+        self.key = '%.2f,%.2f' % (lat, lon)
+        self.lat = lat
+        self.lon = lon
+    
+    def __str__(self):
+        return self.key
+    
+    def __hash__(self):
+        return hash(self.key)
+    
+    def __cmp__(self, other):
+        return cmp(self.key, other.key)
+
 
 class Coordinates(GObject.GObject):
-    """A generic object containing latitude and longitude coordinates.
-    
-    Different instances of this class and it's subclass Photograph can
-    call self.lookup_geodata() and receive cached geoname data.
-    """
+    """A generic object containing latitude and longitude coordinates."""
     modified_timeout = None
     timeout_seconds = 1
     
@@ -154,32 +206,12 @@ class Coordinates(GObject.GObject):
         self.countryname = ''
         self.geotimezone = ''
     
-    @memoize
-    def do_cached_lookup(self, key):
-        """Scan cities.txt for the nearest town."""
-        near, dist = None, float('inf')
-        lat1, lon1 = radians(self.latitude), radians(self.longitude)
-        with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
-            for city in cities:
-                name, lat, lon, country, state, tz = city.split('\t')
-                lat2, lon2 = radians(float(lat)), radians(float(lon))
-                try:
-                    delta = acos(sin(lat1) * sin(lat2) +
-                                 cos(lat1) * cos(lat2) *
-                                 cos(lon2  - lon1))    * EARTH_RADIUS
-                except ValueError:
-                    delta = 0
-                if delta < dist:
-                    dist = delta
-                    near = [name, state, country, tz]
-        return near
-    
     def lookup_geodata(self):
         """Check the cache for geonames, and notify of any changes."""
         if not self.positioned:
             return
-        key = '%.2f,%.2f' % (self._latitude, self._longitude)
-        city, state, countrycode, tz = self.do_cached_lookup(key)
+        city, state, countrycode, tz = do_cached_lookup(
+            GeoCacheKey(self._latitude, self._longitude))
         provincestate = get_state(countrycode, state)
         countryname = get_country(countrycode)
         if (city is not self.city) or \
