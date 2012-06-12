@@ -71,7 +71,7 @@ MapView.connect('realize', remember_location)
 center = Coordinates()
 lat_binding = bind_properties(MapView, 'latitude', center)
 lon_binding = bind_properties(MapView, 'longitude', center)
-center.do_modified(True)
+center.do_modified()
 center_binding = bind_properties(center, 'geoname', Widgets.main, 'title')
 center.timeout_seconds = 10 # Reduces the rate that the titlebar updates
 

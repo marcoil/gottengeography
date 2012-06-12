@@ -114,15 +114,16 @@ class Photograph(Coordinates):
         
         This MUST be the case in order to avoid the @memoize cache getting
         filled up with invalid Photograph instances."""
-        Coordinates.__init__(self, filename=filename if filename else '')
+        Coordinates.__init__(self)
         self.thumb = fetch_thumbnail(filename)
         self.filename = filename
+        
+        self.connect('notify::geoname', self.update_geoname)
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
         self.exif = fetch_exif(self.filename)
         self.manual = False
-        self.modified = False
         self.modified_timeout = None
         self.reset_properties()
         
@@ -163,9 +164,6 @@ class Photograph(Coordinates):
                     {key.split('.')[-1]: self.exif[key].value})
             except KeyError:
                 pass
-        
-        self.connect('notify::positioned', lambda *ignore: modified.add(self))
-        self.connect('notify::geoname', self.update_geoname)
     
     def calculate_timestamp(self, offset = 0):
         """Determine the timestamp based on the currently selected timezone.
@@ -218,8 +216,7 @@ class Photograph(Coordinates):
         """Update the text displayed in the GtkListStore."""
         modified.add(self)
         if self.iter is not None:
-            Widgets.loaded_photos.set_value(self.iter, 1,
-                ('<b>%s</b>' % self.markup_summary()))
+            Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
         if self.camera and self.camera.found_timezone is not self.geotimezone:
             self.camera.found_timezone = self.geotimezone
     

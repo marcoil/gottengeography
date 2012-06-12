@@ -181,6 +181,7 @@ class GottenGeography(Gtk.Application):
         Raises IOError if filename refers to a file that is not a photograph.
         """
         photo = Photograph(uri)
+        modified.discard(photo)
         photo.read()
         
         Widgets.empty_camera_list.hide()
@@ -198,7 +199,6 @@ class GottenGeography(Gtk.Application):
         if camera.timezone_method == 'lookup':
             photo.calculate_timestamp(camera.offset)
         
-        modified.discard(photo)
         Widgets.apply_button.set_sensitive(True)
     
     def load_gpx_from_file(self, uri):

@@ -6,17 +6,17 @@
 from __future__ import division
 
 from math import acos, sin, cos, radians
+from gi.repository import GLib, GObject
 from time import strftime, localtime
 from math import modf as split_float
 from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
 from pyexiv2 import Rational
-from gi.repository import GLib, GObject
 
 from territories import get_state, get_country
+from common import memoize, modified
 from build_info import PKG_DATA_DIR
-from common import memoize
 
 EARTH_RADIUS = 6371 #km
 
@@ -120,15 +120,6 @@ class Coordinates(GObject.GObject):
     
     # GObject properties
     # Modifiable, non-derived properties
-    @GObject.property(type=str, default='')
-    def filename(self):
-        return self._filename
-    
-    @filename.setter
-    def filename(self, value):
-        self._filename = value
-        self.do_modified()
-    
     @GObject.property(type=float, default=0.0)
     def latitude(self):
         return self._latitude
@@ -138,7 +129,7 @@ class Coordinates(GObject.GObject):
         if abs(value) > 90:
             return
         self._latitude = value
-        self.do_modified(True)
+        self.do_modified()
     
     @GObject.property(type=float, default=0.0)
     def longitude(self):
@@ -149,7 +140,7 @@ class Coordinates(GObject.GObject):
         if abs(value) > 180:
             return
         self._longitude = value
-        self.do_modified(True)
+        self.do_modified()
     
     @GObject.property(type=float, default=0.0)
     def altitude(self):
@@ -188,7 +179,7 @@ class Coordinates(GObject.GObject):
         return self._geoname
     
     def __init__(self, **props):
-        self._filename = ''
+        self.filename = ''
         self.reset_properties()
         
         GObject.GObject.__init__(self, **props)
@@ -252,12 +243,12 @@ class Coordinates(GObject.GObject):
     
     def markup_summary(self):
         """Longer summary with Pango markup."""
-        return '<span %s>%s</span>\n<span %s>%s</span>' % (
-                        'size="larger"', basename(self.filename),
-                        'style="italic" size="smaller"', self.plain_summary()
-                        )
+        summary = '<span %s>%s</span>\n<span %s>%s</span>' % (
+            'size="larger"', basename(self.filename),
+            'style="italic" size="smaller"', self.plain_summary())
+        return '<b>%s</b>' % summary if self in modified else summary
     
-    def do_modified(self, positioned=False):
+    def do_modified(self):
         """Notify that position has changed and set timer to update geoname."""
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
