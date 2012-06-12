@@ -113,12 +113,14 @@ class Photograph(Coordinates):
         """Raises IOError for invalid file types.
         
         This MUST be the case in order to avoid the @memoize cache getting
-        filled up with invalid Photograph instances."""
+        filled up with invalid Photograph instances.
+        """
         Coordinates.__init__(self)
         self.thumb = fetch_thumbnail(filename)
         self.filename = filename
         
         self.connect('notify::geoname', self.update_liststore_summary)
+        self.connect('notify::positioned', self.respond_positioned)
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
@@ -211,6 +213,12 @@ class Photograph(Coordinates):
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
+    
+    def respond_positioned(self, *ignore):
+        """If a photo has been placed on the map, make it saveable."""
+        if self.positioned:
+            modified.add(self)
+            Widgets.save_button.set_sensitive(True)
     
     def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""
