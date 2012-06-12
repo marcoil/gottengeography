@@ -65,7 +65,6 @@ class Coordinates(GObject.GObject):
     """
     modified_timeout = None
     timeout_seconds = 1
-    modified = False
     
     # GObject properties
     # Modifiable, non-derived properties
@@ -227,7 +226,6 @@ class Coordinates(GObject.GObject):
     
     def do_modified(self, positioned=False):
         """Notify that position has changed and set timer to update geoname."""
-        self.modified = True
         if positioned and self.valid_coords():
             self._positioned = True
             self.notify('positioned')
@@ -237,13 +235,9 @@ class Coordinates(GObject.GObject):
     
     def update_derived_properties(self):
         """Do expensive geodata lookups after the timeout."""
-        if not self.modified:
-            return False
         if self.modified_timeout:
             GLib.source_remove(self.modified_timeout)
-        self.lookup_geodata()
-        
-        self.modified = False
-        self.modified_timeout = None
+            self.lookup_geodata()
+            self.modified_timeout = None
         return False
 
