@@ -98,14 +98,14 @@ class Photograph(Coordinates):
     iter = None
     
     @staticmethod
-    def resize_all_photos(*ignore):
+    def resize_all_photos(gst, key):
         """Reload all the thumbnails when the GSetting changes."""
         # TODO: There's probably a more GObjecty way to do this with properties
         # TODO: Is it necessary to reload every time? Probably could just load
         # the max size to start and then scale it down to the requested size on
-        # the fly. But this works for now. 
+        # the fly. But this works for now.
+        size = gst.get_int(key)
         for photo in Photograph.files:
-            size = Gst.get_int('thumbnail-size')
             photo.thumb = fetch_thumbnail(photo.filename, size)
             Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)
     
