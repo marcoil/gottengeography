@@ -126,8 +126,6 @@ class Photograph(Coordinates):
         self.modified_timeout = None
         self.reset_properties()
         
-        Label(self).hide()
-        
         self.calculate_timestamp()
         
         try:

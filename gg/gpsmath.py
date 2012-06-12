@@ -259,14 +259,13 @@ class Coordinates(GObject.GObject):
     
     def do_modified(self, positioned=False):
         """Notify that position has changed and set timer to update geoname."""
-        if positioned and self.positioned:
-            self.notify('positioned')
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
                 self.timeout_seconds, self.update_derived_properties)
     
     def update_derived_properties(self):
         """Do expensive geodata lookups after the timeout."""
+        self.notify('positioned')
         if self.modified_timeout:
             GLib.source_remove(self.modified_timeout)
             self.lookup_geodata()
