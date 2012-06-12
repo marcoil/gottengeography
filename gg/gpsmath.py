@@ -118,10 +118,16 @@ class Coordinates(GObject.GObject):
         self.do_modified()
     
     # Convenience properties calculated from the other ones
-    # Has it been positioned, or is it uninitialized?
     @GObject.property(type=bool, default=False)
     def positioned(self):
-        return self._positioned and self.valid_coords()
+        """Identify if this instance occupies a valid point on the map.
+        
+        Returns False at 0,0 because it's actually remarkably difficult to
+        achieve that exact point in a natural way (not to mention it's in the
+        middle of the Atlantic), which means the photo hasn't been placed yet.
+        """
+        return False if self._latitude == 0.0 and self._longitude == 0.0 else \
+                    abs(self._latitude) <= 90 and abs(self._longitude) <= 180
     
     # The city / state / country location
     @GObject.property(type=str, default='')
@@ -141,17 +147,12 @@ class Coordinates(GObject.GObject):
         self._longitude = 0.0
         self._altitude = 0.0
         self._timestamp = 0
-        self._positioned = False
         self._geoname = ''
         
         self.city = ''
         self.provincestate = ''
         self.countryname = ''
         self.geotimezone = ''
-    
-    def valid_coords(self):
-        """Check if this object contains valid coordinates."""
-        return abs(self._latitude) <= 90 and abs(self._longitude) <= 180
     
     @memoize
     def do_cached_lookup(self, key):
@@ -177,7 +178,7 @@ class Coordinates(GObject.GObject):
         """Check the cache for geonames, and notify of any changes."""
         if not self.positioned:
             return
-        key = '%.2f,%.2f' % (self.latitude, self.longitude)
+        key = '%.2f,%.2f' % (self._latitude, self._longitude)
         city, state, countrycode, tz = self.do_cached_lookup(key)
         provincestate = get_state(countrycode, state)
         countryname = get_country(countrycode)
@@ -226,8 +227,7 @@ class Coordinates(GObject.GObject):
     
     def do_modified(self, positioned=False):
         """Notify that position has changed and set timer to update geoname."""
-        if positioned and self.valid_coords():
-            self._positioned = True
+        if positioned and self.positioned:
             self.notify('positioned')
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
