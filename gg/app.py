@@ -30,13 +30,12 @@ from actor import animate_in
 from widgets import Widgets, MapView
 from camera import Camera, CameraView
 from photos import Photograph, fetch_thumbnail
+from navigation import go_back, move_by_arrow_keys
 from xmlfiles import TrackFile, GPXFile, KMLFile
 from common import Gst, selected, modified
 
 from drag import DragController
 from search import SearchController
-
-import navigation
 
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
@@ -98,6 +97,10 @@ def startup(self):
     for button, handler in click_handlers.items():
         Widgets[button + '_button'].connect('clicked', *handler)
     
+    Widgets.zoom_in_button.connect('clicked', lambda *x: MapView.zoom_in())
+    Widgets.zoom_out_button.connect('clicked', lambda *x: MapView.zoom_out())
+    Widgets.back_button.connect('clicked', go_back)
+    
     # Deal with multiple selection drag and drop.
     Widgets.photos_view.connect('button-press-event', self.photoview_pressed)
     Widgets.photos_view.connect('button-release-event', self.photoview_released)
@@ -107,6 +110,9 @@ def startup(self):
     accel  = Gtk.AccelGroup()
     accel.connect(Gdk.keyval_from_name('q'),
         Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
+    for key in [ 'Left', 'Right', 'Up', 'Down' ]:
+        accel.connect(Gdk.keyval_from_name(key),
+            Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
     
     Widgets.main.add_accel_group(accel)
     Widgets.main.connect('delete_event', self.confirm_quit_dialog)

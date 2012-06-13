@@ -51,18 +51,8 @@ def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     out_sensitive(view.get_min_zoom_level() != zoom)
     in_sensitive( view.get_max_zoom_level() != zoom)
 
-Widgets.zoom_in_button.connect('clicked', lambda *ignore: MapView.zoom_in())
-Widgets.zoom_out_button.connect('clicked', lambda *ignore: MapView.zoom_out())
-Widgets.back_button.connect('clicked', go_back)
-
 for key in ['latitude', 'longitude', 'zoom-level']:
     Gst.bind(key, MapView, key)
-
-accel = Gtk.AccelGroup()
-Widgets.main.add_accel_group(accel)
-for key in [ 'Left', 'Right', 'Up', 'Down' ]:
-    accel.connect(Gdk.keyval_from_name(key),
-        Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
 
 MapView.connect('notify::zoom-level', zoom_button_sensitivity,
     Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
