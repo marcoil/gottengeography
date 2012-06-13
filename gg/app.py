@@ -211,7 +211,10 @@ class GottenGeography(Gtk.Application):
         """Parse GPX data, drawing each GPS track segment on the map."""
         start_time = clock()
         
-        gpx = (GPXFile if uri.lower().endswith('gpx') else KMLFile)(uri)
+        try:
+            gpx = {'kml': KMLFile, 'gpx': GPXFile}[uri[-3:].lower()](uri)
+        except KeyError:
+            raise IOError
         
         self.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
