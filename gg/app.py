@@ -40,9 +40,6 @@ from search import SearchController
 # Handy names for GtkListStore column numbers.
 PATH, SUMMARY, THUMB, TIMESTAMP = range(4)
 
-CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
-SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
-
 # Just pretend these functions are actually GottenGeography() instance methods.
 # The 'self' argument gets passed in by GtkApplication instead of Python.
 
@@ -101,10 +98,6 @@ def startup(self):
     Widgets.zoom_out_button.connect('clicked', lambda *x: MapView.zoom_out())
     Widgets.back_button.connect('clicked', go_back)
     
-    # Deal with multiple selection drag and drop.
-    Widgets.photos_view.connect('button-press-event', self.photoview_pressed)
-    Widgets.photos_view.connect('button-release-event', self.photoview_released)
-    
     Widgets.open.connect('update-preview', self.update_preview, Widgets.preview)
     
     accel  = Gtk.AccelGroup()
@@ -138,7 +131,6 @@ class GottenGeography(Gtk.Application):
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
     message_timeout_source = None
-    defer_select = False
     
     def __init__(self, do_fade_in=True):
         Gtk.Application.__init__(
@@ -329,27 +321,4 @@ class GottenGeography(Gtk.Application):
         if info:
             self.message_timeout_source = \
                 GLib.timeout_add_seconds(10, self.dismiss_message)
-    
-    # Multiple selection drag and drop copied from Kevin Mehall, adapted
-    # to use it with the standard GtkTreeView.
-    # http://blog.kevinmehall.net/2010/pygtk_multi_select_drag_drop
-    def photoview_pressed(self, tree, event):
-        """Allow the user to drag photos without losing the selection."""
-        target = tree.get_path_at_pos(int(event.x), int(event.y))
-        if (target and event.type == Gdk.EventType.BUTTON_PRESS
-                   and not (event.state & (CONTROL_MASK|SHIFT_MASK))
-                   and Widgets.photos_selection.path_is_selected(target[0])):
-            # disable selection
-            Widgets.photos_selection.set_select_function(
-                lambda *ignore: False, None)
-            self.defer_select = target[0]
-     
-    def photoview_released(self, tree, event):
-        """Restore normal selection behavior while not dragging."""
-        Widgets.photos_selection.set_select_function(lambda *ignore: True, None)
-        target = tree.get_path_at_pos(int(event.x), int(event.y))
-        if (target and self.defer_select
-                   and self.defer_select == target[0]
-                   and not (event.x == 0 and event.y == 0)): # certain drag&drop
-            tree.set_cursor(target[0], target[1], False)
 

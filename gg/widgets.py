@@ -3,13 +3,16 @@
 
 """Orchestrate the construction of widgets with GtkBuilder."""
 
-from gi.repository import Gtk, GtkChamplain
+from gi.repository import Gtk, GtkChamplain, Gdk
 from gi.repository import GdkPixbuf, Pango
 from os.path import join
 
 from version import APPNAME, PACKAGE
 from build_info import PKG_DATA_DIR, REVISION
 from common import Gst, singleton, memoize
+
+CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
+SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
 
 class Builder(Gtk.Builder):
@@ -47,6 +50,7 @@ class Builder(Gtk.Builder):
 @singleton
 class Widgets(Builder):
     """Tweak the GtkBuilder results specifically for the main window."""
+    defer_select = False
     
     def __init__(self):
         Builder.__init__(self)
@@ -82,9 +86,34 @@ class Widgets(Builder):
         
         self.loaded_photos.connect('row-changed', photo_pane_visibility)
         self.loaded_photos.connect('row-deleted', photo_pane_visibility)
+        self.photos_view.connect('button-press-event', self.photoview_pressed)
+        self.photos_view.connect('button-release-event', self.photoview_released)
         
         self.error_bar.connect('response',
             lambda widget, signal: widget.hide())
+    
+    # Multiple selection drag and drop copied from Kevin Mehall, adapted
+    # to use it with the standard GtkTreeView.
+    # http://blog.kevinmehall.net/2010/pygtk_multi_select_drag_drop
+    def photoview_pressed(self, tree, event):
+        """Allow drag & drop with multiple photos selected."""
+        target = tree.get_path_at_pos(int(event.x), int(event.y))
+        if (target and event.type == Gdk.EventType.BUTTON_PRESS
+                   and not (event.state & (CONTROL_MASK|SHIFT_MASK))
+                   and self.photos_selection.path_is_selected(target[0])):
+            # disable selection
+            self.photos_selection.set_select_function(
+                lambda *ignore: False, None)
+            self.defer_select = target[0]
+     
+    def photoview_released(self, tree, event):
+        """Restore normal selection behavior while not dragging."""
+        self.photos_selection.set_select_function(lambda *ignore: True, None)
+        target = tree.get_path_at_pos(int(event.x), int(event.y))
+        if (target and self.defer_select
+                   and self.defer_select == target[0]
+                   and not (event.x == 0 and event.y == 0)): # certain drag&drop
+            tree.set_cursor(target[0], target[1], False)
 
 
 @singleton
