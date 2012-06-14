@@ -127,7 +127,15 @@ class Photograph(Coordinates):
         self.exif = fetch_exif(self.filename)
         self.manual = False
         self.modified_timeout = None
-        self.reset_properties()
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.altitude = 0.0
+        self.timestamp = 0
+        
+        self.city = ''
+        self.provincestate = ''
+        self.countryname = ''
+        self.geotimezone = ''
         
         self.calculate_timestamp()
         

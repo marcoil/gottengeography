@@ -118,6 +118,11 @@ class Coordinates(GObject.GObject):
     modified_timeout = None
     timeout_seconds = 1
     
+    city = ''
+    provincestate = ''
+    countryname = ''
+    geotimezone = ''
+    
     latitude = GObject.property(
         type=float,
         default=0.0,
@@ -157,25 +162,11 @@ class Coordinates(GObject.GObject):
     
     def __init__(self, **props):
         self.filename = ''
-        self.reset_properties(first=True)
         
         GObject.GObject.__init__(self, **props)
         
         for prop in ('latitude', 'longitude', 'altitude', 'timestamp'):
             self.connect('notify::' + prop, self.do_modified)
-    
-    def reset_properties(self, first=False):
-        """Reset/reinitialize everything to the factory defaults."""
-        if not first:
-            self.latitude = 0.0
-            self.longitude = 0.0
-            self.altitude = 0.0
-            self.timestamp = 0
-        
-        self.city = ''
-        self.provincestate = ''
-        self.countryname = ''
-        self.geotimezone = ''
     
     def lookup_geodata(self):
         """Check the cache for geonames, and notify of any changes."""
