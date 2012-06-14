@@ -219,7 +219,7 @@ class CameraView(Gtk.Box):
         """Populate the list of cities when a continent is selected."""
         cities.remove_all()
         for city in get_timezone(region.get_active_id(), []):
-            cities.append(city, city)
+            cities.append(city.replace('_', ' '), city)
     
     def set_counter_text(self, *ignore):
         """Display to the user how many photos are loaded."""
