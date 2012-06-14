@@ -147,8 +147,7 @@ class Coordinates(GObject.GObject):
         achieve that exact point in a natural way (not to mention it's in the
         middle of the Atlantic), which means the photo hasn't been placed yet.
         """
-        return False if self.latitude == 0.0 and self.longitude == 0.0 else \
-                    abs(self.latitude) <= 90 and abs(self.longitude) <= 180
+        return bool(self.latitude or self.longitude)
     
     @GObject.property(type=str, default='')
     def geoname(self):
