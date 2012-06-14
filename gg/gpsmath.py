@@ -172,11 +172,11 @@ class Coordinates(GObject.GObject):
         return False if self._latitude == 0.0 and self._longitude == 0.0 else \
                     abs(self._latitude) <= 90 and abs(self._longitude) <= 180
     
-    # The city / state / country location
     @GObject.property(type=str, default='')
     def geoname(self):
-        self.update_derived_properties()
-        return self._geoname
+        """Report the city, state, and country in a pretty list."""
+        return ', '.join(
+            [s for s in (self.city, self.provincestate, self.countryname) if s])
     
     def __init__(self, **props):
         self.filename = ''
@@ -190,7 +190,6 @@ class Coordinates(GObject.GObject):
         self._longitude = 0.0
         self._altitude = 0.0
         self._timestamp = 0
-        self._geoname = ''
         
         self.city = ''
         self.provincestate = ''
@@ -201,20 +200,16 @@ class Coordinates(GObject.GObject):
         """Check the cache for geonames, and notify of any changes."""
         if not self.positioned:
             return
-        city, state, countrycode, tz = do_cached_lookup(
+        
+        old_geoname = self.geoname
+        self.city, state, countrycode, tz = do_cached_lookup(
             GeoCacheKey(self._latitude, self._longitude))
-        provincestate = get_state(countrycode, state)
-        countryname = get_country(countrycode)
-        self._geoname = ', '.join(
-            [s for s in (city, provincestate, countryname) if s])
-        if (city != self.city) or \
-           (provincestate != self.provincestate) or \
-           (countryname != self.countryname):
+        self.provincestate = get_state(countrycode, state)
+        self.countryname = get_country(countrycode)
+        self.geotimezone = tz.strip()
+        if self.geoname != old_geoname:
             self.notify('geoname')
-        self.city = city
-        self.provincestate = provincestate
-        self.countryname   = countryname
-        self.geotimezone   = tz.strip()
+        
         return self.geotimezone
     
     def pretty_time(self):
@@ -236,7 +231,7 @@ class Coordinates(GObject.GObject):
     
     def plain_summary(self):
         """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in [self._geoname,
+        return '\n'.join([s for s in [self.geoname,
                                       self.pretty_time(),
                                       self.pretty_coords(),
                                       self.pretty_altitude()] if s])
@@ -256,8 +251,8 @@ class Coordinates(GObject.GObject):
     
     def update_derived_properties(self):
         """Do expensive geodata lookups after the timeout."""
-        self.notify('positioned')
         if self.modified_timeout:
+            self.notify('positioned')
             GLib.source_remove(self.modified_timeout)
             self.lookup_geodata()
             self.modified_timeout = None
