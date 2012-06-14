@@ -118,49 +118,27 @@ class Coordinates(GObject.GObject):
     modified_timeout = None
     timeout_seconds = 1
     
-    # GObject properties
-    # Modifiable, non-derived properties
-    @GObject.property(type=float, default=0.0)
-    def latitude(self):
-        return self._latitude
+    latitude = GObject.property(
+        type=float,
+        default=0.0,
+        minimum=-90.0,
+        maximum=90.0)
     
-    @latitude.setter
-    def latitude(self, value):
-        if abs(value) > 90:
-            return
-        self._latitude = value
-        self.do_modified()
+    longitude = GObject.property(
+        type=float,
+        default=0.0,
+        minimum=-180.0,
+        maximum=180.0)
     
-    @GObject.property(type=float, default=0.0)
-    def longitude(self):
-        return self._longitude
+    altitude = GObject.property(
+        type=float,
+        default=0.0)
     
-    @longitude.setter
-    def longitude(self, value):
-        if abs(value) > 180:
-            return
-        self._longitude = value
-        self.do_modified()
+    timestamp = GObject.property(
+        type=int,
+        default=0)
     
-    @GObject.property(type=float, default=0.0)
-    def altitude(self):
-        return self._altitude
-    
-    @altitude.setter
-    def altitude(self, value):
-        self._altitude = value
-        self.do_modified()
-    
-    @GObject.property(type=int, default=0)
-    def timestamp(self):
-        return self._timestamp
-    
-    @timestamp.setter
-    def timestamp(self, value):
-        self._timestamp = value
-        self.do_modified()
-    
-    # Convenience properties calculated from the other ones
+    # Read-only properties calculated from the other ones
     @GObject.property(type=bool, default=False)
     def positioned(self):
         """Identify if this instance occupies a valid point on the map.
@@ -169,8 +147,8 @@ class Coordinates(GObject.GObject):
         achieve that exact point in a natural way (not to mention it's in the
         middle of the Atlantic), which means the photo hasn't been placed yet.
         """
-        return False if self._latitude == 0.0 and self._longitude == 0.0 else \
-                    abs(self._latitude) <= 90 and abs(self._longitude) <= 180
+        return False if self.latitude == 0.0 and self.longitude == 0.0 else \
+                    abs(self.latitude) <= 90 and abs(self.longitude) <= 180
     
     @GObject.property(type=str, default='')
     def geoname(self):
@@ -180,16 +158,20 @@ class Coordinates(GObject.GObject):
     
     def __init__(self, **props):
         self.filename = ''
-        self.reset_properties()
+        self.reset_properties(first=True)
         
         GObject.GObject.__init__(self, **props)
+        
+        for prop in ('latitude', 'longitude', 'altitude', 'timestamp'):
+            self.connect('notify::' + prop, self.do_modified)
     
-    def reset_properties(self):
+    def reset_properties(self, first=False):
         """Reset/reinitialize everything to the factory defaults."""
-        self._latitude = 0.0
-        self._longitude = 0.0
-        self._altitude = 0.0
-        self._timestamp = 0
+        if not first:
+            self.latitude = 0.0
+            self.longitude = 0.0
+            self.altitude = 0.0
+            self.timestamp = 0
         
         self.city = ''
         self.provincestate = ''
@@ -203,7 +185,7 @@ class Coordinates(GObject.GObject):
         
         old_geoname = self.geoname
         self.city, state, countrycode, tz = do_cached_lookup(
-            GeoCacheKey(self._latitude, self._longitude))
+            GeoCacheKey(self.latitude, self.longitude))
         self.provincestate = get_state(countrycode, state)
         self.countryname = get_country(countrycode)
         self.geotimezone = tz.strip()
@@ -243,8 +225,8 @@ class Coordinates(GObject.GObject):
             'style="italic" size="smaller"', self.plain_summary())
         return '<b>%s</b>' % summary if self in modified else summary
     
-    def do_modified(self):
-        """Notify that position has changed and set timer to update geoname."""
+    def do_modified(self, *ignore):
+        """Set timer to update the geoname after all modifications are done."""
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
                 self.timeout_seconds, self.update_derived_properties)
