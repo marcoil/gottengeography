@@ -39,7 +39,7 @@ countries = {
 "BH": "Bahrain",
 "BI": "Burundi",
 "BJ": "Benin",
-"BL": "Saint Barthélemy",
+"BL": "Saint Barthelemy",
 "BM": "Bermuda",
 "BN": "Brunei",
 "BO": "Bolivia",
@@ -265,7 +265,7 @@ countries = {
 "ZM": "Zambia",
 "ZW": "Zimbabwe",
 "CS": "Serbia and Montenegro",
-"AN": "Netherlands Antilles"
+"AN": "Netherlands Antilles",
 }
 
 territories = {
@@ -4127,7 +4127,7 @@ territories = {
 "ZW.03": "Mashonaland Central",
 "ZW.01": "Manicaland",
 "ZW.09": "Bulawayo",
-"ZW.10": "Harare Province"
+"ZW.10": "Harare Province",
 }
 
 zones = {
@@ -4183,7 +4183,8 @@ zones = {
 'Sao_Tome',
 'Tripoli',
 'Tunis',
-'Windhoek'],
+'Windhoek',
+],
 
 'America': [
 'Adak',
@@ -4333,7 +4334,8 @@ zones = {
 'Whitehorse',
 'Winnipeg',
 'Yakutat',
-'Yellowknife'],
+'Yellowknife',
+],
 
 'Antarctica': [
 'Casey',
@@ -4346,10 +4348,12 @@ zones = {
 'Rothera',
 'South_Pole',
 'Syowa',
-'Vostok'],
+'Vostok',
+],
 
 'Arctic': [
-'Longyearbyen'],
+'Longyearbyen',
+],
 
 'Asia': [
 'Aden',
@@ -4428,7 +4432,8 @@ zones = {
 'Vladivostok',
 'Yakutsk',
 'Yekaterinburg',
-'Yerevan'],
+'Yerevan',
+],
 
 'Atlantic': [
 'Azores',
@@ -4440,7 +4445,8 @@ zones = {
 'Reykjavik',
 'South_Georgia',
 'St_Helena',
-'Stanley'],
+'Stanley',
+],
 
 'Australia': [
 'Adelaide',
@@ -4454,7 +4460,8 @@ zones = {
 'Lord_Howe',
 'Melbourne',
 'Perth',
-'Sydney'],
+'Sydney',
+],
 
 'Europe': [
 'Amsterdam',
@@ -4511,7 +4518,8 @@ zones = {
 'Warsaw',
 'Zagreb',
 'Zaporozhye',
-'Zurich'],
+'Zurich',
+],
 
 'Indian': [
 'Antananarivo',
@@ -4524,7 +4532,8 @@ zones = {
 'Maldives',
 'Mauritius',
 'Mayotte',
-'Reunion'],
+'Reunion',
+],
 
 'Pacific': [
 'Apia',
@@ -4564,7 +4573,9 @@ zones = {
 'Tarawa',
 'Tongatapu',
 'Wake',
-'Wallis']
+'Wallis',
+],
+
 }
 
 tz_regions   = sorted(zones.keys())
