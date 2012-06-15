@@ -5,7 +5,7 @@
 
 from __future__ import division
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gdk
 
 from widgets import Widgets, MapView
 from common import Gst, bind_properties

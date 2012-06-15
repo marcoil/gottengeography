@@ -3,8 +3,8 @@
 
 """Orchestrate the construction of widgets with GtkBuilder."""
 
-from gi.repository import Gtk, GtkChamplain, Gdk
-from gi.repository import GdkPixbuf, Pango
+from gi.repository import Gtk, GtkChamplain
+from gi.repository import Gdk, GdkPixbuf
 from os.path import join
 
 from version import APPNAME, PACKAGE
