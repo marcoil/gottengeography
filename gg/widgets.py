@@ -3,7 +3,7 @@
 
 """Orchestrate the construction of widgets with GtkBuilder."""
 
-from gi.repository import Gtk, GtkChamplain
+from gi.repository import Gtk, GtkChamplain, GLib
 from gi.repository import Gdk, GdkPixbuf
 from os.path import join
 
@@ -50,6 +50,7 @@ class Builder(Gtk.Builder):
 @singleton
 class Widgets(Builder):
     """Tweak the GtkBuilder results specifically for the main window."""
+    message_timeout_source = None
     defer_select = False
     
     def __init__(self):
@@ -127,6 +128,28 @@ class Widgets(Builder):
             self.progressbar.set_text(str(text))
         while Gtk.events_pending():
             Gtk.main_iteration()
+    
+    def dismiss_message(self):
+        """Responsible for hiding the GtkInfoBar after a timeout."""
+        self.message_timeout_source = None
+        self.error_bar.hide()
+        return False
+    
+    def status_message(self, message, info=False):
+        """Display a message with the GtkInfoBar."""
+        self.error_message.set_markup('<b>%s</b>' % message)
+        self.error_bar.set_message_type(
+            Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
+        self.error_icon.set_from_stock(
+            Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
+        self.error_bar.show()
+        
+        # Remove any previous message timeout
+        if self.message_timeout_source is not None:
+            GLib.source_remove(self.message_timeout_source)
+        if info:
+            self.message_timeout_source = \
+                GLib.timeout_add_seconds(10, self.dismiss_message)
 
 
 @singleton

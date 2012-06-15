@@ -130,7 +130,6 @@ class GottenGeography(Gtk.Application):
     automatically cross-reference the timestamps on the photos to the timestamps
     in the GPX to determine the three-dimensional coordinates of each photo.
     """
-    message_timeout_source = None
     
     def __init__(self, do_fade_in=True):
         Gtk.Application.__init__(
@@ -157,7 +156,7 @@ class GottenGeography(Gtk.Application):
             except IOError:
                 invalid.append(basename(name))
         if len(invalid) > 0:
-            self.status_message(_('Could not open: ') + ', '.join(invalid))
+            Widgets.status_message(_('Could not open: ') + ', '.join(invalid))
         
         # Ensure camera has found correct timezone regardless of the order
         # that the GPX/KML files were loaded in.
@@ -208,7 +207,7 @@ class GottenGeography(Gtk.Application):
         except KeyError:
             raise IOError
         
-        self.status_message(_('%d points loaded in %.2fs.') %
+        Widgets.status_message(_('%d points loaded in %.2fs.') %
             (len(gpx.tracks), clock() - start_time), True)
         
         if len(gpx.tracks) < 2:
@@ -242,7 +241,7 @@ class GottenGeography(Gtk.Application):
             try:
                 photo.write()
             except Exception as inst:
-                self.status_message(str(inst))
+                Widgets.status_message(str(inst))
         Widgets.progressbar.hide()
         Widgets.photos_selection.emit('changed')
     
@@ -285,26 +284,4 @@ class GottenGeography(Gtk.Application):
         if response != Gtk.ResponseType.CANCEL:
             self.quit()
         return True
-    
-    def dismiss_message(self):
-        """Responsible for hiding the GtkInfoBar after a timeout."""
-        self.message_timeout_source = None
-        Widgets.error_bar.hide()
-        return False
-    
-    def status_message(self, message, info=False):
-        """Display a message with the GtkInfoBar."""
-        Widgets.error_message.set_markup('<b>%s</b>' % message)
-        Widgets.error_bar.set_message_type(
-            Gtk.MessageType.INFO if info else Gtk.MessageType.WARNING)
-        Widgets.error_icon.set_from_stock(
-            Gtk.STOCK_DIALOG_INFO if info else Gtk.STOCK_DIALOG_WARNING, 6)
-        Widgets.error_bar.show()
-        
-        # Remove any previous message timeout
-        if self.message_timeout_source is not None:
-            GLib.source_remove(self.message_timeout_source)
-        if info:
-            self.message_timeout_source = \
-                GLib.timeout_add_seconds(10, self.dismiss_message)
 
