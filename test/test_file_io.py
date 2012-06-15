@@ -51,23 +51,24 @@ def test_demo_data():
         assert photo.altitude == 0.0
         assert photo.latitude == 0.0
         assert photo.longitude == 0.0
+        assert not photo.positioned
         
         # Add some crap
         photo.latitude  = 10.0
         photo.altitude  = 650
         photo.longitude = 45.0
-        assert photo.valid_coords()
+        assert photo.positioned
         
         # photo.read() should discard all the crap we added above.
         # This is in response to a bug where I was using pyexiv2 wrongly
         # and it would load data from disk without discarding old data.
         photo.read()
         photo.lookup_geodata()
-        assert photo._geoname == ''
+        assert photo.geoname == ''
         assert photo.altitude == 0.0
         assert photo.latitude == 0.0
         assert photo.longitude == 0.0
-        assert photo.valid_coords()
+        assert not photo.positioned
         assert photo.filename == Label(photo).get_name()
         assert Label(photo).photo.filename == Label(photo).get_name()
     
@@ -80,13 +81,17 @@ def test_demo_data():
     else:
         assert False # Because it should have raised the exception
     gui.open_files(gpx)
-    Widgets.photos_selection.emit('changed')
     
     # Check that the GPX is loaded
     assert len(points) == 374
     assert len(TrackFile.instances) == 1
     assert TrackFile.range[0] == 1287259751
     assert TrackFile.range[1] == 1287260756
+    
+    for photo in Photograph.instances.values():
+        photo.update_derived_properties()
+    
+    Widgets.photos_selection.emit('changed')
     
     # The save button should be sensitive because loading GPX modifies
     # photos, but nothing is selected so the others are insensitive.
@@ -98,10 +103,9 @@ def test_demo_data():
     for photo in Photograph.files:
         assert photo in modified
         
-        print photo.latitude, photo.longitude
         assert photo.latitude
         assert photo.longitude
-        assert photo.valid_coords()
+        assert photo.positioned
         assert Label(photo).get_property('visible')
     
     # Unload the GPX data.
@@ -138,7 +142,8 @@ def test_demo_data():
     for filename in files:
         photo = Photograph(filename)
         photo.read()
-        assert photo.valid_coords()
+        photo.update_derived_properties()
+        assert photo.positioned
         assert photo.altitude > 600
-        assert photo.pretty_geoname() == 'Edmonton, Alberta, Canada'
+        assert photo.geoname == 'Edmonton, Alberta, Canada'
 

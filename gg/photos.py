@@ -238,6 +238,7 @@ class Photograph(Coordinates):
     
     def destroy(self):
         """Agony!"""
+        self.update_derived_properties() # To clear any callback...
         # TODO: Disconnect this from here
         if self in Label.instances:
             Label(self).destroy()

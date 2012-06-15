@@ -38,6 +38,7 @@ def test_string_functions():
     photo.altitude = 600.71
     assert photo.pretty_altitude() == '600.7m above sea level'
     
+    photo.update_derived_properties() # Bypass the timeout
     assert photo.plain_summary() == \
 """Georgetown, Ascension, Saint Helena
 2001-09-08 07:46:39 PM
@@ -45,9 +46,9 @@ S 10.00000, W 10.00000
 600.7m above sea level"""
     
     assert photo.markup_summary() == \
-"""<span size="larger">IMG_2411.JPG</span>
+"""<b><span size="larger">IMG_2411.JPG</span>
 <span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
 2001-09-08 07:46:39 PM
 S 10.00000, W 10.00000
-600.7m above sea level</span>"""
+600.7m above sea level</span></b>"""
 
