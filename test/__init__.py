@@ -16,6 +16,8 @@ from gg.camera import Camera
 
 DEMOFILES = [abspath(join(PKG_DATA_DIR, '..', 'demo', f))
              for f in listdir('./demo/')]
+GPXFILES = [f for f in DEMOFILES if f.endswith('gpx')]
+IMGFILES = [f for f in DEMOFILES if f.endswith('JPG')]
 
 gui = GottenGeography(do_fade_in=False)
 startup(gui)

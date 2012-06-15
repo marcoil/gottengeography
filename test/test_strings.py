@@ -5,13 +5,13 @@ from gg.common import Struct
 from gg.camera import Camera
 from gg.photos import Photograph
 
-from test import DEMOFILES, teardown, setup
+from test import IMGFILES, teardown, setup
 
 def test_string_functions():
     """Ensure that strings print properly."""
     teardown()
     
-    photo = Photograph(DEMOFILES[5])
+    photo = Photograph(IMGFILES[4])
     photo.read()
     
     photo._latitude  = 200

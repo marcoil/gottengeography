@@ -4,7 +4,9 @@
 from gg.camera import Camera
 from gg.common import GSettings
 from gg.photos import Photograph
-from test import gui, setup, teardown, DEMOFILES
+
+from test import GPXFILES, IMGFILES
+from test import gui, setup, teardown
 
 def test_timezone_lookups():
     """Ensure that the timezone can be discovered from the map"""
@@ -18,13 +20,13 @@ def test_timezone_lookups():
     Camera.instances.clear()
     
     # Open just the GPX
-    gui.open_files([DEMOFILES[3]])
+    gui.open_files(GPXFILES)
     
     # At this point the camera hasn't been informed of the timezone
     assert gst.get_string('found-timezone') == ''
     
     # Opening a photo should place it on the map.
-    gui.open_files([DEMOFILES[0]])
+    gui.open_files([IMGFILES[0]])
     print Camera.instances
     print gst.get_string('found-timezone')
     assert gst.get_string('found-timezone') == 'America/Edmonton'

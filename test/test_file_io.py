@@ -7,7 +7,8 @@ from gg.photos import Photograph
 from gg.xmlfiles import TrackFile
 from gg.common import points, selected, modified
 
-from test import gui, teardown, setup, DEMOFILES
+from test import gui, teardown, setup
+from test import GPXFILES, IMGFILES
 
 def test_demo_data():
     """Load the demo data and ensure that we're reading it in properly."""
@@ -23,19 +24,13 @@ def test_demo_data():
         assert not buttons[button].get_sensitive()
     
     # Load only the photos first.
-    for filename in DEMOFILES:
-        if filename.endswith('JPG'):
-            try:
-                TrackFile.load_from_file(filename)
-            except IOError:
-                pass
-            else:
-                assert False # Because it should have raised the exception
-    gui.open_files([uri for uri in DEMOFILES if uri.endswith('JPG')])
+    try: TrackFile.load_from_file(IMGFILES[0])
+    except IOError: pass
+    else: assert False # Because it should have raised the exception
+    gui.open_files(IMGFILES)
     
     # Nothing is yet selected or modified, so buttons still insensitive.
     for button in buttons.values():
-        # TODO fix this test here.
         assert not button.get_sensitive()
     
     # Something loaded in the liststore?
@@ -73,14 +68,10 @@ def test_demo_data():
         assert Label(photo).photo.filename == Label(photo).get_name()
     
     # Load the GPX
-    gpx = [filename for filename in DEMOFILES if filename.endswith('gpx')]
-    try:
-        Photograph.load_from_file(gpx[0])
-    except IOError:
-        pass
-    else:
-        assert False # Because it should have raised the exception
-    gui.open_files(gpx)
+    try: Photograph.load_from_file(GPXFILES[0])
+    except IOError: pass
+    else: assert False # Because it should have raised the exception
+    gui.open_files(GPXFILES)
     
     # Check that the GPX is loaded
     assert len(points) == 374
