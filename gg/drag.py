@@ -24,6 +24,7 @@ from __future__ import division
 
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
+from urllib import unquote
 
 from widgets import Widgets, MapView
 from common import selected, modified
@@ -68,7 +69,7 @@ class DragController():
         This method allows photos to be dropped in from the photo
         pane or any other drag source, such as the file browser.
         """
-        files = [urlparse(s).path.strip() for s in
+        files = [unquote(urlparse(s).path.strip()) for s in
                  data.get_text().split('\n') if s]
         
         if self.external_drag:
