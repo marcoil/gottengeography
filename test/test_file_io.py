@@ -26,7 +26,7 @@ def test_demo_data():
     for filename in DEMOFILES:
         if filename.endswith('JPG'):
             try:
-                gui.load_gpx_from_file(filename)
+                TrackFile.load_from_file(filename)
             except IOError:
                 pass
             else:
@@ -75,7 +75,7 @@ def test_demo_data():
     # Load the GPX
     gpx = [filename for filename in DEMOFILES if filename.endswith('gpx')]
     try:
-        gui.load_img_from_file(gpx[0])
+        Photograph.load_from_file(gpx[0])
     except IOError:
         pass
     else:

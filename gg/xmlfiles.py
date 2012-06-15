@@ -9,10 +9,12 @@ from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Champlain, Clutter, Gtk, Gdk
 from dateutil.parser import parse as parse_date
 from re import compile as re_compile
+from gettext import gettext as _
 from os.path import basename
 from calendar import timegm
 from time import clock
 
+from camera import Camera
 from gpsmath import Coordinates
 from widgets import Widgets, Builder, MapView
 from common import GSettings, Gst, memoize, points
@@ -174,6 +176,33 @@ class TrackFile():
         
         TrackFile.instances.clear()
         points.clear()
+    
+    @staticmethod
+    def load_from_file(uri):
+        """Determine the correct subclass to instantiate.
+        
+        Also time everything and report how long it took. Raises IOError if
+        the file extension is not in ('kml', 'gpx').
+        """
+        start_time = clock()
+        
+        try:
+            gpx = {'kml': KMLFile, 'gpx': GPXFile}[uri[-3:].lower()](uri)
+        except KeyError:
+            raise IOError
+        
+        Widgets.status_message(_('%d points loaded in %.2fs.') %
+            (len(gpx.tracks), clock() - start_time), True)
+        
+        if len(gpx.tracks) < 2:
+            return
+        
+        MapView.emit('realize')
+        MapView.set_zoom_level(MapView.get_max_zoom_level())
+        MapView.ensure_visible(TrackFile.get_bounding_box(), False)
+        
+        TrackFile.update_range()
+        Camera.set_all_found_timezone(gpx.start.geotimezone)
     
     def __init__(self, filename, root, watch):
         self.filename = filename

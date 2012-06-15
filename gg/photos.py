@@ -13,6 +13,7 @@ from os import stat
 from label import Label
 from widgets import Widgets
 from xmlfiles import TrackFile
+from camera import Camera, CameraView
 from gpsmath import Coordinates, float_to_rational
 from gpsmath import dms_to_decimal, decimal_to_dms
 from common import Gst, memoize, points, modified
@@ -108,6 +109,36 @@ class Photograph(Coordinates):
         for photo in Photograph.files:
             photo.thumb = fetch_thumbnail(photo.filename, size)
             Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)
+    
+    @staticmethod
+    def load_from_file(uri):
+        """Coordinates instantiation of various classes.
+        
+        Ensures that related Photograph, Camera, CameraView, and Label are all
+        instantiated together.
+        """
+        photo = Photograph(uri)
+        modified.discard(photo)
+        photo.read()
+        
+        Widgets.empty_camera_list.hide()
+        
+        camera_id, camera_name = Camera.generate_id(photo.camera_info)
+        camera = Camera(camera_id)
+        camera.add_photo(photo)
+        
+        CameraView(camera, camera_name)
+        Label(photo)
+        
+        # If the user has selected the lookup method, then the timestamp
+        # was probably calculated incorrectly the first time (before the
+        # timezone was discovered). So call it again to get the correct value.
+        if camera.timezone_method == 'lookup':
+            photo.calculate_timestamp(camera.offset)
+        
+        Widgets.apply_button.set_sensitive(True)
+        
+        return photo
     
     def __init__(self, filename):
         """Raises IOError for invalid file types.

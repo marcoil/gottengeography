@@ -14,7 +14,6 @@ gettext.textdomain(PACKAGE)
 from gi.repository import GLib, GObject, GtkClutter, Gtk, Gdk, Gio
 from os.path import basename, abspath
 from gettext import gettext as _
-from time import clock
 
 # If I have seen a little further it is by standing on the shoulders of Giants.
 #                                    --- Isaac Newton
@@ -25,14 +24,13 @@ if not GLib.get_application_name():
 
 GtkClutter.init([])
 
-from label import Label
+from camera import Camera
 from actor import animate_in
+from xmlfiles import TrackFile
 from widgets import Widgets, MapView
-from camera import Camera, CameraView
+from common import Gst, selected, modified
 from photos import Photograph, fetch_thumbnail
 from navigation import go_back, move_by_arrow_keys
-from xmlfiles import TrackFile, GPXFile, KMLFile
-from common import Gst, selected, modified
 
 from drag import DragController
 from search import SearchController
@@ -150,9 +148,9 @@ class GottenGeography(Gtk.Application):
             Widgets.redraw_interface(i / total, basename(name))
             try:
                 try:
-                    self.load_img_from_file(name)
+                    Photograph.load_from_file(name)
                 except IOError:
-                    self.load_gpx_from_file(name)
+                    TrackFile.load_from_file(name)
             except IOError:
                 invalid.append(basename(name))
         if len(invalid) > 0:
@@ -166,59 +164,6 @@ class GottenGeography(Gtk.Application):
         Camera.timezone_handler_all()
         Widgets.progressbar.hide()
         Widgets.photos_selection.emit('changed')
-    
-    def load_img_from_file(self, uri):
-        """Create or update a row in the ListStore.
-        
-        Checks if the file has already been loaded, and if not, creates a new
-        row in the ListStore. Either way, it then populates that row with
-        photo metadata as read from disk. Effectively, this is used both for
-        loading new photos, and reverting old photos, discarding any changes.
-        
-        Raises IOError if filename refers to a file that is not a photograph.
-        """
-        photo = Photograph(uri)
-        modified.discard(photo)
-        photo.read()
-        
-        Widgets.empty_camera_list.hide()
-        
-        camera_id, camera_name = Camera.generate_id(photo.camera_info)
-        camera = Camera(camera_id)
-        camera.add_photo(photo)
-        
-        CameraView(camera, camera_name)
-        Label(photo)
-        
-        # If the user has selected the lookup method, then the timestamp
-        # was probably calculated incorrectly the first time (before the
-        # timezone was discovered). So call it again to get the correct value.
-        if camera.timezone_method == 'lookup':
-            photo.calculate_timestamp(camera.offset)
-        
-        Widgets.apply_button.set_sensitive(True)
-    
-    def load_gpx_from_file(self, uri):
-        """Parse GPX data, drawing each GPS track segment on the map."""
-        start_time = clock()
-        
-        try:
-            gpx = {'kml': KMLFile, 'gpx': GPXFile}[uri[-3:].lower()](uri)
-        except KeyError:
-            raise IOError
-        
-        Widgets.status_message(_('%d points loaded in %.2fs.') %
-            (len(gpx.tracks), clock() - start_time), True)
-        
-        if len(gpx.tracks) < 2:
-            return
-        
-        MapView.emit('realize')
-        MapView.set_zoom_level(MapView.get_max_zoom_level())
-        MapView.ensure_visible(TrackFile.get_bounding_box(), False)
-        
-        TrackFile.update_range()
-        Camera.set_all_found_timezone(gpx.start.geotimezone)
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
