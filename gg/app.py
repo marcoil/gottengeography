@@ -148,7 +148,7 @@ class GottenGeography(Gtk.Application):
         Widgets.progressbar.show()
         invalid, total = [], len(files)
         for i, name in enumerate(files, 1):
-            self.redraw_interface(i / total, basename(name))
+            Widgets.redraw_interface(i / total, basename(name))
             try:
                 try:
                     self.load_img_from_file(name)
@@ -238,7 +238,7 @@ class GottenGeography(Gtk.Application):
         Widgets.progressbar.show()
         total = len(modified)
         for i, photo in enumerate(list(modified), 1):
-            self.redraw_interface(i / total, basename(photo.filename))
+            Widgets.redraw_interface(i / total, basename(photo.filename))
             try:
                 photo.write()
             except Exception as inst:
@@ -279,26 +279,12 @@ class GottenGeography(Gtk.Application):
         Widgets.quit.format_secondary_markup(self.quit_message % len(modified))
         response = Widgets.quit.run()
         Widgets.quit.hide()
-        self.redraw_interface()
+        Widgets.redraw_interface()
         if response == Gtk.ResponseType.ACCEPT:
             self.save_all_files()
         if response != Gtk.ResponseType.CANCEL:
             self.quit()
         return True
-    
-    def redraw_interface(self, fraction=None, text=None):
-        """Tell Gtk to redraw the user interface, so it doesn't look hung.
-        
-        Primarily used to update the progressbar, but also for disappearing
-        some dialogs while things are processing in the background. Won't
-        modify the progressbar if called with no arguments.
-        """
-        if fraction is not None:
-            Widgets.progressbar.set_fraction(fraction)
-        if text is not None:
-            Widgets.progressbar.set_text(str(text))
-        while Gtk.events_pending():
-            Gtk.main_iteration()
     
     def dismiss_message(self):
         """Responsible for hiding the GtkInfoBar after a timeout."""

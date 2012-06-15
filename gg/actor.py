@@ -154,7 +154,6 @@ def animate_in(anim=True):
     for i in xrange(Gst.get_int('animation-steps') if anim else 1, 0, -1):
         for actor in (Crosshair, Box, Scale):
             actor.set_opacity(256 - i)
-        while Gtk.events_pending():
-            Gtk.main_iteration()
+        Widgets.redraw_interface()
         sleep(0.01)
 

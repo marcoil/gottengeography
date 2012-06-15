@@ -114,6 +114,19 @@ class Widgets(Builder):
                    and self.defer_select == target[0]
                    and not (event.x == 0 and event.y == 0)): # certain drag&drop
             tree.set_cursor(target[0], target[1], False)
+    
+    def redraw_interface(self, fraction=None, text=None):
+        """Tell Gtk to redraw the user interface, so it doesn't look hung.
+        
+        Primarily for updating the progressbar, but won't touch it if called
+        with no arguments.
+        """
+        if fraction is not None:
+            self.progressbar.set_fraction(fraction)
+        if text is not None:
+            self.progressbar.set_text(str(text))
+        while Gtk.events_pending():
+            Gtk.main_iteration()
 
 
 @singleton

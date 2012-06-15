@@ -66,8 +66,7 @@ class SearchController():
         self.last_search = itr.copy()
         MapView.emit('realize')
         MapView.set_zoom_level(MapView.get_max_zoom_level())
-        while Gtk.events_pending():
-            Gtk.main_iteration()
+        Widgets.redraw_interface()
         MapView.center_on(*model.get(itr, LATITUDE, LONGITUDE))
         MapView.set_zoom_level(11)
     
