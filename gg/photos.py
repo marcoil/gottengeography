@@ -118,7 +118,6 @@ class Photograph(Coordinates):
         instantiated together.
         """
         photo = Photograph(uri)
-        modified.discard(photo)
         photo.read()
         
         Widgets.empty_camera_list.hide()
@@ -136,7 +135,7 @@ class Photograph(Coordinates):
         if camera.timezone_method == 'lookup':
             photo.calculate_timestamp(camera.offset)
         
-        Widgets.apply_button.set_sensitive(True)
+        Widgets.photos_selection.emit('changed')
         
         return photo
     
@@ -168,6 +167,7 @@ class Photograph(Coordinates):
         self.countryname = ''
         self.geotimezone = ''
         
+        modified.discard(self)
         self.calculate_timestamp()
         
         try:
@@ -206,7 +206,7 @@ class Photograph(Coordinates):
             except KeyError:
                 pass
     
-    def calculate_timestamp(self, offset = 0):
+    def calculate_timestamp(self, offset=0):
         """Determine the timestamp based on the currently selected timezone.
         
         This method relies on the TZ environment variable to be set before
@@ -257,7 +257,7 @@ class Photograph(Coordinates):
         """If a photo has been placed on the map, make it saveable."""
         if self.positioned:
             modified.add(self)
-            Widgets.save_button.set_sensitive(True)
+            Widgets.photos_selection.emit('changed')
     
     def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""

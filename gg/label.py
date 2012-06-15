@@ -27,13 +27,14 @@ def update_highlights(*ignore):
             selected.add(label.photo)
         label.set_highlight(label.photo in selected, selection_exists)
 
-def selection_sensitivity(selection, close, save, revert, jump):
+def selection_sensitivity(selection, close, save, revert, jump, aply):
     """Control the sensitivity of various widgets."""
     sensitive = selection.count_selected_rows() > 0
     close.set_sensitive(sensitive)
     jump.set_sensitive([photo for photo in selected if photo.positioned])
     save.set_sensitive(len(modified) > 0)
     revert.set_sensitive(len(modified & selected) > 0)
+    aply.set_sensitive(len(selected) > 0)
 
 def clicked(label, event):
     """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -110,5 +111,6 @@ class Label(Champlain.Label):
 
 Widgets.photos_selection.connect('changed', update_highlights)
 Widgets.photos_selection.connect('changed', selection_sensitivity,
-    *[Widgets[b + '_button'] for b in ('close', 'save', 'revert', 'jump')])
+    *[Widgets[b + '_button'] for b in
+        ('close', 'save', 'revert', 'jump', 'apply')])
 

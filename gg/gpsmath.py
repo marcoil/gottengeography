@@ -116,7 +116,7 @@ class GeoCacheKey:
 class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates."""
     modified_timeout = None
-    timeout_seconds = 1
+    timeout_seconds = 0
     
     city = ''
     provincestate = ''
@@ -217,6 +217,7 @@ class Coordinates(GObject.GObject):
     
     def do_modified(self, *ignore):
         """Set timer to update the geoname after all modifications are done."""
+        self.notify('positioned')
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
                 self.timeout_seconds, self.update_derived_properties)

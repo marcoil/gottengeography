@@ -167,15 +167,12 @@ class GottenGeography(Gtk.Application):
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
-        for photo in Photograph.files:
-            if photo.manual:
-                continue
+        for photo in selected:
             photo.disable_auto_position()
             photo.set_location(
                 MapView.get_property('latitude'),
                 MapView.get_property('longitude'))
         Widgets.photos_selection.emit('changed')
-        Widgets.apply_button.set_sensitive(False)
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
