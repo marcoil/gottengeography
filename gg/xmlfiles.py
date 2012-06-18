@@ -22,10 +22,12 @@ from common import GSettings, Gst, memoize, points
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
 
+
 def make_clutter_color(color):
     """Generate a Clutter.Color from the currently chosen color."""
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 49152]])
+
 
 def track_color_changed(selection, polys):
     """Update the color of any loaded GPX tracks."""
@@ -182,7 +184,7 @@ class TrackFile():
         """Determine the correct subclass to instantiate.
         
         Also time everything and report how long it took. Raises IOError if
-        the file extension is not in ('kml', 'gpx').
+        the file extension is unknown, or no track points were found.
         """
         start_time = clock()
         
@@ -242,6 +244,9 @@ class TrackFile():
         self.parser = XMLSimpleParser(root, watch)
         self.parser.parse(filename, self.element_start, self.element_end)
         
+        if not self.tracks:
+            raise IOError('No points found')
+        
         points.update(self.tracks)
         keys = self.tracks.keys()
         self.alpha = min(keys)
@@ -290,20 +295,13 @@ split = re_compile(r'[:T.Z-]').split
 
 @memoize
 class GPXFile(TrackFile):
-    """Parse a GPX file."""
+    """Support for the open GPS eXchange format."""
     
     def __init__(self, filename):
         TrackFile.__init__(self, filename, 'gpx', ['trkseg', 'trkpt'])
     
     def element_end(self, name, state):
-        """Collect and use all the parsed data.
-        
-        This method does most of the heavy lifting, including parsing time
-        strings into UTC epoch seconds, appending to the ChamplainMarkerLayers,
-        keeping track of the first and last points loaded.
-        """
-        # We only care about the trkpt element closing, because that means
-        # there is a new, fully-loaded GPX point to play with.
+        """Collect and use all the parsed data."""
         if name != 'trkpt':
             return
         try:
@@ -312,8 +310,6 @@ class GPXFile(TrackFile):
             lon = float(state['lon'])
         except Exception as error:
             print error
-            # If any of lat, lon, or time is missing, we cannot continue.
-            # Better to just give up on this track point and go to the next.
             return
         
         self.tracks[timestamp] = self.append(lat, lon,
@@ -323,8 +319,35 @@ class GPXFile(TrackFile):
 
 
 @memoize
+class TCXFile(TrackFile):
+    """Support for Garmin's Training Center XML."""
+    
+    def __init__(self, filename):
+        TrackFile.__init__(self, filename, 'TrainingCenterDatabase',
+                           ['Track', 'Trackpoint', 'Time', 'LatitudeDegrees',
+                           'LongitudeDegrees', 'AltitudeMeters'])
+    
+    def element_end(self, name, state):
+        """Collect and use all the parsed data."""
+        if name != 'Trackpoint':
+            return
+        try:
+            timestamp = timegm(map(int, split(state['Time'])[0:6]))
+            lat = float(state['LatitudeDegrees'])
+            lon = float(state['LongitudeDegrees'])
+        except Exception as error:
+            print error
+            return
+        
+        self.tracks[timestamp] = self.append(
+            lat, lon, float(state.get('AltitudeMeters', 0.0)))
+        
+        TrackFile.element_end(self, name, state)
+
+
+@memoize
 class KMLFile(TrackFile):
-    """Parse a KML file."""
+    """Support for Google's Keyhole Markup Language."""
     
     def __init__(self, filename):
         self.whens    = []
