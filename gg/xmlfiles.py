@@ -17,7 +17,7 @@ from time import clock
 from camera import Camera
 from gpsmath import Coordinates
 from widgets import Widgets, Builder, MapView
-from common import GSettings, Gst, memoize, points
+from common import GSettings, Gst, Struct, memoize, points
 
 BOTTOM = Gtk.PositionType.BOTTOM
 RIGHT = Gtk.PositionType.RIGHT
@@ -415,37 +415,37 @@ class CSVFile(TrackFile):
         
         with open(filename) as lines:
             for line in lines:
-                self.caller(parse_csv(line))
+                self.caller(parse_csv(line), self.columns)
     
-    def ignore_preamble(self, state):
+    def ignore_preamble(self, state, columns):
         """Discard all of the lines before the first blank line."""
         if not state:
             self.caller = self.parse_header
     
-    def parse_header(self, state):
+    def parse_header(self, state, columns):
         """The first line after the first blank line contains column headers."""
         try:
-            self.columns = {col: state.index(col) for col in self.watchlist}
+            self.columns = Struct({col.split(' ')[0].lower():
+                state.index(col) for col in self.watchlist})
         except ValueError:
             raise IOError('This CSV file is missing necessary headers')
         self.caller = self.parse_row
     
-    def parse_row(self, state):
+    def parse_row(self, state, col):
         """All subsequent lines contain one track point each."""
-        col = self.columns
         try:
-            if int(state[col['Segment']]) > len(self.polygons):
+            if int(state[col.segment]) > len(self.polygons):
                 self.element_start('Segment')
             
-            timestamp = timegm(map(int, split(state[col['Time']])[0:6]))
-            lat = float(state[col['Latitude (deg)']])
-            lon = float(state[col['Longitude (deg)']])
+            timestamp = timegm(map(int, split(state[col.time])[0:6]))
+            lat = float(state[col.latitude])
+            lon = float(state[col.longitude])
         except Exception as error:
             print error
             return
         
         self.tracks[timestamp] = self.append(
-            lat, lon, float(state[col['Altitude (m)']] or 0.0))
+            lat, lon, float(state[col.altitude] or 0.0))
         
         TrackFile.element_end(self)
 
