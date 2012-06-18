@@ -285,7 +285,7 @@ class TrackFile():
 
 # GPX files use ISO 8601 dates, which look like 2010-10-16T20:09:13Z.
 # This regex splits that up into a list like 2010, 10, 16, 20, 09, 13.
-split = re_compile(r'[:TZ-]').split
+split = re_compile(r'[:T.Z-]').split
 
 
 @memoize
