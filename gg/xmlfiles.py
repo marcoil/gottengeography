@@ -187,7 +187,7 @@ class TrackFile():
         start_time = clock()
         
         try:
-            gpx = {'kml': KMLFile, 'gpx': GPXFile}[uri[-3:].lower()](uri)
+            gpx = globals()[uri[-3:].upper() + 'File'](uri)
         except KeyError:
             raise IOError
         
