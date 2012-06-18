@@ -207,14 +207,14 @@ class TrackFile():
         Camera.set_all_found_timezone(gpx.start.geotimezone)
     
     def __init__(self, filename, root, watch):
+        self.watchlist = watch
         self.filename = filename
         self.progress = Widgets.progressbar
-        self.clock    = clock()
-        self.append   = None
-        self.tracks   = {}
         self.polygons = set()
-        
         self.widgets = Builder('trackfile')
+        self.append = None
+        self.tracks = {}
+        self.clock = clock()
         
         self.gst = GSettings('trackfile', basename(filename))
         if self.gst.get_string('start-timezone') is '':
@@ -241,8 +241,11 @@ class TrackFile():
         Widgets.trackfile_colors_group.add_widget(self.widgets.colorpicker)
         Widgets.trackfiles_group.add_widget(self.widgets.trackfile_label)
         
-        self.parser = XMLSimpleParser(root, watch)
-        self.parser.parse(filename, self.element_start, self.element_end)
+        if callable(root):
+            root(filename)
+        else:
+            self.parser = XMLSimpleParser(root, watch)
+            self.parser.parse(filename, self.element_start, self.element_end)
         
         if not self.tracks:
             raise IOError('No points found')
@@ -258,9 +261,9 @@ class TrackFile():
         
         Widgets.trackfiles_view.add(self.widgets.trackfile_settings)
     
-    def element_start(self, name, attributes):
+    def element_start(self, name, attributes=None):
         """Determine when new tracks start and create a new Polygon."""
-        if name == self.parser.watchlist[0]:
+        if name == self.watchlist[0]:
             polygon = Polygon()
             self.polygons.add(polygon)
             self.append = polygon.append_point
@@ -268,7 +271,7 @@ class TrackFile():
             return False
         return True
     
-    def element_end(self, name, state):
+    def element_end(self, name=None, state=None):
         """Occasionally redraw the screen so the user can see activity."""
         if clock() - self.clock > .2:
             self.progress.pulse()
@@ -382,4 +385,67 @@ class KMLFile(TrackFile):
             self.coords = self.coords[complete:]
         
         TrackFile.element_end(self, name, state)
+
+
+# This regex ignores commas inside quotes, so '"foo,bar","baz,qux"' would be
+# interpreted as having only two columns.
+parse_csv = re_compile(r'"([^"]+)",+').findall
+
+
+@memoize
+class CSVFile(TrackFile):
+    """Support for Google's MyTracks' Comma Separated Values format.
+    
+    This implementation ignores everything before the first blank line,
+    allowing you to have any arbitrary preamble you like, and then the first
+    line after the first blank line must contain the following column titles
+    (in any order you like). Extra columns are harmlessly ignored. All "values"
+    must be "quoted" with "double quotes".
+    """
+    columns = None
+    
+    def __init__(self, filename):
+        TrackFile.__init__(self, filename, self.parser,
+            ['Segment', 'Latitude (deg)', 'Longitude (deg)',
+             'Altitude (m)', 'Time'])
+    
+    def parser(self, filename):
+        """Call the appropriate handler for each line of the file."""
+        self.caller = self.ignore_preamble
+        
+        with open(filename) as lines:
+            for line in lines:
+                self.caller(parse_csv(line))
+    
+    def ignore_preamble(self, state):
+        """Discard all of the lines before the first blank line."""
+        if not state:
+            self.caller = self.parse_header
+    
+    def parse_header(self, state):
+        """The first line after the first blank line contains column headers."""
+        try:
+            self.columns = {col: state.index(col) for col in self.watchlist}
+        except ValueError:
+            raise IOError('This CSV file is missing necessary headers')
+        self.caller = self.parse_row
+    
+    def parse_row(self, state):
+        """All subsequent lines contain one track point each."""
+        col = self.columns
+        try:
+            if int(state[col['Segment']]) > len(self.polygons):
+                self.element_start('Segment')
+            
+            timestamp = timegm(map(int, split(state[col['Time']])[0:6]))
+            lat = float(state[col['Latitude (deg)']])
+            lon = float(state[col['Longitude (deg)']])
+        except Exception as error:
+            print error
+            return
+        
+        self.tracks[timestamp] = self.append(
+            lat, lon, float(state[col['Altitude (m)']] or 0.0))
+        
+        TrackFile.element_end(self)
 
