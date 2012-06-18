@@ -411,24 +411,19 @@ class CSVFile(TrackFile):
     
     def parser(self, filename):
         """Call the appropriate handler for each line of the file."""
-        self.caller = self.ignore_preamble
+        self.caller = self.parse_header
         
         with open(filename) as lines:
             for line in lines:
                 self.caller(parse_csv(line), self.columns)
     
-    def ignore_preamble(self, state, columns):
-        """Discard all of the lines before the first blank line."""
-        if not state:
-            self.caller = self.parse_header
-    
     def parse_header(self, state, columns):
-        """The first line after the first blank line contains column headers."""
+        """Ignore as many lines as necessary until column headers are found."""
         try:
             self.columns = Struct({col.split(' ')[0].lower():
                 state.index(col) for col in self.watchlist})
         except ValueError:
-            raise IOError('This CSV file is missing necessary headers')
+            return
         self.caller = self.parse_row
     
     def parse_row(self, state, col):
