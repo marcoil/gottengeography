@@ -283,11 +283,12 @@ class TrackFile():
         """Die a horrible death."""
         for polygon in self.polygons:
             MapView.remove_layer(polygon)
-        for timestamp in self.tracks:
-            del points[timestamp]
         self.polygons.clear()
         self.widgets.trackfile_settings.destroy()
         del TrackFile.instances[self.filename]
+        points.clear()
+        for trackfile in TrackFile.files:
+            points.update(trackfile.tracks)
         TrackFile.update_range()
 
 
