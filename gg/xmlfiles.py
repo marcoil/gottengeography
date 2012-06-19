@@ -391,11 +391,10 @@ parse_csv = re_compile(r'"([^"]+)",+').findall
 class CSVFile(TrackFile):
     """Support for Google's MyTracks' Comma Separated Values format.
     
-    This implementation ignores everything before the first blank line,
-    allowing you to have any arbitrary preamble you like, and then the first
-    line after the first blank line must contain the following column titles
-    (in any order you like). Extra columns are harmlessly ignored. All "values"
-    must be "quoted" with "double quotes".
+    This implementation ignores everything before the first line that contains
+    the necessary column headers, allowing you to have any arbitrary preamble
+    you like. Extra columns are harmlessly ignored. All "values" must be
+    "quoted" with "double quotes".
     """
     columns = None
     
