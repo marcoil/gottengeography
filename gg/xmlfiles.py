@@ -52,7 +52,10 @@ class Polygon(Champlain.PathLayer):
         coord = Champlain.Coordinate.new_full(latitude, longitude)
         coord.lat = latitude
         coord.lon = longitude
-        coord.ele = elevation
+        try:
+            coord.ele = float(elevation)
+        except ValueError, TypeError:
+            coord.ele = 0.0
         self.add_node(coord)
         return coord
 
@@ -313,8 +316,7 @@ class GPXFile(TrackFile):
             print error
             return
         
-        self.tracks[timestamp] = self.append(lat, lon,
-                                             float(state.get('ele', 0.0)))
+        self.tracks[timestamp] = self.append(lat, lon, state.get('ele'))
         
         TrackFile.element_end(self, name, state)
 
@@ -338,7 +340,7 @@ class TCXFile(TrackFile):
             return
         
         self.tracks[timestamp] = self.append(
-            lat, lon, float(state.get('AltitudeMeters', 0.0)))
+            lat, lon, state.get('AltitudeMeters'))
         
         TrackFile.element_end(self, name, state)
 
@@ -410,7 +412,7 @@ class CSVFile(TrackFile):
             for line in lines:
                 self.caller(parse_csv(line), self.columns)
     
-    def parse_header(self, state, columns):
+    def parse_header(self, state, columns, alt='Altitude (m)'):
         """Ignore as many lines as necessary until column headers are found."""
         try:
             self.columns = Struct({col.split(' ')[0].lower():
@@ -418,14 +420,11 @@ class CSVFile(TrackFile):
         except ValueError:
             return
         
-        try:
-            self.columns.altitude = state.index('Altitude (m)')
-        except ValueError:
-            self.columns.altitude = None
+        self.columns.alt = state.index(alt) if alt in state else -1
         
         self.caller = self.parse_row
     
-    def parse_row(self, state, col, alt=None):
+    def parse_row(self, state, col):
         """All subsequent lines contain one track point each."""
         try:
             if int(state[col.segment]) > len(self.polygons):
@@ -438,10 +437,8 @@ class CSVFile(TrackFile):
             print error
             return
         
-        if col.altitude is not None:
-            alt = float(state[col.altitude] or 0.0)
-        
-        self.tracks[timestamp] = self.append(lat, lon, alt or 0.0)
+        self.tracks[timestamp] = self.append(
+            lat, lon, state[col.alt] if col.alt >= 0 else 0.0)
         
         TrackFile.element_end(self)
 
