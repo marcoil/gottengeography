@@ -170,20 +170,19 @@ class Coordinates(GObject.GObject):
     
     def pretty_time(self):
         """Convert epoch seconds to a human-readable date."""
-        if type(self.timestamp) is int:
+        if self.timestamp:
             return strftime('%Y-%m-%d %X', localtime(self.timestamp))
     
     def pretty_coords(self):
         """Add cardinal directions to decimal coordinates."""
-        return format_coords(self.latitude, self.longitude) \
-            if self.positioned else _('Not geotagged')
+        if self.positioned:
+            return format_coords(self.latitude, self.longitude)
     
     def pretty_altitude(self):
         """Convert elevation into a human readable format."""
-        if self.altitude != 0.0:
+        if self.altitude:
             return '%.1f%s' % (abs(self.altitude), _('m above sea level')
                         if self.altitude >= 0 else _('m below sea level'))
-        return ''
     
     def plain_summary(self):
         """Plaintext summary of photo metadata."""
