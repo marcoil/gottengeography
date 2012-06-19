@@ -384,7 +384,7 @@ class KMLFile(TrackFile):
 
 # This regex ignores commas inside quotes, so '"foo,bar","baz,qux"' would be
 # interpreted as having only two columns.
-parse_csv = re_compile(r'"([^"]+)",+').findall
+parse_csv = re_compile(r'"([^"]*)",?').findall
 
 
 @memoize
@@ -400,8 +400,7 @@ class CSVFile(TrackFile):
     
     def __init__(self, filename):
         TrackFile.__init__(self, filename, self.parser,
-            ['Segment', 'Latitude (deg)', 'Longitude (deg)',
-             'Altitude (m)', 'Time'])
+            ['Segment', 'Latitude (deg)', 'Longitude (deg)', 'Time'])
     
     def parser(self, filename):
         """Call the appropriate handler for each line of the file."""
@@ -418,9 +417,15 @@ class CSVFile(TrackFile):
                 state.index(col) for col in self.watchlist})
         except ValueError:
             return
+        
+        try:
+            self.columns.altitude = state.index('Altitude (m)')
+        except ValueError:
+            self.columns.altitude = None
+        
         self.caller = self.parse_row
     
-    def parse_row(self, state, col):
+    def parse_row(self, state, col, alt=None):
         """All subsequent lines contain one track point each."""
         try:
             if int(state[col.segment]) > len(self.polygons):
@@ -433,8 +438,10 @@ class CSVFile(TrackFile):
             print error
             return
         
-        self.tracks[timestamp] = self.append(
-            lat, lon, float(state[col.altitude] or 0.0))
+        if col.altitude is not None:
+            alt = float(state[col.altitude] or 0.0)
+        
+        self.tracks[timestamp] = self.append(lat, lon, alt or 0.0)
         
         TrackFile.element_end(self)
 
