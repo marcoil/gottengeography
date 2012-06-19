@@ -123,27 +123,11 @@ class Coordinates(GObject.GObject):
     countryname = ''
     geotimezone = ''
     
-    latitude = GObject.property(
-        type=float,
-        default=0.0,
-        minimum=-90.0,
-        maximum=90.0)
+    timestamp = GObject.property(type=int)
+    altitude  = GObject.property(type=float)
+    latitude  = GObject.property(type=float, minimum=-90.0,  maximum=90.0)
+    longitude = GObject.property(type=float, minimum=-180.0, maximum=180.0)
     
-    longitude = GObject.property(
-        type=float,
-        default=0.0,
-        minimum=-180.0,
-        maximum=180.0)
-    
-    altitude = GObject.property(
-        type=float,
-        default=0.0)
-    
-    timestamp = GObject.property(
-        type=int,
-        default=0)
-    
-    # Read-only properties calculated from the other ones
     @GObject.property(type=bool, default=False)
     def positioned(self):
         """Identify if this instance occupies a valid point on the map.
@@ -154,7 +138,7 @@ class Coordinates(GObject.GObject):
         """
         return bool(self.latitude or self.longitude)
     
-    @GObject.property(type=str, default='')
+    @GObject.property(type=str)
     def geoname(self):
         """Report the city, state, and country in a pretty list."""
         return ', '.join(

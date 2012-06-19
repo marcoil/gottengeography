@@ -35,29 +35,13 @@ class Camera(GObject.GObject):
     instances = {}
     cameras = instances.viewvalues()
     
-    offset = GObject.property(
-        type = int,
-        default = 0,
-        minimum = -3600,
-        maximum = 3600)
+    offset = GObject.property(type=int, minimum=-3600, maximum=3600)
+    found_timezone = GObject.property(type=str)
+    timezone_method = GObject.property(type=str)
+    timezone_region = GObject.property(type=str)
+    timezone_city = GObject.property(type=str)
     
-    timezone_method = GObject.property(
-        type = str,
-        default = 'system')
-    
-    found_timezone = GObject.property(
-        type = str,
-        default = '')
-    
-    timezone_region = GObject.property(
-        type = str,
-        default = '')
-    
-    timezone_city = GObject.property(
-        type = str,
-        default = '')
-    
-    @GObject.property(type=int, default=0)
+    @GObject.property(type=int)
     def num_photos(self):
         """Read-only count of the loaded photos taken by this camera."""
         return len(self.photos)
