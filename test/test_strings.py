@@ -1,9 +1,9 @@
 
 """Pretty strings should match what's given here.'"""
 
-from gg.common import Struct
 from gg.camera import Camera
 from gg.photos import Photograph
+from gg.common import Struct, modified
 
 from test import IMGFILES, teardown, setup
 
@@ -14,11 +14,8 @@ def test_string_functions():
     photo = Photograph(IMGFILES[4])
     photo.read()
     
-    photo._latitude  = 200
-    photo._longitude = 200
-    assert photo.pretty_coords() == 'Not geotagged'
+    assert photo.pretty_coords() == None
     
-    photo.positioned = 0
     photo.latitude  = 10.0
     photo.longitude = 10.0
     assert photo.pretty_coords() == 'N 10.00000, E 10.00000'
@@ -45,6 +42,14 @@ def test_string_functions():
 S 10.00000, W 10.00000
 600.7m above sea level"""
     
+    assert photo.markup_summary() == \
+"""<span size="larger">IMG_2411.JPG</span>
+<span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
+2001-09-08 07:46:39 PM
+S 10.00000, W 10.00000
+600.7m above sea level</span>"""
+    
+    modified.add(photo)
     assert photo.markup_summary() == \
 """<b><span size="larger">IMG_2411.JPG</span>
 <span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
