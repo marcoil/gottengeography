@@ -248,6 +248,7 @@ class Photograph(Coordinates):
     
     def set_location(self, lat, lon, ele=None):
         """Alter the coordinates of this photo."""
+        modified.add(self)
         if ele is not None:
             self.altitude = ele
         self.latitude  = lat
@@ -256,12 +257,10 @@ class Photograph(Coordinates):
     def respond_positioned(self, *ignore):
         """If a photo has been placed on the map, make it saveable."""
         if self.positioned:
-            modified.add(self)
             Widgets.photos_selection.emit('changed')
     
     def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""
-        modified.add(self)
         if self.iter is not None:
             Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
         if self.camera and self.camera.found_timezone is not self.geotimezone:

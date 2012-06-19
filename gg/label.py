@@ -75,7 +75,8 @@ class Label(Champlain.Label):
         self.connect('leave-event', hover, 1/1.05)
         self.connect('button-press', clicked)
         self.connect('drag-finish',
-            lambda *ignore: photo.disable_auto_position())
+            lambda *ignore: modified.add(photo)
+                and photo.disable_auto_position())
         
         if photo.positioned:
             self.set_location(photo.latitude, photo.longitude)
