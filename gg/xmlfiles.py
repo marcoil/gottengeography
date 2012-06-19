@@ -305,8 +305,6 @@ class GPXFile(TrackFile):
     
     def element_end(self, name, state):
         """Collect and use all the parsed data."""
-        if name != 'trkpt':
-            return
         try:
             timestamp = timegm(map(int, split(state['time'])[0:6]))
             lat = float(state['lat'])
@@ -327,13 +325,10 @@ class TCXFile(TrackFile):
     
     def __init__(self, filename):
         TrackFile.__init__(self, filename, 'TrainingCenterDatabase',
-                           ['Track', 'Trackpoint', 'Time', 'LatitudeDegrees',
-                           'LongitudeDegrees', 'AltitudeMeters'])
+                           ['Track', 'Trackpoint'])
     
     def element_end(self, name, state):
         """Collect and use all the parsed data."""
-        if name != 'Trackpoint':
-            return
         try:
             timestamp = timegm(map(int, split(state['Time'])[0:6]))
             lat = float(state['LatitudeDegrees'])
