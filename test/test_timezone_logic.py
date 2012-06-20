@@ -42,11 +42,32 @@ def test_manual_timezone():
     assert Camera.instances
     assert Photograph.instances
     camera = Camera.instances.values()[0]
-    camera.gst.set_string('timezone-method', 'custom')
-    camera.gst.set_string('timezone-region', 'America')
-    camera.gst.set_string('timezone-city', 'Winnipeg')
-    
     photo = Photograph.instances.values()[0]
+    
+    camera.gst.set_string('timezone-method', 'offset')
+    camera.gst.set_int('utc-offset', -6)
+    assert photo.latitude == 53.530476
+    assert photo.longitude == -113.450635
+    
+    camera.gst.set_int('utc-offset', 3)
     assert photo.latitude == 53.52263
     assert photo.longitude == -113.448979
+    
+    camera.gst.set_int('utc-offset', -10)
+    assert photo.latitude == 53.522496
+    assert photo.longitude == -113.450537
+    
+    camera.gst.set_string('timezone-method', 'custom')
+    camera.gst.set_string('timezone-region', 'America')
+    camera.gst.set_string('timezone-city', 'Vancouver')
+    assert photo.latitude == 53.522496
+    assert photo.longitude == -113.450537
+    
+    camera.gst.set_string('timezone-city', 'Winnipeg')
+    assert photo.latitude == 53.52263
+    assert photo.longitude == -113.448979
+    
+    camera.gst.set_string('timezone-city', 'Edmonton')
+    assert photo.latitude == 53.530476
+    assert photo.longitude == -113.450635
 
