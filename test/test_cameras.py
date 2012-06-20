@@ -4,8 +4,11 @@
 from gg.camera import Camera
 from gg.photos import Photograph
 
+from test import DEMOFILES, gui
+
 def test_camera_offsets():
     """Make sure that camera offsets function correctly"""
+    gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Camera.instances
     

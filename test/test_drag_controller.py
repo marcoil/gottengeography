@@ -13,7 +13,6 @@ from test import gui, DEMOFILES, random_coord
 def test_drags_from_external_source():
     """Make sure that we can load photos dragged in"""
     data = Struct({'get_text': lambda: '\n'.join(DEMOFILES)})
-    teardown()
     assert len(Photograph.instances) == 0
     assert len(points) == 0
     
@@ -21,14 +20,10 @@ def test_drags_from_external_source():
                             None, None, True)
     assert len(Photograph.instances) == 6
     assert len(points) == 374
-    
-    teardown()
-    assert len(Photograph.instances) == 0
-    assert len(points) == 0
-    setup()
 
 def test_drags_on_map():
     """Drag the ChamplainLabels around the map"""
+    gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
     for label in Label.instances.values():
@@ -41,6 +36,7 @@ def test_drags_on_map():
 
 def test_drags_from_liststore():
     """Drag from the GtkListStore to the map"""
+    gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
     for photo in Photograph.files:

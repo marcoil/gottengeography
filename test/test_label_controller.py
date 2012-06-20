@@ -8,7 +8,7 @@ from gg.widgets import Widgets
 from gg.photos import Photograph
 from gg.label import Label
 
-from test import setup, teardown, random_coord
+from test import DEMOFILES, gui, random_coord
 
 def test_creatability():
     """ChamplainLabels should exist"""
@@ -27,6 +27,7 @@ def test_creatability():
 
 def test_hoverability():
     """Labels should grow when hovered"""
+    gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
     for label in Label.instances.values():
@@ -38,6 +39,7 @@ def test_hoverability():
 
 def test_clickability():
     """Labels become selected when clicked"""
+    gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
     for label in Label.instances.values():
