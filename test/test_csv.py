@@ -4,7 +4,6 @@
 from os.path import abspath, join
 
 from gg.xmlfiles import TrackFile, CSVFile
-from gg.build_info import PKG_DATA_DIR
 from gg.common import points
 
 from test import gui, setup, teardown
