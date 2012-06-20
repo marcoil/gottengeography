@@ -103,7 +103,7 @@ class Camera(GObject.GObject):
             # if no timezone has actually been found yet.
             environ['TZ'] = self.found_timezone
         elif self.timezone_method == 'offset':
-            environ['TZ'] = 'UTC%+d' % self.utc_offset
+            environ['TZ'] = 'UTC%+d' % -self.utc_offset
         elif self.timezone_method == 'custom' and \
              self.timezone_region and self.timezone_city:
             environ['TZ'] = '/'.join(
