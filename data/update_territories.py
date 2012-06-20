@@ -20,6 +20,9 @@ representation of accuracy, timeliness or completeness.
 The data was then converted from tab-delimited UTF8 into
 python source code by Robert Park <rbpark@exolucere.ca>
 \"\"\"
+
+from os import listdir
+from os.path import sep, join, isdir
 """
 
 print 'countries = {'
@@ -39,28 +42,15 @@ with open('admin1CodesASCII.txt') as states:
         print '"%s": "%s",' % (code, name)
 print '}'
 
-zones = {}
-with open('timeZones.txt') as tz:
-    for line in tz:
-        try:
-            region, city = line.split('\t')[1].split('/', 1)
-        except ValueError:
-            continue
-        if region not in zones:
-            zones[region] = []
-        zones[region].append(city)
-
-print
-print 'zones = {'
-for region in sorted(zones):
-    print "'%s': [" % region
-    for city in sorted(zones[region]):
-        print "'%s'," % city
-    print '],'
-    print
-print '}'
-
 print """
+zoneinfo = join(sep, 'usr', 'share', 'zoneinfo')
+zones = {}
+for region in listdir(zoneinfo):
+    region_path = join(zoneinfo, region)
+    if not isdir(region_path) or region in ('posix', 'Etc', 'right'):
+        continue
+    zones[region] = sorted(listdir(region_path))
+
 tz_regions   = sorted(zones.keys())
 get_timezone = zones.get
 get_country  = countries.get
