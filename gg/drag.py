@@ -69,6 +69,9 @@ class DragController():
         This method allows photos to be dropped in from the photo
         pane or any other drag source, such as the file browser.
         """
+        if not data.get_text():
+            return
+        
         files = [unquote(urlparse(s).path.strip()) for s in
                  data.get_text().split('\n') if s]
         
