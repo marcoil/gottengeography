@@ -13,9 +13,9 @@ from test import GPXFILES, IMGFILES
 def test_demo_data():
     """Load the demo data and ensure that we're reading it in properly."""
     teardown()
-    assert len(points) == 0
-    assert len(TrackFile.instances) == 0
-    assert len(TrackFile.range) == 0
+    assert not points
+    assert not TrackFile.instances
+    assert not TrackFile.range
     Widgets.photos_selection.emit('changed')
     # No buttons should be sensitive yet because nothing's loaded.
     buttons = {}
@@ -43,9 +43,9 @@ def test_demo_data():
         assert not photo in selected
         
         # Pristine demo data shouldn't have any tags.
-        assert photo.altitude == 0.0
-        assert photo.latitude == 0.0
-        assert photo.longitude == 0.0
+        assert not photo.altitude
+        assert not photo.latitude
+        assert not photo.longitude
         assert not photo.positioned
         
         # Add some crap
@@ -59,10 +59,10 @@ def test_demo_data():
         # and it would load data from disk without discarding old data.
         photo.read()
         photo.lookup_geodata()
-        assert photo.geoname == ''
-        assert photo.altitude == 0.0
-        assert photo.latitude == 0.0
-        assert photo.longitude == 0.0
+        assert not photo.geoname
+        assert not photo.altitude
+        assert not photo.latitude
+        assert not photo.longitude
         assert not photo.positioned
         assert photo.filename == Label(photo).get_name()
         assert Label(photo).photo.filename == Label(photo).get_name()
@@ -101,13 +101,13 @@ def test_demo_data():
     
     # Unload the GPX data.
     TrackFile.clear_all()
-    assert len(points) == 0
-    assert len(TrackFile.instances) == 0
-    assert len(TrackFile.range) == 0
+    assert not points
+    assert not TrackFile.instances
+    assert not TrackFile.range
     
     # Save all photos
     buttons['save'].emit('clicked')
-    assert len(modified) == 0
+    assert not modified
     for button in ('save', 'revert'):
         assert not buttons[button].get_sensitive()
     
@@ -123,18 +123,23 @@ def test_demo_data():
     buttons['close'].emit('clicked')
     for button in ('save', 'revert', 'close'):
         assert not buttons[button].get_sensitive()
-    assert len(Photograph.instances) == 0
-    assert len(modified) == 0
-    assert len(selected) == 0
+    assert not Photograph.instances
+    assert not modified
+    assert not selected
     
     # Re-read the photos back from disk to make sure that the saving
     # was successful.
-    assert files
+    assert len(files) == 6
     for filename in files:
         photo = Photograph(filename)
         photo.read()
         photo.update_derived_properties()
+        assert photo not in modified
         assert photo.positioned
+        assert photo.latitude
+        assert photo.longitude
         assert photo.altitude > 600
         assert photo.geoname == 'Edmonton, Alberta, Canada'
+    assert not modified
+    assert len(Photograph.instances) == 6
 
