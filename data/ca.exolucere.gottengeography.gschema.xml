@@ -76,6 +76,7 @@
       <choices>
         <choice value='system'/>
         <choice value='lookup'/>
+        <choice value='offset'/>
         <choice value='custom'/>
       </choices>
       <default>'system'</default>
@@ -96,6 +97,11 @@
       <default>''</default>
       <summary>The custom timezone city that the user has selected, if any.</summary>
       <description>This key is only consulted if timezone-method is 'custom'. The value is an int representing the index of the city selected manually by the user.</description>
+    </key>
+    <key type="i" name="utc-offset">
+      <range min="-24" max="24"/>
+      <default>0</default>
+      <summary>How many hours you are away from UTC.</summary>
     </key>
   </schema>
 

@@ -34,6 +34,7 @@
         <items>
           <item id="system" translatable="yes">Use the system timezone.</item>
           <item id="lookup" translatable="yes">Use the local timezone.</item>
+          <item id="offset" translatable="yes">Specify a UTC offset manually.</item>
           <item id="custom" translatable="yes">Specify the timezone manually.</item>
         </items>
       </object>
@@ -73,6 +74,32 @@
       </packing>
     </child>
     <child>
+      <object class="GtkLabel" id="utc_label">
+        <property name="can_focus">False</property>
+        <property name="no_show_all">True</property>
+        <property name="label">UTC +/-</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkSpinButton" id="utc_offset">
+        <property name="can_focus">False</property>
+        <property name="no_show_all">True</property>
+        <property name="adjustment">utc_offset_value</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">3</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
       <object class="GtkScale" id="offset">
         <property name="can_focus">False</property>
         <property name="adjustment">offset_value</property>
@@ -82,7 +109,7 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
-        <property name="top_attach">3</property>
+        <property name="top_attach">4</property>
         <property name="width">2</property>
         <property name="height">1</property>
       </packing>
@@ -98,7 +125,7 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
-        <property name="top_attach">4</property>
+        <property name="top_attach">5</property>
         <property name="width">2</property>
         <property name="height">1</property>
       </packing>
@@ -109,5 +136,11 @@
     <property name="upper">3600</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="utc_offset_value">
+    <property name="lower">-24</property>
+    <property name="upper">24</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
   </object>
 </interface>

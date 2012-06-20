@@ -36,6 +36,7 @@ class Camera(GObject.GObject):
     cameras = instances.viewvalues()
     
     offset = GObject.property(type=int, minimum=-3600, maximum=3600)
+    utc_offset = GObject.property(type=int, minimum=-24, maximum=24)
     found_timezone = GObject.property(type=str)
     timezone_method = GObject.property(type=str)
     timezone_region = GObject.property(type=str)
@@ -85,13 +86,14 @@ class Camera(GObject.GObject):
         # Bind properties to settings
         self.gst = GSettings('camera', camera_id)
         for prop in ('offset', 'timezone-method', 'timezone-region',
-                     'timezone-city', 'found-timezone'):
+                     'timezone-city', 'found-timezone', 'utc-offset'):
             self.gst.bind(prop, self)
         
         # Get notifications when properties are changed
         self.connect('notify::offset', self.offset_handler)
         self.connect('notify::timezone-method', self.timezone_handler)
         self.connect('notify::timezone-city', self.timezone_handler)
+        self.connect('notify::utc-offset', self.timezone_handler)
     
     def timezone_handler(self, *ignore):
         """Set the timezone to the chosen zone and update all photos."""
@@ -100,6 +102,8 @@ class Camera(GObject.GObject):
             # Note that this will gracefully fallback on system timezone
             # if no timezone has actually been found yet.
             environ['TZ'] = self.found_timezone
+        elif self.timezone_method == 'offset':
+            environ['TZ'] = 'UTC%+d' % self.utc_offset
         elif self.timezone_method == 'custom' and \
              self.timezone_region and self.timezone_city:
             environ['TZ'] = '/'.join(
@@ -139,6 +143,7 @@ class CameraView(Gtk.Box):
     
     def __init__(self, camera, name):
         Gtk.Box.__init__(self)
+        self.bindings = {}
         self.camera = camera
         
         self.widgets = Builder('camera')
@@ -158,10 +163,13 @@ class CameraView(Gtk.Box):
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
         # Also, it seems SYNC_CREATE doesn't really work.
         scale.set_value(camera.offset)
-        self.scale_binding = bind_properties(scale.get_adjustment(),
-                                             'value',
-                                             camera,
-                                             'offset')
+        self.bindings['scale'] = bind_properties(
+            scale.get_adjustment(), 'value', camera, 'offset')
+        
+        utc = self.widgets.utc_offset
+        utc.set_value(camera.utc_offset)
+        self.bindings['utc'] = bind_properties(
+            utc.get_adjustment(), 'value', camera, 'utc-offset')
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -170,7 +178,6 @@ class CameraView(Gtk.Box):
         for name in tz_regions:
             region_combo.append(name, name)
         
-        self.bindings = {}
         for setting in ('region', 'city', 'method'):
             name = 'timezone_' + setting
             self.bindings[setting] = bind_properties(
@@ -184,8 +191,10 @@ class CameraView(Gtk.Box):
         method_combo.connect('changed', self.method_handler)
         method_combo.set_active_id(camera.timezone_method)
         
-        Widgets.timezone_regions_group.add_widget(region_combo)
+        Widgets.timezone_cities_group.add_widget(utc)
         Widgets.timezone_cities_group.add_widget(cities_combo)
+        Widgets.timezone_regions_group.add_widget(region_combo)
+        Widgets.timezone_regions_group.add_widget(self.widgets.utc_label)
         Widgets.cameras_group.add_widget(self.widgets.camera_settings)
         
         camera.connect('notify::num-photos', self.set_counter_text)
@@ -195,9 +204,11 @@ class CameraView(Gtk.Box):
     
     def method_handler(self, method):
         """Only show manual tz selectors when necessary."""
-        visible = method.get_active_id() == 'custom'
-        self.widgets.timezone_region.set_visible(visible)
-        self.widgets.timezone_city.set_visible(visible)
+        active_method = method.get_active_id()
+        self.widgets.timezone_region.set_visible(active_method == 'custom')
+        self.widgets.timezone_city.set_visible(active_method == 'custom')
+        self.widgets.utc_label.set_visible(active_method == 'offset')
+        self.widgets.utc_offset.set_visible(active_method == 'offset')
     
     def region_handler(self, region, cities):
         """Populate the list of cities when a continent is selected."""
