@@ -9,6 +9,7 @@ from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Champlain, Clutter, Gtk, Gdk
 from dateutil.parser import parse as parse_date
 from re import compile as re_compile
+from collections import defaultdict
 from gettext import gettext as _
 from os.path import basename
 from calendar import timegm
@@ -70,7 +71,7 @@ class XMLSimpleParser:
         self.call_end = None
         self.element = None
         self.tracking = None
-        self.state = {}
+        self.state = defaultdict(str)
         
         self.parser = ParserCreate()
         self.parser.StartElementHandler = self.element_root
@@ -104,7 +105,6 @@ class XMLSimpleParser:
         
         if self.tracking is not None:
             self.element = name
-            self.state[name] = ''
             self.state.update(attributes)
     
     def element_data(self, data):
