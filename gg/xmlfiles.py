@@ -88,7 +88,7 @@ class XMLSimpleParser:
    
     def element_root(self, name, attributes):
         """Called on the root XML element, we check if it's the one we want."""
-        if self.rootname != None and name != self.rootname:
+        if name != self.rootname:
             raise IOError
         self.parser.StartElementHandler = self.element_start
     
