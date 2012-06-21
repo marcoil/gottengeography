@@ -114,7 +114,9 @@ class Camera(GObject.GObject):
     
     def offset_handler(self, *ignore):
         """When the offset is changed, update the loaded photos."""
-        for photo in self.photos:
+        for i, photo in enumerate(self.photos):
+            if not i % 10:
+                Widgets.redraw_interface()
             photo.calculate_timestamp(self.offset)
     
     def add_photo(self, photo):
