@@ -44,13 +44,13 @@ for map_desc in [
     'http://www.gnu.org/copyleft/fdl.html',
     'http://maps-for-free.com/layer/relief/z#Z#/row#Y#/#Z#_#X#-#Y#.jpg'],
     ]:
-    mapid, name, min_zoom, max_zoom, size, license, lic_uri, tile_uri = map_desc
+    mapid, name, min_zoom, max_zoom, size, lic, lic_uri, tile_uri = map_desc
     
     c = Champlain.MapSourceChain()
     c.push(Champlain.MapSourceFactory.dup_default().create_error_source(size))
     
     c.push(Champlain.NetworkTileSource.new_full(
-        mapid, name, license, lic_uri, min_zoom, max_zoom,
+        mapid, name, lic, lic_uri, min_zoom, max_zoom,
         size, Champlain.MapProjection.MAP_PROJECTION_MERCATOR,
         tile_uri, Champlain.ImageRenderer()))
     

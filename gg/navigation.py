@@ -7,22 +7,22 @@ from __future__ import division
 
 from gi.repository import Gdk
 
+from common import Gst
+from gpsmath import valid_coords
 from widgets import Widgets, MapView
-from common import Gst, bind_properties
-from gpsmath import Coordinates, valid_coords
 
 def move_by_arrow_keys(accel_group, acceleratable, keyval, modifier):
     """Move the map view by 5% of its length in the given direction."""
-    key, view = Gdk.keyval_name(keyval), MapView
-    factor    = (0.45 if key in ('Up', 'Left') else 0.55)
-    lat       = view.get_center_latitude()
-    lon       = view.get_center_longitude()
+    key = Gdk.keyval_name(keyval)
+    factor = 0.45 if key in ('Up', 'Left') else 0.55
     if key in ('Up', 'Down'):
-        lat = view.y_to_latitude(view.get_height() * factor)
+        lat = MapView.y_to_latitude(MapView.get_height() * factor)
+        lon = MapView.get_center_longitude()
     else:
-        lon = view.x_to_longitude(view.get_width() * factor)
+        lat = MapView.get_center_latitude()
+        lon = MapView.x_to_longitude(MapView.get_width() * factor)
     if valid_coords(lat, lon):
-        view.center_on(lat, lon)
+        MapView.center_on(lat, lon)
 
 def remember_location(view):
     """Add current location to history stack."""

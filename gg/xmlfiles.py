@@ -55,7 +55,7 @@ class Polygon(Champlain.PathLayer):
         coord.lon = longitude
         try:
             coord.ele = float(elevation)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             coord.ele = 0.0
         self.add_node(coord)
         return coord
@@ -116,7 +116,7 @@ class XMLSimpleParser:
             return
         self.state[self.element] += data
     
-    def element_end(self, name):
+    def element_end(self, name, state=None):
         """When the tag closes, pass it's data to the end callback and reset."""
         if name != self.tracking:
             return
@@ -131,8 +131,7 @@ class XMLSimpleParser:
 class TrackFile():
     """Parent class for all types of GPS track files.
     
-    Subclasses must implement element_start and element_end, and call them in
-    the base class.
+    Subclasses must implement at least element_end.
     """
     range = []
     instances = {}
@@ -401,13 +400,12 @@ class CSVFile(TrackFile):
     columns = None
     
     def __init__(self, filename):
+        self.caller = self.parse_header
         TrackFile.__init__(self, filename, self.parser,
             ['Segment', 'Latitude (deg)', 'Longitude (deg)', 'Time'])
     
     def parser(self, filename):
         """Call the appropriate handler for each line of the file."""
-        self.caller = self.parse_header
-        
         with open(filename) as lines:
             for line in lines:
                 self.caller(parse_csv(line), self.columns)
