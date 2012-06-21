@@ -51,17 +51,10 @@ def zoom_button_sensitivity(view, signal, in_sensitive, out_sensitive):
     out_sensitive(view.get_min_zoom_level() != zoom)
     in_sensitive( view.get_max_zoom_level() != zoom)
 
-for key in ['latitude', 'longitude', 'zoom-level']:
-    Gst.bind(key, MapView, key)
+for prop in ('latitude', 'longitude', 'zoom-level'):
+    Gst.bind(prop, MapView, prop)
 
 MapView.connect('notify::zoom-level', zoom_button_sensitivity,
     Widgets.zoom_in_button.set_sensitive, Widgets.zoom_out_button.set_sensitive)
 MapView.connect('realize', remember_location)
-
-center = Coordinates()
-lat_binding = bind_properties(MapView, 'latitude', center)
-lon_binding = bind_properties(MapView, 'longitude', center)
-center.do_modified()
-center_binding = bind_properties(center, 'geoname', Widgets.main, 'title')
-center.timeout_seconds = 10 # Reduces the rate that the titlebar updates
 

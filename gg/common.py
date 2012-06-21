@@ -38,11 +38,11 @@ def memoize(obj):
     if type(obj) is FunctionType:
         obj.instances = {}
     
-    def memoizer(*args):
+    def memoizer(*args, **kwargs):
         """Do cache lookups and populate the cache in the case of misses."""
         key = args[0] if len(args) is 1 else args
         if key not in obj.instances:
-            obj.instances[key] = obj(*args)
+            obj.instances[key] = obj(*args, **kwargs)
         return obj.instances[key]
     
     # Make the memoizer func masquerade as the object we are memoizing.
@@ -52,10 +52,16 @@ def memoize(obj):
     return memoizer
 
 
+@memoize
 def bind_properties(source, source_prop,
                     target, target_prop=None,
                     flags=GObject.BindingFlags.DEFAULT):
-    """Make it easier to bind properties between GObjects."""
+    """Make it easier to bind properties between GObjects.
+    
+    Even though this method never experiences a memoizer cache hit,
+    it still benefits from memoization because the GObject.Binding instances
+    need to be kept alive through the life of the application.
+    """
     return GObject.Binding(source = source,
                            source_property = source_prop,
                            target = target,

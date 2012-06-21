@@ -145,7 +145,6 @@ class CameraView(Gtk.Box):
     
     def __init__(self, camera, name):
         Gtk.Box.__init__(self)
-        self.bindings = {}
         self.camera = camera
         
         self.widgets = Builder('camera')
@@ -165,13 +164,11 @@ class CameraView(Gtk.Box):
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
         # Also, it seems SYNC_CREATE doesn't really work.
         scale.set_value(camera.offset)
-        self.bindings['scale'] = bind_properties(
-            scale.get_adjustment(), 'value', camera, 'offset')
+        bind_properties(scale.get_adjustment(), 'value', camera, 'offset')
         
         utc = self.widgets.utc_offset
         utc.set_value(camera.utc_offset)
-        self.bindings['utc'] = bind_properties(
-            utc.get_adjustment(), 'value', camera, 'utc-offset')
+        bind_properties(utc.get_adjustment(), 'value', camera, 'utc-offset')
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -182,8 +179,8 @@ class CameraView(Gtk.Box):
         
         for setting in ('region', 'city', 'method'):
             name = 'timezone_' + setting
-            self.bindings[setting] = bind_properties(
-                self.widgets[name], 'active-id', camera, name.replace('_', '-'))
+            bind_properties(self.widgets[name], 'active-id',
+                            camera, name.replace('_', '-'))
         
         region_combo.connect('changed', self.region_handler, cities_combo)
         region_combo.set_active_id(camera.timezone_region)

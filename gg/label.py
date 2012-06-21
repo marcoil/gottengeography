@@ -84,13 +84,10 @@ class Label(Champlain.Label):
         else:
             self.hide()
         
-        self.bindings = {}
         for prop in ('latitude', 'longitude'):
-            self.bindings[prop] = bind_properties(
-                photo, prop, self,
-                flags=GObject.BindingFlags.BIDIRECTIONAL)
-        self.bindings['visible'] = bind_properties(
-            photo, 'positioned', self, 'visible')
+            bind_properties(photo, prop, self,
+                            flags=GObject.BindingFlags.BIDIRECTIONAL)
+        bind_properties(photo, 'positioned', self, 'visible')
         
         layer.add_marker(self)
     
