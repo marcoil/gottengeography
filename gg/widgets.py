@@ -3,13 +3,15 @@
 
 """Orchestrate the construction of widgets with GtkBuilder."""
 
-from gi.repository import Gtk, GtkChamplain, GLib
+from gi.repository import GtkChamplain, Champlain
 from gi.repository import Gdk, GdkPixbuf
+from gi.repository import Gtk, GLib
 from os.path import join
 
 from version import APPNAME, PACKAGE
 from build_info import PKG_DATA_DIR, REVISION
 from common import Gst, singleton, memoize
+from common import modified, selected
 
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
@@ -89,9 +91,32 @@ class Widgets(Builder):
         self.loaded_photos.connect('row-deleted', photo_pane_visibility)
         self.photos_view.connect('button-press-event', self.photoview_pressed)
         self.photos_view.connect('button-release-event', self.photoview_released)
+        self.photos_selection.connect('changed', self.update_highlights)
+        self.photos_selection.connect('changed', self.selection_sensitivity)
         
         self.error_bar.connect('response',
             lambda widget, signal: widget.hide())
+    
+    def update_highlights(self, selection):
+        """Ensure only the selected labels are highlighted."""
+        selection_exists = selection.count_selected_rows() > 0
+        selected.clear()
+        for label in MarkerLayer.get_markers():
+            photo = label.photo
+            itr = photo.iter
+            if itr and selection.iter_is_selected(itr):
+                selected.add(photo)
+            label.set_highlight(photo in selected, selection_exists)
+    
+    def selection_sensitivity(self, selection):
+        """Control the sensitivity of various widgets."""
+        sensitive = selection.count_selected_rows() > 0
+        self.close_button.set_sensitive(sensitive)
+        self.apply_button.set_sensitive(sensitive)
+        self.save_button.set_sensitive(modified)
+        self.revert_button.set_sensitive(modified & selected)
+        self.jump_button.set_sensitive(
+            [photo for photo in selected if photo.positioned])
     
     # Multiple selection drag and drop copied from Kevin Mehall, adapted
     # to use it with the standard GtkTreeView.
@@ -163,5 +188,11 @@ class ChamplainEmbedder(GtkChamplain.Embed):
 
 # Just pretend that MapView is also a singleton...
 MapView = ChamplainEmbedder.get_view()
-MapView.__call__ = lambda: MapView
+
+
+@singleton
+class MarkerLayer(Champlain.MarkerLayer):
+    def __init__(self):
+        Champlain.MarkerLayer.__init__(self)
+        MapView.add_layer(self)
 

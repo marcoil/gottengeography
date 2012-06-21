@@ -8,33 +8,10 @@ from __future__ import division
 from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 
-from widgets import Widgets, MapView
 from common import selected, modified
 from common import bind_properties, memoize
+from widgets import Widgets, MapView, MarkerLayer
 
-layer = Champlain.MarkerLayer()
-MapView.add_layer(layer)
-
-
-def update_highlights(*ignore):
-    """Ensure only the selected labels are highlighted."""
-    selection_exists = Widgets.photos_selection.count_selected_rows() > 0
-    selected.clear()
-    for label in layer.get_markers():
-        # Maintain the 'selected' set() for easier iterating later.
-        if label.photo.iter and Widgets.photos_selection.iter_is_selected(
-                                label.photo.iter):
-            selected.add(label.photo)
-        label.set_highlight(label.photo in selected, selection_exists)
-
-def selection_sensitivity(selection, close, save, revert, jump, aply):
-    """Control the sensitivity of various widgets."""
-    sensitive = selection.count_selected_rows() > 0
-    close.set_sensitive(sensitive)
-    aply.set_sensitive(sensitive)
-    jump.set_sensitive([photo for photo in selected if photo.positioned])
-    save.set_sensitive(modified)
-    revert.set_sensitive(modified & selected)
 
 def clicked(label, event):
     """When a ChamplainLabel is clicked, select it in the GtkListStore.
@@ -54,9 +31,11 @@ def clicked(label, event):
         Widgets.photos_selection.unselect_all()
         Widgets.photos_selection.select_iter(photo.iter)
 
+
 def hover(label, event, factor):
     """Scale a ChamplainLabel by the given factor."""
     label.set_scale(*[scale * factor for scale in label.get_scale()])
+
 
 @memoize
 class Label(Champlain.Label):
@@ -89,7 +68,7 @@ class Label(Champlain.Label):
                             flags=GObject.BindingFlags.BIDIRECTIONAL)
         bind_properties(photo, 'positioned', self, 'visible')
         
-        layer.add_marker(self)
+        MarkerLayer.add_marker(self)
     
     def set_highlight(self, highlight, transparent):
         """Set the highlightedness of the given ChamplainLabel."""
@@ -105,10 +84,4 @@ class Label(Champlain.Label):
         del Label.instances[self.photo]
         self.unmap()
         Champlain.Label.destroy(self)
-
-
-Widgets.photos_selection.connect('changed', update_highlights)
-Widgets.photos_selection.connect('changed', selection_sensitivity,
-    *[Widgets[b + '_button'] for b in
-        ('close', 'save', 'revert', 'jump', 'apply')])
 
