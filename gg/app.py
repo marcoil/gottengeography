@@ -162,7 +162,7 @@ class GottenGeography(Gtk.Application):
                     TrackFile.load_from_file(name)
             except IOError:
                 invalid.append(basename(name))
-        if len(invalid) > 0:
+        if invalid:
             Widgets.status_message(_('Could not open: ') + ', '.join(invalid))
         
         # Ensure camera has found correct timezone regardless of the order
@@ -176,11 +176,10 @@ class GottenGeography(Gtk.Application):
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
+        lat, lon = MapView.get_center_latitude(), MapView.get_center_longitude()
         for photo in selected:
-            photo.disable_auto_position()
-            photo.set_location(
-                MapView.get_property('latitude'),
-                MapView.get_property('longitude'))
+            photo.manual = True
+            photo.set_location(lat, lon)
         Widgets.button_sensitivity()
     
     def save_all_files(self, widget=None):
@@ -209,15 +208,14 @@ class GottenGeography(Gtk.Application):
         try:
             image.set_from_pixbuf(fetch_thumbnail(
                 chooser.get_preview_filename(), 300))
-        except IOError:
-            return
-        except TypeError:
+        except (IOError, TypeError):
             return
     
     def add_files_dialog(self, button, chooser):
         """Display a file chooser, and attempt to load chosen files."""
         response = chooser.run()
         chooser.hide()
+        Widgets.redraw_interface()
         if response == Gtk.ResponseType.OK:
             self.open_files(chooser.get_filenames())
     
