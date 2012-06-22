@@ -64,22 +64,18 @@ class Polygon(Champlain.PathLayer):
 class XMLSimpleParser:
     """A simple wrapper for the Expat XML parser."""
     
-    def __init__(self, rootname, watchlist):
-        self.rootname = rootname
-        self.watchlist = watchlist
-        self.call_start = None
-        self.call_end = None
-        self.element = None
-        self.tracking = None
+    def __init__(self, filename, root, watch, call_start, call_end):
         self.state = defaultdict(str)
+        self.call_start = call_start
+        self.call_end = call_end
+        self.watchlist = watch
+        self.rootname = root
+        self.tracking = None
+        self.element = None
         
         self.parser = ParserCreate()
         self.parser.StartElementHandler = self.element_root
-    
-    def parse(self, filename, call_start, call_end):
-        """Begin the loading and parsing of the XML file."""
-        self.call_start = call_start
-        self.call_end = call_end
+        
         try:
             with open(filename) as xml:
                 self.parser.ParseFile(xml)
@@ -245,8 +241,8 @@ class TrackFile():
         if callable(root):
             root(filename)
         else:
-            self.parser = XMLSimpleParser(root, watch)
-            self.parser.parse(filename, self.element_start, self.element_end)
+            XMLSimpleParser(filename, root, watch,
+                            self.element_start, self.element_end)
         
         if not self.tracks:
             raise IOError('No points found')
@@ -389,8 +385,8 @@ class KMLFile(TrackFile):
     def second_pass(self, filename):
         """Trigger the first pass and then do the second pass."""
         # First pass
-        self.parser = XMLSimpleParser('kml', self.watchlist)
-        self.parser.parse(filename, self.element_start, self.element_end)
+        XMLSimpleParser(filename, 'kml', self.watchlist,
+                        self.element_start, self.element_end)
         
         # Second pass
         TrackFile.element_start(self, 'gx:Track')
@@ -431,10 +427,10 @@ class CSVFile(TrackFile):
     
     def __init__(self, filename):
         self.caller = self.parse_header
-        TrackFile.__init__(self, filename, self.parser,
+        TrackFile.__init__(self, filename, self.csv_parser,
             ['Segment', 'Latitude (deg)', 'Longitude (deg)', 'Time'])
     
-    def parser(self, filename):
+    def csv_parser(self, filename):
         """Call the appropriate handler for each line of the file."""
         with open(filename) as lines:
             for line in lines:
