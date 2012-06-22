@@ -72,6 +72,8 @@ class DragController():
         if not data.get_text():
             return
         
+        lat, lon = MapView.y_to_latitude(y), MapView.x_to_longitude(x)
+        
         files = [unquote(urlparse(s).path.strip()) for s in
                  data.get_text().split('\n') if s]
         
@@ -83,10 +85,8 @@ class DragController():
             for filename in files:
                 photo = Photograph.instances.get(filename)
                 if photo is not None:
-                    photo.disable_auto_position()
-                    photo.set_location(
-                        MapView.y_to_latitude(y),
-                        MapView.x_to_longitude(x))
-                    modified.add(photo)
+                    photo.manual = True
+                    photo.set_location(lat, lon)
         
         self.selection.emit('changed')
+
