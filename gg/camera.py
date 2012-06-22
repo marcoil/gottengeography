@@ -25,8 +25,8 @@ from time import tzset
 from os import environ
 
 from widgets import Builder, Widgets
+from common import GSettings, Binding, memoize
 from territories import tz_regions, get_timezone
-from common import GSettings, memoize, bind_properties
 
 
 @memoize
@@ -164,11 +164,11 @@ class CameraView(Gtk.Box):
         # https://bugzilla.gnome.org/show_bug.cgi?id=675582
         # Also, it seems SYNC_CREATE doesn't really work.
         scale.set_value(camera.offset)
-        bind_properties(scale.get_adjustment(), 'value', camera, 'offset')
+        Binding(scale.get_adjustment(), 'value', camera, 'offset')
         
         utc = self.widgets.utc_offset
         utc.set_value(camera.utc_offset)
-        bind_properties(utc.get_adjustment(), 'value', camera, 'utc-offset')
+        Binding(utc.get_adjustment(), 'value', camera, 'utc-offset')
         
         # These two ComboBoxTexts are used for choosing the timezone manually.
         # They're hidden to reduce clutter when not needed.
@@ -179,7 +179,7 @@ class CameraView(Gtk.Box):
         
         for setting in ('region', 'city', 'method'):
             name = 'timezone_' + setting
-            bind_properties(self.widgets[name], 'active-id',
+            Binding(self.widgets[name], 'active-id',
                             camera, name.replace('_', '-'))
         
         region_combo.connect('changed', self.region_handler, cities_combo)

@@ -53,20 +53,16 @@ def memoize(obj):
 
 
 @memoize
-def bind_properties(source, source_prop,
-                    target, target_prop=None,
-                    flags=GObject.BindingFlags.DEFAULT):
-    """Make it easier to bind properties between GObjects.
+class Binding(GObject.Binding):
+    """Make it easier to bind properties between GObjects."""
+    instances = {}
     
-    Even though this method never experiences a memoizer cache hit,
-    it still benefits from memoization because the GObject.Binding instances
-    need to be kept alive through the life of the application.
-    """
-    return GObject.Binding(source = source,
-                           source_property = source_prop,
-                           target = target,
-                           target_property = target_prop or source_prop,
-                           flags = flags)
+    def __init__(self, source, sprop, target, tprop=None,
+                 flags=GObject.BindingFlags.DEFAULT):
+        GObject.Binding.__init__(self,
+            source=source, source_property=sprop,
+            target=target, target_property=tprop or sprop,
+            flags=flags)
 
 
 class GSettings(Gio.Settings):

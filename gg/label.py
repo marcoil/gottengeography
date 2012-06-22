@@ -8,8 +8,8 @@ from __future__ import division
 from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 
+from common import Binding, memoize
 from common import selected, modified
-from common import bind_properties, memoize
 from widgets import Widgets, MapView, MarkerLayer
 
 
@@ -64,9 +64,9 @@ class Label(Champlain.Label):
             self.hide()
         
         for prop in ('latitude', 'longitude'):
-            bind_properties(photo, prop, self,
+            Binding(photo, prop, self,
                             flags=GObject.BindingFlags.BIDIRECTIONAL)
-        bind_properties(photo, 'positioned', self, 'visible')
+        Binding(photo, 'positioned', self, 'visible')
         
         MarkerLayer.add_marker(self)
     

@@ -29,10 +29,9 @@ from actor import animate_in
 from xmlfiles import TrackFile
 from gpsmath import Coordinates
 from widgets import Widgets, MapView
-from common import selected, modified
-from common import Gst, bind_properties
 from photos import Photograph, fetch_thumbnail
 from navigation import go_back, move_by_arrow_keys
+from common import Gst, Binding, selected, modified
 
 from drag import DragController
 from search import SearchController
@@ -120,10 +119,10 @@ def startup(self):
     Gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
     
     center = Coordinates()
-    bind_properties(MapView, 'latitude', center)
-    bind_properties(MapView, 'longitude', center)
+    Binding(MapView, 'latitude', center)
+    Binding(MapView, 'longitude', center)
     center.do_modified()
-    bind_properties(center, 'geoname', Widgets.main, 'title')
+    Binding(center, 'geoname', Widgets.main, 'title')
     center.timeout_seconds = 10 # Only update titlebar every 10 seconds
     
     Widgets.launch()
