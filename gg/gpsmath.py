@@ -137,7 +137,7 @@ class Coordinates(GObject.GObject):
     @GObject.property(type=str)
     def geoname(self):
         """Report the city, state, and country in a pretty list."""
-        return ', '.join(name for name in self.names if name)
+        return ', '.join([name for name in self.names if name])
     
     def __init__(self, **props):
         self.filename = ''
@@ -180,10 +180,10 @@ class Coordinates(GObject.GObject):
     
     def plain_summary(self):
         """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in [self.geoname,
+        return '\n'.join([s for s in (self.geoname,
                                       self.pretty_time(),
                                       self.pretty_coords(),
-                                      self.pretty_altitude()] if s])
+                                      self.pretty_altitude()) if s])
     
     def markup_summary(self):
         """Longer summary with Pango markup."""

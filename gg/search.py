@@ -54,9 +54,9 @@ class SearchController():
                     city, lat, lon, country, state = line.split('\t')[0:5]
                     if city.lower().find(three) > -1:
                         append((
-                            ', '.join(s for s in (city,
-                                                  get_state(country, state),
-                                                  get_country(country)) if s),
+                            ', '.join([s for s in (city,
+                                                   get_state(country, state),
+                                                   get_country(country)) if s]),
                             float(lat),
                             float(lon)))
     
