@@ -132,6 +132,7 @@ class TrackFile():
     range = []
     instances = {}
     files = instances.viewvalues()
+    parse = XMLSimpleParser
     
     @staticmethod
     def update_range():
@@ -238,11 +239,7 @@ class TrackFile():
         Widgets.trackfile_colors_group.add_widget(self.widgets.colorpicker)
         Widgets.trackfiles_group.add_widget(self.widgets.trackfile_label)
         
-        if callable(root):
-            root(filename)
-        else:
-            XMLSimpleParser(filename, root, watch,
-                            self.element_start, self.element_end)
+        self.parse(filename, root, watch, self.element_start, self.element_end)
         
         if not self.tracks:
             raise IOError('No points found')
@@ -299,7 +296,7 @@ class GPXFile(TrackFile):
     """Support for the open GPS eXchange format."""
     
     def __init__(self, filename):
-        TrackFile.__init__(self, filename, 'gpx', ['trkseg', 'trkpt'])
+        TrackFile.__init__(self, filename, 'gpx', ('trkseg', 'trkpt'))
     
     def element_end(self, name, state):
         """Collect and use all the parsed data."""
@@ -321,8 +318,8 @@ class TCXFile(TrackFile):
     """Support for Garmin's Training Center XML."""
     
     def __init__(self, filename):
-        TrackFile.__init__(self, filename, 'TrainingCenterDatabase',
-                           ['Track', 'Trackpoint'])
+        TrackFile.__init__(self, filename,
+                           'TrainingCenterDatabase', ('Track', 'Trackpoint'))
     
     def element_end(self, name, state):
         """Collect and use all the parsed data."""
@@ -352,11 +349,11 @@ class KMLFile(TrackFile):
     """
     
     def __init__(self, filename):
-        self.watchlist = ('gx:Track', 'when', 'gx:coord')
         self.whens  = deque()
         self.coords = deque()
         
-        TrackFile.__init__(self, filename, self.second_pass, self.watchlist)
+        TrackFile.__init__(self, filename,
+                           'kml', ('gx:Track', 'when', 'gx:coord'))
     
     def element_start(self, name, attributes=None):
         """Make note of where new polygons start."""
@@ -382,11 +379,10 @@ class KMLFile(TrackFile):
             self.coords.append(state['gx:coord'].split())
         TrackFile.element_end(self, name, state)
     
-    def second_pass(self, filename):
+    def parse(self, filename, root, watch, start, end):
         """Trigger the first pass and then do the second pass."""
         # First pass
-        XMLSimpleParser(filename, 'kml', self.watchlist,
-                        self.element_start, self.element_end)
+        TrackFile.parse(filename, root, watch, start, end)
         
         # Second pass
         TrackFile.element_start(self, 'gx:Track')
@@ -426,15 +422,14 @@ class CSVFile(TrackFile):
     columns = None
     
     def __init__(self, filename):
-        self.caller = self.parse_header
-        TrackFile.__init__(self, filename, self.csv_parser,
-            ['Segment', 'Latitude (deg)', 'Longitude (deg)', 'Time'])
+        TrackFile.__init__(self, filename, None,
+            ('Segment', 'Latitude (deg)', 'Longitude (deg)', 'Time'))
     
-    def csv_parser(self, filename):
+    def parse(self, filename, root, watch, start, end):
         """Call the appropriate handler for each line of the file."""
         with open(filename) as lines:
             for line in lines:
-                self.caller(parse_csv(line), self.columns)
+                self.parse_header(parse_csv(line), self.columns)
     
     def parse_header(self, state, columns, alt='Altitude (m)'):
         """Ignore as many lines as necessary until column headers are found."""
@@ -446,7 +441,7 @@ class CSVFile(TrackFile):
         
         self.columns.alt = state.index(alt) if alt in state else -1
         
-        self.caller = self.parse_row
+        self.parse_header = self.parse_row
     
     def parse_row(self, state, col):
         """All subsequent lines contain one track point each."""
