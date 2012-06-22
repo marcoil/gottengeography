@@ -8,8 +8,8 @@ from __future__ import division
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Champlain, Clutter, Gtk, Gdk
 from dateutil.parser import parse as parse_date
+from collections import defaultdict, deque
 from re import compile as re_compile
-from collections import defaultdict
 from gettext import gettext as _
 from os.path import basename
 from calendar import timegm
@@ -346,19 +346,34 @@ class TCXFile(TrackFile):
 
 @memoize
 class KMLFile(TrackFile):
-    """Support for Google's Keyhole Markup Language."""
+    """Support for Google's Keyhole Markup Language.
+    
+    The KML parser is a little bit different than the other XML parsers,
+    it uses a two-pass approach of loading points first, then marking them on
+    the map in the second pass. This is because KML has an absurd requirement
+    of allowing `when` tags to be decoupled from their associated `gx:coord`
+    tags which makes the single-pass approach significantly slower.
+    """
     
     def __init__(self, filename):
-        self.whens    = []
-        self.coords   = []
+        self.watchlist = ('gx:Track', 'when', 'gx:coord')
+        self.whens  = deque()
+        self.coords = deque()
         
-        TrackFile.__init__(self, filename, 'kml',
-                           ['gx:Track', 'when', 'gx:coord'])
+        TrackFile.__init__(self, filename, self.second_pass, self.watchlist)
+    
+    def element_start(self, name, attributes=None):
+        """Make note of where new polygons start."""
+        if name == self.watchlist[0]:
+            self.whens.append(None)
+            self.coords.append(None)
+            return False
+        return True
     
     def element_end(self, name, state):
         """Watch for complete pairs of when and gx:coord tags.
         
-        This is accomplished by maintaining parallel arrays of each tag.
+        This is accomplished by maintaining parallel deques of each tag.
         """
         if name == 'when':
             try:
@@ -369,18 +384,33 @@ class KMLFile(TrackFile):
             self.whens.append(timestamp)
         if name == 'gx:coord':
             self.coords.append(state['gx:coord'].split())
-        
-        complete = min(len(self.whens), len(self.coords))
-        if complete > 0:
-            for i in range(0, complete):
-                self.tracks[self.whens[i]] = \
-                    self.append(float(self.coords[i][1]), \
-                                float(self.coords[i][0]), \
-                                float(self.coords[i][2]))
-            self.whens = self.whens[complete:]
-            self.coords = self.coords[complete:]
-        
         TrackFile.element_end(self, name, state)
+    
+    def second_pass(self, filename):
+        """Trigger the first pass and then do the second pass."""
+        # First pass
+        self.parser = XMLSimpleParser('kml', self.watchlist)
+        self.parser.parse(filename, self.element_start, self.element_end)
+        
+        # Second pass
+        TrackFile.element_start(self, 'gx:Track')
+        
+        whens = self.whens
+        coords = self.coords
+        tracks = self.tracks
+        append = self.append
+        
+        while whens and coords:
+            when = whens.popleft()
+            coord = coords.popleft()
+            try:
+                tracks[when] = append(
+                    float(coord[1]), float(coord[0]), coord[2])
+            except TypeError:
+                TrackFile.element_start(self, 'gx:Track')
+                append = self.append
+            else:
+                TrackFile.element_end(self)
 
 
 # This regex ignores commas inside quotes, so '"foo,bar","baz,qux"' would be
