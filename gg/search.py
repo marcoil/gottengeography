@@ -53,12 +53,12 @@ class SearchController():
                 for line in cities:
                     city, lat, lon, country, state = line.split('\t')[0:5]
                     if city.lower().find(three) > -1:
-                        append([
-                            ', '.join([s for s in [city,
-                                                   get_state(country, state),
-                                                   get_country(country)] if s]),
+                        append((
+                            ', '.join(s for s in (city,
+                                                  get_state(country, state),
+                                                  get_country(country)) if s),
                             float(lat),
-                            float(lon)])
+                            float(lon)))
     
     def search_completed(self, entry, model, itr):
         """Go to the selected location."""
