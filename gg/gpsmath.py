@@ -116,11 +116,8 @@ class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates."""
     modified_timeout = None
     timeout_seconds = 0
-    
-    city = ''
-    provincestate = ''
-    countryname = ''
     geotimezone = ''
+    names = (None, None, None)
     
     timestamp = GObject.property(type=int)
     altitude  = GObject.property(type=float)
@@ -140,8 +137,7 @@ class Coordinates(GObject.GObject):
     @GObject.property(type=str)
     def geoname(self):
         """Report the city, state, and country in a pretty list."""
-        return ', '.join(
-            [s for s in (self.city, self.provincestate, self.countryname) if s])
+        return ', '.join(name for name in self.names if name)
     
     def __init__(self, **props):
         self.filename = ''
@@ -157,10 +153,9 @@ class Coordinates(GObject.GObject):
             return
         
         old_geoname = self.geoname
-        self.city, state, countrycode, tz = do_cached_lookup(
+        city, state, code, tz = do_cached_lookup(
             GeoCacheKey(self.latitude, self.longitude))
-        self.provincestate = get_state(countrycode, state)
-        self.countryname = get_country(countrycode)
+        self.names = (city, get_state(code, state), get_country(code))
         self.geotimezone = tz.strip()
         if self.geoname != old_geoname:
             self.notify('geoname')

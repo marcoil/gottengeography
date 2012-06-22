@@ -34,7 +34,7 @@ def test_st_johns():
     stjohns.latitude = 47.56494
     stjohns.longitude = -52.70931
     stjohns.lookup_geodata()
-    assert stjohns.city == "St. John's"
+    assert stjohns.names[0] == "St. John's"
 
 def test_math():
     """Test coordinate conversion functions."""

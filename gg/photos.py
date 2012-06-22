@@ -163,9 +163,7 @@ class Photograph(Coordinates):
         self.altitude = 0.0
         self.timestamp = 0
         
-        self.city = ''
-        self.provincestate = ''
-        self.countryname = ''
+        self.names = (None, None, None)
         self.geotimezone = ''
         
         try:
@@ -238,9 +236,9 @@ class Photograph(Coordinates):
         self.exif[GPS + 'Longitude']    = decimal_to_dms(self.longitude)
         self.exif[GPS + 'LongitudeRef'] = 'E' if self.longitude >= 0 else 'W'
         self.exif[GPS + 'MapDatum']     = 'WGS-84'
-        self.exif[IPTC + 'City']          = [self.city or '']
-        self.exif[IPTC + 'ProvinceState'] = [self.provincestate or '']
-        self.exif[IPTC + 'CountryName']   = [self.countryname or '']
+        self.exif[IPTC + 'City']          = [self.names[0] or '']
+        self.exif[IPTC + 'ProvinceState'] = [self.names[1] or '']
+        self.exif[IPTC + 'CountryName']   = [self.names[2] or '']
         self.exif.write()
         modified.discard(self)
         Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
