@@ -11,7 +11,6 @@ from math import modf as split_float
 from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
-from math import cos, radians
 from pyexiv2 import Rational
 
 from territories import get_state, get_country
@@ -68,13 +67,12 @@ def do_cached_lookup(key):
     precise lat,lon pair past the memoizer.
     """
     near, dist = None, float('inf')
-    lat1, lon1 = radians(key.lat), radians(key.lon)
+    lat1, lon1 = key.lat, key.lon
     with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
         for city in cities:
             name, lat2, lon2, country, state, tz = city.split('\t')
-            lat2, lon2 = radians(float(lat2)), radians(float(lon2))
-            x = (lon2 - lon1) * cos((lat1 + lat2) / 2)
-            y = (lat2 - lat1)
+            x = (float(lon2) - lon1)
+            y = (float(lat2) - lat1)
             delta = x * x + y * y
             if delta < dist:
                 dist = delta
