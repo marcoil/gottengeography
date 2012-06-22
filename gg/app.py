@@ -115,7 +115,7 @@ def startup(self):
     for prop in ['width', 'height']:
         MapView.connect('notify::' + prop, save_size, Widgets.main.get_size)
     
-    Widgets.photos_selection.emit('changed')
+    Widgets.button_sensitivity()
     
     Gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
     
@@ -172,7 +172,7 @@ class GottenGeography(Gtk.Application):
             Camera.set_all_found_timezone(likely_zone)
         Camera.timezone_handler_all()
         Widgets.progressbar.hide()
-        Widgets.photos_selection.emit('changed')
+        Widgets.button_sensitivity()
     
     def apply_selected_photos(self, button):
         """Manually apply map center coordinates to all unpositioned photos."""
@@ -181,7 +181,7 @@ class GottenGeography(Gtk.Application):
             photo.set_location(
                 MapView.get_property('latitude'),
                 MapView.get_property('longitude'))
-        Widgets.photos_selection.emit('changed')
+        Widgets.button_sensitivity()
     
     def save_all_files(self, widget=None):
         """Ensure all loaded files are saved."""
@@ -194,7 +194,7 @@ class GottenGeography(Gtk.Application):
             except Exception as inst:
                 Widgets.status_message(str(inst))
         Widgets.progressbar.hide()
-        Widgets.photos_selection.emit('changed')
+        Widgets.button_sensitivity()
     
     def jump_to_photo(self, button):
         """Center on the first selected photo."""

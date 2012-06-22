@@ -73,7 +73,8 @@ class Label(Champlain.Label):
     def set_highlight(self, highlight, transparent):
         """Set the highlightedness of the given ChamplainLabel."""
         if self.get_property('visible'):
-            self.set_scale(*[1.1 if highlight else 1] * 2)
+            scale = 1.1 if highlight else 1
+            self.set_scale(scale, scale)
             self.set_selected(highlight)
             self.set_opacity(64 if transparent and not highlight else 255)
             if highlight:

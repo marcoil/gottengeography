@@ -5,20 +5,19 @@
 
 from __future__ import division
 
-from math import acos, sin, cos, radians
 from gi.repository import GLib, GObject
 from time import strftime, localtime
 from math import modf as split_float
 from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
+from math import cos, radians
 from pyexiv2 import Rational
 
 from territories import get_state, get_country
 from common import memoize, modified
 from build_info import PKG_DATA_DIR
 
-EARTH_RADIUS = 6371 #km
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
     """Convert degrees, minutes, seconds into decimal degrees."""
@@ -27,6 +26,7 @@ def dms_to_decimal(degrees, minutes, seconds, sign=' '):
         float(minutes) / 60   +
         float(seconds) / 3600
     )
+
 
 def decimal_to_dms(decimal):
     """Convert decimal degrees into degrees, minutes, seconds."""
@@ -38,10 +38,12 @@ def decimal_to_dms(decimal):
         float_to_rational(remainder * 60)
     ]
 
+
 def float_to_rational(value):
     """Create a pyexiv2.Rational with help from fractions.Fraction."""
     frac = Fraction(abs(value)).limit_denominator(99999)
     return Rational(frac.numerator, frac.denominator)
+
 
 def valid_coords(lat, lon):
     """Determine the validity of coordinates."""
@@ -49,12 +51,14 @@ def valid_coords(lat, lon):
     if type(lon) not in (float, int): return False
     return abs(lat) <= 90 and abs(lon) <= 180
 
+
 def format_coords(lat, lon):
     """Add cardinal directions to decimal coordinates."""
     return '%s %.5f, %s %.5f' % (
         _('N') if lat >= 0 else _('S'), abs(lat),
         _('E') if lon >= 0 else _('W'), abs(lon)
     )
+
 
 @memoize
 def do_cached_lookup(key):
@@ -67,14 +71,11 @@ def do_cached_lookup(key):
     lat1, lon1 = radians(key.lat), radians(key.lon)
     with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
         for city in cities:
-            name, lat, lon, country, state, tz = city.split('\t')
-            lat2, lon2 = radians(float(lat)), radians(float(lon))
-            try:
-                delta = acos(sin(lat1) * sin(lat2) +
-                             cos(lat1) * cos(lat2) *
-                             cos(lon2  - lon1))    * EARTH_RADIUS
-            except ValueError:
-                delta = 0
+            name, lat2, lon2, country, state, tz = city.split('\t')
+            lat2, lon2 = radians(float(lat2)), radians(float(lon2))
+            x = (lon2 - lon1) * cos((lat1 + lat2) / 2)
+            y = (lat2 - lat1)
+            delta = x * x + y * y
             if delta < dist:
                 dist = delta
                 near = [name, state, country, tz]

@@ -87,12 +87,12 @@ class Widgets(Builder):
             placeholder.set_visible(empty)
             toolbar.set_visible(not empty)
         
-        self.loaded_photos.connect('row-changed', photo_pane_visibility)
+        self.loaded_photos.connect('row-inserted', photo_pane_visibility)
         self.loaded_photos.connect('row-deleted', photo_pane_visibility)
         self.photos_view.connect('button-press-event', self.photoview_pressed)
         self.photos_view.connect('button-release-event', self.photoview_released)
         self.photos_selection.connect('changed', self.update_highlights)
-        self.photos_selection.connect('changed', self.selection_sensitivity)
+        self.photos_selection.connect('changed', self.button_sensitivity)
         
         self.error_bar.connect('response',
             lambda widget, signal: widget.hide())
@@ -108,11 +108,10 @@ class Widgets(Builder):
                 selected.add(photo)
             label.set_highlight(photo in selected, selection_exists)
     
-    def selection_sensitivity(self, selection):
+    def button_sensitivity(self, *ignore):
         """Control the sensitivity of various widgets."""
-        sensitive = selection.count_selected_rows() > 0
-        self.close_button.set_sensitive(sensitive)
-        self.apply_button.set_sensitive(sensitive)
+        self.close_button.set_sensitive(selected)
+        self.apply_button.set_sensitive(selected)
         self.save_button.set_sensitive(modified)
         self.revert_button.set_sensitive(modified & selected)
         self.jump_button.set_sensitive(

@@ -92,6 +92,7 @@ class Photograph(Coordinates):
     instances = {}
     files = instances.viewvalues()
     camera_info = None
+    orig_time = None
     manual = False
     camera = None
     label = None
@@ -135,7 +136,7 @@ class Photograph(Coordinates):
         if camera.timezone_method == 'lookup':
             photo.calculate_timestamp(camera.offset)
         
-        Widgets.photos_selection.emit('changed')
+        Widgets.button_sensitivity()
         
         return photo
     
@@ -150,7 +151,7 @@ class Photograph(Coordinates):
         self.filename = filename
         
         self.connect('notify::geoname', self.update_liststore_summary)
-        self.connect('notify::positioned', self.respond_positioned)
+        self.connect('notify::positioned', Widgets.button_sensitivity)
     
     def read(self):
         """Discard all state and (re)initialize from disk."""
@@ -167,8 +168,11 @@ class Photograph(Coordinates):
         self.countryname = ''
         self.geotimezone = ''
         
-        modified.discard(self)
-        self.calculate_timestamp()
+        try:
+            self.orig_time = self.exif[
+                'Exif.Photo.DateTimeOriginal'].value.timetuple()
+        except KeyError:
+            pass
         
         try:
             self.latitude = dms_to_decimal(
@@ -187,6 +191,9 @@ class Photograph(Coordinates):
                 self.altitude *= -1
         except KeyError:
             pass
+        
+        modified.discard(self)
+        self.calculate_timestamp()
         
         if self.iter is None:
             self.iter = Widgets.loaded_photos.append()
@@ -215,9 +222,8 @@ class Photograph(Coordinates):
         same timezone.
         """
         try:
-            self.timestamp = int(mktime(
-                self.exif['Exif.Photo.DateTimeOriginal'].value.timetuple()))
-        except KeyError:
+            self.timestamp = int(mktime(self.orig_time))
+        except TypeError:
             self.timestamp = int(stat(self.filename).st_mtime)
         self.timestamp += offset
         auto_timestamp_comparison(self)
@@ -253,11 +259,6 @@ class Photograph(Coordinates):
             self.altitude = ele
         self.latitude  = lat
         self.longitude = lon
-    
-    def respond_positioned(self, *ignore):
-        """If a photo has been placed on the map, make it saveable."""
-        if self.positioned:
-            Widgets.photos_selection.emit('changed')
     
     def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""
