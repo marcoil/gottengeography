@@ -15,6 +15,31 @@ Rest assured that your camera's settings are simply gone but not forgotten,
 and if you want to see the camera in the camera list, you should load a photo
 taken by that camera.
 
+>>> from common import Dummy
+>>> cam = Camera('unknown_camera')
+>>> cam.add_photo(Dummy())
+>>> cam.num_photos
+1
+>>> cam.add_photo(Dummy())
+>>> cam.num_photos
+2
+
+>>> view = CameraView(cam, 'Unknown Camera')
+>>> view.widgets.camera_label.get_text()
+'Unknown Camera'
+>>> view.widgets.timezone_method.set_active_id('system')
+True
+>>> view.widgets.utc_label.get_visible()
+False
+>>> cam.gst.get_string('timezone-method')
+'system'
+>>> view.widgets.timezone_method.set_active_id('offset')
+True
+>>> view.widgets.utc_label.get_visible()
+True
+>>> cam.gst.get_string('timezone-method')
+'offset'
+
 >>> Camera.generate_id({'Make': 'Nikon',
 ...                     'Model': 'Wonder Cam',
 ...                     'Serial': '12345'})

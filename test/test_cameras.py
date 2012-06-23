@@ -15,12 +15,16 @@ def test_camera_offsets():
     camera = Camera.instances.values()[0]
     photo = Photograph.instances.values()[0]
     
+    camera.timezone_method = 'custom'
+    camera.timezone_region = 'America'
+    camera.timezone_city = 'Edmonton'
+    
     for delta in (1, 10, 100, 600, -711):
-        start = [photo.timestamp, camera.offset,
-                 camera.gst.get_int('offset')]
+        start = (photo.timestamp, camera.offset,
+                 camera.gst.get_int('offset'))
         camera.offset += delta
-        end = [photo.timestamp, camera.offset,
-               photo.camera.gst.get_int('offset')]
+        end = (photo.timestamp, camera.offset,
+               photo.camera.gst.get_int('offset'))
         
         # Check that the photo timestamp, spinbutton value, and gsettings
         # key have all changed by precisely the same amount.

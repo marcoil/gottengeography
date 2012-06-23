@@ -149,7 +149,15 @@ class GottenGeography(Gtk.Application):
         self.do_fade_in = do_fade_in
     
     def open_files(self, files):
-        """Attempt to load all of the specified files."""
+        """Attempt to load all of the specified files.
+        
+        >>> len(Photograph.instances)
+        0
+        >>> GottenGeography().open_files(
+        ...     ['demo/IMG_2411.JPG', 'demo/IMG_2412.JPG'])
+        >>> len(Photograph.instances)
+        2
+        """
         Widgets.progressbar.show()
         invalid, total = [], len(files)
         for i, name in enumerate(files, 1):

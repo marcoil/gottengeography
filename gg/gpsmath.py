@@ -3,6 +3,18 @@
 
 """Coordinate, geocoding, and other mathematical calculations.
 
+>>> coord = Coordinates()
+>>> coord.positioned
+False
+>>> coord.latitude = -51.688687
+>>> coord.longitude = -57.804152
+>>> coord.positioned
+True
+>>> coord.update_derived_properties() # skip the timeout, not necessary normally
+False
+>>> coord.geoname
+'Stanley, Falkland Islands'
+
 >>> do_cached_lookup(GeoCacheKey(43.646424, -79.333426))
 ('Toronto', '08', 'CA', 'America/Toronto\\n')
 >>> do_cached_lookup(GeoCacheKey(48.440257,-89.204443))

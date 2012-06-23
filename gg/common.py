@@ -177,3 +177,19 @@ class Struct:
     def __init__(self, attributes={}):
         self.__dict__.update(attributes)
 
+
+class Dummy(Struct):
+    """This is a do-nothing stub that can pretend to be anything.
+    
+    >>> Dummy().this_method_doesnt_exist(1, 2, 3, 4)
+    True
+    """
+    
+    def __getattr__(self, attribute):
+        """Any method you attempt to call will return True."""
+        return lambda *dummy: True
+    
+    def __hash__(self):
+        """Instances can be uniquely identified."""
+        return id(self)
+

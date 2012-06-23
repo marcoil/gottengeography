@@ -1,7 +1,37 @@
 # Author: Robert Park <rbpark@exolucere.ca>, (C) 2010
 # Copyright: See COPYING file included with this distribution.
 
-"""Control how the custom map actors behave."""
+"""Custom map sources are defined here:
+
+>>> MAP_SOURCES['osm-mapnik']                                #doctest: +ELLIPSIS
+<MapSourceChain object at 0x... (ChamplainMapSourceChain at 0x...)>
+
+
+Gtk.RadioMenuItem is subclassed to add itself to the menu. You just need
+to instantiate it:
+
+>>> RadioMenuItem(MAP_SOURCES['osm-cyclemap']).get_label()
+'OpenStreetMap Cycle Map'
+
+>>> len(Widgets.map_source_menu.get_children()) == len(MAP_SOURCES)
+True
+
+
+Custom map actors are defined here as well:
+
+>>> isinstance(Crosshair, Champlain.Point)
+True
+>>> isinstance(Scale, Champlain.Scale)
+True
+>>> isinstance(Box, Clutter.Box)
+True
+>>> isinstance(CoordLabel, Clutter.Text)
+True
+
+>>> MapView.center_on(53.554177, -116.792299)
+>>> CoordLabel.get_text()
+'N 53.55418, W 116.79230'
+"""
 
 from __future__ import division
 
@@ -133,8 +163,9 @@ class CoordLabel(Clutter.Text):
     
     def display(self, view, param):
         """Display map center coordinates when they change."""
-        lat, lon = [ view.get_property(x) for x in ('latitude', 'longitude') ]
-        self.set_markup(format_coords(lat, lon))
+        self.set_markup(format_coords(
+            MapView.get_center_latitude(),
+            MapView.get_center_longitude()))
 
 
 @singleton
