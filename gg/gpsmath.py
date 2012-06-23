@@ -1,7 +1,13 @@
 # Author: Robert Park <rbpark@exolucere.ca>, (C) 2010
 # Copyright: See COPYING file included with this distribution.
 
-"""Trigonometry and other mathematical calculations."""
+"""Coordinate, geocoding, and other mathematical calculations.
+
+>>> do_cached_lookup(GeoCacheKey(43.646424, -79.333426))
+('Toronto', '08', 'CA', 'America/Toronto\\n')
+>>> do_cached_lookup(GeoCacheKey(48.440257,-89.204443))
+('Thunder Bay', '08', 'CA', 'America/Thunder_Bay\\n')
+"""
 
 from __future__ import division
 
@@ -47,14 +53,26 @@ def decimal_to_dms(decimal):
 
 
 def valid_coords(lat, lon):
-    """Determine the validity of coordinates."""
+    """Determine the validity of coordinates.
+    
+    >>> valid_coords(200, 300)
+    False
+    >>> valid_coords(40.689167, -74.044678)
+    True
+    >>> valid_coords(50, [])
+    False
+    """
     if type(lat) not in (float, int): return False
     if type(lon) not in (float, int): return False
     return abs(lat) <= 90 and abs(lon) <= 180
 
 
 def format_coords(lat, lon):
-    """Add cardinal directions to decimal coordinates."""
+    """Add cardinal directions to decimal coordinates.
+    
+    >>> format_coords(46.742065, -92.106434)
+    'N 46.74206, W 92.10643'
+    """
     return '%s %.5f, %s %.5f' % (
         _('N') if lat >= 0 else _('S'), abs(lat),
         _('E') if lon >= 0 else _('W'), abs(lon)
@@ -63,11 +81,7 @@ def format_coords(lat, lon):
 
 @memoize
 def do_cached_lookup(key):
-    """Scan cities.txt for the nearest town.
-    
-    The key argument should be a GeoCacheKey instance so that we can sneak the
-    precise lat,lon pair past the memoizer.
-    """
+    """Scan cities.txt for the nearest town."""
     near, dist = None, float('inf')
     lat1, lon1 = key.lat, key.lon
     with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
@@ -78,7 +92,7 @@ def do_cached_lookup(key):
             delta = x * x + y * y
             if delta < dist:
                 dist = delta
-                near = [name, state, country, tz]
+                near = (name, state, country, tz)
     return near
 
 
