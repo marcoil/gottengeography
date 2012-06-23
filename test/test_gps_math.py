@@ -38,11 +38,6 @@ def test_st_johns():
 
 def test_math():
     """Test coordinate conversion functions"""
-    to_float = lambda rats: (
-        Fraction(rats[0].to_float()),
-        Fraction(rats[1].to_float()),
-                 rats[2])
-    
     # Pick 100 random coordinates on the globe, convert them from decimal
     # to sexagesimal and then back, and ensure that they are always equal-ish.
     for i in range(100):
@@ -59,8 +54,8 @@ def test_math():
         assert len(dms_lon) == 3
         assert dms_lon[0].numerator == floor(abs(decimal_lon))
         
-        assert decimal_lat - dms_to_decimal(*to_float(dms_lat) \
-            + ('N' if decimal_lat >= 0 else 'S',)) < 1e-6
-        assert decimal_lon - dms_to_decimal(*to_float(dms_lon) \
-            + ('E' if decimal_lon >= 0 else 'W',)) < 1e-6
+        assert decimal_lat - dms_to_decimal(*dms_lat +
+            ['N' if decimal_lat >= 0 else 'S']) < 1e-6
+        assert decimal_lon - dms_to_decimal(*dms_lon +
+            ['E' if decimal_lon >= 0 else 'W']) < 1e-6
 

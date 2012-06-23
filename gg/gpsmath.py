@@ -11,7 +11,6 @@ from math import modf as split_float
 from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
-from pyexiv2 import Rational
 
 from territories import get_state, get_country
 from common import memoize, modified
@@ -37,17 +36,14 @@ def decimal_to_dms(decimal):
     """Convert decimal degrees into degrees, minutes, seconds.
     
     >>> decimal_to_dms(50.445891)
-    [Rational(50, 1), Rational(26, 1), Fraction(113019, 2500)]
+    [Fraction(50, 1), Fraction(26, 1), Fraction(113019, 2500)]
     >>> decimal_to_dms(-125.976893)
-    [Rational(125, 1), Rational(58, 1), Fraction(92037, 2500)]
+    [Fraction(125, 1), Fraction(58, 1), Fraction(92037, 2500)]
     """
     remainder, degrees = split_float(abs(decimal))
     remainder, minutes = split_float(remainder * 60)
-    return [
-        Rational(degrees, 1),
-        Rational(minutes, 1),
-        Fraction(remainder * 60).limit_denominator(99999)
-    ]
+    return [Fraction(n).limit_denominator(99999)
+        for n in (degrees, minutes, remainder * 60)]
 
 
 def valid_coords(lat, lon):
