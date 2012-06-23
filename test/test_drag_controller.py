@@ -26,7 +26,7 @@ def test_drags_on_map():
     gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
-    for label in Label.instances.values():
+    for label in Label.instances:
         label.set_location(random_coord(80), random_coord(180))
         label.emit('drag-finish', Clutter.Event())
         assert label.get_latitude() == label.photo.latitude
@@ -39,7 +39,7 @@ def test_drags_from_liststore():
     gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
-    for photo in Photograph.files:
+    for photo in Photograph.instances:
         old = [photo.latitude, photo.longitude]
         selected.add(photo)
         data = Struct({'get_text': lambda: photo.filename})

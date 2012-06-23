@@ -13,7 +13,6 @@ is used to place photos on the map by looking up their timestamps.
 from __future__ import division
 
 from gi.repository import GObject, Gio, GLib
-from types import FunctionType
 from functools import wraps
 
 from version import PACKAGE
@@ -54,7 +53,6 @@ def memoize(obj):
     
     >>> @memoize
     ... class Memorable:
-    ...     instances = {}
     ...     def __init__(self, foo): pass
     >>> Memorable('alpha') is Memorable('alpha')
     True
@@ -63,10 +61,10 @@ def memoize(obj):
     >>> len(Memorable.instances)
     2
     """
-    if type(obj) is FunctionType:
-        obj.instances = {}
-    
-    cache = obj.instances
+    if not hasattr(obj, 'cache'):
+        obj.cache = {}
+    cache = obj.cache
+    obj.instances = cache.viewvalues()
     
     @wraps(obj)
     def memoizer(*args, **kwargs):
@@ -75,17 +73,38 @@ def memoize(obj):
         if key not in cache:
             cache[key] = obj(*args, **kwargs)
         return cache[key]
-    
-    # Unbreak static and class methods
-    memoizer.__dict__.update({k: v.__func__ for k, v
-        in obj.__dict__.items() if hasattr(v, '__func__')})
     return memoizer
+
+class staticmethod(object):
+    """Make @staticmethods play nice with @memoize.
+    
+    >>> @memoize
+    ... class HasStatic:
+    ...     @staticmethod
+    ...     def do_something():
+    ...         print 'Invoked with no arguments.'
+    >>> HasStatic.do_something()
+    Invoked with no arguments.
+    
+    Without this class, the above example would raise
+    TypeError: 'staticmethod' object is not callable
+    """
+    
+    def __init__(self, func):
+        self.func = func
+    
+    def __call__(self, *args, **kwargs):
+        """Provide the expected behavior inside memoized classes."""
+        return self.func(*args, **kwargs)
+    
+    def __get__(self, obj, objtype=None):
+        """Re-implement the standard behavior for non-memoized classes."""
+        return self.func
 
 
 @memoize
 class Binding(GObject.Binding):
     """Make it easier to bind properties between GObjects."""
-    instances = {}
     
     def __init__(self, source, sprop, target, tprop=None,
                  flags=GObject.BindingFlags.DEFAULT):

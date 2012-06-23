@@ -43,7 +43,6 @@ def hover(label, event, factor):
 @memoize
 class Label(Champlain.Label):
     """Extend Champlain.Label to add itself to the map."""
-    instances = {}
     
     def __init__(self, photo):
         Champlain.Label.__init__(self)
@@ -85,7 +84,7 @@ class Label(Champlain.Label):
     
     def destroy(self):
         """Remove from map and unload."""
-        del Label.instances[self.photo]
+        del Label.cache[self.photo]
         self.unmap()
         Champlain.Label.destroy(self)
 

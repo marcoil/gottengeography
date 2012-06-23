@@ -20,6 +20,7 @@ from time import clock
 
 from camera import Camera
 from gpsmath import Coordinates
+from common import staticmethod
 from widgets import Widgets, Builder, MapView
 from common import GSettings, Gst, Struct, memoize, points
 
@@ -143,8 +144,8 @@ class TrackFile():
     Subclasses must implement at least element_end.
     """
     range = []
-    instances = {}
-    files = instances.viewvalues()
+    cache = {}
+    instances = cache.viewvalues()
     parse = XMLSimpleParser
     
     @staticmethod
@@ -162,7 +163,7 @@ class TrackFile():
     def get_bounding_box():
         """Determine the smallest box that contains all loaded polygons."""
         bounds = Champlain.BoundingBox.new()
-        for trackfile in TrackFile.files:
+        for trackfile in TrackFile.instances:
             for polygon in trackfile.polygons:
                 bounds.compose(polygon.get_bounding_box())
         return bounds
@@ -177,17 +178,17 @@ class TrackFile():
         timezone is likely to be the one that their camera is set to.
         """
         zones = set()
-        for trackfile in TrackFile.files:
+        for trackfile in TrackFile.instances:
             zones.add(trackfile.start.geotimezone)
         return None if len(zones) != 1 else zones.pop()
     
     @staticmethod
     def clear_all(*ignore):
         """Forget all GPX data, start over with a clean slate."""
-        for trackfile in TrackFile.instances.values():
+        for trackfile in list(TrackFile.instances):
             trackfile.destroy()
         
-        TrackFile.instances.clear()
+        TrackFile.cache.clear()
         points.clear()
     
     @staticmethod
@@ -292,9 +293,9 @@ class TrackFile():
             MapView.remove_layer(polygon)
         self.polygons.clear()
         self.widgets.trackfile_settings.destroy()
-        del TrackFile.instances[self.filename]
+        del TrackFile.cache[self.filename]
         points.clear()
-        for trackfile in TrackFile.files:
+        for trackfile in TrackFile.instances:
             points.update(trackfile.tracks)
         TrackFile.update_range()
 

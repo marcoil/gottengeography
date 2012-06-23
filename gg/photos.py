@@ -17,6 +17,7 @@ from os import stat
 from label import Label
 from widgets import Widgets
 from xmlfiles import TrackFile
+from common import staticmethod
 from camera import Camera, CameraView
 from common import Gst, memoize, points, modified
 from gpsmath import Coordinates, dms_to_decimal, decimal_to_dms
@@ -92,8 +93,6 @@ def fetch_thumbnail(filename, size=Gst.get_int('thumbnail-size')):
 @memoize
 class Photograph(Coordinates):
     """Represents a single photograph and it's location in space and time."""
-    instances = {}
-    files = instances.viewvalues()
     camera_info = None
     orig_time = None
     manual = False
@@ -110,7 +109,7 @@ class Photograph(Coordinates):
         # the max size to start and then scale it down to the requested size on
         # the fly. But this works for now.
         size = gst.get_int(key)
-        for photo in Photograph.files:
+        for photo in Photograph.instances:
             photo.thumb = fetch_thumbnail(photo.filename, size)
             Widgets.loaded_photos.set_value(photo.iter, 2, photo.thumb)
     
@@ -273,12 +272,12 @@ class Photograph(Coordinates):
         """Agony!"""
         self.update_derived_properties() # To clear any callback...
         # TODO: Disconnect this from here
-        if self in Label.instances:
+        if self in Label.cache:
             Label(self).destroy()
         if self.camera is not None:
             self.camera.remove_photo(self)
         modified.discard(self)
         if self.iter:
             Widgets.loaded_photos.remove(self.iter)
-        del Photograph.instances[self.filename]
+        del Photograph.cache[self.filename]
 

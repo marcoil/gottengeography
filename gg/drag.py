@@ -85,7 +85,7 @@ class DragController():
         
         if on_map:
             for filename in files:
-                photo = Photograph.instances.get(filename)
+                photo = Photograph.cache.get(filename)
                 if photo is not None:
                     photo.manual = True
                     photo.set_location(lat, lon)

@@ -24,7 +24,7 @@ def test_string_functions():
     photo.longitude = -10.0
     assert photo.pretty_coords() == 'S 10.00000, W 10.00000'
     
-    camera = Camera.instances.values()[0]
+    camera = list(Camera.instances).pop()
     camera.gst.set_string('timezone-method', 'lookup')
     photo.timestamp = 999999999
     assert photo.pretty_time() == '2001-09-08 07:46:39 PM'

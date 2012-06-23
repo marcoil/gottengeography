@@ -17,7 +17,7 @@ def test_timezone_lookups():
     gst.reset('found-timezone')
     gst.reset('offset')
     gst.set_string('timezone-method', 'lookup')
-    Camera.instances.clear()
+    Camera.cache.clear()
     
     # Open just the GPX
     gui.open_files(GPXFILES)
@@ -33,7 +33,7 @@ def test_timezone_lookups():
     assert Photograph.instances
     assert Camera.instances
     
-    photo = Photograph.instances.values()[0]
+    photo = list(Photograph.instances).pop()
     assert photo.latitude == 53.530476
     assert photo.longitude == -113.450635
 
@@ -41,8 +41,8 @@ def test_manual_timezone():
     """The wrong timezone will clamp the photo to the end of the track"""
     assert Camera.instances
     assert Photograph.instances
-    camera = Camera.instances.values()[0]
-    photo = Photograph.instances.values()[0]
+    photo = list(Photograph.instances).pop()
+    camera = photo.camera
     
     camera.gst.set_string('timezone-method', 'offset')
     camera.gst.set_int('utc-offset', -6)

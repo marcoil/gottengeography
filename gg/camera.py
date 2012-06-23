@@ -59,6 +59,7 @@ from gettext import gettext as _
 from time import tzset
 from os import environ
 
+from common import staticmethod
 from widgets import Builder, Widgets
 from common import GSettings, Binding, memoize
 from territories import tz_regions, get_timezone
@@ -67,9 +68,6 @@ from territories import tz_regions, get_timezone
 @memoize
 class Camera(GObject.GObject):
     """Store per-camera configuration in GSettings."""
-    instances = {}
-    cameras = instances.viewvalues()
-    
     offset = GObject.property(type=int, minimum=-3600, maximum=3600)
     utc_offset = GObject.property(type=int, minimum=-24, maximum=24)
     found_timezone = GObject.property(type=str)
@@ -99,13 +97,13 @@ class Camera(GObject.GObject):
     @staticmethod
     def set_all_found_timezone(timezone):
         """"Set all cameras to the given timezone."""
-        for camera in Camera.cameras:
+        for camera in Camera.instances:
             camera.found_timezone = timezone
     
     @staticmethod
     def timezone_handler_all():
         """Update all of the photos from all of the cameras."""
-        for camera in Camera.cameras:
+        for camera in Camera.instances:
             camera.timezone_handler()
     
     def __init__(self, camera_id):
@@ -179,7 +177,6 @@ def display_offset(offset, value, add, subtract):
 @memoize
 class CameraView(Gtk.Box):
     """A widget to show camera settings."""
-    instances = {}
     
     def __init__(self, camera, name):
         Gtk.Box.__init__(self)

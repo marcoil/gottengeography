@@ -30,7 +30,7 @@ def test_hoverability():
     gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
-    for label in Label.instances.values():
+    for label in Label.instances:
         assert label.get_scale() == (1, 1)
         label.emit('enter-event', Clutter.Event())
         assert label.get_scale() == (1.05, 1.05)
@@ -42,7 +42,7 @@ def test_clickability():
     gui.open_files(DEMOFILES)
     assert Photograph.instances
     assert Label.instances
-    for label in Label.instances.values():
+    for label in Label.instances:
         label.emit('button-press', Clutter.Event())
         for button in ('save', 'revert', 'close'):
             assert Widgets[button + '_button'].get_sensitive()
@@ -56,7 +56,7 @@ def test_clickability():
         assert label.get_property('opacity') == 255
         
         # Make sure the Labels that we didn't click on are deselected.
-        for other in Label.instances.values():
+        for other in Label.instances:
             if other.get_name() == label.get_name():
                 continue
             assert not Widgets.photos_selection.iter_is_selected(other.photo.iter)

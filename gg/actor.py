@@ -95,12 +95,11 @@ for map_desc in [
 @memoize
 class RadioMenuItem(Gtk.RadioMenuItem):
     """Create the individual menu items for choosing map sources."""
-    instances = {}
     
     def __init__(self, source):
         Gtk.RadioMenuItem.__init__(self)
         if self.instances:
-            self.set_property('group', self.instances.values()[0])
+            self.set_property('group', list(self.instances).pop())
         self.set_label(source.get_name())
         self.connect('activate', self.menu_item_clicked, source.get_id())
         Widgets.map_source_menu.append(self)

@@ -38,7 +38,7 @@ def test_demo_data():
     assert Widgets.loaded_photos.get_iter_first()
     
     assert Photograph.instances
-    for photo in Photograph.files:
+    for photo in Photograph.instances:
         assert not photo in modified
         assert not photo in selected
         
@@ -79,7 +79,7 @@ def test_demo_data():
     assert TrackFile.range[0] == 1287259751
     assert TrackFile.range[1] == 1287260756
     
-    for photo in Photograph.instances.values():
+    for photo in Photograph.instances:
         photo.update_derived_properties()
     
     Widgets.photos_selection.emit('changed')
@@ -91,7 +91,7 @@ def test_demo_data():
         assert not buttons[button].get_sensitive()
     
     assert Photograph.instances
-    for photo in Photograph.files:
+    for photo in Photograph.instances:
         assert photo in modified
         
         assert photo.latitude

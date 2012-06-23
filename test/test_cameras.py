@@ -12,8 +12,8 @@ def test_camera_offsets():
     assert Photograph.instances
     assert Camera.instances
     
-    camera = Camera.instances.values()[0]
-    photo = Photograph.instances.values()[0]
+    photo = list(Photograph.instances).pop()
+    camera = photo.camera
     
     camera.timezone_method = 'custom'
     camera.timezone_region = 'America'
