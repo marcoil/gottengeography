@@ -14,6 +14,7 @@ from __future__ import division
 
 from gi.repository import GObject, Gio, GLib
 from types import FunctionType
+from functools import wraps
 
 from version import PACKAGE
 
@@ -67,6 +68,7 @@ def memoize(obj):
     
     cache = obj.instances
     
+    @wraps(obj)
     def memoizer(*args, **kwargs):
         """Do cache lookups and populate the cache in the case of misses."""
         key = args[0] if len(args) is 1 else args
@@ -74,10 +76,9 @@ def memoize(obj):
             cache[key] = obj(*args, **kwargs)
         return cache[key]
     
-    # Make the memoizer func masquerade as the object we are memoizing.
-    # This makes class attributes and static methods behave as expected.
-    for k, v in obj.__dict__.items():
-        memoizer.__dict__[k] = v.__func__ if type(v) is staticmethod else v
+    # Unbreak static and class methods
+    memoizer.__dict__.update({k: v.__func__ for k, v
+        in obj.__dict__.items() if hasattr(v, '__func__')})
     return memoizer
 
 
