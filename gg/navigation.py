@@ -5,6 +5,9 @@
 
 from __future__ import division
 
+from gi.repository import GtkClutter
+GtkClutter.init([])
+
 from gi.repository import Gdk
 
 from common import Gst

@@ -8,7 +8,7 @@ from gg.common import Struct, modified
 from test import IMGFILES, teardown, setup
 
 def test_string_functions():
-    """Ensure that strings print properly."""
+    """Ensure that strings print properly"""
     teardown()
     
     photo = Photograph(IMGFILES[4])

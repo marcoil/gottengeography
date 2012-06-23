@@ -5,6 +5,9 @@
 
 from __future__ import division
 
+from gi.repository import GtkClutter
+GtkClutter.init([])
+
 from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 

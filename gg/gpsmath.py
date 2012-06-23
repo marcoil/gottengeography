@@ -19,7 +19,13 @@ from build_info import PKG_DATA_DIR
 
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
-    """Convert degrees, minutes, seconds into decimal degrees."""
+    """Convert degrees, minutes, seconds into decimal degrees.
+    
+    >>> dms_to_decimal(10, 10, 10)
+    10.169444444444444
+    >>> dms_to_decimal(8, 9, 10, 'S')
+    -8.152777777777779
+    """
     return (-1 if sign[0] in 'SWsw' else 1) * (
         float(degrees)        +
         float(minutes) / 60   +
@@ -28,20 +34,20 @@ def dms_to_decimal(degrees, minutes, seconds, sign=' '):
 
 
 def decimal_to_dms(decimal):
-    """Convert decimal degrees into degrees, minutes, seconds."""
+    """Convert decimal degrees into degrees, minutes, seconds.
+    
+    >>> decimal_to_dms(50.445891)
+    [Rational(50, 1), Rational(26, 1), Fraction(113019, 2500)]
+    >>> decimal_to_dms(-125.976893)
+    [Rational(125, 1), Rational(58, 1), Fraction(92037, 2500)]
+    """
     remainder, degrees = split_float(abs(decimal))
     remainder, minutes = split_float(remainder * 60)
     return [
         Rational(degrees, 1),
         Rational(minutes, 1),
-        float_to_rational(remainder * 60)
+        Fraction(remainder * 60).limit_denominator(99999)
     ]
-
-
-def float_to_rational(value):
-    """Create a pyexiv2.Rational with help from fractions.Fraction."""
-    frac = Fraction(abs(value)).limit_denominator(99999)
-    return Rational(frac.numerator, frac.denominator)
 
 
 def valid_coords(lat, lon):
@@ -83,18 +89,11 @@ def do_cached_lookup(key):
 class GeoCacheKey:
     """This class allows fuzzy geodata cache lookups.
     
-    The magic here is that different instances of this class will compare
-    equally if they have the same key (ie, if the lat,lon pair are equal to
-    within 2 decimal places), and as a result of this, a dict() entry created
-    by one instance of this class can be retrieved by a different instance, as
-    long as self.key is equal between them.
-    
-    This allows me to pass in the precise lat,lon pair to the do_cached_lookup
-    method above, without the memoizer caching too specifically. If we just
-    cached the full lat,lon pair, there'd never be any cache hits and we'd
-    be doing expensive geodata lookups way too often, so this makes the cache
-    lookups 'fuzzy', allowing you to get get a cached result even if you're
-    only just *nearby* a previously cached result.
+    >>> GeoCacheKey(10.004, 10.004) == GeoCacheKey(9.996, 9.996)
+    True
+    >>> {GeoCacheKey(53.564, -113.564):
+    ...      'example'}[GeoCacheKey(53.559, -113.560)]
+    'example'
     """
     
     def __init__(self, lat, lon):

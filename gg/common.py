@@ -24,26 +24,55 @@ points   = {}
 
 
 def singleton(cls):
-    """Decorate a class with @singleton when There Can Be Only One."""
+    """Decorate a class with @singleton when There Can Be Only One.
+    
+    >>> @singleton
+    ... class Highlander: pass
+    >>> Highlander() is Highlander() is Highlander
+    True
+    >>> id(Highlander()) == id(Highlander)
+    True
+    """
     instance = cls()
     instance.__call__ = lambda: instance
     return instance
 
 
 def memoize(obj):
-    """Cache class instances and methods. Decorate with @memoize to use.
+    """General-purpose cache for classes, methods, and functions.
     
-    Classes should define 'instances = {}' to store their instances.
+    >>> @memoize
+    ... def doubler(foo):
+    ...     print 'performing expensive calculation...'
+    ...     return foo * 2
+    >>> doubler(50)
+    performing expensive calculation...
+    100
+    >>> doubler(50)
+    100
+    
+    >>> @memoize
+    ... class Memorable:
+    ...     instances = {}
+    ...     def __init__(self, foo): pass
+    >>> Memorable('alpha') is Memorable('alpha')
+    True
+    >>> Memorable('alpha') is Memorable('beta')
+    False
+    >>> len(Memorable.instances)
+    2
     """
     if type(obj) is FunctionType:
         obj.instances = {}
     
+    cache = obj.instances
+    
     def memoizer(*args, **kwargs):
         """Do cache lookups and populate the cache in the case of misses."""
         key = args[0] if len(args) is 1 else args
-        if key not in obj.instances:
-            obj.instances[key] = obj(*args, **kwargs)
-        return obj.instances[key]
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
     
     # Make the memoizer func masquerade as the object we are memoizing.
     # This makes class attributes and static methods behave as expected.
@@ -135,7 +164,15 @@ class Gst(GSettings):
 
 
 class Struct:
-    """This is a generic object which can be assigned arbitrary attributes."""
+    """This is a generic object which can be assigned arbitrary attributes.
+    
+    >>> foo = Struct({'one': 2})
+    >>> foo.one
+    2
+    >>> foo.four = 4
+    >>> foo.four
+    4
+    """
     
     def __init__(self, attributes={}):
         self.__dict__.update(attributes)

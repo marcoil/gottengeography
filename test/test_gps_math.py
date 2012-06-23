@@ -7,7 +7,7 @@ from math import floor
 
 from fractions import Fraction
 from gg.gpsmath import Coordinates, valid_coords
-from gg.gpsmath import float_to_rational, dms_to_decimal, decimal_to_dms
+from gg.gpsmath import dms_to_decimal, decimal_to_dms
 
 from test import random_coord
 
@@ -37,17 +37,15 @@ def test_st_johns():
     assert stjohns.names[0] == "St. John's"
 
 def test_math():
-    """Test coordinate conversion functions."""
-    rats_to_fracs = lambda rats: [Fraction(rat.to_float()) for rat in rats]
+    """Test coordinate conversion functions"""
+    to_float = lambda rats: (
+        Fraction(rats[0].to_float()),
+        Fraction(rats[1].to_float()),
+                 rats[2])
     
     # Pick 100 random coordinates on the globe, convert them from decimal
     # to sexagesimal and then back, and ensure that they are always equal-ish.
     for i in range(100):
-        # Oh, and test altitudes too
-        altitude = random_coord(1000)
-        fraction = float_to_rational(altitude)
-        assert abs(altitude) - fraction.numerator / fraction.denominator < 1e-6
-        
         decimal_lat = random_coord(80)
         decimal_lon = random_coord(180)
         assert valid_coords(decimal_lat, decimal_lon)
@@ -61,8 +59,8 @@ def test_math():
         assert len(dms_lon) == 3
         assert dms_lon[0].numerator == floor(abs(decimal_lon))
         
-        assert decimal_lat - dms_to_decimal(*rats_to_fracs(dms_lat) \
-            + ['N' if decimal_lat >= 0 else 'S']) < 1e-6
-        assert decimal_lon - dms_to_decimal(*rats_to_fracs(dms_lon) \
-            + ['E' if decimal_lon >= 0 else 'W']) < 1e-6
+        assert decimal_lat - dms_to_decimal(*to_float(dms_lat) \
+            + ('N' if decimal_lat >= 0 else 'S',)) < 1e-6
+        assert decimal_lon - dms_to_decimal(*to_float(dms_lon) \
+            + ('E' if decimal_lon >= 0 else 'W',)) < 1e-6
 

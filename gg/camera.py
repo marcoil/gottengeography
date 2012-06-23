@@ -14,9 +14,19 @@ for GSettings to store a camera definition that isn't displayed in the UI.
 Rest assured that your camera's settings are simply gone but not forgotten,
 and if you want to see the camera in the camera list, you should load a photo
 taken by that camera.
+
+>>> Camera.generate_id({'Make': 'Nikon',
+...                     'Model': 'Wonder Cam',
+...                     'Serial': '12345'})
+('12345_nikon_wonder_cam', 'Nikon Wonder Cam')
+>>> Camera.generate_id({})
+('unknown_camera', 'Unknown Camera')
 """
 
 from __future__ import division
+
+from gi.repository import GtkClutter
+GtkClutter.init([])
 
 from gi.repository import GObject, Gtk
 from math import modf as split_float
@@ -49,11 +59,7 @@ class Camera(GObject.GObject):
     
     @staticmethod
     def generate_id(info):
-        """Identifies a camera by serial number, make, and model.
-        
-        The ids look like: 12345_nikon_wonder_cam
-        The names look like: 'Nikon Wonder Cam'
-        """
+        """Identifies a camera by serial number, make, and model."""
         maker = info.get('Make', '').capitalize()
         model = info.get('Model', '')
         
@@ -78,7 +84,6 @@ class Camera(GObject.GObject):
             camera.timezone_handler()
     
     def __init__(self, camera_id):
-        """Bind self's properties to GSettings."""
         GObject.GObject.__init__(self)
         self.id = camera_id
         self.photos = set()
@@ -133,7 +138,15 @@ class Camera(GObject.GObject):
 
 
 def display_offset(offset, value, add, subtract):
-    """Display minutes and seconds in the offset GtkScale."""
+    """Display minutes and seconds in the offset GtkScale.
+    
+    >>> display_offset(None, 10, 'Add %d, %d', 'Subtract %d, %d')
+    'Add 0, 10'
+    >>> display_offset(None, 100, 'Add %d, %d', 'Subtract %d, %d')
+    'Add 1, 40'
+    >>> display_offset(None, -100, 'Add %d, %d', 'Subtract %d, %d')
+    'Subtract 1, 40'
+    """
     seconds, minutes = split_float(abs(value) / 60)
     return (subtract if value < 0 else add) % (minutes, int(seconds * 60))
 

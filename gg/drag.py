@@ -22,6 +22,9 @@ is defined in label.py
 
 from __future__ import division
 
+from gi.repository import GtkClutter
+GtkClutter.init([])
+
 from gi.repository import Gtk, Gdk
 from urlparse import urlparse
 from urllib import unquote

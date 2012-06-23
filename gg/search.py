@@ -5,6 +5,9 @@
 
 from __future__ import division
 
+from gi.repository import GtkClutter
+GtkClutter.init([])
+
 from os.path import join
 
 from territories import get_state, get_country

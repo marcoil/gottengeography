@@ -5,6 +5,9 @@
 
 from __future__ import division
 
+from gi.repository import GtkClutter
+GtkClutter.init([])
+
 from xml.parsers.expat import ParserCreate, ExpatError
 from gi.repository import Champlain, Clutter, Gtk, Gdk
 from dateutil.parser import parse as parse_date
@@ -25,7 +28,12 @@ RIGHT = Gtk.PositionType.RIGHT
 
 
 def make_clutter_color(color):
-    """Generate a Clutter.Color from the currently chosen color."""
+    """Generate a Clutter.Color from the currently chosen color.
+    
+    >>> color = make_clutter_color(Gdk.Color(32767, 65535, 32767))
+    >>> (color.red, color.green, color.blue)
+    (127, 255, 127)
+    """
     return Clutter.Color.new(
         *[x / 256 for x in [color.red, color.green, color.blue, 49152]])
 
@@ -41,7 +49,12 @@ def track_color_changed(selection, polys):
 
 
 class Polygon(Champlain.PathLayer):
-    """Extend a Champlain.PathLayer to do things more the way I like them."""
+    """Extend a Champlain.PathLayer to automate appending points.
+    
+    >>> coord = Polygon().append_point(10, 10, None)
+    >>> (coord.lat, coord.lon, coord.ele)
+    (10, 10, 0.0)
+    """
     
     def __init__(self):
         Champlain.PathLayer.__init__(self)

@@ -4146,6 +4146,12 @@ get_timezone = zones.get
 get_country  = countries.get
 
 def get_state(country, state):
-    """Returns the name of a province/state given a Geonames.org admin1code."""
+    """Returns the name of a province/state given a Geonames.org admin1code.
+    
+    >>> get_state('CA', '01')
+    'Alberta'
+    >>> get_state('US', 'WI')
+    'Wisconsin'
+    """
     return territories.get("%s.%s" % (country, state))
 

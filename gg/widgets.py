@@ -1,7 +1,21 @@
 # Author: Robert Park <rbpark@exolucere.ca>, (C) 2012
 # Copyright: See COPYING file included with this distribution.
 
-"""Orchestrate the construction of widgets with GtkBuilder."""
+"""Orchestrate the construction of widgets with GtkBuilder.
+
+>>> type(Widgets.main)
+<class 'gi.overrides.Gtk.Window'>
+>>> type(Widgets['error_bar'])
+<class 'gi.repository.Gtk.InfoBar'>
+
+>>> Widgets.status_message('Hello!', True); Widgets.error_message.get_text()
+'Hello!'
+"""
+
+from __future__ import division
+
+from gi.repository import GtkClutter
+GtkClutter.init([])
 
 from gi.repository import GtkChamplain, Champlain
 from gi.repository import Gdk, GdkPixbuf
