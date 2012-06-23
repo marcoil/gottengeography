@@ -52,9 +52,11 @@ except:
     need('libchamplain 0.12.2')
 
 try:
-    import pyexiv2
-    if pyexiv2.version_info < (0, 3):
-        raise ImportError
+    from pyexiv2.exif import ExifTag
+    from fractions import Fraction
+    # Fails for pyexiv2 0.2 which didn't support Fractions.
+    assert ExifTag('Exif.GPSInfo.GPSAltitude')._convert_to_string(
+        Fraction('1.6')) == '8/5'
 except:
     need('pyexiv2 0.3')
 
