@@ -93,12 +93,8 @@ class staticmethod(object):
         self.func = func
     
     def __call__(self, *args, **kwargs):
-        """Provide the expected behavior inside memoized classes."""
+        """Call the static method with no instance."""
         return self.func(*args, **kwargs)
-    
-    def __get__(self, obj, objtype=None):
-        """Re-implement the standard behavior for non-memoized classes."""
-        return self.func
 
 
 @memoize
