@@ -110,8 +110,7 @@ class Camera(GObject.GObject):
         
         # Bind properties to settings
         self.gst = GSettings('camera', camera_id)
-        for prop in ('offset', 'timezone-method', 'timezone-region',
-                     'timezone-city', 'found-timezone', 'utc-offset'):
+        for prop in self.gst.list_keys():
             self.gst.bind(prop, self)
         
         # Get notifications when properties are changed
