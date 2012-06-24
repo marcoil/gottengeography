@@ -148,9 +148,8 @@ class TrackFile():
     Subclasses must implement at least element_end.
     """
     range = []
-    cache = {}
-    instances = cache.viewvalues()
     parse = XMLSimpleParser
+    instances = set()
     
     @staticmethod
     def update_range():
@@ -192,7 +191,6 @@ class TrackFile():
         for trackfile in list(TrackFile.instances):
             trackfile.destroy()
         
-        TrackFile.cache.clear()
         points.clear()
     
     @staticmethod
@@ -215,6 +213,7 @@ class TrackFile():
         if len(gpx.tracks) < 2:
             return
         
+        TrackFile.instances.add(gpx)
         MapView.emit('realize')
         MapView.set_zoom_level(MapView.get_max_zoom_level())
         MapView.ensure_visible(TrackFile.get_bounding_box(), False)
@@ -297,7 +296,8 @@ class TrackFile():
             MapView.remove_layer(polygon)
         self.polygons.clear()
         self.widgets.trackfile_settings.destroy()
-        del TrackFile.cache[self.filename]
+        del self.cache[self.filename]
+        TrackFile.instances.discard(self)
         points.clear()
         for trackfile in TrackFile.instances:
             points.update(trackfile.tracks)

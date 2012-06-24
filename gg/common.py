@@ -61,9 +61,7 @@ def memoize(obj):
     >>> len(Memorable.instances)
     2
     """
-    if not hasattr(obj, 'cache'):
-        obj.cache = {}
-    cache = obj.cache
+    cache = obj.cache = {}
     obj.instances = cache.viewvalues()
     
     @wraps(obj)
