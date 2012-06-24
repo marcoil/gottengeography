@@ -75,6 +75,7 @@ def memoize(obj):
         return cache[key]
     return memoizer
 
+
 class staticmethod(object):
     """Make @staticmethods play nice with @memoize.
     

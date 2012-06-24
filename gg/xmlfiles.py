@@ -52,9 +52,13 @@ def track_color_changed(selection, polys):
 class Polygon(Champlain.PathLayer):
     """Extend a Champlain.PathLayer to automate appending points.
     
-    >>> coord = Polygon().append_point(10, 10, None)
+    >>> poly = Polygon()
+    >>> coord = poly.append_point(49.899754, -97.137494, None)
     >>> (coord.lat, coord.lon, coord.ele)
-    (10, 10, 0.0)
+    (49.899754, -97.137494, 0.0)
+    >>> coord = poly.append_point(53.529201, -113.499324, 1000)
+    >>> (coord.lat, coord.lon, coord.ele)
+    (53.529201, -113.499324, 1000.0)
     """
     
     def __init__(self):

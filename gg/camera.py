@@ -14,38 +14,6 @@ for GSettings to store a camera definition that isn't displayed in the UI.
 Rest assured that your camera's settings are simply gone but not forgotten,
 and if you want to see the camera in the camera list, you should load a photo
 taken by that camera.
-
->>> from common import Dummy
->>> cam = Camera('unknown_camera')
->>> cam.add_photo(Dummy())
->>> cam.num_photos
-1
->>> cam.add_photo(Dummy())
->>> cam.num_photos
-2
-
->>> view = CameraView(cam, 'Unknown Camera')
->>> view.widgets.camera_label.get_text()
-'Unknown Camera'
->>> view.widgets.timezone_method.set_active_id('system')
-True
->>> view.widgets.utc_label.get_visible()
-False
->>> cam.gst.get_string('timezone-method')
-'system'
->>> view.widgets.timezone_method.set_active_id('offset')
-True
->>> view.widgets.utc_label.get_visible()
-True
->>> cam.gst.get_string('timezone-method')
-'offset'
-
->>> Camera.generate_id({'Make': 'Nikon',
-...                     'Model': 'Wonder Cam',
-...                     'Serial': '12345'})
-('12345_nikon_wonder_cam', 'Nikon Wonder Cam')
->>> Camera.generate_id({})
-('unknown_camera', 'Unknown Camera')
 """
 
 from __future__ import division
@@ -67,7 +35,36 @@ from territories import tz_regions, get_timezone
 
 @memoize
 class Camera(GObject.GObject):
-    """Store per-camera configuration in GSettings."""
+    """Store per-camera configuration in GSettings.
+    
+    >>> from common import Dummy
+    >>> cam = Camera('unknown_camera')
+    >>> cam.add_photo(Dummy())
+    >>> cam.num_photos
+    1
+    >>> dummy = Dummy()
+    >>> cam.add_photo(dummy)
+    >>> cam.num_photos
+    2
+    >>> cam.remove_photo(dummy)
+    >>> cam.num_photos
+    1
+    
+    >>> Camera.generate_id({'Make': 'Nikon',
+    ...                     'Model': 'Wonder Cam',
+    ...                     'Serial': '12345'})
+    ('12345_nikon_wonder_cam', 'Nikon Wonder Cam')
+    >>> Camera.generate_id({})
+    ('unknown_camera', 'Unknown Camera')
+    
+    >>> cam = Camera('canon_canon_powershot_a590_is')
+    >>> cam.timezone_method = 'lookup'
+    >>> environ['TZ']
+    'America/Edmonton'
+    >>> cam.timezone_method = 'offset'
+    >>> environ['TZ'].startswith('UTC')
+    True
+    """
     offset = GObject.property(type=int, minimum=-3600, maximum=3600)
     utc_offset = GObject.property(type=int, minimum=-24, maximum=24)
     found_timezone = GObject.property(type=str)
@@ -176,7 +173,24 @@ def display_offset(offset, value, add, subtract):
 
 @memoize
 class CameraView(Gtk.Box):
-    """A widget to show camera settings."""
+    """A widget to show camera settings.
+    
+    >>> view = CameraView(Camera('unknown_camera'), 'Unknown Camera')
+    >>> view.widgets.camera_label.get_text()
+    'Unknown Camera'
+    >>> view.widgets.timezone_method.set_active_id('system')
+    True
+    >>> view.widgets.utc_label.get_visible()
+    False
+    >>> view.camera.gst.get_string('timezone-method')
+    'system'
+    >>> view.widgets.timezone_method.set_active_id('offset')
+    True
+    >>> view.widgets.utc_label.get_visible()
+    True
+    >>> view.camera.gst.get_string('timezone-method')
+    'offset'
+    """
     
     def __init__(self, camera, name):
         Gtk.Box.__init__(self)

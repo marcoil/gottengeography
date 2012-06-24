@@ -6,31 +6,15 @@
 >>> MAP_SOURCES['osm-mapnik']                                #doctest: +ELLIPSIS
 <MapSourceChain object at 0x... (ChamplainMapSourceChain at 0x...)>
 
-
-Gtk.RadioMenuItem is subclassed to add itself to the menu. You just need
-to instantiate it:
-
->>> RadioMenuItem(MAP_SOURCES['osm-cyclemap']).get_label()
-'OpenStreetMap Cycle Map'
-
->>> len(Widgets.map_source_menu.get_children()) == len(MAP_SOURCES)
-True
-
-
 Custom map actors are defined here as well:
-
->>> isinstance(Crosshair, Champlain.Point)
-True
->>> isinstance(Scale, Champlain.Scale)
-True
->>> isinstance(Box, Clutter.Box)
-True
->>> isinstance(CoordLabel, Clutter.Text)
-True
 
 >>> MapView.center_on(53.554177, -116.792299)
 >>> CoordLabel.get_text()
 'N 53.55418, W 116.79230'
+
+>>> MapView.notify('width')
+>>> Box.get_width() == MapView.get_width()
+True
 """
 
 from __future__ import division
@@ -94,7 +78,13 @@ for map_desc in [
 
 @memoize
 class RadioMenuItem(Gtk.RadioMenuItem):
-    """Create the individual menu items for choosing map sources."""
+    """Create the individual menu items for choosing map sources.
+    
+    >>> RadioMenuItem(MAP_SOURCES['osm-cyclemap']).get_label()
+    'OpenStreetMap Cycle Map'
+    >>> len(Widgets.map_source_menu.get_children()) == len(MAP_SOURCES)
+    True
+    """
     
     def __init__(self, source):
         Gtk.RadioMenuItem.__init__(self)

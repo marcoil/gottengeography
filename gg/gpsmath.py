@@ -1,25 +1,7 @@
 # Author: Robert Park <rbpark@exolucere.ca>, (C) 2010
 # Copyright: See COPYING file included with this distribution.
 
-"""Coordinate, geocoding, and other mathematical calculations.
-
->>> coord = Coordinates()
->>> coord.positioned
-False
->>> coord.latitude = -51.688687
->>> coord.longitude = -57.804152
->>> coord.positioned
-True
->>> coord.update_derived_properties() # skip the timeout, not necessary normally
-False
->>> coord.geoname
-'Stanley, Falkland Islands'
-
->>> do_cached_lookup(GeoCacheKey(43.646424, -79.333426))
-('Toronto', '08', 'CA', 'America/Toronto\\n')
->>> do_cached_lookup(GeoCacheKey(48.440257,-89.204443))
-('Thunder Bay', '08', 'CA', 'America/Thunder_Bay\\n')
-"""
+"""Reverse geocoding and other mathematical calculations."""
 
 from __future__ import division
 
@@ -93,7 +75,13 @@ def format_coords(lat, lon):
 
 @memoize
 def do_cached_lookup(key):
-    """Scan cities.txt for the nearest town."""
+    """Scan cities.txt for the nearest town.
+    
+    >>> do_cached_lookup(GeoCacheKey(43.646424, -79.333426))
+    ('Toronto', '08', 'CA', 'America/Toronto\\n')
+    >>> do_cached_lookup(GeoCacheKey(48.440257, -89.204443))
+    ('Thunder Bay', '08', 'CA', 'America/Thunder_Bay\\n')
+    """
     near, dist = None, float('inf')
     lat1, lon1 = key.lat, key.lon
     with open(join(PKG_DATA_DIR, 'cities.txt')) as cities:
@@ -109,14 +97,7 @@ def do_cached_lookup(key):
 
 
 class GeoCacheKey:
-    """This class allows fuzzy geodata cache lookups.
-    
-    >>> GeoCacheKey(10.004, 10.004) == GeoCacheKey(9.996, 9.996)
-    True
-    >>> {GeoCacheKey(53.564, -113.564):
-    ...      'example'}[GeoCacheKey(53.559, -113.560)]
-    'example'
-    """
+    """This class allows fuzzy geodata cache lookups."""
     
     def __init__(self, lat, lon):
         self.key = '%.2f,%.2f' % (lat, lon)
@@ -124,17 +105,50 @@ class GeoCacheKey:
         self.lon = lon
     
     def __str__(self):
+        """Show the key being used.
+        
+        >>> print GeoCacheKey(53.564, -113.564)
+        53.56,-113.56
+        """
         return self.key
     
     def __hash__(self):
+        """Different instances can be used to fetch dictionary values.
+        
+        >>> cache = { GeoCacheKey(53.564, -113.564): 'example' }
+        >>> cache.get(GeoCacheKey(53.559, -113.560))
+        'example'
+        >>> cache.get(GeoCacheKey(0, 0), 'Missing')
+        'Missing'
+        """
         return hash(self.key)
     
     def __cmp__(self, other):
+        """Different instances can compare equally.
+        
+        >>> GeoCacheKey(10.004, 10.004) == GeoCacheKey(9.996, 9.996)
+        True
+        >>> GeoCacheKey(10.004, 10.004) == GeoCacheKey(0, 0)
+        False
+        """
         return cmp(self.key, other.key)
 
 
 class Coordinates(GObject.GObject):
-    """A generic object containing latitude and longitude coordinates."""
+    """A generic object containing latitude and longitude coordinates.
+    
+    >>> coord = Coordinates()
+    >>> coord.positioned
+    False
+    >>> coord.latitude = -51.688687
+    >>> coord.longitude = -57.804152
+    >>> coord.positioned
+    True
+    >>> coord.lookup_geodata()
+    'Atlantic/Stanley'
+    >>> coord.geoname
+    'Stanley, Falkland Islands'
+    """
     modified_timeout = None
     timeout_seconds = 0
     geotimezone = ''
@@ -168,8 +182,38 @@ class Coordinates(GObject.GObject):
         for prop in ('latitude', 'longitude', 'altitude', 'timestamp'):
             self.connect('notify::' + prop, self.do_modified)
     
+    def __str__(self):
+        """Plaintext summary of metadata.
+        
+        >>> coord = Coordinates()
+        >>> print coord
+        <BLANKLINE>
+        >>> coord.altitude = 456.7
+        >>> coord.latitude = 10
+        >>> coord.lookup_geodata()
+        'Africa/Accra'
+        >>> print coord
+        Yendi, Ghana
+        N 10.00000, E 0.00000
+        456.7m above sea level
+        """
+        return '\n'.join([s for s in (self.geoname,
+                                      self.pretty_time(),
+                                      self.pretty_coords(),
+                                      self.pretty_altitude()) if s])
+    
     def lookup_geodata(self):
-        """Check the cache for geonames, and notify of any changes."""
+        """Check the cache for geonames, and notify of any changes.
+        
+        >>> coord = Coordinates()
+        >>> coord.lookup_geodata()
+        >>> coord.latitude = 47.56494
+        >>> coord.longitude = -52.70931
+        >>> coord.lookup_geodata()
+        'America/St_Johns'
+        >>> coord.geoname
+        "St. John's, Newfoundland and Labrador, Canada"
+        """
         if not self.positioned:
             return
         
@@ -184,44 +228,78 @@ class Coordinates(GObject.GObject):
         return self.geotimezone
     
     def pretty_time(self):
-        """Convert epoch seconds to a human-readable date."""
+        """Convert epoch seconds to a human-readable date.
+        
+        >>> import os, time
+        >>> os.environ['TZ'] = 'America/Winnipeg'
+        >>> time.tzset()
+        >>> coord = Coordinates()
+        >>> coord.pretty_time()
+        >>> coord.timestamp = 60 * 60 * 24 * 365 * 50
+        >>> coord.pretty_time()
+        '2019-12-19 06:00:00 PM'
+        """
         if self.timestamp:
             return strftime('%Y-%m-%d %X', localtime(self.timestamp))
     
     def pretty_coords(self):
-        """Add cardinal directions to decimal coordinates."""
+        """Add cardinal directions to decimal coordinates.
+        
+        >>> coord = Coordinates()
+        >>> coord.pretty_coords()
+        >>> coord.latitude = 46.742065
+        >>> coord.longitude = -92.106434
+        >>> coord.pretty_coords()
+        'N 46.74206, W 92.10643'
+        """
         if self.positioned:
             return format_coords(self.latitude, self.longitude)
     
     def pretty_altitude(self):
-        """Convert elevation into a human readable format."""
+        """Convert elevation into a human readable format.
+        
+        >>> coord = Coordinates()
+        >>> coord.pretty_altitude()
+        >>> coord.altitude = 600
+        >>> coord.pretty_altitude()
+        '600.0m above sea level'
+        >>> coord.altitude = -100
+        >>> coord.pretty_altitude()
+        '100.0m below sea level'
+        """
         if self.altitude:
             return '%.1f%s' % (abs(self.altitude), _('m above sea level')
                         if self.altitude >= 0 else _('m below sea level'))
     
-    def plain_summary(self):
-        """Plaintext summary of photo metadata."""
-        return '\n'.join([s for s in (self.geoname,
-                                      self.pretty_time(),
-                                      self.pretty_coords(),
-                                      self.pretty_altitude()) if s])
-    
-    def markup_summary(self):
-        """Longer summary with Pango markup."""
-        summary = '<span %s>%s</span>\n<span %s>%s</span>' % (
-            'size="larger"', basename(self.filename),
-            'style="italic" size="smaller"', self.plain_summary())
-        return '<b>%s</b>' % summary if self in modified else summary
-    
     def do_modified(self, *ignore):
-        """Set timer to update the geoname after all modifications are done."""
+        """Set timer to update the geoname after all modifications are done.
+        
+        >>> coord = Coordinates()
+        >>> type(coord.modified_timeout)
+        <type 'NoneType'>
+        >>> coord.latitude = 10
+        >>> type(coord.modified_timeout)
+        <type 'int'>
+        """
         self.notify('positioned')
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
                 self.timeout_seconds, self.update_derived_properties)
     
     def update_derived_properties(self):
-        """Do expensive geodata lookups after the timeout."""
+        """Do expensive geodata lookups after the timeout.
+        
+        >>> coord = Coordinates()
+        >>> coord.latitude = 10
+        >>> type(coord.modified_timeout)
+        <type 'int'>
+        >>> coord.update_derived_properties()
+        False
+        >>> type(coord.modified_timeout)
+        <type 'NoneType'>
+        >>> coord.geoname
+        'Yendi, Ghana'
+        """
         if self.modified_timeout:
             self.notify('positioned')
             GLib.source_remove(self.modified_timeout)

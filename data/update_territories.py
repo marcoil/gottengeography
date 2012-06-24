@@ -19,6 +19,13 @@ representation of accuracy, timeliness or completeness.
 
 The data was then converted from tab-delimited UTF8 into
 python source code by Robert Park <rbpark@exolucere.ca>
+
+>>> one = set(key.split('.')[0] for key in territories)
+>>> two = set(countries)
+>>> len(one - two) is 0      # No provinces that don't belong to a country.
+True
+>>> len(two - one) > 1       # Some countries don't have provinces/states.
+True
 \"\"\"
 
 from os import listdir
@@ -56,6 +63,16 @@ get_timezone = zones.get
 get_country  = countries.get
 
 def get_state(country, state):
-    \"\"\"Returns the name of a province/state given a Geonames.org admin1code.\"\"\"
+    \"\"\"Returns the name of a province/state given a Geonames.org admin1code.
+    
+    >>> get_country('CA')
+    'Canada'
+    >>> get_country('MT')
+    'Malta'
+    >>> get_state('CA', '01')
+    'Alberta'
+    >>> get_state('US', 'WI')
+    'Wisconsin'
+    \"\"\"
     return territories.get("%s.%s" % (country, state))
 """

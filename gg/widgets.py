@@ -8,7 +8,8 @@
 >>> type(Widgets['error_bar'])
 <class 'gi.repository.Gtk.InfoBar'>
 
->>> Widgets.status_message('Hello!', True); Widgets.error_message.get_text()
+>>> Widgets.status_message('Hello!', True)
+>>> Widgets.error_message.get_text()
 'Hello!'
 """
 
@@ -33,6 +34,7 @@ SHIFT_MASK = Gdk.ModifierType.SHIFT_MASK
 
 class Builder(Gtk.Builder):
     """Load GottenGeography's UI definitions."""
+    
     def __init__(self, filename=PACKAGE):
         Gtk.Builder.__init__(self)
         
@@ -57,6 +59,12 @@ class Builder(Gtk.Builder):
         accessing variables, you should avoid it inside performance-critical
         inner loops, however thanks to memoization, it's faster than calling
         get_object() directly, so don't sweat it.
+        
+        >>> infobar = 'error_bar'
+        >>> Widgets.error_bar is Widgets.get_object(infobar)
+        True
+        >>> Widgets.error_bar is Widgets[infobar]
+        True
         """
         return self.get_object(widget)
     
@@ -205,6 +213,8 @@ MapView = ChamplainEmbedder.get_view()
 
 @singleton
 class MarkerLayer(Champlain.MarkerLayer):
+    """This is the primary MarkerLayer upon which all Photo labels rest."""
+    
     def __init__(self):
         Champlain.MarkerLayer.__init__(self)
         MapView.add_layer(self)

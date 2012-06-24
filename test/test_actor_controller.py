@@ -9,12 +9,6 @@ from gg.actor import MAP_SOURCES, Box, Crosshair, animate_in
 
 from test import Gst, gui
 
-def test_configuration():
-    """Reticulating splines"""
-    animate_in(20)
-    assert Box.get_width() == MapView.get_width()
-    assert isinstance(Crosshair, Champlain.Point)
-
 def test_map_sources():
     """The map should have multiple sources"""
     MapView.set_map_source(MAP_SOURCES['osm-cyclemap'])

@@ -11,6 +11,7 @@ GtkClutter.init([])
 from gi.repository import Gio, GObject, GdkPixbuf
 from pyexiv2 import ImageMetadata
 from fractions import Fraction
+from os.path import basename
 from time import mktime
 from os import stat
 
@@ -64,16 +65,30 @@ def auto_timestamp_comparison(photo):
     photo.set_location(lat, lon, ele)
 
 def fetch_exif(filename):
-    """Load EXIF data from disk."""
+    """Load EXIF data from disk.
+    
+    >>> fetch_exif('demo/2010 10 16.gpx')
+    Traceback (most recent call last):
+    IOError: demo/2010 10 16.gpx: The file contains data of an unknown image type
+    >>> type(fetch_exif('demo/IMG_2411.JPG'))
+    <class 'pyexiv2.metadata.ImageMetadata'>
+    """
     exif = ImageMetadata(filename)
-    try:
-        exif.read()
-    except TypeError:
-        raise IOError
+    exif.read()
     return exif
 
 def fetch_thumbnail(filename, size=Gst.get_int('thumbnail-size')):
-    """Load a photo's thumbnail from disk, avoiding EXIF data if possible."""
+    """Load a photo's thumbnail from disk, avoiding EXIF data if possible.
+    
+    >>> fetch_thumbnail('gg/widgets.py')
+    Traceback (most recent call last):
+    IOError: gg/widgets.py: The file contains data of an unknown image type
+    >>> type(fetch_thumbnail('demo/IMG_2411.JPG'))
+    <class 'gi.repository.GdkPixbuf.Pixbuf'>
+    """
+    #TODO: The above IOError is raise by pyexiv2 in fetch_exif,
+    # I need to find a file that pyexiv2 thinks is an image, but has
+    # no thumbnail and thus raises IOError here anyway.
     try:
         return GdkPixbuf.Pixbuf.new_from_file_at_size(filename, size, size)
     except GObject.GError:
@@ -83,7 +98,7 @@ def fetch_thumbnail(filename, size=Gst.get_int('thumbnail-size')):
         elif len(exif.exif_thumbnail.data) > 0:
             data = exif.exif_thumbnail.data
         else:
-            raise IOError
+            raise IOError('%s: No thumbnail found.' % filename)
         
         return GdkPixbuf.Pixbuf.new_from_stream_at_scale(
             Gio.MemoryInputStream.new_from_data(data, None),
@@ -92,7 +107,32 @@ def fetch_thumbnail(filename, size=Gst.get_int('thumbnail-size')):
 
 @memoize
 class Photograph(Coordinates):
-    """Represents a single photograph and it's location in space and time."""
+    """Represents a single photograph and it's location in space and time.
+    
+    >>> import os, time
+    >>> os.environ['TZ'] = 'America/Winnipeg'
+    >>> time.tzset()
+    >>> photo = Photograph('demo/IMG_2411.JPG')
+    >>> photo.latitude  = -10.0
+    >>> photo.longitude = -10.0
+    >>> photo.altitude = -10.20005
+    >>> photo.timestamp = 999999999
+    >>> photo.lookup_geodata()
+    'Atlantic/St_Helena'
+    >>> print photo
+    <span size="larger">IMG_2411.JPG</span>
+    <span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
+    2001-09-08 08:46:39 PM
+    S 10.00000, W 10.00000
+    10.2m below sea level</span>
+    >>> modified.add(photo)
+    >>> print photo
+    <b><span size="larger">IMG_2411.JPG</span>
+    <span style="italic" size="smaller">Georgetown, Ascension, Saint Helena
+    2001-09-08 08:46:39 PM
+    S 10.00000, W 10.00000
+    10.2m below sea level</span></b>
+    """
     camera_info = None
     orig_time = None
     manual = False
@@ -155,6 +195,13 @@ class Photograph(Coordinates):
         self.connect('notify::geoname', self.update_liststore_summary)
         self.connect('notify::positioned', Widgets.button_sensitivity)
     
+    def __str__(self):
+        """Long summary of photo metadata with Pango markup."""
+        summary = '<span %s>%s</span>\n<span %s>%s</span>' % (
+            'size="larger"', basename(self.filename),
+            'style="italic" size="smaller"', Coordinates.__str__(self))
+        return '<b>%s</b>' % summary if self in modified else summary
+    
     def read(self):
         """Discard all state and (re)initialize from disk."""
         self.exif = fetch_exif(self.filename)
@@ -198,7 +245,7 @@ class Photograph(Coordinates):
         if self.iter is None:
             self.iter = Widgets.loaded_photos.append()
         Widgets.loaded_photos.set_row(self.iter, [self.filename,
-                                                  self.markup_summary(),
+                                                  str(self),
                                                   self.thumb,
                                                   self.timestamp])
         
@@ -244,7 +291,7 @@ class Photograph(Coordinates):
         self.exif[IPTC + 'CountryName']   = [self.names[2] or '']
         self.exif.write()
         modified.discard(self)
-        Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
+        Widgets.loaded_photos.set_value(self.iter, 1, str(self))
     
     def disable_auto_position(self):
         """Indicate that the user has manually positioned the photo.
@@ -264,7 +311,7 @@ class Photograph(Coordinates):
     def update_liststore_summary(self, *ignore):
         """Update the text displayed in the GtkListStore."""
         if self.iter is not None:
-            Widgets.loaded_photos.set_value(self.iter, 1, self.markup_summary())
+            Widgets.loaded_photos.set_value(self.iter, 1, str(self))
         if self.camera and self.camera.found_timezone is not self.geotimezone:
             self.camera.found_timezone = self.geotimezone
     
