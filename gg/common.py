@@ -41,6 +41,8 @@ def singleton(cls):
 def memoize(obj):
     """General-purpose cache for classes, methods, and functions.
     
+    Functions are cached by their arguments:
+    
     >>> @memoize
     ... def doubler(foo):
     ...     print 'performing expensive calculation...'
@@ -50,6 +52,31 @@ def memoize(obj):
     100
     >>> doubler(50)
     100
+    
+    Methods are also cached by all their arguments, including `self`, which
+    means that different instances will not share their cache. This is primarily
+    used in the Gtk.Builder subclasses, where we want to cache slow widget
+    lookups, but we don't want different instances stepping on each other's
+    widgets:
+    
+    >>> class WidgetFactory:
+    ...     @memoize
+    ...     def get_by_name(self, name):
+    ...         print 'Making new widget named', name
+    ...         return '<<%s>>' % name
+    >>> one = WidgetFactory()
+    >>> one.get_by_name('bob')
+    Making new widget named bob
+    '<<bob>>'
+    >>> one.get_by_name('bob')
+    '<<bob>>'
+    >>> two = WidgetFactory()
+    >>> two.get_by_name('bob')
+    Making new widget named bob
+    '<<bob>>'
+    
+    Finally, class instantiations are also cached based on the arguments passed
+    to the constructor:
     
     >>> @memoize
     ... class Memorable:
