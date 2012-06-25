@@ -328,7 +328,7 @@ class GPXFile(TrackFile):
         
         self.tracks[timestamp] = self.append(lat, lon, state.get('ele'))
         
-        TrackFile.element_end(self, name, state)
+        TrackFile.element_end(self)
 
 
 @memoize
@@ -352,7 +352,7 @@ class TCXFile(TrackFile):
         self.tracks[timestamp] = self.append(
             lat, lon, state.get('AltitudeMeters'))
         
-        TrackFile.element_end(self, name, state)
+        TrackFile.element_end(self)
 
 
 @memoize
@@ -395,7 +395,7 @@ class KMLFile(TrackFile):
             self.whens.append(timestamp)
         if name == 'gx:coord':
             self.coords.append(state['gx:coord'].split())
-        TrackFile.element_end(self, name, state)
+        TrackFile.element_end(self)
     
     def parse(self, filename, root, watch, start, end):
         """Trigger the first pass and then do the second pass."""
@@ -423,11 +423,6 @@ class KMLFile(TrackFile):
                 TrackFile.element_end(self)
 
 
-# This regex ignores commas inside quotes, so '"foo,bar","baz,qux"' would be
-# interpreted as having only two columns.
-parse_csv = re_compile(r'"([^"]*)",?').findall
-
-
 @memoize
 class CSVFile(TrackFile):
     """Support for Google's MyTracks' Comma Separated Values format.
@@ -446,8 +441,9 @@ class CSVFile(TrackFile):
     def parse(self, filename, root, watch, start, end):
         """Call the appropriate handler for each line of the file."""
         with open(filename) as lines:
+            parse_line = re_compile(r'"([^"]*)",?').findall
             for line in lines:
-                self.parse_header(parse_csv(line), self.columns)
+                self.parse_header(parse_line(line), self.columns)
     
     def parse_header(self, state, columns, alt='Altitude (m)'):
         """Ignore as many lines as necessary until column headers are found."""

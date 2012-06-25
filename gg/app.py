@@ -182,7 +182,7 @@ class GottenGeography(Gtk.Application):
         Widgets.button_sensitivity()
     
     def apply_selected_photos(self, button):
-        """Manually apply map center coordinates to all unpositioned photos."""
+        """Manually apply map center coordinates to selected photos."""
         lat, lon = MapView.get_center_latitude(), MapView.get_center_longitude()
         for photo in selected:
             photo.manual = True

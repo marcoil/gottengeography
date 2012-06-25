@@ -11,9 +11,8 @@ GtkClutter.init([])
 from gi.repository import GObject, Champlain, Clutter
 from os.path import basename
 
-from common import Binding, memoize
-from common import selected, modified
-from widgets import Widgets, MapView, MarkerLayer
+from common import Binding, memoize, modified
+from widgets import Widgets, MarkerLayer
 
 
 def clicked(label, event):

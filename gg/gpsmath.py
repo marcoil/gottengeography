@@ -8,13 +8,13 @@ from __future__ import division
 from gi.repository import GLib, GObject
 from time import strftime, localtime
 from math import modf as split_float
-from os.path import join, basename
 from gettext import gettext as _
 from fractions import Fraction
+from os.path import join
 
 from territories import get_state, get_country
-from common import memoize, modified
 from build_info import PKG_DATA_DIR
+from common import memoize
 
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
