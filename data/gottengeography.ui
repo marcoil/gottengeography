@@ -288,7 +288,7 @@
                         <property name="border_width">0</property>
                         <property name="stock-id">gtk-apply</property>
                         <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Place all photos onto center of map (Ctrl Enter)</property>
+                        <property name="tooltip_text" translatable="yes">Place selected photos onto center of map (Ctrl Enter)</property>
                         <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                     </child>

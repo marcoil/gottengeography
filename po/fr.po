@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gottengeography 0.5\n"
+"Project-Id-Version: gottengeography 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-14 23:14-0500\n"
+"POT-Creation-Date: 2012-06-25 00:16-0500\n"
 "PO-Revision-Date: 2011-02-09 18:49-0700\n"
 "Last-Translator: Robert Park <rbpark@exolucere.ca>\n"
 "Language-Team: French\n"
@@ -17,176 +17,86 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../gg/app.py:527
-msgid "Could not open: "
-msgstr "Impossible d'ouvrir: "
-
-#: ../gg/app.py:561
-#, python-format
-msgid "%d points loaded in %.2fs."
-msgstr "%d points de chargement dans les %.2f secondes."
-
-#: ../gg/ui.glade.h:1
+#: ../data/gottengeography.ui.h:1
 msgid "Load photos or GPS data (Ctrl O)"
 msgstr "Charge photos ou des données GPS (Ctrl O)"
 
-#: ../gg/ui.glade.h:2
-msgid "Open"
-msgstr "Ouvrir"
+#: ../data/gottengeography.ui.h:2
+msgid "Change map view (Google opens in your browser)"
+msgstr "Changer vue sur la carte (Google s'ouvre dans votre navigateur)"
 
-#: ../gg/ui.glade.h:3
-msgid "Save all photos (Ctrl S)"
-msgstr "Enregistrer toutes les photos (Ctrl S)"
+#: ../data/gottengeography.ui.h:3
+msgid "Return to the previous location viewed on map (Ctrl Left)"
+msgstr "Retour au préalable consulté l'emplacement sur la carte (Ctrl Left)"
 
-#: ../gg/ui.glade.h:4
-msgid "Save All"
-msgstr "Enregistrer tout"
+#: ../data/gottengeography.ui.h:4
+msgid "Type the name of the city you would like to view."
+msgstr "Tapez le nom de la ville que vous souhaitez consulter."
 
-#: ../gg/ui.glade.h:5
-msgid "Unload all GPS data (Ctrl X)"
-msgstr "Décharger toutes les données GPS (Ctrl X)"
+#: ../data/gottengeography.ui.h:5
+msgid "Zoom the map out one step (Ctrl -)"
+msgstr "Zoom sur la carte d'un cran (Ctrl -)"
 
-#: ../gg/ui.glade.h:6
-msgid "Clear GPX"
-msgstr "Effacer GPX"
+#: ../data/gottengeography.ui.h:6
+msgid "Enhance! (Ctrl +)"
+msgstr "Améliorer! (Ctrl +)"
 
-#: ../gg/ui.glade.h:7
+#: ../data/gottengeography.ui.h:7
+msgid "Learn how to use GottenGeography (Ctrl ?)"
+msgstr "Apprenez à utiliser GottenGeography (Ctrl ?)"
+
+#: ../data/gottengeography.ui.h:8
+msgid "About GottenGeography"
+msgstr "À propos GottenGeography"
+
+#: ../data/gottengeography.ui.h:9
+msgid "Drag files here to load."
+msgstr "Glisser ici pour charger."
+
+#: ../data/gottengeography.ui.h:10
 msgid "Close selected photos (Ctrl W)"
 msgstr "Fermer les photos sélectionnée (Ctrl W)"
 
-#: ../gg/ui.glade.h:8
-msgid "Close Photo"
-msgstr "Fermer Photo"
-
-#: ../gg/ui.glade.h:9
+#: ../data/gottengeography.ui.h:11
 msgid "Reload selected photos, losing all changes (Ctrl Z)"
 msgstr ""
 "Recharger les photos sélectionnées, de perdre toutes les modifications (Ctrl "
 "Z)"
 
-#: ../gg/ui.glade.h:10
-msgid "Revert"
-msgstr "Rétablir"
+#: ../data/gottengeography.ui.h:12
+msgid "Center the map view on the selected photo (Ctrl J)"
+msgstr "Voir la photo sélectionnée (Ctrl J)"
 
-#: ../gg/ui.glade.h:11
-msgid "Preferences (Ctrl P)"
-msgstr "Préférences (Ctrl P)"
+#: ../data/gottengeography.ui.h:13
+msgid "Save all photos (Ctrl S)"
+msgstr "Enregistrer toutes les photos (Ctrl S)"
 
-#: ../gg/ui.glade.h:12
-msgid "Preferences"
-msgstr "Préférences"
+#: ../data/gottengeography.ui.h:14
+msgid "Save All"
+msgstr "Enregistrer tout"
 
-#: ../gg/ui.glade.h:13
-msgid "About GottenGeography (Ctrl ?)"
-msgstr "À propos GottenGeography (Ctrl ?)"
-
-#: ../gg/ui.glade.h:14
-msgid "About"
-msgstr "À propos"
-
-#: ../gg/ui.glade.h:15
-msgid "Select all photographs (Ctrl A)"
-msgstr "Sélectionner toutes les photos (Ctrl A)"
-
-#: ../gg/ui.glade.h:16
+#: ../data/gottengeography.ui.h:15
 msgid "Place selected photos onto center of map (Ctrl Enter)"
 msgstr ""
 "Insérer des photos sélectionnées sur le centre de la carte (Ctrl Enter)"
 
-#: ../gg/ui.glade.h:17
-msgid "Change Map"
-msgstr "Changer la carte"
+#: ../data/gottengeography.ui.h:16
+msgid "Photos"
+msgstr "Photos"
 
-#: ../gg/ui.glade.h:18
-msgid "Return to the previous location viewed on map (Ctrl Left)"
-msgstr "Retour au préalable consulté l'emplacement sur la carte (Ctrl Left)"
+#: ../data/gottengeography.ui.h:17
+msgid "Cameras"
+msgstr "Caméras"
 
-#: ../gg/ui.glade.h:19
-msgid "Type the name of the city you would like to view."
-msgstr "Tapez le nom de la ville que vous souhaitez consulter."
+#: ../data/gottengeography.ui.h:18
+msgid "GPS"
+msgstr "GPS"
 
-#: ../gg/ui.glade.h:20
-msgid "Zoom the map out one step (Ctrl -)"
-msgstr "Zoom sur la carte d'un cran (Ctrl -)"
-
-#: ../gg/ui.glade.h:21
-msgid "Enhance! (Ctrl +)"
-msgstr "Améliorer! (Ctrl +)"
-
-#: ../gg/ui.glade.h:22
-msgid "Clock Offset:"
-msgstr "Décalage d'Horloge: "
-
-#: ../gg/ui.glade.h:23
-msgid "Add or subtract minutes from your camera's clock."
-msgstr ""
-"Ajouter ou soustraire des minutes de l'horloge de votre appareil photo."
-
-#: ../gg/ui.glade.h:24
-msgid "Add or subtract seconds from your camera's clock."
-msgstr ""
-"Ajouter ou soustraire des secondes de l'horloge de votre appareil photo."
-
-#: ../gg/ui.glade.h:25
+#: ../data/gottengeography.ui.h:19
 msgid "Open Files"
 msgstr "Ouvrir des fichiers"
 
-#: ../gg/ui.glade.h:26
-msgid "GottenGeography Preferences"
-msgstr "GottenGeography Préférences"
-
-#: ../gg/ui.glade.h:27
-msgid ""
-"Unfortunately, it isn't possible to know what timezone your camera is set to."
-msgstr ""
-"Malheureusement, il n'est pas possible de savoir ce fuseau horaire de votre "
-"appareil photo utilise."
-
-#: ../gg/ui.glade.h:28
-msgid ""
-"<b>Use the _system timezone</b> if your camera's clock is set the same as "
-"this computer."
-msgstr "Utilisez fuseau horaire <b>de cet _ordinateur.</b>"
-
-#: ../gg/ui.glade.h:29
-msgid ""
-"<b>Use the _GPX timezone</b> if your camera's clock is set to the local time "
-"where your photos were taken."
-msgstr ""
-"Utilisez le fuseau horaire <b>de l'_emplacement de la photographie.</b>"
-
-#: ../gg/ui.glade.h:30
-msgid ""
-"<b>Specify the timezone _manually</b> if your camera is set to some other "
-"timezone."
-msgstr "Sélectionnez le fuseau horaire <b>_manuellement.</b>"
-
-#: ../gg/ui.glade.h:31
-msgid "Timezone"
-msgstr "Fuseau horaire"
-
-#: ../gg/ui.glade.h:32
-msgid ""
-"If you load a GPX file that has more than one track, the color you select "
-"here will be used for odd numbered tracks, and even numbered tracks will be "
-"a lighter shade of this color."
-msgstr ""
-"Des traces GPS sur la carte alterne entre cette couleur et une teinte plus "
-"claire."
-
-#: ../gg/ui.glade.h:33
-msgid "Track Color"
-msgstr "Couleur de la piste"
-
-#: ../gg/ui.glade.h:34
-msgid "No preview available"
-msgstr "Pas d'aperçu disponible"
-
-#: ../gg/ui.glade.h:35
-msgid "About GottenGeography"
-msgstr "À propos GottenGeography"
-
-#: ../gg/ui.glade.h:36
+#: ../data/gottengeography.ui.h:20
 msgid ""
 "GottenGeography: Go open thy tagger!\n"
 "\n"
@@ -194,17 +104,17 @@ msgid ""
 "to your photos. The name is an anagram of \"Python Geotagger.\""
 msgstr ""
 
-#: ../gg/ui.glade.h:39
+#: ../data/gottengeography.ui.h:23
 msgid "GottenGeography Wiki"
 msgstr "GottenGeography Wiki"
 
-#: ../gg/ui.glade.h:40
+#: ../data/gottengeography.ui.h:24
 msgid "Robert Park <rbpark@exolucere.ca>"
 msgstr ""
 "Robert Park <rbpark@exolucere.ca>\n"
 "Pylyglot.org"
 
-#: ../gg/ui.glade.h:41
+#: ../data/gottengeography.ui.h:25
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Save changes to your photos before "
 "closing?</span>"
@@ -212,7 +122,7 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Voulez-vous enregistrer les "
 "modifications avant la fermeture?</span>"
 
-#: ../gg/ui.glade.h:43
+#: ../data/gottengeography.ui.h:27
 #, no-c-format
 msgid ""
 "The changes you've made to %d of your photos will be permanently lost if you "
@@ -221,38 +131,82 @@ msgstr ""
 "Les modifications que vous avez apportées à %d de vos photos seront "
 "définitivement perdus si vous ne sauvegardez pas."
 
-#: ../gg/ui.glade.h:44
+#: ../data/gottengeography.ui.h:28
 msgid "Close _without Saving"
 msgstr "Fermer _sans enregistrer"
 
-#: ../gg/utils.py:139
-msgid "View in Google Maps"
-msgstr "Voir dans Google Maps"
+#: ../data/camera.ui.h:1
+msgid "Use the system timezone."
+msgstr "Utiliser le fuseau horaire du système."
 
-#: ../gg/utils.py:146
+#: ../data/camera.ui.h:2
+msgid "Use the local timezone."
+msgstr "Utiliser le fuseau horaire local."
+
+#: ../data/camera.ui.h:3
+msgid "Specify a UTC offset manually."
+msgstr "Spécifiez le décalage UTC manuellement."
+
+#: ../data/camera.ui.h:4
+msgid "Specify the timezone manually."
+msgstr "Spécifiez le fuseau horaire manuellement."
+
+#: ../gg/app.py:173
+msgid "Could not open: "
+msgstr "Impossible d'ouvrir: "
+
+#: ../gg/gpsmath.py:71
 msgid "N"
 msgstr "N"
 
-#: ../gg/utils.py:146
+#: ../gg/gpsmath.py:71
 msgid "S"
 msgstr "S"
 
-#: ../gg/utils.py:147
+#: ../gg/gpsmath.py:72
 msgid "E"
 msgstr "O"
 
-#: ../gg/utils.py:147
+#: ../gg/gpsmath.py:72
 msgid "W"
 msgstr "W"
 
-#: ../gg/utils.py:250
-msgid "Not geotagged"
-msgstr "Sans géolocaliser"
-
-#: ../gg/utils.py:261
+#: ../gg/gpsmath.py:271
 msgid "m above sea level"
 msgstr " mètres au-dessus du niveau des mers"
 
-#: ../gg/utils.py:262
+#: ../gg/gpsmath.py:272
 msgid "m below sea level"
 msgstr " mètres au-dessous du niveau des mers"
+
+#: ../gg/camera.py:92
+msgid "Unknown Camera"
+msgstr "Caméra Inconnu"
+
+#: ../gg/camera.py:208
+#, python-format
+msgid "Add %dm, %ds to clock."
+msgstr "Ajouter %dm, %ds à l'horloge."
+
+#: ../gg/camera.py:209
+#, python-format
+msgid "Subtract %dm, %ds from clock."
+msgstr "Soustraire %dm, %ds de l'horloge."
+
+#: ../gg/camera.py:271
+msgid "No photos loaded."
+msgstr "Pas de photos."
+
+#: ../gg/camera.py:272
+msgid "One photo loaded."
+msgstr "Une photo."
+
+#: ../gg/camera.py:273
+#, python-format
+msgid "%d photos loaded."
+msgstr "%d photos."
+
+#: ../gg/xmlfiles.py:210
+#, python-format
+msgid "%d points loaded in %.2fs."
+msgstr "%d points de chargement dans les %.2f secondes."

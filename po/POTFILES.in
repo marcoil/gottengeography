@@ -5,4 +5,5 @@ gg/actor.py
 gg/app.py
 gg/gpsmath.py
 gg/camera.py
+gg/xmlfiles.py
 
