@@ -9,12 +9,26 @@ from gi.repository import GLib, GObject
 from time import strftime, localtime
 from math import modf as split_float
 from gettext import gettext as _
-from fractions import Fraction
 from os.path import join
+import fractions
 
 from territories import get_state, get_country
 from build_info import PKG_DATA_DIR
 from common import memoize
+
+
+class Fraction(fractions.Fraction):
+    """Only create Fractions from floats.
+    
+    >>> Fraction(0.3)
+    Fraction(3, 10)
+    >>> Fraction(1.1)
+    Fraction(11, 10)
+    """
+    
+    def __new__(cls, value, ignore=None):
+        """Should be compatible with Python 2.6, though untested."""
+        return fractions.Fraction.from_float(value).limit_denominator(99999)
 
 
 def dms_to_decimal(degrees, minutes, seconds, sign=' '):
@@ -42,8 +56,7 @@ def decimal_to_dms(decimal):
     """
     remainder, degrees = split_float(abs(decimal))
     remainder, minutes = split_float(remainder * 60)
-    return [Fraction(n).limit_denominator(99999)
-        for n in (degrees, minutes, remainder * 60)]
+    return [Fraction(n) for n in (degrees, minutes, remainder * 60)]
 
 
 def valid_coords(lat, lon):

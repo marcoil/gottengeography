@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python
 
 # GottenGeography - Automagically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
@@ -21,13 +21,6 @@ from sys import exit, argv
 def need(dependency):
     """Exit the program and tell the user what dependency was missing."""
     exit('GottenGeography requires at least ' + dependency)
-
-try:
-    from fractions import Fraction
-    # Raises TypeError with Python 2.6, so 2.7 is required.
-    Fraction(0.5).numerator
-except:
-    need('Python 2.7')
 
 try:
     from dateutil.parser import parse

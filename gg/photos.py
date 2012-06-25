@@ -10,7 +10,6 @@ GtkClutter.init([])
 
 from gi.repository import Gio, GObject, GdkPixbuf
 from pyexiv2 import ImageMetadata
-from fractions import Fraction
 from os.path import basename
 from time import mktime
 from os import stat
@@ -19,9 +18,11 @@ from label import Label
 from widgets import Widgets
 from xmlfiles import TrackFile
 from common import staticmethod
+from common import Gst, memoize
+from common import points, modified
 from camera import Camera, CameraView
-from common import Gst, memoize, points, modified
-from gpsmath import Coordinates, dms_to_decimal, decimal_to_dms
+from gpsmath import Coordinates, Fraction
+from gpsmath import dms_to_decimal, decimal_to_dms
 
 # Prefixes for common EXIF keys.
 GPS  = 'Exif.GPSInfo.GPS'
@@ -277,10 +278,8 @@ class Photograph(Coordinates):
     
     def write(self):
         """Save exif data to photo file on disk."""
-        if self.altitude is not None:
-            self.exif[GPS + 'AltitudeRef'] = '0' if self.altitude >= 0 else '1'
-            self.exif[GPS + 'Altitude'] = \
-                Fraction(self.altitude).limit_denominator(99999)
+        self.exif[GPS + 'AltitudeRef']  = '0' if self.altitude >= 0 else '1'
+        self.exif[GPS + 'Altitude']     = Fraction(self.altitude)
         self.exif[GPS + 'Latitude']     = decimal_to_dms(self.latitude)
         self.exif[GPS + 'LatitudeRef']  = 'N' if self.latitude >= 0 else 'S'
         self.exif[GPS + 'Longitude']    = decimal_to_dms(self.longitude)
