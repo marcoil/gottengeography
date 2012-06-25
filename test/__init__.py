@@ -20,6 +20,7 @@ GPXFILES = [f for f in DEMOFILES if f.endswith('gpx')]
 IMGFILES = [f for f in DEMOFILES if f.endswith('JPG')]
 
 gui = GottenGeography(do_fade_in=False)
+gui.register(None)
 startup(gui)
 
 def random_coord(maximum=180):

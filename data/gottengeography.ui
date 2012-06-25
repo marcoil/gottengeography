@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkWindow" id="main">
+  <menu id='appmenu'>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Open</attribute>
+        <attribute name='action'>app.open</attribute>
+        <attribute name='accel'>&lt;Primary&gt;o</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Quit</attribute>
+        <attribute name='action'>app.quit</attribute>
+        <attribute name='accel'>&lt;Primary&gt;q</attribute>
+      </item>
+    </section>
+  </menu>
+  <object class="GtkApplicationWindow" id="main">
     <property name="width_request">620</property>
     <property name="height_request">400</property>
     <property name="can_focus">False</property>
+    <property name="show_menubar">False</property>
     <property name="title">GottenGeography</property>
     <property name="icon_name">gottengeography</property>
     <child>

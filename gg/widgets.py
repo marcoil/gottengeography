@@ -4,7 +4,7 @@
 """Orchestrate the construction of widgets with GtkBuilder.
 
 >>> type(Widgets.main)
-<class 'gi.overrides.Gtk.Window'>
+<class 'gi.repository.Gtk.ApplicationWindow'>
 >>> type(Widgets['error_bar'])
 <class 'gi.repository.Gtk.InfoBar'>
 

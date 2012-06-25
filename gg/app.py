@@ -65,7 +65,7 @@ def startup(self):
     
     click_handlers = {
         'open':
-            [self.add_files_dialog, Widgets.open],
+            [self.add_files_dialog],
         'save':
             [self.save_all_files],
         'close':
@@ -99,9 +99,16 @@ def startup(self):
     
     Widgets.open.connect('update-preview', self.update_preview, Widgets.preview)
     
-    accel  = Gtk.AccelGroup()
-    accel.connect(Gdk.keyval_from_name('q'),
-        Gdk.ModifierType.CONTROL_MASK, 0, self.confirm_quit_dialog)
+    actions = {'open': self.add_files_dialog,
+               'quit': self.confirm_quit_dialog}
+    
+    for name in actions:
+        action = Gio.SimpleAction(name=name)
+        action.connect('activate', actions[name])
+        self.add_action(action)
+    self.set_app_menu(Widgets.appmenu)
+    
+    accel = Gtk.AccelGroup()
     for key in [ 'Left', 'Right', 'Up', 'Down' ]:
         accel.connect(Gdk.keyval_from_name(key),
             Gdk.ModifierType.MOD1_MASK, 0, move_by_arrow_keys)
@@ -218,13 +225,13 @@ class GottenGeography(Gtk.Application):
         except (IOError, TypeError):
             return
     
-    def add_files_dialog(self, button, chooser):
+    def add_files_dialog(self, *ignore):
         """Display a file chooser, and attempt to load chosen files."""
-        response = chooser.run()
-        chooser.hide()
+        response = Widgets.open.run()
+        Widgets.open.hide()
         Widgets.redraw_interface()
         if response == Gtk.ResponseType.OK:
-            self.open_files(chooser.get_filenames())
+            self.open_files(Widgets.open.get_filenames())
     
     def confirm_quit_dialog(self, *ignore):
         """Teardown method, inform user of unsaved files, if any."""
