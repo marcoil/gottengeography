@@ -15,7 +15,7 @@ def test_search():
     assert len(gui.search.results) == 0
     
     entry.set_text('edm')
-    assert len(gui.search.results) == 23
+    assert len(gui.search.results) == 24
     
     get_title = Widgets.main.get_title
     for result in gui.search.results:
@@ -27,8 +27,8 @@ def test_search():
         assert lon == MapView.get_property('longitude')
     
     entry.set_text('calg')
-    assert len(gui.search.results) == 652
+    assert len(gui.search.results) == 656
     
     entry.set_text('st.')
-    assert len(gui.search.results) == 671
+    assert len(gui.search.results) == 675
 

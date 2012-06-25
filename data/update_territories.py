@@ -2,8 +2,8 @@
 
 """This script parses geonames.org db dumps into the territories.py file.
 
-You'll need to download countryInfo.txt, admin1CodesASCII.txt, and
-timeZones.txt from http://download.geonames.org/export/dump/
+You'll need to download countryInfo.txt, admin1CodesASCII.txt
+from http://download.geonames.org/export/dump/
 """
 
 print """# coding=UTF-8
