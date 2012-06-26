@@ -71,7 +71,7 @@ def startup(self):
     
     screen = Gdk.Screen.get_default()
     
-    actions = ('open', 'help', 'about', 'quit') # These define the App Menu.
+    app_menu = ('open', 'save', 'help', 'about', 'quit')
     click_handlers = {
         'open':
             [self.add_files_dialog],
@@ -102,7 +102,7 @@ def startup(self):
         button = Widgets[name + '_button']
         if button:
             button.connect('clicked', *handler)
-        if name in actions:
+        if name in app_menu:
             action = Gio.SimpleAction(name=name)
             action.connect('activate', *handler)
             self.add_action(action)
@@ -195,7 +195,7 @@ class GottenGeography(Gtk.Application):
             photo.set_location(lat, lon)
         Widgets.button_sensitivity()
     
-    def save_all_files(self, widget=None):
+    def save_all_files(self, *ignore):
         """Ensure all loaded files are saved."""
         Widgets.progressbar.show()
         total = len(modified)

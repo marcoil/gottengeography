@@ -7,6 +7,10 @@
         <attribute name='label' translatable='yes'>_Open</attribute>
         <attribute name='action'>app.open</attribute>
       </item>
+      <item>
+        <attribute name='label' translatable='yes'>_Save All</attribute>
+        <attribute name='action'>app.save</attribute>
+      </item>
     </section>
     <section>
       <item>

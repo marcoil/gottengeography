@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sys import exit, argv
+from gi.repository import Gtk
+import sys
 
 def need(dependency):
     """Exit the program and tell the user what dependency was missing."""
-    exit('GottenGeography requires at least ' + dependency)
+    sys.exit('GottenGeography requires at least ' + dependency)
 
 try:
     from dateutil.parser import parse
@@ -40,7 +41,8 @@ try:
     Champlain.PathLayer
     
     # Raises TypeError with libchamplain 0.12.0
-    [ source.get_id() for source in Champlain.MapSourceFactory.dup_default().get_registered() ]
+    [source.get_id() for source in
+        Champlain.MapSourceFactory.dup_default().get_registered()]
 except:
     need('libchamplain 0.12.2')
 
@@ -53,9 +55,20 @@ try:
 except:
     need('pyexiv2 0.3')
 
+
+old_hook = sys.excepthook
+def new_hook(*args):
+    """Exit cleanly if there was an unhandled exception."""
+    old_hook(*args)
+    while Gtk.main_level():
+        Gtk.main_quit()
+    sys.exit()
+sys.excepthook = new_hook
+
+
 # If we got this far, it looks like we have everything we need!
 # Time to launch the app.
 
 from gg.app import GottenGeography
-GottenGeography(not argv[1:]).run(argv)
+GottenGeography(not sys.argv[1:]).run(sys.argv)
 
