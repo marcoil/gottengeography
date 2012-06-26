@@ -63,6 +63,7 @@ def startup(self):
     
     screen = Gdk.Screen.get_default()
     
+    actions = ('open', 'help', 'about', 'quit') # These define the App Menu.
     click_handlers = {
         'open':
             [self.add_files_dialog],
@@ -74,8 +75,7 @@ def startup(self):
             [lambda btn: self.open_files(
                 [p.filename for p in modified & selected])],
         'about':
-            [lambda yes, you_can: you_can.run() and you_can.hide(),
-                Widgets.about],
+            [lambda *ignore: Widgets.about.run() and Widgets.about.hide()],
         'help':
             [lambda *ignore: Gtk.show_uri(screen,
                 'ghelp:gottengeography', Gdk.CURRENT_TIME)],
@@ -89,24 +89,24 @@ def startup(self):
                 MapView.get_center_latitude(),
                 MapView.get_center_longitude()),
                 Gdk.CURRENT_TIME)],
+        'quit':
+            [self.confirm_quit_dialog],
     }
-    for button, handler in click_handlers.items():
-        Widgets[button + '_button'].connect('clicked', *handler)
+    for name, handler in click_handlers.items():
+        button = Widgets[name + '_button']
+        if button:
+            button.connect('clicked', *handler)
+        if name in actions:
+            action = Gio.SimpleAction(name=name)
+            action.connect('activate', *handler)
+            self.add_action(action)
+    self.set_app_menu(Widgets.appmenu)
     
     Widgets.zoom_in_button.connect('clicked', lambda *x: MapView.zoom_in())
     Widgets.zoom_out_button.connect('clicked', lambda *x: MapView.zoom_out())
     Widgets.back_button.connect('clicked', go_back)
     
     Widgets.open.connect('update-preview', self.update_preview, Widgets.preview)
-    
-    actions = {'open': self.add_files_dialog,
-               'quit': self.confirm_quit_dialog}
-    
-    for name in actions:
-        action = Gio.SimpleAction(name=name)
-        action.connect('activate', actions[name])
-        self.add_action(action)
-    self.set_app_menu(Widgets.appmenu)
     
     accel = Gtk.AccelGroup()
     for key in [ 'Left', 'Right', 'Up', 'Down' ]:

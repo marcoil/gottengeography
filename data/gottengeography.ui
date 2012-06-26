@@ -6,7 +6,17 @@
       <item>
         <attribute name='label' translatable='yes'>_Open</attribute>
         <attribute name='action'>app.open</attribute>
-        <attribute name='accel'>&lt;Primary&gt;o</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Help</attribute>
+        <attribute name='action'>app.help</attribute>
+        <attribute name='accel'>F1</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_About</attribute>
+        <attribute name='action'>app.about</attribute>
       </item>
     </section>
     <section>
