@@ -40,7 +40,19 @@
   <section id="custom">
     <title>Specify the timezone manually.</title>
 
-    <p>If all else fails, you can choose the timezone from a list of all possible timezones. This option will provide you with two comboboxes for selecting your timezone. The first one is used to select what continent you're on, and the second one has a list of capital cities. Most likely you'll want to choose the city nearest you.</p>
+    <p>If all else fails, you can choose the timezone either as a UTC offset, or from a list of all possible timezones.</p>
+
+    <p>If you choose UTC, you can specify the UTC offset in whole-hour increments from -24 to +24.</p>
+
+    <p>Alternately, you can choose your timezone from a list. This option will provide you with two drop-down lists for selecting your timezone. The first one is used to select your region (which can be a country or a continent), and the second one has a list of capital cities or zones known to be in that region. Most likely you'll want to choose the city nearest you. For example, you can choose <em>America</em> and <em>Edmonton</em>, or you can get similar results by choosing <em>Canada</em> and <em>Mountain</em>. The reason for this slight redundancy is that the list of timezones is provided by the system, and either options are valid, so <app>GottenGeography</app> happily allows either.</p>
+  </section>
+
+  <section id="recommendations">
+    <title>Recommended strategy</title>
+
+    <p>The easiest and most hassle-free method of using GottenGeography is to simply syncronise your camera's clock to your computer's clock.</p>
+
+    <p>Another strategy is to syncronise your camera's clock to UTC, and then select UTC+0 manually. This has the benefit that even if you move around a lot, and your computer's system timezone is changing frequently, the camera's clock will always be known and correct results can always be found, with little hassle.</p>
   </section>
 
   <section id="offset">
