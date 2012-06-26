@@ -74,37 +74,37 @@ def startup(self):
     app_menu = ('open', 'save', 'help', 'about', 'quit')
     click_handlers = {
         'open':
-            [self.add_files_dialog],
+            self.add_files_dialog,
         'save':
-            [self.save_all_files],
+            self.save_all_files,
         'close':
-            [lambda btn: [p.destroy() for p in selected.copy()]],
+            lambda btn: [p.destroy() for p in selected.copy()],
         'revert':
-            [lambda btn: self.open_files(
-                [p.filename for p in modified & selected])],
+            lambda btn: self.open_files(
+                [p.filename for p in modified & selected]),
         'about':
-            [lambda *ignore: Widgets.about.run() and Widgets.about.hide()],
+            lambda *ignore: Widgets.about.run() and Widgets.about.hide(),
         'help':
-            [lambda *ignore: Gtk.show_uri(screen,
-                'ghelp:gottengeography', Gdk.CURRENT_TIME)],
+            lambda *ignore: Gtk.show_uri(screen,
+                'ghelp:gottengeography', Gdk.CURRENT_TIME),
         'jump':
-            [self.jump_to_photo],
+            self.jump_to_photo,
         'apply':
-            [self.apply_selected_photos],
+            self.apply_selected_photos,
         'map_source_menu':
-            [lambda *ignore: Gtk.show_uri(
+            lambda *ignore: Gtk.show_uri(
                 screen, 'http://maps.google.com/maps?q=%s,%s' %
-                (center.latitude, center.longitude), Gdk.CURRENT_TIME)],
+                (center.latitude, center.longitude), Gdk.CURRENT_TIME),
         'quit':
-            [self.confirm_quit_dialog],
+            self.confirm_quit_dialog,
     }
     for name, handler in click_handlers.items():
         button = Widgets[name + '_button']
         if button:
-            button.connect('clicked', *handler)
+            button.connect('clicked', handler)
         if name in app_menu:
             action = Gio.SimpleAction(name=name)
-            action.connect('activate', *handler)
+            action.connect('activate', handler)
             self.add_action(action)
     self.set_app_menu(Widgets.appmenu)
     
