@@ -65,6 +65,8 @@ class Builder(Gtk.Builder):
         True
         >>> Widgets.error_bar is Widgets[infobar]
         True
+        >>> Widgets.error_bar is Builder().error_bar
+        False
         """
         return self.get_object(widget)
     
