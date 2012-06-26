@@ -25,10 +25,10 @@ if not GLib.get_application_name():
 GtkClutter.init([])
 
 from camera import Camera
-from actor import animate_in
 from xmlfiles import TrackFile
 from gpsmath import Coordinates
 from widgets import Widgets, MapView
+from actor import CoordLabel, animate_in
 from photos import Photograph, fetch_thumbnail
 from navigation import go_back, move_by_arrow_keys
 from common import Gst, Binding, selected, modified
@@ -130,6 +130,7 @@ def startup(self):
     Binding(MapView, 'longitude', center)
     center.do_modified()
     Binding(center, 'geoname', Widgets.main, 'title')
+    Binding(center, 'coords', CoordLabel, 'text')
     center.timeout_seconds = 10 # Only update titlebar every 10 seconds
     
     Widgets.launch()

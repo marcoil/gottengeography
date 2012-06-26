@@ -74,18 +74,6 @@ def valid_coords(lat, lon):
     return abs(lat) <= 90 and abs(lon) <= 180
 
 
-def format_coords(lat, lon):
-    """Add cardinal directions to decimal coordinates.
-    
-    >>> format_coords(46.742065, -92.106434)
-    'N 46.74206, W 92.10643'
-    """
-    return '%s %.5f, %s %.5f' % (
-        _('N') if lat >= 0 else _('S'), abs(lat),
-        _('E') if lon >= 0 else _('W'), abs(lon)
-    )
-
-
 @memoize
 def do_cached_lookup(key):
     """Scan cities.txt for the nearest town.
@@ -155,6 +143,8 @@ class Coordinates(GObject.GObject):
     False
     >>> coord.latitude = -51.688687
     >>> coord.longitude = -57.804152
+    >>> coord.coords
+    'S 51.68869, W 57.80415'
     >>> coord.positioned
     True
     >>> coord.lookup_geodata()
@@ -187,6 +177,16 @@ class Coordinates(GObject.GObject):
         """Report the city, state, and country in a pretty list."""
         return ', '.join([name for name in self.names if name])
     
+    @GObject.property(type=str)
+    def coords(self):
+        """Report a nicely formatted latitude and longitude pair."""
+        if self.positioned:
+            lat, lon = self.latitude, self.longitude
+            return '%s %.5f, %s %.5f' % (
+                _('N') if lat >= 0 else _('S'), abs(lat),
+                _('E') if lon >= 0 else _('W'), abs(lon)
+            )
+    
     def __init__(self, **props):
         self.filename = ''
         
@@ -212,7 +212,7 @@ class Coordinates(GObject.GObject):
         """
         return '\n'.join([s for s in (self.geoname,
                                       self.pretty_time(),
-                                      self.pretty_coords(),
+                                      self.coords,
                                       self.pretty_altitude()) if s])
     
     def lookup_geodata(self):
@@ -255,19 +255,6 @@ class Coordinates(GObject.GObject):
         if self.timestamp:
             return strftime('%Y-%m-%d %X', localtime(self.timestamp))
     
-    def pretty_coords(self):
-        """Add cardinal directions to decimal coordinates.
-        
-        >>> coord = Coordinates()
-        >>> coord.pretty_coords()
-        >>> coord.latitude = 46.742065
-        >>> coord.longitude = -92.106434
-        >>> coord.pretty_coords()
-        'N 46.74206, W 92.10643'
-        """
-        if self.positioned:
-            return format_coords(self.latitude, self.longitude)
-    
     def pretty_altitude(self):
         """Convert elevation into a human readable format.
         
@@ -295,6 +282,7 @@ class Coordinates(GObject.GObject):
         <type 'int'>
         """
         self.notify('positioned')
+        self.notify('coords')
         if not self.modified_timeout:
             self.modified_timeout = GLib.timeout_add_seconds(
                 self.timeout_seconds, self.update_derived_properties)

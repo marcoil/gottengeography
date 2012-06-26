@@ -8,10 +8,6 @@
 
 Custom map actors are defined here as well:
 
->>> MapView.center_on(53.554177, -116.792299)
->>> CoordLabel.get_text()
-'N 53.55418, W 116.79230'
-
 >>> MapView.notify('width')
 >>> Box.get_width() == MapView.get_width()
 True
@@ -25,7 +21,6 @@ GtkClutter.init([])
 from gi.repository import Gtk, Champlain, Clutter
 from time import sleep
 
-from gpsmath import format_coords
 from widgets import Widgets, MapView
 from common import Gst, singleton, memoize
 
@@ -147,14 +142,6 @@ class CoordLabel(Clutter.Text):
     def __init__(self):
         Clutter.Text.__init__(self)
         self.set_color(Clutter.Color.new(255, 255, 255, 255))
-        for signal in ('latitude', 'longitude'):
-            MapView.connect('notify::' + signal, self.display)
-    
-    def display(self, view, param):
-        """Display map center coordinates when they change."""
-        self.set_markup(format_coords(
-            MapView.get_center_latitude(),
-            MapView.get_center_longitude()))
 
 
 @singleton
