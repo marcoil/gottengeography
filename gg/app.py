@@ -61,6 +61,14 @@ def startup(self):
     self.drag   = DragController(self.open_files)
     self.search = SearchController()
     
+    center = Coordinates()
+    Binding(MapView, 'latitude', center)
+    Binding(MapView, 'longitude', center)
+    center.do_modified()
+    Binding(center, 'geoname', Widgets.main, 'title')
+    Binding(center, 'coords', CoordLabel, 'text')
+    center.timeout_seconds = 10 # Only update titlebar every 10 seconds
+    
     screen = Gdk.Screen.get_default()
     
     actions = ('open', 'help', 'about', 'quit') # These define the App Menu.
@@ -85,10 +93,8 @@ def startup(self):
             [self.apply_selected_photos],
         'map_source_menu':
             [lambda *ignore: Gtk.show_uri(
-                screen, 'http://maps.google.com/maps?q=%s,%s' % (
-                MapView.get_center_latitude(),
-                MapView.get_center_longitude()),
-                Gdk.CURRENT_TIME)],
+                screen, 'http://maps.google.com/maps?q=%s,%s' %
+                (center.latitude, center.longitude), Gdk.CURRENT_TIME)],
         'quit':
             [self.confirm_quit_dialog],
     }
@@ -124,14 +130,6 @@ def startup(self):
     Widgets.button_sensitivity()
     
     Gst.connect('changed::thumbnail-size', Photograph.resize_all_photos)
-    
-    center = Coordinates()
-    Binding(MapView, 'latitude', center)
-    Binding(MapView, 'longitude', center)
-    center.do_modified()
-    Binding(center, 'geoname', Widgets.main, 'title')
-    Binding(center, 'coords', CoordLabel, 'text')
-    center.timeout_seconds = 10 # Only update titlebar every 10 seconds
     
     Widgets.launch()
     animate_in(self.do_fade_in)
