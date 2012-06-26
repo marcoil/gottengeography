@@ -138,15 +138,34 @@ class GeoCacheKey:
 class Coordinates(GObject.GObject):
     """A generic object containing latitude and longitude coordinates.
     
+    >>> import os, time
+    >>> os.environ['TZ'] = 'America/Winnipeg'
+    >>> time.tzset()
     >>> coord = Coordinates()
+    
+    >>> coord.date
+    >>> coord.timestamp = 60 * 60 * 24 * 365 * 50
+    >>> coord.date
+    '2019-12-19 06:00:00 PM'
+    
+    >>> coord.height
+    >>> coord.altitude = 600
+    >>> coord.height
+    '600.0m above sea level'
+    >>> coord.altitude = -100
+    >>> coord.height
+    '100.0m below sea level'
+    
     >>> coord.positioned
     False
+    >>> coord.coords
     >>> coord.latitude = -51.688687
     >>> coord.longitude = -57.804152
     >>> coord.coords
     'S 51.68869, W 57.80415'
     >>> coord.positioned
     True
+    
     >>> coord.lookup_geodata()
     'Atlantic/Stanley'
     >>> coord.geoname
@@ -178,6 +197,12 @@ class Coordinates(GObject.GObject):
         return ', '.join([name for name in self.names if name])
     
     @GObject.property(type=str)
+    def date(self):
+        """Convert epoch seconds to a human-readable date."""
+        if self.timestamp:
+            return strftime('%Y-%m-%d %X', localtime(self.timestamp))
+    
+    @GObject.property(type=str)
     def coords(self):
         """Report a nicely formatted latitude and longitude pair."""
         if self.positioned:
@@ -186,6 +211,13 @@ class Coordinates(GObject.GObject):
                 _('N') if lat >= 0 else _('S'), abs(lat),
                 _('E') if lon >= 0 else _('W'), abs(lon)
             )
+    
+    @GObject.property(type=str)
+    def height(self):
+        """Convert elevation into a human readable format."""
+        if self.altitude:
+            return '%.1f%s' % (abs(self.altitude), _('m above sea level')
+                        if self.altitude >= 0 else _('m below sea level'))
     
     def __init__(self, **props):
         self.filename = ''
@@ -210,10 +242,8 @@ class Coordinates(GObject.GObject):
         N 10.00000, E 0.00000
         456.7m above sea level
         """
-        return '\n'.join([s for s in (self.geoname,
-                                      self.pretty_time(),
-                                      self.coords,
-                                      self.pretty_altitude()) if s])
+        return '\n'.join([s for s in
+            (self.geoname, self.date, self.coords, self.height) if s])
     
     def lookup_geodata(self):
         """Check the cache for geonames, and notify of any changes.
@@ -239,37 +269,6 @@ class Coordinates(GObject.GObject):
             self.notify('geoname')
         
         return self.geotimezone
-    
-    def pretty_time(self):
-        """Convert epoch seconds to a human-readable date.
-        
-        >>> import os, time
-        >>> os.environ['TZ'] = 'America/Winnipeg'
-        >>> time.tzset()
-        >>> coord = Coordinates()
-        >>> coord.pretty_time()
-        >>> coord.timestamp = 60 * 60 * 24 * 365 * 50
-        >>> coord.pretty_time()
-        '2019-12-19 06:00:00 PM'
-        """
-        if self.timestamp:
-            return strftime('%Y-%m-%d %X', localtime(self.timestamp))
-    
-    def pretty_altitude(self):
-        """Convert elevation into a human readable format.
-        
-        >>> coord = Coordinates()
-        >>> coord.pretty_altitude()
-        >>> coord.altitude = 600
-        >>> coord.pretty_altitude()
-        '600.0m above sea level'
-        >>> coord.altitude = -100
-        >>> coord.pretty_altitude()
-        '100.0m below sea level'
-        """
-        if self.altitude:
-            return '%.1f%s' % (abs(self.altitude), _('m above sea level')
-                        if self.altitude >= 0 else _('m below sea level'))
     
     def do_modified(self, *ignore):
         """Set timer to update the geoname after all modifications are done.
