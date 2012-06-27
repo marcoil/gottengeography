@@ -26,7 +26,10 @@
 
     <p>The unfortunate reality is that most cameras do not record any timezone data into the photos they produce, and this makes your camera's clock very ambiguous. By default, GottenGeography will assume that your camera is set to the same timezone as your computer. This means that for best results, you must synchronise your camera's clock to the one on your computer.</p>
 
-    <p>In the event that your camera's clock is not synchronized with your computer, GottenGeography provides you with a number of options.</p>
+    <figure>
+      <media type="image" src="figures/tz-system.png" />
+      <desc>In the event that your camera's clock is not synchronized with your computer, GottenGeography provides you with a number of options.</desc>
+    </figure>
   </section>
 
   <section id="local">
@@ -34,7 +37,10 @@
 
     <p>GottenGeography can attempt to determine what the local timezone was at the location where your photos were taken. It works by locating the nearest city or town with a population of at least 1,000 and then looking up in a table what timezone is in use in that town. This depends upon the data recorded by your GPS device, and is notoriously unreliable in unpopulated areas. If the nearest town to you is in the next timezone over, it will give you incorrect results.</p>
 
-    <p>This option is only recommended if you travel a lot and are always certain to set your camera's clock to the local time of wherever you go.</p>
+    <figure>
+      <media type="image" src="figures/tz-local.png" />
+      <desc>This option is only recommended if you travel a lot and are always certain to set your camera's clock to the local time of wherever you go.</desc>
+    </figure>
   </section>
 
   <section id="custom">
@@ -42,9 +48,16 @@
 
     <p>If all else fails, you can choose the timezone either as a UTC offset, or from a list of all possible timezones.</p>
 
-    <p>If you choose UTC, you can specify the UTC offset in whole-hour increments from -24 to +24.</p>
+    <figure>
+      <media type="image" src="figures/tz-system.png" />
+      <desc>If you choose UTC, you can specify the UTC offset in whole-hour increments from -24 to +24.</desc>
+    </figure>
 
     <p>Alternately, you can choose your timezone from a list. This option will provide you with two drop-down lists for selecting your timezone. The first one is used to select your region (which can be a country or a continent), and the second one has a list of capital cities or zones known to be in that region. Most likely you'll want to choose the city nearest you. For example, you can choose <em>America</em> and <em>Edmonton</em>, or you can get similar results by choosing <em>Canada</em> and <em>Mountain</em>. The reason for this slight redundancy is that the list of timezones is provided by the system, and either options are valid, so <app>GottenGeography</app> happily allows either.</p>
+    <figure>
+      <media type="image" src="figures/tz-manual-america.png" />
+      <media type="image" src="figures/tz-manual-canada.png" />
+    </figure>
   </section>
 
   <section id="recommendations">

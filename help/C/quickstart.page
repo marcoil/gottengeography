@@ -36,7 +36,10 @@
 
     <p>The first time you run <app>GottenGeography</app>, you see a map of the world. To navigate the map, click and drag to move around, using the mouse wheel to zoom in and out. You can also search the map by typing the name of a city or town in the search bar.</p>
 
-    <p>Try zooming in on your hometown.</p>
+    <figure>
+      <media type="image" src="figures/01-edmonton.png" />
+      <desc>Try zooming in on your hometown.</desc>
+    </figure>
 
     <p><app>GottenGeography</app> will remember where you left off, and return to the last viewed location on the next launch.</p>
   </section>
@@ -48,7 +51,10 @@
 
     <p>You can also click the <gui>Open</gui> button, and select your photos and your GPX files with the more traditional <gui>Open Files</gui> dialog.</p>
 
-    <p>Go ahead and open a GPX or KML file to start.</p>
+    <figure>
+      <media type="image" src="figures/02-load-gps.png" />
+      <desc>Go ahead and open a GPS trace file to start. Supported formats are GPX, TCX, KML, and CSV.</desc>
+    </figure>
 
     <p>The map will automatically zoom in or out so you can see the entire GPS trace. If you load several traces, it zooms out even further to show everything you've loaded.</p>
 
@@ -56,9 +62,17 @@
 
     <p>Now, try loading some images.</p>
 
-    <p>Ta-da! <app>GottenGeography</app> automatically places your images onto the map based on the information in the GPX file.</p>
+    <figure>
+      <media type="image" src="figures/03-load-photos.png" />
+      <desc>Ta-da! <app>GottenGeography</app> automatically places your images onto the map using the GPS data.</desc>
+    </figure>
 
     <p>If your camera's clock is wrong, you can correct it using the "Clock Offset" setting in the Cameras tab. The fastest way to change this setting is with the mouse wheel, but you can also do it with the arrow keys, or by clicking and dragging. This change is reflected on the map immediately, so just keep scrolling the mouse wheel until the photos look like they are correctly positioned. If your camera's timezone is not the same as your computer's timezone, you will have to set the timezone manually, and then you can change the minutes and seconds settings until the photos are positioned correctly.</p>
+
+    <figure>
+      <media type="image" src="figures/04-camera-offset.png" />
+      <desc>Changing the offset slider moves the photos along the GPS trace on the map.</desc>
+    </figure>
 
     <p>By clicking "Save All", your photos will forever remember where you took them.</p>
   </section>
@@ -66,17 +80,25 @@
   <section id="tagging files manually">
     <title>Don't have a GPS? Forgot to bring it?</title>
 
-    <p>No Problem! You can use the <gui>Apply</gui> button to set the position for your photo manually.</p>
+    <p>No Problem! <app>GottenGeography</app> offers two different methods for manually placing photos onto the map, the easiest of which is <gui>drag &amp; drop</gui>. You can either drag photos from the list of photos at left, or directly from your file browser, and GottenGeography will place them at the precise point you indicate on the map. If you make a mistake, the photos can also be dragged around within the map to fine tune your results.</p>
 
-    <p>First, navigate the map to the place you took the photo. The black diamond at map center indicates precisely where the photos will be placed. Once you're satisfied you have the right location, click <gui>Apply</gui>. A marker appears on the map exactly where your photo was placed. If you want to fine-tune the location of the marker, you can actually drag the marker around on the map after it is created.</p>
+    <p>If <gui>drag &amp; drop</gui> isn't working for you, there is also the <gui>Apply</gui> button to set the position for your photo manually. Clicking this button will place the selected photos directly onto the center of the map, so you must first navigate the map to the place you took the photos. The grey dot at map center indicates precisely where the photos will be placed. Once you're satisfied you have the right location, click <gui>Apply</gui> (the green check mark). The photo will then appear on the map.</p>
 
-    <p>When a photo has been manually tagged, the automatic tagger respects and preserves the location you've chosen. If you change the "Clock Offset" setting, the photo you've manually tagged stays still, but the rest slide up and down the GPX track. If you want to switch back to automatic tagging, just select the photo and click the <gui>Revert</gui> button.</p>
+    <figure>
+      <media type="image" src="figures/06-manual.png" />
+      <desc>When a photo has been manually tagged, the automatic tagger respects and preserves the location you've chosen. If you change the "Clock Offset" setting, the photo you've manually tagged stays still, but the rest slide up and down the GPX track. If you want to switch back to automatic tagging, just select the photo and click the <gui>Revert</gui> button.</desc>
+    </figure>
+
   </section>
 
   <section id="viewing tags">
     <title>Viewing Tags</title>
 
     <p>Simply load photos that already have geotag data applied to them, and <app>GottenGeography</app> will display them on the map. That's it!</p>
+
+    <figure>
+      <media type="image" src="figures/07-viewing.png" />
+    </figure>
   </section>
 
   <section id="bogs">
