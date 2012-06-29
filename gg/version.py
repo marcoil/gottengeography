@@ -8,7 +8,7 @@
 
 APPNAME='GottenGeography'
 PACKAGE='gottengeography'
-VERSION='1.3'
+VERSION='2.0'
 
 AUTHOR='Robert Park'
 EMAIL='rbpark@exolucere.ca'

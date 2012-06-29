@@ -1,9 +1,9 @@
 Status
 ======
 
-Version 1.3 is released, and it's targetted for Fedora 17, meaning that Fedora 17 ships with everything needed to run GottenGeography. Users of other distros who want to run it will need to make sure they have libchamplain 0.12.2 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0, and Python 2.7.
+Version 2.0 is released, and it's targetted for Fedora 17, meaning that Fedora 17 ships with everything needed to run GottenGeography. Users of other distros who want to run it will need to make sure they have libchamplain 0.12.2 or later, pyexiv2 0.3 or later, pygobject3 3.0.3 or later, Gtk 3.0 or later, and Python 2.7.
 
-Unfortunately Fedora 16 does not provide the necessary dependencies to run v1.3 and so users of Fedora 16 should be using v1.1.
+Unfortunately Fedora 16 does not provide the necessary dependencies to run v2.0 and so users of Fedora 16 should be using v1.1.
 
 GottenGeography
 ===============
@@ -41,6 +41,6 @@ Testing
 
 I feel I have tested most aspects of this application fairly thoroughly. However, I only own two cameras, and only one GPS unit, so my test data is limited. You should backup your files before using GottenGeography. If you find that GottenGeography fails with your files, please send them to me and I'll do my best to get everything working. I have supplied some demo data with the program to show you how it is *supposed* to work ;-)
 
-If you want to try out the included demo data and you're not in the Mountain Standard Time timezone, you'll have to turn on the auto-timezone lookup in the preferences (Timezone tab, click the second radio button), and that will give correct results regardless of what timezone your computer is set to.
+If you want to try out the included demo data and you're not in the Mountain Standard Time timezone, you'll have to choose "use the local timezone" on the Cameras tab, and that will give correct results regardless of what timezone your computer is set to.
 
 Happy Tagging! --[Robert](mailto:rbpark@exolucere.ca)
