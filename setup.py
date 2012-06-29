@@ -2,7 +2,7 @@
 
 from glob import glob
 from os import listdir
-from os.path import join
+from os.path import join, isdir
 from distutils.core import setup
 from subprocess import Popen, PIPE
 from DistUtilsExtra.command import *
@@ -21,7 +21,11 @@ data_files = [
 
 for helplang in listdir('help'):
     data_files.append(('share/gnome/help/%s/%s' % (PACKAGE, helplang),
-                      glob(join('help', helplang, '*'))))
+                      [f for f in glob(join('help', helplang, '*'))
+                          if not f.endswith('figures')]))
+
+data_files.append(('share/gnome/help/%s/C/figures' % PACKAGE,
+    glob(join('help', 'C', 'figures', '*'))))
 
 build_info_template = """# -*- coding: UTF-8 -*-
 
@@ -36,7 +40,7 @@ class build_py(_build_py):
     
     Inspired by a distutils-sig posting by Wolodja Wentland in Sept 2009.
     """
-    def build_module (self, module, module_file, package):
+    def build_module(self, module, module_file, package):
         if ('%s/%s' % (package, module) == 'gg/build_info'):
             try:
                 iobj = self.distribution.command_obj['install']
