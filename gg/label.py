@@ -58,15 +58,8 @@ class Label(Champlain.Label):
             lambda *ignore: modified.add(photo)
                 and photo.disable_auto_position())
         
-        if photo.positioned:
-            self.set_location(photo.latitude, photo.longitude)
-            self.show()
-        else:
-            self.hide()
-        
         for prop in ('latitude', 'longitude'):
-            Binding(photo, prop, self,
-                            flags=GObject.BindingFlags.BIDIRECTIONAL)
+            Binding(photo, prop, self, flags=GObject.BindingFlags.BIDIRECTIONAL)
         Binding(photo, 'positioned', self, 'visible')
         
         MarkerLayer.add_marker(self)
