@@ -1,0 +1,78 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:e="http://projectmallard.org/experimental/"
+      type="topic"
+      id="timezones">
+
+  <info>
+    <title type="link">Timezones</title>
+    <title type="text"><app>GottenGeography</app> Timezone Guide</title>
+    <link type="guide" xref="index"/>
+
+    <credit type="author">
+      <name>Robert Park</name>
+      <email>rbpark@exolucere.ca</email>
+    </credit>
+    <license>
+      <p>Creative Commons Share Alike 3.0</p>
+    </license>
+  </info>
+  
+  <title>
+    <app>GottenGeography</app> Timezone Guide
+  </title>
+
+  <section id="introduction">
+    <title>Understanding the Timezone Selector</title>
+
+    <p>The unfortunate reality is that most cameras do not record any timezone data into the photos they produce, and this makes your camera's clock very ambiguous. By default, GottenGeography will assume that your camera is set to the same timezone as your computer. This means that for best results, you must synchronise your camera's clock to the one on your computer.</p>
+
+    <figure>
+      <media type="image" src="figures/tz-system.png" />
+      <desc>In the event that your camera's clock is not synchronized with your computer, GottenGeography provides you with a number of options.</desc>
+    </figure>
+  </section>
+
+  <section id="local">
+    <title>Use the local time</title>
+
+    <p>GottenGeography can attempt to determine what the local timezone was at the location where your photos were taken. It works by locating the nearest city or town with a population of at least 1,000 and then looking up in a table what timezone is in use in that town. This depends upon the data recorded by your GPS device, and is notoriously unreliable in unpopulated areas. If the nearest town to you is in the next timezone over, it will give you incorrect results.</p>
+
+    <figure>
+      <media type="image" src="figures/tz-local.png" />
+      <desc>This option is only recommended if you travel a lot and are always certain to set your camera's clock to the local time of wherever you go.</desc>
+    </figure>
+  </section>
+
+  <section id="custom">
+    <title>Specify the timezone manually.</title>
+
+    <p>If all else fails, you can choose the timezone either as a UTC offset, or from a list of all possible timezones.</p>
+
+    <figure>
+      <media type="image" src="figures/tz-system.png" />
+      <desc>If you choose UTC, you can specify the UTC offset in whole-hour increments from -24 to +24.</desc>
+    </figure>
+
+    <p>Alternately, you can choose your timezone from a list. This option will provide you with two drop-down lists for selecting your timezone. The first one is used to select your region (which can be a country or a continent), and the second one has a list of capital cities or zones known to be in that region. Most likely you'll want to choose the city nearest you. For example, you can choose <em>America</em> and <em>Edmonton</em>, or you can get similar results by choosing <em>Canada</em> and <em>Mountain</em>. The reason for this slight redundancy is that the list of timezones is provided by the system, and either options are valid, so <app>GottenGeography</app> happily allows either.</p>
+    <figure>
+      <media type="image" src="figures/tz-manual-america.png" />
+      <media type="image" src="figures/tz-manual-canada.png" />
+    </figure>
+  </section>
+
+  <section id="recommendations">
+    <title>Recommended strategy</title>
+
+    <p>The easiest and most hassle-free method of using GottenGeography is to simply syncronise your camera's clock to your computer's clock.</p>
+
+    <p>Another strategy is to syncronise your camera's clock to UTC, and then select UTC+0 manually. This has the benefit that even if you move around a lot, and your computer's system timezone is changing frequently, the camera's clock will always be known and correct results can always be found, with little hassle.</p>
+  </section>
+
+  <section id="offset">
+    <title>Clock offset</title>
+    <p>If your photos don't line up properly and your camera's clock is just plain wrong, you can add or subtract up to an hour with the <gui>Clock Offset Slider</gui>. If you are trying to add or subtract more than an hour, this means you have chosen the wrong timezone.</p>
+
+    <p>I personally find the slider easiest to operate with the mouse wheel, however if you don't have a mouse wheel, it also can be controlled with the arrow keys on your keyboard, or by clicking and dragging.</p>
+  </section>
+
+</page>

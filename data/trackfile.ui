@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkGrid" id="trackfile_settings">
+    <property name="visible">True</property>
+    <property name="expand">True</property>
+    <property name="can_focus">False</property>
+    <property name="row-spacing">6</property>
+    <property name="column-spacing">6</property>
+    <property name="halign">center</property>
+    <property name="valign">center</property>
+    <child>
+      <object class="GtkLabel" id="trackfile_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label">Filename</property>
+        <property name="single_line_mode">True</property>
+        <attributes>
+          <attribute name="weight" value="heavy"/>
+          <attribute name="size" value="13000"/>
+        </attributes>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkColorButton" id="colorpicker">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">1</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolButton" id="unload">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="stock_id">gtk-close</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">1</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+  </object>
+</interface>

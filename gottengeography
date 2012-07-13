@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python
 
 # GottenGeography - Automagically geotags photos by comparing timestamps to GPX data
 # Copyright (C) 2010 Robert Park <rbpark@exolucere.ca>
@@ -16,18 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sys import exit
+from gi.repository import Gtk
+import sys
 
 def need(dependency):
     """Exit the program and tell the user what dependency was missing."""
-    exit('GottenGeography requires at least ' + dependency)
-
-try:
-    from fractions import Fraction
-    # Raises TypeError with Python 2.6, so 2.7 is required.
-    Fraction(0.5).numerator
-except:
-    need('Python 2.7')
+    sys.exit('GottenGeography requires at least ' + dependency)
 
 try:
     from dateutil.parser import parse
@@ -47,19 +41,34 @@ try:
     Champlain.PathLayer
     
     # Raises TypeError with libchamplain 0.12.0
-    [ source.get_id() for source in Champlain.MapSourceFactory.dup_default().get_registered() ]
+    [source.get_id() for source in
+        Champlain.MapSourceFactory.dup_default().get_registered()]
 except:
     need('libchamplain 0.12.2')
 
 try:
-    import pyexiv2
-    if pyexiv2.version_info < (0, 3):
-        raise ImportError
+    from pyexiv2.exif import ExifTag
+    from fractions import Fraction
+    # Fails for pyexiv2 0.2 which didn't support Fractions.
+    assert ExifTag('Exif.GPSInfo.GPSAltitude')._convert_to_string(
+        Fraction('1.6')) == '8/5'
 except:
     need('pyexiv2 0.3')
+
+
+old_hook = sys.excepthook
+def new_hook(*args):
+    """Exit cleanly if there was an unhandled exception."""
+    old_hook(*args)
+    while Gtk.main_level():
+        Gtk.main_quit()
+    sys.exit()
+sys.excepthook = new_hook
+
 
 # If we got this far, it looks like we have everything we need!
 # Time to launch the app.
 
 from gg.app import GottenGeography
-GottenGeography().main()
+GottenGeography(not sys.argv[1:]).run(sys.argv)
+

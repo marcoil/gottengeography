@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <menu id='appmenu'>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Open</attribute>
+        <attribute name='action'>app.open</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_Save All</attribute>
+        <attribute name='action'>app.save</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Help</attribute>
+        <attribute name='action'>app.help</attribute>
+        <attribute name='accel'>F1</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_About</attribute>
+        <attribute name='action'>app.about</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Quit</attribute>
+        <attribute name='action'>app.quit</attribute>
+        <attribute name='accel'>&lt;Primary&gt;q</attribute>
+      </item>
+    </section>
+  </menu>
+  <object class="GtkApplicationWindow" id="main">
+    <property name="width_request">620</property>
+    <property name="height_request">400</property>
+    <property name="can_focus">False</property>
+    <property name="show_menubar">False</property>
+    <property name="title">GottenGeography</property>
+    <property name="icon_name">gottengeography</property>
+    <child>
+      <object class="GtkGrid" id="app_container">
+        <property name="can_focus">False</property>
+        <child>
+          <object class="GtkToolbar" id="toolbar">
+            <property name="can_focus">False</property>
+            <style>
+                <class name="primary-toolbar"/>
+            </style>
+            <child>
+              <object class="GtkToolButton" id="open_button">
+                <property name="use_action_appearance">False</property>
+                <property name="can_focus">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip_text" translatable="yes">Load photos or GPS data (Ctrl O)</property>
+                <property name="stock_id">gtk-open</property>
+                <accelerator key="o" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="sep1">
+                <property name="can_focus">False</property>
+                <property name="draw">False</property>
+                <property name="width_request">50</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkMenuToolButton" id="map_source_menu_button">
+                <property name="menu">map_source_menu</property>
+                <property name="is_important">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Change map view (Google opens in your browser)</property>
+                <property name="label">Google</property>
+                <child type="menu">
+                  <object class="GtkMenu" id="map_source_menu">
+                    <property name="can_focus">False</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="sep2">
+                <property name="can_focus">False</property>
+                <property name="draw">False</property>
+                <property name="width_request">50</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="back_button">
+                <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">Return to the previous location viewed on map (Ctrl Left)</property>
+                <property name="stock-id">gtk-go-back</property>
+                <accelerator key="Left" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="search_box_container">
+                <child>
+                  <object class="GtkEntry" id="search_box">
+                    <property name="can_focus">True</property>
+                    <property name="has_tooltip">True</property>
+                    <property name="placeholder_text" translatable="yes">Type the name of the city you would like to view.</property>
+                    <property name="width_chars">30</property>
+                    <property name="caps_lock_warning">False</property>
+                    <property name="secondary_icon_stock">gtk-find</property>
+                    <property name="completion">search_completion</property>
+                    <accelerator key="l" signal="grab_focus" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="zoom_out_button">
+                <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">Zoom the map out one step (Ctrl -)</property>
+                <property name="stock-id">gtk-zoom-out</property>
+                <accelerator key="minus" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="zoom_in_button">
+                <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">Enhance! (Ctrl +)</property>
+                <property name="stock-id">gtk-zoom-in</property>
+                <accelerator key="equal" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="sep3">
+                <property name="can_focus">False</property>
+                <property name="draw">False</property>
+                <property name="width_request">50</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="help_button">
+                <property name="can_focus">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="is_important">True</property>
+                <property name="tooltip_text" translatable="yes">Learn how to use GottenGeography (Ctrl ?)</property>
+                <property name="stock_id">gtk-help</property>
+                <accelerator key="question" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                <accelerator key="slash" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="about_button">
+                <property name="can_focus">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip_text" translatable="yes">About GottenGeography</property>
+                <property name="stock_id">gtk-about</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="width">2</property>
+            <property name="left-attach">0</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkNotebook" id="photo_camera_gps">
+            <property name="can_focus">False</property>
+            <property name="border_width">3</property>
+            <property name="expand">False</property>
+            <child>
+              <object class="GtkGrid" id="photos_with_toolbar">
+                <property name="can_focus">False</property>
+                <property name="border_width">0</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkOverlay" id="photos_with_buttons">
+                    <property name="can_focus">False</property>
+                    <property name="expand">True</property>
+                    <property name="border_width">0</property>
+                    <child>
+                      <object class="GtkScrolledWindow" id="photoscroller">
+                        <property name="can_focus">False</property>
+                        <property name="border_width">0</property>
+                        <property name="hscrollbar_policy">never</property>
+                        <child>
+                          <object class="GtkTreeView" id="photos_view">
+                            <property name="can_focus">True</property>
+                            <property name="headers_visible">False</property>
+                            <property name="headers_clickable">False</property>
+                            <property name="enable_search">False</property>
+                            <property name="show_expanders">False</property>
+                            <property name="model">loaded_photos</property>
+                            <child internal-child="selection">
+                              <object class="GtkTreeSelection" id="photos_selection">
+                                <property name="mode">GTK_SELECTION_MULTIPLE</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="photos_column">
+                                <property name="title">Photos</property>
+                                <property name="sizing">GTK_TREE_VIEW_COLUMN_AUTOSIZE</property>
+                                <child>
+                                  <object class="GtkCellRendererPixbuf" id="photos_thumb_renderer">
+                                    <property name="xpad">12</property>
+                                    <property name="ypad">6</property>
+                                  </object>
+                                  <attributes>
+                                    <attribute name="pixbuf">2</attribute>
+                                  </attributes>
+                                </child>
+                                <child>
+                                  <object class="GtkCellRendererText" id="photos_summary_renderer">
+                                    <property name="wrap-width">200</property>
+                                    <property name="wrap-mode">0</property>
+                                  </object>
+                                  <attributes>
+                                    <attribute name="markup">1</attribute>
+                                  </attributes>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="overlay">
+                      <object class="GtkLabel" id="empty_photo_list">
+                        <property name="sensitive">True</property>
+                        <property name="halign">0</property>
+                        <property name="valign">0</property>
+                        <property name="can_focus">False</property>
+                        <property name="wrap">True</property>
+                        <property name="label" translatable="yes">Drag files here to load.</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToolbar" id="photo_btn_bar">
+                    <property name="can_focus">False</property>
+                    <property name="show_arrow">False</property>
+                    <property name="no_show_all">True</property>
+                    <property name="expand">False</property>
+                    <property name="border_width">0</property>
+                    <property name="icon_size">1</property>
+                    <child>
+                      <object class="GtkToolButton" id="close_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="border_width">0</property>
+                        <property name="stock_id">gtk-close</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Close selected photos (Ctrl W)</property>
+                        <property name="is_important">True</property>
+                        <accelerator key="w" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="revert_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="border_width">0</property>
+                        <property name="stock_id">gtk-revert-to-saved</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Reload selected photos, losing all changes (Ctrl Z)</property>
+                        <property name="is_important">True</property>
+                        <accelerator key="z" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="jump_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="border_width">0</property>
+                        <property name="stock_id">gtk-jump-to</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Center the map view on the selected photo (Ctrl J)</property>
+                        <accelerator key="j" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorToolItem" id="spacer1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="draw">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="save_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Save all photos (Ctrl S)</property>
+                        <property name="is_important">True</property>
+                        <property name="label" translatable="yes">Save All</property>
+                        <property name="use_underline">True</property>
+                        <property name="stock_id">gtk-save</property>
+                        <accelerator key="s" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="apply_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="border_width">0</property>
+                        <property name="stock-id">gtk-apply</property>
+                        <property name="has_tooltip">True</property>
+                        <property name="tooltip_text" translatable="yes">Place selected photos onto center of map (Ctrl Enter)</property>
+                        <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="tab_photo">
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Photos</property>
+                <property name="single_line_mode">True</property>
+                <property name="hexpand">True</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkGrid" id="cameras_view">
+                <property name="can_focus">False</property>
+                <property name="margin">20</property>
+                <property name="row-spacing">20</property>
+                <property name="column-spacing">6</property>
+                <property name="column-homogeneous">True</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel" id="empty_camera_list">
+                    <property name="sensitive">True</property>
+                    <property name="no_show_all">True</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="wrap">True</property>
+                    <property name="label" translatable="yes">Drag files here to load.</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="tab_cameras">
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Cameras</property>
+                <property name="single_line_mode">True</property>
+                <property name="hexpand">True</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkGrid" id="trackfiles_view">
+                <property name="margin">20</property>
+                <property name="row-spacing">12</property>
+                <property name="column-spacing">6</property>
+                <property name="column-homogeneous">True</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel" id="empty_trackfile_list">
+                    <property name="sensitive">True</property>
+                    <property name="no_show_all">True</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="wrap">True</property>
+                    <property name="label" translatable="yes">Drag files here to load.</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="tab_gps">
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">GPS</property>
+                <property name="single_line_mode">True</property>
+                <property name="hexpand">True</property>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="width">1</property>
+            <property name="left-attach">0</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="map_border">
+            <property name="can_focus">False</property>
+            <property name="hscrollbar_policy">never</property>
+            <property name="vscrollbar_policy">never</property>
+            <property name="shadow_type">etched-out</property>
+            <property name="kinetic_scrolling">False</property>
+            <property name="expand">True</property>
+            <property name="border_width">3</property>
+            <child>
+              <object class="GtkViewport" id="map_viewport">
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkOverlay" id="map_container">
+                    <property name="can_focus">False</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child type="overlay">
+                      <object class="GtkInfoBar" id="error_bar">
+                        <property name="no_show_all">True</property>
+                        <property name="visible">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="expand">False</property>
+                        <property name="halign">0</property>
+                        <property name="valign">1</property>
+                        <child internal-child="content_area">
+                          <object class="GtkBox" id="error_bar_content">
+                            <property name="can_focus">False</property>
+                            <property name="border_width">8</property>
+                            <property name="spacing">16</property>
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkImage" id="error_icon">
+                                <property name="can_focus">False</property>
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                             <object class="GtkLabel" id="error_message">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="wrap">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                        <child internal-child="action_area">
+                          <object class="GtkButtonBox" id="error_action">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="orientation">vertical</property>
+                            <property name="layout_style">center</property>
+                            <child>
+                              <object class="GtkButton" id="error_ok_button">
+                                <property name="visible">True</property>
+                                <property name="label">gtk-ok</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="border_width">6</property>
+                                <property name="use_stock">True</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <action-widgets>
+                          <action-widget response="0">error_ok_button</action-widget>
+                        </action-widgets>
+                      </object>
+                    </child>
+                    <child type="overlay">
+                      <object class="GtkProgressBar" id="progressbar">
+                        <property name="can_focus">False</property>
+                        <property name="no_show_all">True</property>
+                        <property name="show_text">True</property>
+                        <property name="margin">6</property>
+                        <property name="halign">0</property>
+                        <property name="valign">2</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="width">1</property>
+            <property name="left-attach">1</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkFileChooserDialog" id="open">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Open Files</property>
+    <property name="transient_for">main</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="icon_name">gtk-open</property>
+    <property name="type_hint">dialog</property>
+    <property name="preview_widget">preview</property>
+    <property name="select_multiple">True</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox3">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area3">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="open_cancel">
+                <property name="label">gtk-cancel</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="open_ok">
+                <property name="label">gtk-ok</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="-6">open_cancel</action-widget>
+      <action-widget response="-5">open_ok</action-widget>
+    </action-widgets>
+  </object>
+  <object class="GtkImage" id="preview">
+    <property name="width_request">310</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="xpad">5</property>
+    <property name="ypad">5</property>
+    <property name="stock">gtk-file</property>
+    <property name="icon-size">6</property>
+  </object>
+  <object class="GtkAboutDialog" id="about">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">About GottenGeography</property>
+    <property name="window_position">center-always</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="icon_name">gtk-about</property>
+    <property name="logo_icon_name">gottengeography</property>
+    <property name="type_hint">dialog</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
+    <property name="transient_for">main</property>
+    <property name="copyright">© Robert Park, 2010 - 2012</property>
+    <property name="comments" translatable="yes">GottenGeography: Go open thy tagger!
+
+This program is written in the Python programming language, and adds geotags to your photos. The name is an anagram of "Python Geotagger."</property>
+    <property name="website">http://github.com/robru/GottenGeography/wiki</property>
+    <property name="website_label" translatable="yes">GottenGeography Wiki</property>
+    <property name="license">Copyright (C) 2010 Robert Park &lt;rbpark@exolucere.ca&gt;
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
+    <property name="authors">Robert Park &lt;rbpark@exolucere.ca&gt;
+Marc Ordinas i Llopis &lt;mail@marcoil.org&gt;</property>
+    <property name="documenters">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
+    <property name="translator_credits" translatable="yes">Robert Park &lt;rbpark@exolucere.ca&gt;</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkMessageDialog" id="quit">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title"> </property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="transient_for">main</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="icon_name">dialog-warning</property>
+    <property name="type_hint">dialog</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="urgency_hint">True</property>
+    <property name="message_type">warning</property>
+    <property name="text" translatable="yes">&lt;span weight="bold" size="larger"&gt;Save changes to your photos before closing?&lt;/span&gt;</property>
+    <property name="use_markup">True</property>
+    <property name="secondary_text" translatable="yes">The changes you've made to %d of your photos will be permanently lost if you do not save.</property>
+    <property name="secondary_use_markup">True</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox2">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
+            <property name="layout_style">center</property>
+            <child>
+              <object class="GtkButton" id="quit_nosave">
+                <property name="label" translatable="yes">Close _without Saving</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="quit_cancel">
+                <property name="label">gtk-cancel</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="quit_save">
+                <property name="label">gtk-save</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="-7">quit_nosave</action-widget>
+      <action-widget response="-6">quit_cancel</action-widget>
+      <action-widget response="-3">quit_save</action-widget>
+    </action-widgets>
+  </object>
+  <object class="GtkListStore" id="loaded_photos">
+    <columns>
+      <!-- column-name filename -->
+      <column type="gchararray"/>
+      <!-- column-name summary -->
+      <column type="gchararray"/>
+      <!-- column-name thumb -->
+      <column type="GdkPixbuf"/>
+      <!-- column-name timestamp -->
+      <column type="gint"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="search_results">
+    <columns>
+      <!-- column-name city -->
+      <column type="gchararray"/>
+      <!-- column-name lat -->
+      <column type="gdouble"/>
+      <!-- column-name lon -->
+      <column type="gdouble"/>
+    </columns>
+  </object>
+  <object class="GtkEntryCompletion" id="search_completion">
+    <property name="model">search_results</property>
+    <property name="minimum_key_length">3</property>
+    <property name="text_column">0</property>
+    <property name="inline_completion">True</property>
+  </object>
+  <object class="GtkSizeGroup" id="cameras_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="timezone_regions_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="timezone_cities_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="trackfiles_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="trackfile_colors_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup" id="trackfile_unloads_group">
+    <property name="mode">GTK_SIZE_GROUP_HORIZONTAL</property>
+    <widgets>
+      <placeholder />
+    </widgets>
+  </object>
+</interface>
