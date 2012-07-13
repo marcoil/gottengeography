@@ -1,4 +1,9 @@
-gg/app.py
-gg/files.py
-gg/utils.py
 [type: gettext/glade] data/gottengeography.ui
+[type: gettext/glade] data/trackfile.ui
+[type: gettext/glade] data/camera.ui
+gg/actor.py
+gg/app.py
+gg/gpsmath.py
+gg/camera.py
+gg/xmlfiles.py
+

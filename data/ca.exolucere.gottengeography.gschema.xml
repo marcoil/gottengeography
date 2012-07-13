@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
+
+
   <schema path="/ca/exolucere/gottengeography/" id="ca.exolucere.gottengeography">
     <key type="(ii)" name="window-size">
       <default>(800, 600)</default>
       <summary>The current size of the main window.</summary>
     </key>
-    <key type="aad" name="history">
-      <default>[[34.5, 15.8, 2]]</default>
+    <key type="a(ddi)" name="history">
+      <default>[(34.5, 15.8, 2)]</default>
       <summary>A short history of the places the user has visited.</summary>
     </key>
     <key type="(iii)" name="track-color">
@@ -16,16 +18,6 @@
     <key type="s" name="map-source-id">
       <default>"osm-mapnik"</default>
       <summary>The id of the map to display to the user.</summary>
-    </key>
-    <key type="i" name="offset-minutes">
-      <range min="-60" max="60"/>
-      <default>0</default>
-      <summary>The number of minutes that the camera's clock is wrong by.</summary>
-    </key>
-    <key type="i" name="offset-seconds">
-      <range min="-60" max="60"/>
-      <default>0</default>
-      <summary>The number of seconds that the camera's clock is wrong by.</summary>
     </key>
     <key type="d" name="latitude">
       <default>34.5</default>
@@ -39,25 +31,91 @@
       <default>2</default>
       <summary>Current level to which the map is zoomed.</summary>
     </key>
-    <key type="i" name="timezone-region">
-      <default>-1</default>
-      <summary>The custom timezone region that is selected.</summary>
+    <key type="i" name="left-pane-page">
+      <range min="0" max="2"/>
+      <default>0</default>
+      <summary>Indicates whether the Photos, Cameras, or GPS tab is currently visible.</summary>
     </key>
-    <key type="i" name="timezone-cities">
-      <default>-1</default>
-      <summary>The custom timezone city that is selected.</summary>
+    <key type="i" name="animation-steps">
+      <range min="1" max="256"/>
+      <default>256</default>
+      <summary>How many steps the initial fade-in animation should play at app launch.</summary>
+      <description>Set this number lower in order to speed app launch.</description>
     </key>
-    <key type="b" name="system-timezone">
+    <key type="i" name="thumbnail-size">
+      <range min="48" max="500"/>
+      <default>200</default>
+      <summary>Width in pixels for the thumbnails in the photo pane.</summary>
+    </key>
+    <key type="b" name="use-dark-theme">
       <default>true</default>
-      <summary>Use the system's timezone.</summary>
+      <summary>Use the dark GTK theme, if available.</summary>
     </key>
-    <key type="b" name="lookup-timezone">
-      <default>false</default>
-      <summary>Use the photo location's timezone.</summary>
+    <key type="b" name="show-map-scale">
+      <default>true</default>
+      <summary>Determines whether or not to show the scale on the map.</summary>
     </key>
-    <key type="b" name="custom-timezone">
-      <default>false</default>
-      <summary>Specify a manual timezone.</summary>
+    <key type="b" name="show-map-center">
+      <default>true</default>
+      <summary>Determines whether or not to show the crosshair at map center.</summary>
+    </key>
+    <key type="b" name="show-map-coords">
+      <default>true</default>
+      <summary>Determines whether or not to show the latitude and longitude atop the map.</summary>
     </key>
   </schema>
+
+
+  <schema id="ca.exolucere.gottengeography.camera">
+    <key type="i" name="offset">
+      <range min="-3600" max="3600"/>
+      <default>0</default>
+      <summary>The error in the camera's clock, measured in seconds.</summary>
+    </key>
+    <key type="s" name="timezone-method">
+      <choices>
+        <choice value='system'/>
+        <choice value='lookup'/>
+        <choice value='offset'/>
+        <choice value='custom'/>
+      </choices>
+      <default>'system'</default>
+      <summary>What method is used to determine the camera's timezone.</summary>
+      <description>This rubbish is necessary because the EXIF standard does not specify the timezone, even if the user has specified a timezone in their camera's setup menu.</description>
+    </key>
+    <key type="s" name="found-timezone">
+      <default>''</default>
+      <summary>The timezone that the camera was last known to be used in.</summary>
+      <description>This key is only consulted if timezone-method is 'lookup'.</description>
+    </key>
+    <key type="s" name="timezone-region">
+      <default>''</default>
+      <summary>The custom timezone region that the user has selected, if any.</summary>
+      <description>This key is only consulted if timezone-method is 'custom'. The value is an int representing the index of the continent selected manually by the user.</description>
+    </key>
+    <key type="s" name="timezone-city">
+      <default>''</default>
+      <summary>The custom timezone city that the user has selected, if any.</summary>
+      <description>This key is only consulted if timezone-method is 'custom'. The value is an int representing the index of the city selected manually by the user.</description>
+    </key>
+    <key type="i" name="utc-offset">
+      <range min="-24" max="24"/>
+      <default>0</default>
+      <summary>How many hours you are away from UTC.</summary>
+    </key>
+  </schema>
+
+
+  <schema id="ca.exolucere.gottengeography.trackfile">
+    <key type="(iii)" name="track-color">
+      <default>(32768, 0, 65535)</default>
+      <summary>Use this color for the polygons on the map.</summary>
+    </key>
+    <key type="s" name="start-timezone">
+      <default>''</default>
+      <summary>The timezone that the GPS trace began at.</summary>
+    </key>
+  </schema>
+
+
 </schemalist>

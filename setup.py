@@ -1,24 +1,38 @@
 #!/usr/bin/env python
 
-from os.path import join
+from glob import glob
+from os import listdir
+from os.path import join, isdir
 from distutils.core import setup
+from subprocess import Popen, PIPE
 from DistUtilsExtra.command import *
 from distutils.command.build_py import build_py as _build_py
 
 from gg.version import *
 
 data_files = [
-    ('share/' + PACKAGE, ['data/cities.txt', 'data/%s.ui' % PACKAGE]),
-    ('share/applications', ['data/%s.desktop' % PACKAGE]),
     ('share/icons/hicolor/scalable/apps', ['data/%s.svg' % PACKAGE]),
     ('share/glib-2.0/schemas', ['data/ca.exolucere.%s.gschema.xml' % PACKAGE]),
-    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING'])
+    ('share/applications', ['data/%s.desktop' % PACKAGE]),
+    ('share/doc/' + PACKAGE, ['README.md', 'AUTHORS', 'COPYING']),
+    ('share/' + PACKAGE, ['data/cities.txt', 'data/trackfile.ui', 'data/camera.ui',
+        'data/%s.ui' % PACKAGE, 'data/%s.svg' % PACKAGE])
 ]
+
+for helplang in listdir('help'):
+    data_files.append(('share/gnome/help/%s/%s' % (PACKAGE, helplang),
+                      [f for f in glob(join('help', helplang, '*'))
+                          if not f.endswith('figures')]))
+
+data_files.append(('share/gnome/help/%s/C/figures' % PACKAGE,
+    glob(join('help', 'C', 'figures', '*'))))
 
 build_info_template = """# -*- coding: UTF-8 -*-
 
-# Distutils installed GottenGeography into:
+# Distutils installation details:
+PREFIX='%s'
 PKG_DATA_DIR='%s'
+REVISION='%s'
 """
 
 class build_py(_build_py): 
@@ -26,15 +40,18 @@ class build_py(_build_py):
     
     Inspired by a distutils-sig posting by Wolodja Wentland in Sept 2009.
     """
-    def build_module (self, module, module_file, package):
+    def build_module(self, module, module_file, package):
         if ('%s/%s' % (package, module) == 'gg/build_info'):
             try:
                 iobj = self.distribution.command_obj['install']
                 with open(module_file, 'w') as module_fp:
                     module_fp.write(build_info_template % (
-                        join(iobj.prefix, 'share', PACKAGE)
+                        iobj.prefix,
+                        join(iobj.prefix, 'share', PACKAGE),
+                        Popen(['git', 'describe'],
+                            stdout=PIPE).communicate()[0].strip()
                     ))
-            except:
+            except KeyError:
                 pass
         
         _build_py.build_module(self, module, module_file, package)

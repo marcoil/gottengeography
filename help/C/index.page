@@ -1,0 +1,23 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:e="http://projectmallard.org/experimental/"
+      type="guide" style="2column task"
+      id="index">
+
+  <info>
+    <title type="link"><app>GottenGeography</app></title>
+    <title type="text"><app>GottenGeography</app></title>
+
+    <credit type="author">
+      <name>Robert Park</name>
+      <email>rbpark@exolucere.ca</email>
+    </credit>
+    <license>
+      <p>Creative Commons Share Alike 3.0</p>
+    </license>
+  </info>
+  
+  <title>
+    <app>GottenGeography</app> Documentation
+  </title>
+
+</page>
