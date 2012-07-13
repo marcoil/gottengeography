@@ -1,26 +1,13 @@
-gottengeography (1.2.1-precise2ubuntu1) UNRELEASED; urgency=low
+gottengeography (2.0-precise1) precise; urgency=low
 
   [ Robert Bruce Park ]
-  * Use GSettings instead of GConf. Closes #41.
-  * Bring the test suite up to speed with the recent GSettings migration.
-  * Update translation instructions.
-  * Improve filesystem correctness.
-  * Drop package_data from setup.py.
-  * Workaround for https://bugs.launchpad.net/intltool/+bug/381347
-  * Expand test coverage of drag&drop.
-  * Extend distutils to record installation prefix at build time.
-  * Persist window size in GSettings.
-  * Honor zoom level when linking to Google Maps.
-  * Switch position of maps link and map source button.
-  * Give up on ChamplainMapSourceFactory as per Jiri's suggestion.
-  * Streamline ActorController.display, because it's called frequently.
-  * Correct Cycle Map max zoom level.
-  * Issue #12: First draft of an application icon.
+  * Way too many changes to list here.
+  * New Spanish translation thanks to Jose Luis Tirado <joseluis.tirado@gmail.com>.
 
   [ Marc Ordinas i Llopis ]
-  * Added gir1.2-glib-2.0 to dependencies.
+  * Imported Upstream version 2.0
 
- -- Marc Ordinas i Llopis (marcoil) <mail@marcoil.org>  Sat, 19 May 2012 13:00:56 +0200
+ -- Marc Ordinas i Llopis (marcoil) <mail@marcoil.org>  Fri, 13 Jul 2012 19:12:38 +0200
 
 gottengeography (1.2.1-precise1) precise; urgency=low
 
